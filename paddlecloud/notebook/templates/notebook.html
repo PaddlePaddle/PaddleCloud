@@ -1,0 +1,15 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}notebook{% endblock %}
+
+{% block body_class %}home{% endblock %}
+
+{% block body_base %}
+    <div class="container">
+      <iframe src="http://notebook.paddlepaddle.org/" width="100%" height="768" style="border:none;"></iframe>
+    </div>
+    {{ notebook_id }}
+
+{% endblock %}
