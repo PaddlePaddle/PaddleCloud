@@ -1,0 +1,30 @@
+{% extends "theme_bootstrap/base.html" %}
+
+{% load staticfiles %}
+{% load pinax_webanalytics_tags %}
+{% load i18n %}
+
+
+{% block styles %}
+    <link href="{% static "css/site.css" %}" rel="stylesheet" />
+{% endblock %}
+
+
+{% block extra_head_base %}
+    {% block extra_head %}{% endblock %}
+{% endblock %}
+
+
+{% block footer %}
+    {% include "_footer.html" %}
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{% static "js/site.js" %}"></script>
+{% endblock %}
+
+{% block extra_body_base %}
+    {% analytics %}
+    {% block extra_body %}{% endblock %}
+{% endblock %}
