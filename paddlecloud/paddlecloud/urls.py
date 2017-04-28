@@ -13,7 +13,8 @@ urlpatterns = [
     url(r"^account/signup/$", notebook.views.SignupView.as_view(), name="account_signup"),
     url(r"^account/login/$", notebook.views.LoginView.as_view(), name="account_login"),
     url(r"^account/", include("account.urls")),
-    url(r"^notebook/", notebook.views.notebook_view),
+    url(r"^notedash/", notebook.views.notebook_view),
+    url(r"^notestop/", notebook.views.stop_notebook_backend),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

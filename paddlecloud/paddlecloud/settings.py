@@ -114,6 +114,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "account.middleware.ExpiredPasswordMiddleware",
+    "notebook.frame_middleware.NotebookMiddleware"
 ]
 
 ROOT_URLCONF = "paddlecloud.urls"

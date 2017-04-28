@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: paddle-cloud
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: paddle-cloud
+    spec:
+      containers:
+      - name: paddle-cloud
+        image: docker.paddlepaddlehub.com/pcloud:latest
+        ports:
+        - containerPort: 8000
