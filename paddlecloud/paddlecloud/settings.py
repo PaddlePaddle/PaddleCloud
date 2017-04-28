@@ -197,7 +197,6 @@ AUTHENTICATION_BACKENDS = [
     "account.auth_backends.UsernameAuthenticationBackend",
 ]
 
-ALLOWED_HOSTS=["cloud.paddlepaddle.org"]
 
 CA_PATH = os.path.join(BASE_DIR, "ca.crt")
 CA_KEY_PATH = os.path.join(BASE_DIR, "ca.key")
