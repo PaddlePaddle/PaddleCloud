@@ -14,16 +14,19 @@ def email_escape(email):
     return safe_email
 
 
-def update_user_k8s_config(username):
+def get_user_api_client(username):
     """
         update kubernetes client to use current logined user's crednetials
     """
+
     conf_obj = kubernetes.client.Configuration()
     conf_obj.host = settings.K8S_HOST
     conf_obj.ssl_ca_cert = os.path.join(settings.CA_PATH)
     conf_obj.cert_file = os.path.join(settings.USER_CERTS_PATH, username, username, ".pem")
     conf_obj.key_file = os.path.join(settings.USER_CERTS_PATH, username, username, "-key.pem")
-    kubernetes.config.load_kube_config(client_configuration=conf_obj)
+    #kubernetes.config.load_kube_config(client_configuration=conf_obj)
+    api_client = kubernetes.client.ApiClient(config=conf_obj)
+    return api_client
 
 # a class for creating jupyter notebook resources
 class UserNotebook():
@@ -112,7 +115,7 @@ class UserNotebook():
         return item_found
 
     def __create_deployment(self, username, namespace):
-        v1beta1api = kubernetes.client.ExtensionsV1beta1Api()
+        v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         dep_list = v1beta1api.list_namespaced_deployment(namespace)
         if not self.__find_item(dep_list, "paddle-book-deployment"):
             self.dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2] = \
@@ -120,8 +123,8 @@ class UserNotebook():
             resp = v1beta1api.create_namespaced_deployment(namespace, body=self.dep_body, pretty=True)
             self.__wait_api_response(resp)
 
-    def __create_service(self, namespace):
-        v1api = kubernetes.client.CoreV1Api()
+    def __create_service(self, username, namespace):
+        v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
         service_list = v1api.list_namespaced_service(namespace)
         if not self.__find_item(service_list, "paddle-book-service"):
             resp = v1api.create_namespaced_service(namespace, body=self.service_body)
@@ -135,7 +138,7 @@ class UserNotebook():
             self.__wait_api_response(resp)
 
     def __create_ingress(self, username, namespace):
-        v1beta1api = kubernetes.client.ExtensionsV1beta1Api()
+        v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         ing_list = v1beta1api.list_namespaced_ingress(namespace)
         if not self.__find_item(ing_list, "paddle-book-ingress"):
             # FIXME: must split this for different users
@@ -149,12 +152,12 @@ class UserNotebook():
             start deployment, service, ingress to start a notebook service for current user
         """
         self.__create_deployment(username, namespace)
-        self.__create_service(namespace)
+        self.__create_service(username, namespace)
         self.__create_ingress(username, namespace)
 
     def stop_all(self, username, namespace):
-        v1beta1api = kubernetes.client.ExtensionsV1beta1Api()
-        v1api = kubernetes.client.CoreV1Api()
+        v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
+        v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
         v1beta1api.delete_namespaced_deployment("paddle-book-deployment", namespace)
         v1beta1api.delete_namespaced_ingress("paddle-book-ingress", namespace)
         v1api.delete_namespaced_service("paddle-book-service", namespace)
@@ -164,8 +167,8 @@ class UserNotebook():
             check notebook deployment status
             @return: running starting stopped
         """
-        v1api = kubernetes.client.CoreV1Api()
-        v1beta1api = kubernetes.client.ExtensionsV1beta1Api()
+        v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
+        v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         d, s, i = (True, True, True)
         dep_list = v1beta1api.list_namespaced_deployment(namespace)
         if not self.__find_item(dep_list, "paddle-book-deployment"):
