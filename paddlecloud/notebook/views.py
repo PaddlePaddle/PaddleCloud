@@ -36,11 +36,11 @@ class SignupView(account.views.SignupView):
 
     def after_signup(self, form):
         self.update_profile(form)
-        try:
-            logging.info("creating default user certs...")
-            tls.create_user_cert(settings.CA_PATH, form.get_user())
-        except Exception, e:
-            logging.error("create user certs error: %s", str(e))
+        #try:
+        logging.info("creating default user certs...")
+        tls.create_user_cert(settings.CA_PATH, form.cleaned_data["email"])
+        #except Exception, e:
+        #    logging.error("create user certs error: %s", str(e))
 
         super(SignupView, self).after_signup(form)
 
@@ -68,10 +68,9 @@ def notebook_view(request):
     # NOTICE: username is the same to user's email
     # NOTICE: escape the username to safe string to create namespaces
     username = request.user.username
-    utils.update_user_k8s_config(username)
 
     # FIXME: notebook must be started under username's namespace
-    v1api = kubernetes.client.CoreV1Api()
+    v1api = kubernetes.client.CoreV1Api(utils.get_user_api_client(username))
     namespaces = v1api.list_namespace()
     user_namespace_found = False
     user_namespace = utils.email_escape(username)

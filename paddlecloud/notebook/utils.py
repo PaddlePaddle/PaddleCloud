@@ -22,8 +22,8 @@ def get_user_api_client(username):
     conf_obj = kubernetes.client.Configuration()
     conf_obj.host = settings.K8S_HOST
     conf_obj.ssl_ca_cert = os.path.join(settings.CA_PATH)
-    conf_obj.cert_file = os.path.join(settings.USER_CERTS_PATH, username, username, ".pem")
-    conf_obj.key_file = os.path.join(settings.USER_CERTS_PATH, username, username, "-key.pem")
+    conf_obj.cert_file = os.path.join(settings.USER_CERTS_PATH, username, "%s.pem"%username)
+    conf_obj.key_file = os.path.join(settings.USER_CERTS_PATH, username, "%s-key.pem"%username)
     #kubernetes.config.load_kube_config(client_configuration=conf_obj)
     api_client = kubernetes.client.ApiClient(config=conf_obj)
     return api_client
@@ -162,7 +162,7 @@ class UserNotebook():
         v1beta1api.delete_namespaced_ingress("paddle-book-ingress", namespace)
         v1api.delete_namespaced_service("paddle-book-service", namespace)
 
-    def status(self, namespace):
+    def status(self, username, namespace):
         """
             check notebook deployment status
             @return: running starting stopped

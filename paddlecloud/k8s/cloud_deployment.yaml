@@ -9,8 +9,15 @@ spec:
       labels:
         app: paddle-cloud
     spec:
+      volumes:
+        - name: pcloud-volume
+          hostPath:
+            path: "/Users/wuyi/go/src/github.com/typhoonzero/PaddleCloud/paddlecloud"
       containers:
       - name: paddle-cloud
+        volumeMounts:
+          - mountPath: /pcloud
+            name: pcloud-volume
         image: docker.paddlepaddlehub.com/pcloud:latest
         ports:
         - containerPort: 8000

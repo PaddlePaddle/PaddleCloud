@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from django import template
 from django.contrib.messages.utils import get_level_tags
 from django.utils.encoding import force_text
-from notebook.utils import email_escape, update_user_k8s_config, UserNotebook
+from notebook.utils import email_escape, UserNotebook, get_user_api_client
 import kubernetes
 
 LEVEL_TAGS = get_level_tags()
@@ -21,9 +21,8 @@ def _get_notebook_id(self, username):
 def get_user_notebook_status(user):
     if not user.is_authenticated:
         return ""
+    username = user.username
     namespace = email_escape(user.email)
-    update_user_k8s_config(user.username)
-
     ub = UserNotebook()
 
-    return ub.status(namespace)
+    return ub.status(username, namespace)
