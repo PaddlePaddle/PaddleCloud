@@ -15,6 +15,7 @@ spec:
             path: "/Users/wuyi/go/src/github.com/typhoonzero/PaddleCloud/paddlecloud"
       containers:
       - name: paddle-cloud
+        imagePullPolicy: Always
         volumeMounts:
           - mountPath: /pcloud
             name: pcloud-volume
