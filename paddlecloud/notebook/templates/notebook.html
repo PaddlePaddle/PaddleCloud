@@ -7,9 +7,16 @@
 {% block body_class %}home{% endblock %}
 
 {% block body_base %}
-    <div class="container">
-      <iframe src="http://notebook.paddlepaddle.org/" width="100%" height="768" style="border:none;"></iframe>
-    </div>
-    {{ notebook_id }}
+  <script>
+  $(document).ready(function(){
+      $(window).resize(function(){
+          $(".fullheight").height($(document).height());
+      });
+  });
+  </script>
+
+  <div class="container fullheight">
+    <iframe src="http://cloud.paddlepaddle.org/notebook/{{ notebook_id }}" width="100%" height="500" style="border:none;"></iframe>
+  </div>
 
 {% endblock %}

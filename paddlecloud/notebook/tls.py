@@ -1,5 +1,6 @@
 import subprocess
 import os
+from django.conf import settings
 
 def __check_cert_requirements__(program):
     def is_exe(fpath):
@@ -29,13 +30,13 @@ def create_user_cert(ca_path, username):
     user_cert_cmds = []
     user_cert_dir = os.path.join(settings.USER_CERTS_PATH, username)
     user_cert_cmds.append("mkdir -p %s" % user_cert_dir)
-    user_cert_cmd.append("openssl genrsa -out \
+    user_cert_cmds.append("openssl genrsa -out \
         %s/%s-key.pem 2048"%(user_cert_dir, username))
-    user_cert_cmd.append("openssl req -new -key %s/%s-key.pem -out\
+    user_cert_cmds.append("openssl req -new -key %s/%s-key.pem -out\
         %s/%s.csr -subj \"/CN=%s\""%\
         (user_cert_dir, username,
         user_cert_dir, username, username))
-    user_cert_cmd.append("openssl x509 -req -in %s/%s.csr -CA %s -CAkey %s \
+    user_cert_cmds.append("openssl x509 -req -in %s/%s.csr -CA %s -CAkey %s \
         -CAcreateserial -out %s/%s.pem -days 365"% \
         (user_cert_dir, username,
         settings.CA_PATH, settings.CA_KEY_PATH,

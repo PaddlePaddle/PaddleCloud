@@ -15,7 +15,8 @@ DATABASES = {
 }
 
 ALLOWED_HOSTS = [
-    "localhost",
+    "127.0.0.1",
+    "cloud.paddlepaddle.org",
 ]
 
 # Local time zone for this installation. Choices can be found here:
@@ -114,6 +115,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "account.middleware.ExpiredPasswordMiddleware",
+    "notebook.frame_middleware.NotebookMiddleware"
 ]
 
 ROOT_URLCONF = "paddlecloud.urls"
@@ -198,10 +200,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-CA_PATH = os.path.join(BASE_DIR, "ca.crt")
-CA_KEY_PATH = os.path.join(BASE_DIR, "ca.key")
+CA_PATH = os.path.join(BASE_DIR, "..", "ca.crt")
+CA_KEY_PATH = os.path.join(BASE_DIR, "..", "ca.key")
 USER_CERTS_PATH="/tmp"
 
-K8S_HOST = "https://192.168.64.2:8443"
+K8S_HOST = "https://192.168.99.100:8443"
 PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
 PADDLE_BOOK_PORT=8888

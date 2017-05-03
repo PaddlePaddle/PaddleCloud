@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: paddle-cloud-service
+spec:
+  selector:
+    app: paddle-cloud
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
