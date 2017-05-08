@@ -44,4 +44,5 @@ def create_user_cert(ca_path, username):
     for cmd in user_cert_cmds:
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         process.wait()
-        print process.returncode
+        if process.returncode != 0:
+            raise RuntimeError("%s error with: (%d)", cmd, process.returncode)

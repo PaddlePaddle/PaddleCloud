@@ -3,6 +3,7 @@ import os
 import kubernetes
 import hashlib
 import copy
+import logging
 
 def email_escape(email):
     """
@@ -118,9 +119,11 @@ class UserNotebook():
         v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         dep_list = v1beta1api.list_namespaced_deployment(namespace)
         if not self.__find_item(dep_list, "paddle-book-deployment"):
-            self.dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2] = \
-                self.dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2] % self.get_notebook_id(username)
-            resp = v1beta1api.create_namespaced_deployment(namespace, body=self.dep_body, pretty=True)
+            dep_body = copy.deepcopy(self.dep_body)
+            logging.info("command: %s, userid: %s", self.dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2], self.get_notebook_id(username))
+            dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2] = \
+                dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2] % (self.get_notebook_id(username))
+            resp = v1beta1api.create_namespaced_deployment(namespace, body=dep_body, pretty=True)
             self.__wait_api_response(resp)
 
     def __create_service(self, username, namespace):
