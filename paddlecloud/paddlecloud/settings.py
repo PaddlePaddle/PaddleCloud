@@ -199,11 +199,12 @@ AUTHENTICATION_BACKENDS = [
     "account.auth_backends.UsernameAuthenticationBackend",
 ]
 
-
-CA_PATH = os.path.join(BASE_DIR, "..", "ca.crt")
-CA_KEY_PATH = os.path.join(BASE_DIR, "..", "ca.key")
-USER_CERTS_PATH="/tmp"
+# secret places to store ca and users keys
+CA_PATH = "/certs/ca.crt"
+CA_KEY_PATH = "/certs/ca.key"
+USER_CERTS_PATH="/certs"
 
 K8S_HOST = "https://192.168.99.100:8443"
-PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
+# PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
+PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
 PADDLE_BOOK_PORT=8888
