@@ -1,0 +1,25 @@
+{% extends "theme_bootstrap/subnav_base.html" %}
+
+{% load i18n %}
+
+{% block body_class %}account{% endblock %}
+
+{% block subnav %}
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>{% trans "Settings" %}</strong></div>
+    <div class="list-group">
+        <a class="list-group-item account-settings" href="{% url "account_settings" %}">
+            {% trans "Account" %}
+        </a>
+        <a class="list-group-item account-certs" href="{% url "account_certs" %}">
+            {% trans "Certs" %}
+        </a>
+        <a class="list-group-item account-password" href="{% url "account_password" %}">
+            {% trans "Change password" %}
+        </a>
+        <a class="list-group-item account-delete" href="{% url "account_delete" %}">
+            {% trans "Delete account" %}
+        </a>
+    </div>
+</div>
+{% endblock %}

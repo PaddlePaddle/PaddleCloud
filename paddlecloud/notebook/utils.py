@@ -7,17 +7,16 @@ import logging
 
 def email_escape(email):
     """
-        escape email to a safe string of kubernetes namespace
+        Escape email to a safe string of kubernetes namespace
     """
     safe_email = email.replace("@", "-")
     safe_email = safe_email.replace(".", "-")
     safe_email = safe_email.replace("_", "-")
     return safe_email
 
-
 def get_user_api_client(username):
     """
-        update kubernetes client to use current logined user's crednetials
+        Update kubernetes client to use current logined user's crednetials
     """
 
     conf_obj = kubernetes.client.Configuration()
@@ -25,9 +24,19 @@ def get_user_api_client(username):
     conf_obj.ssl_ca_cert = os.path.join(settings.CA_PATH)
     conf_obj.cert_file = os.path.join(settings.USER_CERTS_PATH, username, "%s.pem"%username)
     conf_obj.key_file = os.path.join(settings.USER_CERTS_PATH, username, "%s-key.pem"%username)
-    #kubernetes.config.load_kube_config(client_configuration=conf_obj)
     api_client = kubernetes.client.ApiClient(config=conf_obj)
     return api_client
+
+def user_certs_exist(username):
+    """
+        Return True if the user's certs already generated. User's keys are of pairs.
+    """
+    has_cert = os.path.isfile(os.path.join(settings.USER_CERTS_PATH, username, "%s.pem"%username))
+    has_key = os.path.isfile(os.path.join(settings.USER_CERTS_PATH, username, "%s-key.pem"%username))
+    if has_cert and has_key:
+        return True
+    else:
+        return False
 
 # a class for creating jupyter notebook resources
 class UserNotebook():
@@ -35,25 +44,31 @@ class UserNotebook():
         "apiVersion": "extensions/v1beta1",
         "kind": "Deployment",
         "metadata": {
-            "name": "paddle-book-deployment"
+            "name": "cloud-notebook-deployment"
         },
         "spec": {
             "replicas": 1,
             "template": {
                 "metadata": {
                     "labels": {
-                        "app": "paddle-book"
+                        "app": "cloud-notebook"
                     }
                 },
                 "spec": {
                     "containers": [{
-                        "name": "paddle-book",
+                        "name": "cloud-notebook",
                         "image": settings.PADDLE_BOOK_IMAGE,
                         "command": ["sh", "-c",
                          "mkdir -p /root/.jupyter; echo \"c.NotebookApp.base_url = '/notebook/%s'\" > /root/.jupyter/jupyter_notebook_config.py; jupyter notebook --debug --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.disable_check_xsrf=True /book/"],
                         "ports": [{
                             "containerPort": settings.PADDLE_BOOK_PORT
-                        }]
+                        }],
+                        "env" : [
+                            {"name": "USER_NAMESPACE", "valueFrom": {"fieldRef": {"fieldPath": "metadata.namespace"}}},
+                            {"name": "USER_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}},
+                            {"name": "USER_POD_IP", "valueFrom": {"fieldRef": {"fieldPath": "status.podIP"}}},
+                            {"name": "USER_POD_SERVICE_ACCOUNT", "valueFrom": {"fieldRef": {"fieldPath": "spec.serviceAccountName"}}},
+                        ]
                     }]
                 }
             }
@@ -63,11 +78,11 @@ class UserNotebook():
         "apiVersion": "v1",
         "kind": "Service",
         "metadata": {
-            "name": "paddle-book-service"
+            "name": "cloud-notebook-service"
         },
         "spec": {
             "selector": {
-                "app": "paddle-book"
+                "app": "cloud-notebook"
             },
             "ports": [{
                 "protocol": "TCP",
@@ -80,7 +95,7 @@ class UserNotebook():
         "apiVersion": "extensions/v1beta1",
         "kind": "Ingress",
         "metadata": {
-            "name": "paddle-book-ingress"
+            "name": "cloud-notebook-ingress"
         },
         "spec": {
             "rules": [{
@@ -89,7 +104,7 @@ class UserNotebook():
                     "paths": [{
                         "path": "/",
                         "backend": {
-                            "serviceName": "paddle-book-service",
+                            "serviceName": "cloud-notebook-service",
                             "servicePort": 8888
                         }
                     },
@@ -118,7 +133,7 @@ class UserNotebook():
     def __create_deployment(self, username, namespace):
         v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         dep_list = v1beta1api.list_namespaced_deployment(namespace)
-        if not self.__find_item(dep_list, "paddle-book-deployment"):
+        if not self.__find_item(dep_list, "cloud-notebook-deployment"):
             dep_body = copy.deepcopy(self.dep_body)
             logging.info("command: %s, userid: %s", self.dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2], self.get_notebook_id(username))
             dep_body["spec"]["template"]["spec"]["containers"][0]["command"][2] = \
@@ -129,25 +144,18 @@ class UserNotebook():
     def __create_service(self, username, namespace):
         v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
         service_list = v1api.list_namespaced_service(namespace)
-        if not self.__find_item(service_list, "paddle-book-service"):
+        if not self.__find_item(service_list, "cloud-notebook-service"):
             resp = v1api.create_namespaced_service(namespace, body=self.service_body)
-            self.__wait_api_response(resp)
-
-        # service for notebook websocket
-        service_ws = copy.deepcopy(self.service_body)
-        service_ws["metadata"]["name"] = "paddle-book-service-ws"
-        if not self.__find_item(service_list, "paddle-book-service-ws"):
-            resp = v1api.create_namespaced_service(namespace, body=service_ws)
             self.__wait_api_response(resp)
 
     def __create_ingress(self, username, namespace):
         v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         ing_list = v1beta1api.list_namespaced_ingress(namespace)
-        if not self.__find_item(ing_list, "paddle-book-ingress"):
+        if not self.__find_item(ing_list, "cloud-notebook-ingress"):
             # FIXME: must split this for different users
-            self.ing_body["spec"]["rules"][0]["http"]["paths"][0]["path"] = "/notebook/" + self.get_notebook_id(username)
-            #self.ing_body["spec"]["rules"][0]["http"]["paths"][1]["path"] = "/notebook/" + self.get_notebook_id(username) + "/api/kernels/*"
-            resp = v1beta1api.create_namespaced_ingress(namespace, body=self.ing_body)
+            ing_body = copy.deepcopy(self.ing_body)
+            ing_body["spec"]["rules"][0]["http"]["paths"][0]["path"] = "/notebook/" + self.get_notebook_id(username)
+            resp = v1beta1api.create_namespaced_ingress(namespace, body=ing_body)
             self.__wait_api_response(resp)
 
     def start_all(self, username, namespace):
@@ -161,9 +169,9 @@ class UserNotebook():
     def stop_all(self, username, namespace):
         v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
-        v1beta1api.delete_namespaced_deployment("paddle-book-deployment", namespace)
-        v1beta1api.delete_namespaced_ingress("paddle-book-ingress", namespace)
-        v1api.delete_namespaced_service("paddle-book-service", namespace)
+        v1beta1api.delete_namespaced_deployment("cloud-notebook-deployment", namespace)
+        v1beta1api.delete_namespaced_ingress("cloud-notebook-ingress", namespace)
+        v1api.delete_namespaced_service("cloud-notebook-service", namespace)
 
     def status(self, username, namespace):
         """
@@ -173,15 +181,35 @@ class UserNotebook():
         v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
         v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         d, s, i = (True, True, True)
+        # -------------------- deployment status --------------------
         dep_list = v1beta1api.list_namespaced_deployment(namespace)
-        if not self.__find_item(dep_list, "paddle-book-deployment"):
+        if not self.__find_item(dep_list, "cloud-notebook-deployment"):
             d = False
+        else:
+            # notebook must have at least one replica running
+            for i in dep_list.items:
+                if i.status.ready_replicas < 1:
+                    d = False
+        # -------------------- service status --------------------
         service_list = v1api.list_namespaced_service(namespace)
-        if not self.__find_item(service_list, "paddle-book-service"):
+        if not self.__find_item(service_list, "cloud-notebook-service"):
             s = False
+        else:
+            # service is ready when the endpoints to pods has been found
+            endpoints_list = v1api.list_namespaced_endpoints(namespace)
+            if not self.__find_item(endpoints_list, "cloud-notebook-service"):
+                s = False
+        # -------------------- ingress status --------------------
         ing_list = v1beta1api.list_namespaced_ingress(namespace)
-        if not self.__find_item(ing_list, "paddle-book-ingress"):
+        if not self.__find_item(ing_list, "cloud-notebook-ingress"):
             i = False
+        else:
+            # ingress is ready when the remote ip is assigned
+            for i in ing_list.items:
+                if i:
+                    for ing in i.status.load_balancer.ingress:
+                        if not ing.ip:
+                            i = False
 
         if d and s and i:
             return "running"

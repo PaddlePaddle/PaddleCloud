@@ -1,6 +1,7 @@
 {% extends "site_base.html" %}
 
 {% load i18n %}
+{% load staticfiles %}
 
 {% block head_title %}notebook{% endblock %}
 
@@ -14,9 +15,13 @@
       });
   });
   </script>
-
+  {% if notebook_status == "running" %}
   <div class="container fullheight">
     <iframe src="http://cloud.paddlepaddle.org/notebook/{{ notebook_id }}" width="100%" height="500" style="border:none;"></iframe>
   </div>
-
+  {% else %}
+  <div class="container">
+    <img src="{% static "images/outsell_loading.gif" %}" />
+  </div>
+  {% endif %}
 {% endblock %}

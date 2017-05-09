@@ -115,7 +115,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "account.middleware.ExpiredPasswordMiddleware",
-    "notebook.frame_middleware.NotebookMiddleware"
 ]
 
 ROOT_URLCONF = "paddlecloud.urls"
@@ -132,6 +131,10 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
 
+    # paddlecloud apps
+    # NOTE: load before pinax_theme_bootstrap to customize the theme
+    "notebook",
+
     # theme
     "bootstrapform",
     "pinax_theme_bootstrap",
@@ -143,9 +146,6 @@ INSTALLED_APPS = [
 
     # project
     "paddlecloud",
-
-    # paddlecloud apps
-    "notebook",
 ]
 
 # A sample logging configuration. The only tangible logging
@@ -161,14 +161,32 @@ LOGGING = {
             "()": "django.utils.log.RequireDebugFalse"
         }
     },
+    'formatters': {
+        'verbose': {
+            'format': '[%(levelname)s %(asctime)s @ %(process)d] - %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
     "handlers": {
         "mail_admins": {
             "level": "ERROR",
             "filters": ["require_debug_false"],
             "class": "django.utils.log.AdminEmailHandler"
-        }
+        },
+        "stdout": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose"
+        },
     },
     "loggers": {
+        "": {
+            "handlers": ["stdout"],
+            "level": "ERROR",
+            "propagate": True,
+        },
         "django.request": {
             "handlers": ["mail_admins"],
             "level": "ERROR",
@@ -200,11 +218,12 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # secret places to store ca and users keys
-CA_PATH = "/certs/ca.crt"
-CA_KEY_PATH = "/certs/ca.key"
+CA_PATH = "/certs/ca.pem"
+CA_KEY_PATH = "/certs/ca-key.pem"
 USER_CERTS_PATH="/certs"
 
-K8S_HOST = "https://192.168.99.100:8443"
+K8S_HOST = "https://%s:%s" % (os.getenv("KUBERNETES_SERVICE_HOST"),
+    os.getenv("KUBERNETES_SERVICE_PORT_HTTPS"))
 # PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
 PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
 PADDLE_BOOK_PORT=8888
