@@ -7,19 +7,23 @@ from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.conf import settings
 # local imports
 from notebook.models import PaddleUser
 import notebook.forms
 import account.views
 import tls
+import utils
 # libraries
 import os
 import json
 import logging
 import hashlib
 import kubernetes
-import utils
+import zipfile
+import cStringIO as StringIO
+from wsgiref.util import FileWrapper
 
 @receiver(post_save, sender=User)
 def handle_user_save(sender, instance, created, **kwargs):
@@ -36,11 +40,8 @@ class SignupView(account.views.SignupView):
 
     def after_signup(self, form):
         self.update_profile(form)
-        #try:
         logging.info("creating default user certs...")
         tls.create_user_cert(settings.CA_PATH, form.cleaned_data["email"])
-        #except Exception, e:
-        #    logging.error("create user certs error: %s", str(e))
 
         super(SignupView, self).after_signup(form)
 
@@ -58,6 +59,41 @@ class SignupView(account.views.SignupView):
         username = form.cleaned_data["email"]
         return username
 
+class SettingsView(account.views.SettingsView):
+    form_class = notebook.forms.SettingsForm
+
+@login_required
+def user_certs_view(request):
+    key_exist = utils.user_certs_exist(request.user.username)
+    user_keys = ["%s.pem" % request.user.username, "%s-key.pem" % request.user.username]
+
+    return render(request, "user_certs.html",
+        context={"key_exist": key_exist, "user_keys": user_keys})
+
+@login_required
+def user_certs_download(request):
+    certs_file = StringIO.StringIO()
+    with zipfile.ZipFile(certs_file, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
+        with open(os.path.join(settings.USER_CERTS_PATH, request.user.username, "%s.pem"%request.user.username), "r") as c:
+            zf.writestr('%s.pem'%request.user.username, c.read())
+        with open(os.path.join(settings.USER_CERTS_PATH, request.user.username, "%s-key.pem"%request.user.username), "r") as s:
+            zf.writestr('%s-key.pem'%request.user.username, s.read())
+
+    response = HttpResponse(certs_file.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s.zip' % request.user.username
+    response['Content-Length'] = certs_file.tell()
+    return response
+
+@login_required
+def user_certs_generate(request):
+    logging.info("creating default user certs...")
+    try:
+        tls.create_user_cert(settings.CA_PATH, request.user.email)
+        messages.success(request, "X509 certificate generated and updated.")
+    except Exception, e:
+        messages.error(request, str(e))
+        logging.error(str(e))
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @login_required
 def notebook_view(request):
@@ -90,12 +126,13 @@ def notebook_view(request):
     ub.start_all(username, user_namespace)
 
     return render(request, "notebook.html",
-        context={"notebook_id": ub.get_notebook_id(username)})
+        context={"notebook_id": ub.get_notebook_id(username),
+                 "notebook_status": ub.status(username, user_namespace)})
 
 @login_required
 def stop_notebook_backend(request):
     username = request.user.username
     utils.update_user_k8s_config(username)
     ub = utils.UserNotebook()
-    ub.start_all(username, user_namespace)
+    ub.stop_all(username, user_namespace)
     return HttpResponseRedirect("/")

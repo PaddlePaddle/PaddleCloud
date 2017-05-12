@@ -16,6 +16,8 @@
                 <span class="label label-warning">{{ status }}</span>
                 {% elif status == "stopped" %}
                 <span class="label label-danger">{{ status }}</span>
+                {% elif status == "unknown" %}
+                <span class="label label-default">{{ status }}</span>
                 {% endif %}
               {% endif %}
             </a></li>
