@@ -79,7 +79,7 @@ Run the following command to submit the job to the cloud:
 
 ```bash
 # upload training data to cloud, which may be very large
-$ paddlecloud cp -r ./job_word_emb/data /pfs/datacenter1/home/user1/job_word_emb
+$ paddlecloud pfs cp -r ./job_word_emb/data /pfs/datacenter1/home/user1/job_word_emb
 # submit a v1 paddle training job
 $ paddlecloud submit ./job_word_emb -p 4 -c 2 -m 10Gi -t modules/train.py
 Collecting package ... Done
