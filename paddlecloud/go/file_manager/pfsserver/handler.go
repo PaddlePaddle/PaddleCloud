@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	//"strconv"
 	//"github.com/gorilla/mux"
 )
@@ -75,6 +77,37 @@ func makeResponse(w http.ResponseWriter,
 
 }
 
+func lsFiles(paths []string, r bool) ([]pfsmodules.FileMeta, error) {
+
+	ret := make([]pfsmodules.FileMeta, 0, 100)
+
+	for _, t := range paths {
+
+		list, err := filepath.Glob(t)
+		if err != nil {
+			log.Printf("glob path:%s error:%s", t, err)
+			return nil, err
+		}
+
+		for _, v := range list {
+			filepath.Walk(v, func(path string, info os.FileInfo, err error) error {
+				if info.IsDir() && r {
+					return filepath.SkipDir
+				}
+				m := pfsmodules.FileMeta{}
+				m.Path = info.Name()
+				m.Size = info.Size()
+				m.ModTime = info.ModTime().Format("2006-01-02 15:04:05")
+
+				ret = append(ret, m)
+				return nil
+			})
+		}
+	}
+
+	return ret, nil
+}
+
 func GetFiles(w http.ResponseWriter, r *http.Request) {
 	var req pfsmodules.GetFilesReq
 	rep := pfsmodules.GetFilesResponse{}
@@ -97,10 +130,12 @@ func GetFiles(w http.ResponseWriter, r *http.Request) {
 	if req.Method != "ls" {
 		rep.SetErr("Not surported method:" + req.Method)
 		makeResponse(w, rep, 422)
+		return
 	}
 
 	//t := RepoCreateTodo(todo)
-	t := "{}"
+	log.Print(req)
+	t, err := lsFiles(req.FilesPath, false)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {

@@ -3,14 +3,14 @@ package pfsmodules
 type GetFilesReq struct {
 	Method    string   `json:"Method"`
 	Options   []string `json:"Options"`
-	FilePaths []string `json:"FilesPaths"`
+	FilesPath []string `json:"FilesPath"`
 }
 
 type FileMeta struct {
-	Path         string `json:"Path"`
-	Err          string `json:"Err"`
-	CreationTime string `json:"CreationTime"`
-	Size         int64  `json:"Size"`
+	Err     string `json:"Err"`
+	Path    string `json:"Path"`
+	ModTime string `json:"ModTime"`
+	Size    int64  `json:"Size"`
 }
 
 type GetFilesResponse struct {
