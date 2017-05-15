@@ -6,11 +6,11 @@ A Command Line Interface for PaddlePaddle Cloud
 
 # Goals:
 
-Developers using PaddlePadle Cloud can use this command-line client for conviniece of manage cloud Deep-Learning jobs, including:
+Developers using PaddlePadle Cloud can use this command-line client for the convenience of managing cloud Deep-Learning jobs, including:
 
 - Submitting a PaddlePaddle cluster training job
-- List jobs that is currently running.
-- List all job history that have been submited.
+- List jobs that are currently running.
+- List all job history that has been submitted.
 - Fetch logs of the jobs.
 - Download output(model data) of the completed job.
 - View user's quota usages in their spaces.
@@ -32,17 +32,17 @@ datacenter1:
 
 ## Reference
 
-- `paddlecloud submit [options] [package path]`: submit job to PaddlePaddle Cloud
-    - `[package path]`: ***Required*** Job package to submit. Including user training programe and it's dependcies.
-    - `-p --parallism`: Number of parrallel trainers. Defaults to 1.
-    - `-c --cpu`: CPU resource each trainer will use. Defaults to 1.
-    - `-g --gpu`: GPU resource each trainer will use. Defaults to 0.
-    - `-m --memory`: Memory resource each trainer will use. Defaults to 1Gi.
-    - `-s --pservers`: Number of parameter servers. Defaults equal to `-p`
-    - `-u --pscpu`: Parameter server CPU resource. Defaults to 1.
-    - `-y --psmemory`: Parameter server momory resource. Defaults to 1Gi.
-    - `-e --entry`: Command of starting trainer process. Defaults to `paddle train`
-    - `-t --topology`: ***Will Be Deprecated*** `.py` file contains paddle v1 job configs
+- `paddlecloud submit [options] <package path>`: submit job to PaddlePaddle Cloud
+    - `<package path>`: ***Required*** Job package to submit. Including user training program and it's dependencies.
+    - `-parallelism`: Number of parallel trainers. Defaults to 1.
+    - `-cpu`: CPU resource each trainer will use. Defaults to 1.
+    - `-gpu`: GPU resource each trainer will use. Defaults to 0.
+    - `-memory`: Memory resource each trainer will use. Defaults to 1Gi. Memory ammounts consists a plain integer using one of these suffixes: Ei, Pi, Ti, Gi, Mi, Ki
+    - `-pservers`: Number of parameter servers. Defaults equal to `-p`
+    - `-pscpu`: Parameter server CPU resource. Defaults to 1.
+    - `-psmemory`: Parameter server memory resource. Defaults to 1Gi.
+    - `-entry`: Command of starting trainer process. Defaults to `paddle train`
+    - `-topology`: ***Will Be Deprecated*** `.py` file contains paddle v1 job configs
 - `paddlecloud jobs [-a]`: List jobs. List only running jobs if no `-a` specified.
     - `-a`: List all jobs.
 - `paddlecloud logs [job]`: Print logs of the job.
@@ -52,6 +52,7 @@ datacenter1:
     - `paddlecloud pfs cp <local src> [<local src> ... ] <remote dest>`: Upload a file
     - `paddlecloud pfs cp <remote src> [<remote src> ... ] <local dest>`: Download a file
     - `paddlecloud pfs ls <remote dir>`: List files under `<remote dir>`.
+    - `paddlecloud pfs rm <remote> ...`: Delete remote files
 
 ## Examples
 
@@ -112,11 +113,11 @@ $ paddlecloud pfs cp /pfs/datacenter1/home/user1/job_word_emb/output ./output
 Downloading /pfs/datacenter1/home/user1/job_word_emb/output ... Done
 ```
 
-# API Defination
+# API Definition
 
-PaddleCloud Client calls a remote "RESTful server" to accomplish the goals. This "RESTful server" is deployed in cloud and serves all client calls for all users.
+PaddleCloud Client calls a remote "RESTful server" to accomplish the goals. This "RESTful server" is deployed in the cloud and serves all client calls for all users.
 
-We have multiple API versions, currently it is "v1" and "v2". "v1" stands for submiting a paddle job which is written with paddle v1 API. All endpoints start with the version path, like "/v1/submit"
+We have multiple API versions, currently, it is "v1" and "v2". "v1" stands for submitting a paddle job which is written with paddle v1 API. All endpoints start with the version path, like "/v1/submit"
 
 We define the APIs below:
 
@@ -125,5 +126,4 @@ We define the APIs below:
 | /v1/submit | POST   | see [above](#client-commands) |
 | /v1/jobs   | GET    | see [above](#client-commands) |
 | /v1/quota  | GET    | see [above](#client-commands) |
-| /v1/pfs/cp | POST   | see [above](#client-commands) |
-| /v1/pfs/ls | GET    | see [above](#client-commands) |
+| /v1/pfs/*  |  -     | see [here](https://github.com/gongweibao/Paddle/blob/filemanager2/doc/design/file_manager/README.md#pfsserver) |
