@@ -64,22 +64,24 @@ job_word_emb/
   |-- dict1.pickle
   |-- dict2.pickle
   |-- my_topo.py
-  `-- data/
-      |-- train/
-      |   |-- train.txt-00000
-      |   |-- train.txt-00001
-      |   ...
-      `-- test/
-          |-- test.txt-00000
-          |-- test.txt-00001
-          ...
+data/
+  |-- train/
+  |   |-- train.txt-00000
+  |   |-- train.txt-00001
+  |   ...
+  `-- test/
+      |-- test.txt-00000
+      |-- test.txt-00001
+      ...
 ```
 
 Run the following command to submit the job to the cloud:
 
 ```bash
+# upload training data to cloud, which may be very large
+$ paddlecloud cp -r ./job_word_emb/data /pfs/datacenter1/home/user1/job_word_emb
 # submit a v1 paddle training job
-$ paddlecloud submit ./job_word_emb -p 4 -c 2 -m 10Gi -t train.py
+$ paddlecloud submit ./job_word_emb -p 4 -c 2 -m 10Gi -t modules/train.py
 Collecting package ... Done
 Uploading package ... Done
 Starting kuberntes job ... Done
