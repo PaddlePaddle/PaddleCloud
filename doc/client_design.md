@@ -143,7 +143,7 @@ We define the APIs below:
 ```json
 {
   "name": "paddle-job",
-  "job_package": "/pfs/datacenter1/home/user1/job_word_emb",
+  "jobPackage": "/pfs/datacenter1/home/user1/job_word_emb",
   "parallelism": 3,
   "cpu": 1,
   "gpu": 1,
