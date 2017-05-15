@@ -16,6 +16,9 @@ spec:
       - name: settings
         hostPath:
           path: /root/wuyi/settings.py
+      - name: mysql-data
+        hostPath:
+          path: /root/wuyi/mysql
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
@@ -27,5 +30,23 @@ spec:
           mountPath: /pcloud/paddlecloud/settings.py
         ports:
         - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz/
+            port: 8000
+            httpHeaders:
+            - name: User-Agent
+              value: kubernetes-health-check
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      - name: mysql
+        image: mysql:5.7
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: root
       nodeSelector:
         pcloud: pcloud
