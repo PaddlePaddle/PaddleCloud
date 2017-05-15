@@ -128,8 +128,9 @@ We define the APIs below:
 
 | Endpoint   | method | arguments |
 | --------   | ------ | --------- |
-| /api/v1/jobs   | POST   | see [above](#submit-job-api) |
-| /api/v1/jobs   | GET    | see [above](#get-jobs) |
+| /api/v1/jobs   | POST   | see [Submit Job](#submit-job) |
+| /api/v1/jobs   | GET    | see [Get Jobs](#get-jobs) |
+| /api/v1/jobs   | DELETE | see [Delete Jobs](#delete-job)
 | /api/v1/quota  | GET    | see [above](#client-commands) |
 | /api/v1/pfs/*  |  -     | see [here](https://github.com/gongweibao/Paddle/blob/filemanager2/doc/design/file_manager/README.md#pfsserver) |
 
