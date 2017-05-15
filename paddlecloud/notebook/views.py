@@ -25,6 +25,9 @@ import zipfile
 import cStringIO as StringIO
 from wsgiref.util import FileWrapper
 
+def healthz(request):
+    return HttpResponse("OK")
+
 @receiver(post_save, sender=User)
 def handle_user_save(sender, instance, created, **kwargs):
     if created:

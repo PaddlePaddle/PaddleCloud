@@ -1,7 +1,6 @@
 FROM python:2.7.13-alpine
-RUN apk add --update nodejs openssl
+RUN apk add --update nodejs openssl gcc mysql-dev musl-dev linux-headers
 
-#ADD requirements.txt package.json /pcloud/
 ADD ./ /pcloud
 RUN cd /pcloud && \
 rm -rf node_modules && npm run clean && \
