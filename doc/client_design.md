@@ -174,7 +174,7 @@ We define the APIs below:
 "msg":[
   {
     "name": "paddle-job-b82x",
-    "job_package": "/pfs/datacenter1/home/user1/job_word_emb",
+    "jobPackage": "/pfs/datacenter1/home/user1/job_word_emb",
     "parallelism": 3,
     "cpu": 1,
     "gpu": 1,
@@ -182,11 +182,17 @@ We define the APIs below:
     "pservers": 3,
     "pscpu": 1,
     "psmemory": "1Gi",
-    "topology": "train.py"
+    "topology": "train.py",
+    "status": {
+      "active": 0,
+      "completionTime": "2017-05-15 13:33:23",
+      "succeeded": 3,
+      "startTime": "2017-05-15 12:33:53"
+    }
   },
   {
     "name": "paddle-yx-02c2",
-    "job_package": "/pfs/datacenter1/home/user2/job_word_emb",
+    "jobPackage": "/pfs/datacenter1/home/user2/job_word_emb",
     "parallelism": 3,
     "cpu": 1,
     "gpu": 1,
@@ -194,7 +200,26 @@ We define the APIs below:
     "pservers": 3,
     "pscpu": 1,
     "psmemory": "1Gi",
-    "topology": "train.py"
+    "topology": "train.py",
+    "status": {
+      "active":1,
+      "failed": 1,
+      "startTime": "2017-05-15 18:30:02"
+    }
   }
 ]
+```
+
+## Delete Job
+- HTTP Request
+
+`DELETE /api/v1/jobs/{name}`
+
+- HTTP Response
+
+```json
+{
+  "code":200,
+  "msg":"OK"
+}
 ```
