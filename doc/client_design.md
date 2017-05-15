@@ -128,7 +128,99 @@ We define the APIs below:
 
 | Endpoint   | method | arguments |
 | --------   | ------ | --------- |
-| /v1/submit | POST   | see [above](#client-commands) |
-| /v1/jobs   | GET    | see [above](#client-commands) |
-| /v1/quota  | GET    | see [above](#client-commands) |
-| /v1/pfs/*  |  -     | see [here](https://github.com/gongweibao/Paddle/blob/filemanager2/doc/design/file_manager/README.md#pfsserver) |
+| /api/v1/jobs   | POST   | see [Submit Job](#submit-job) |
+| /api/v1/jobs   | GET    | see [Get Jobs](#get-jobs) |
+| /api/v1/jobs   | DELETE | see [Delete Jobs](#delete-job)
+| /api/v1/quota  | GET    | see [above](#client-commands) |
+| /api/v1/pfs/*  |  -     | see [here](https://github.com/gongweibao/Paddle/blob/filemanager2/doc/design/file_manager/README.md#pfsserver) |
+
+## Submit Job
+- HTTP Request
+
+`POST /api/v1/jobs`
+
+- Body Parameters
+```json
+{
+  "name": "paddle-job",
+  "jobPackage": "/pfs/datacenter1/home/user1/job_word_emb",
+  "parallelism": 3,
+  "cpu": 1,
+  "gpu": 1,
+  "memory": "1Gi",
+  "pservers": 3,
+  "pscpu": 1,
+  "psmemory": "1Gi",
+  "topology": "train.py"
+}
+```
+
+- HTTP Response
+```json
+{
+    "code":200,
+    "msg":"OK"
+}
+```
+
+## Get Jobs
+- HTTP Request
+
+`GET /api/v1/jobs`
+
+- HTTP Response
+
+```json
+"code":200,
+"msg":[
+  {
+    "name": "paddle-job-b82x",
+    "jobPackage": "/pfs/datacenter1/home/user1/job_word_emb",
+    "parallelism": 3,
+    "cpu": 1,
+    "gpu": 1,
+    "memory": "1Gi",
+    "pservers": 3,
+    "pscpu": 1,
+    "psmemory": "1Gi",
+    "topology": "train.py",
+    "status": {
+      "active": 0,
+      "completionTime": "2017-05-15 13:33:23",
+      "succeeded": 3,
+      "startTime": "2017-05-15 12:33:53"
+    }
+  },
+  {
+    "name": "paddle-yx-02c2",
+    "jobPackage": "/pfs/datacenter1/home/user2/job_word_emb",
+    "parallelism": 3,
+    "cpu": 1,
+    "gpu": 1,
+    "memory": "1Gi",
+    "pservers": 3,
+    "pscpu": 1,
+    "psmemory": "1Gi",
+    "topology": "train.py",
+    "status": {
+      "active":1,
+      "failed": 1,
+      "startTime": "2017-05-15 18:30:02"
+    }
+  }
+]
+```
+
+## Delete Job
+- HTTP Request
+
+`DELETE /api/v1/jobs/{name}`
+
+- HTTP Response
+
+```json
+{
+  "code":200,
+  "msg":"OK"
+}
+```
