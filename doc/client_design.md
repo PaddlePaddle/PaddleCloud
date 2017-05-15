@@ -43,10 +43,13 @@ datacenter1:
     - `-psmemory`: Parameter server memory resource. Defaults to 1Gi.
     - `-entry`: Command of starting trainer process. Defaults to `paddle train`
     - `-topology`: ***Will Be Deprecated*** `.py` file contains paddle v1 job configs
-- `paddlecloud jobs [-a]`: List jobs. List only running jobs if no `-a` specified.
-    - `-a`: List all jobs.
-- `paddlecloud logs [job]`: Print logs of the job.
-- `paddlecloud quota`: Show user's quota usages.
+- `paddlecloud kill [-rm] <job name>`: Stop the job. `-rm` will remove the job from history.
+- `paddlecloud get [options] <resource>`: Print resources
+    - `jobs`: List jobs. List only running jobs if no `-a` specified.
+    - `workers`: List detailed job worker nodes.
+    - `quota`: Print quota usages
+    - `-a`: List all resources.
+- `paddlecloud logs [-n lines] <job>`: Print logs of the job.
 - `paddlecloud pfs ...`: PaddlePaddle Cloud data management.
     `<dest>` is the path on the cloud. The form must be like `/pfs/$DATACENTER/home/$USER`. `$DATACENTER` is the from configuration where you setup at `~/.paddle/config`
     - `paddlecloud pfs cp <local src> [<local src> ... ] <remote dest>`: Upload a file
