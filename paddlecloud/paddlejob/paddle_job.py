@@ -88,7 +88,7 @@ class PaddleJob(object):
         return ["paddle_k8s", "start_pserver"]
 
     def _get_trainer_entrypoint(sefl):
-        return ["paddle_k8s", "start_trainer"]
+        return ["paddle_k8s", "start_trainer v1"]
 
     def _get_trainer_labels(self):
         return {"paddle-job": self._name}

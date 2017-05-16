@@ -7,6 +7,8 @@ from django.contrib import admin
 import account.urls
 
 import notebook.views
+from rest_framework.authtoken import views
+from rest_framework import routers
 
 urlpatterns = [
     url(r"^$", TemplateView.as_view(template_name="homepage.html"), name="home"),
@@ -22,6 +24,8 @@ urlpatterns = [
     url(r"^certsdown/", notebook.views.user_certs_download),
     url(r"^certsgen/", notebook.views.user_certs_generate),
     url(r"^api/v1/jobs/", paddlejob.view.jobs_handler),
+    url(r'^api-token-auth/', views.obtain_auth_token),
+    url(r'^api/sample/$', notebook.views.SampleView.as_view()),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
