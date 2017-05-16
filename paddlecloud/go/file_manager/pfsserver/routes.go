@@ -22,6 +22,6 @@ var routes = Routes{
 		"PostFiles",
 		"Post",
 		"/api/v1/files",
-		CreateFiles,
+		PostFiles,
 	},
 }
