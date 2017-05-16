@@ -2,8 +2,8 @@ package pfsserver
 
 import (
 	"encoding/json"
-	"github.com/cloud/paddlecloud/go/file_manager/pfscommon"
-	"github.com/cloud/paddlecloud/go/file_manager/pfsmodules"
+	"github.com/cloud/go/file_manager/pfscommon"
+	"github.com/cloud/go/file_manager/pfsmodules"
 	"log"
 	"net/http"
 )

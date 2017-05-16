@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cloud/paddlecloud/go/file_manager/pfsserver"
+	"github.com/cloud/go/file_manager/pfsserver"
 	"log"
 	"net/http"
 )
