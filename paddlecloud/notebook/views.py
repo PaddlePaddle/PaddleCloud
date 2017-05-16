@@ -24,6 +24,29 @@ import kubernetes
 import zipfile
 import cStringIO as StringIO
 from wsgiref.util import FileWrapper
+from rest_framework.authtoken.models import Token
+from rest_framework import viewsets, generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+def healthz(request):
+    return HttpResponse("OK")
+
+class SampleView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None):
+        content = {
+            'user': unicode(request.user),  # `django.contrib.auth.User` instance.
+            'auth': unicode(request.auth),  # None
+            'result': "sample api result",
+        }
+        return Response(content)
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
 def handle_user_save(sender, instance, created, **kwargs):
