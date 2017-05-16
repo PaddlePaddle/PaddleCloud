@@ -40,46 +40,9 @@ func (o *GetFilesResponse) SetErr(err string) {
 	o.Err = err
 }
 
-/*
-func LsPath(path string, r bool) ([]FileMeta, error) {
-
-	metas := make([]FileMeta, 0, 100)
-	m := FileMeta{}
-
-	list, err := filepath.Glob(path)
-	if err != nil {
-		m.Err = err.Error()
-		metas = append(metas, m)
-
-		log.Printf("glob path:%s error:%s", path, m.Err)
-		return metas, err
-	}
-
-	if len(list) == 0 {
-		m.Err = "file or directory not exist"
-		metas = append(metas, m)
-
-		log.Printf("glob path:%s error:%s", path, m.Err)
-		return metas, err
-	}
-
-	for _, v := range list {
-		fi, _ := os.Stat(v)
-		log.Printf("path:%s isdir:%d", fi.Name(), fi.IsDir())
-
-		if !fi.IsDir() {
-			m := FileMeta{}
-			m.ModTime = fi.ModTime().Format("2006-01-02 15:04:05")
-			m.Path = v
-			m.Size = fi.Size()
-			metas = append(metas, m)
-			continue
-		}
-	}
-
-	return metas, nil
+func (o *GetFilesResponse) GetErr() string {
+	return o.Err
 }
-*/
 
 func LsPath(path string, r bool) ([]FileMeta, error) {
 
