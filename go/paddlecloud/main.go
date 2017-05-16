@@ -9,73 +9,6 @@ import (
 	"github.com/google/subcommands"
 )
 
-type submitCmd struct {
-	jobpackage string
-	parallism  int
-	cpu        int
-	gpu        int
-	memory     string
-	pservers   int
-	pscpu      int
-	psmemory   string
-	entry      string
-	topology   string
-}
-
-func (*submitCmd) Name() string     { return "submit" }
-func (*submitCmd) Synopsis() string { return "Submit job to PaddlePaddle Cloud." }
-func (*submitCmd) Usage() string {
-	return `submit [options] <package path>:
-	Submit job to PaddlePaddle Cloud.
-	Options:
-`
-}
-
-func (p *submitCmd) SetFlags(f *flag.FlagSet) {
-	f.IntVar(&p.parallism, "parallism", 1, "Number of parrallel trainers. Defaults to 1.")
-	f.IntVar(&p.cpu, "cpu", 1, "CPU resource each trainer will use. Defaults to 1.")
-	f.IntVar(&p.gpu, "gpu", 0, "GPU resource each trainer will use. Defaults to 0.")
-	f.StringVar(&p.memory, "memory", "1Gi", " Memory resource each trainer will use. Defaults to 1Gi.")
-	f.IntVar(&p.pservers, "pservers", 0, "Number of parameter servers. Defaults equal to -p")
-	f.IntVar(&p.pscpu, "pscpu", 1, "Parameter server CPU resource. Defaults to 1.")
-	f.StringVar(&p.psmemory, "psmemory", "1Gi", "Parameter server momory resource. Defaults to 1Gi.")
-	f.StringVar(&p.entry, "entry", "paddle train", "Command of starting trainer process. Defaults to paddle train")
-	f.StringVar(&p.topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
-}
-
-func (p *submitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	for _, arg := range f.Args() {
-		if p.pservers == 0 {
-			p.pservers = p.parallism
-		}
-		fmt.Printf("%s ", arg)
-	}
-	fmt.Println()
-	return subcommands.ExitSuccess
-}
-
-type jobsCommand struct {
-	a bool
-}
-
-func (*jobsCommand) Name() string     { return "jobs" }
-func (*jobsCommand) Synopsis() string { return "List jobs. List only running jobs if no -a specified." }
-func (*jobsCommand) Usage() string {
-	return `jobs [-a]:
-	List jobs. List only running jobs if no -a specified.
-	Options:
-`
-}
-
-func (p *jobsCommand) SetFlags(f *flag.FlagSet) {
-	f.BoolVar(&p.a, "a", false, "List all jobs.")
-}
-
-func (p *jobsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	fmt.Println("Listing jobs...")
-	return subcommands.ExitSuccess
-}
-
 type logsCommand struct {
 	n int
 }
@@ -98,22 +31,48 @@ func (p *logsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 	return subcommands.ExitSuccess
 }
 
-type quotaCommand struct {
+type getCommand struct {
+	a bool
 }
 
-func (*quotaCommand) Name() string     { return "quota" }
-func (*quotaCommand) Synopsis() string { return "Show user's quota usages." }
-func (*quotaCommand) Usage() string {
-	return `quota:
-	Show user's quota usages.
+func (*getCommand) Name() string     { return "get" }
+func (*getCommand) Synopsis() string { return "Print resources" }
+func (*getCommand) Usage() string {
+	return `get:
+	Print resources.
 `
 }
 
-func (p *quotaCommand) SetFlags(f *flag.FlagSet) {
+func (p *getCommand) SetFlags(f *flag.FlagSet) {
+	f.BoolVar(&p.a, "a", false, "Get all resources.")
 }
 
-func (p *quotaCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	fmt.Println("Printing quota...")
+func (p *getCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+	for _, arg := range f.Args() {
+		fmt.Printf("Getting resource info %s ", arg)
+	}
+	fmt.Println()
+	return subcommands.ExitSuccess
+}
+
+type killCommand struct {
+	rm bool
+}
+
+func (*killCommand) Name() string     { return "kill" }
+func (*killCommand) Synopsis() string { return "Stop the job. -rm will remove the job from history." }
+func (*killCommand) Usage() string {
+	return `kill:
+	Stop the job. -rm will remove the job from history.
+`
+}
+
+func (p *killCommand) SetFlags(f *flag.FlagSet) {
+	f.BoolVar(&p.rm, "rm", false, "remove the job from history")
+}
+
+func (p *killCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+	fmt.Println("Killing job...")
 	return subcommands.ExitSuccess
 }
 
@@ -121,9 +80,9 @@ func main() {
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&submitCmd{}, "")
-	subcommands.Register(&jobsCommand{}, "")
 	subcommands.Register(&logsCommand{}, "")
-	subcommands.Register(&quotaCommand{}, "")
+	subcommands.Register(&getCommand{}, "")
+	subcommands.Register(&killCommand{}, "")
 
 	flag.Parse()
 	ctx := context.Background()
