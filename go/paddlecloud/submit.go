@@ -12,11 +12,24 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"gopkg.in/yaml.v2"
 
 	"github.com/google/subcommands"
 )
+
+// UserHomeDir get user home dierctory on different platforms
+func UserHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
 
 type submitCmd struct {
 	Jobpackage string
@@ -63,12 +76,16 @@ func (p *submitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 	p.Jobpackage = f.Arg(0)
 
-	s, err := NewSubmitter(p, "/Users/baidu/.paddle/config")
+	s, err := NewSubmitter(p, UserHomeDir()+"/.paddle/config")
 	if err != nil {
 		fmt.Printf("error submitting: %v\n", err)
 		return subcommands.ExitFailure
 	}
-	s.Submit(f.Arg(0))
+	errS := s.Submit(f.Arg(0))
+	if errS != nil {
+		fmt.Printf("error: %v\n", errS)
+		return subcommands.ExitFailure
+	}
 	return subcommands.ExitSuccess
 }
 
@@ -80,10 +97,11 @@ type Submitter struct {
 
 // NewSubmitter returns a submitter object
 func NewSubmitter(cmd *submitCmd, configFile string) (*Submitter, error) {
+	// ------------------- load paddle config -------------------
 	buf, err := ioutil.ReadFile(configFile)
 	config := submitConfig{}
 	if err == nil {
-		// load paddle config
+
 		yamlErr := yaml.Unmarshal(buf, &config)
 		if yamlErr != nil {
 			return nil, yamlErr
@@ -94,6 +112,7 @@ func NewSubmitter(cmd *submitCmd, configFile string) (*Submitter, error) {
 				config.ActiveConfig = &item
 			}
 		}
+		fmt.Printf("config: %v\n", config.ActiveConfig)
 		s := Submitter{cmd, &config}
 		return &s, nil
 	}
@@ -104,6 +123,20 @@ func NewSubmitter(cmd *submitCmd, configFile string) (*Submitter, error) {
 
 // Submit current job
 func (s *Submitter) Submit(jobPackage string) error {
+
+	// 1. authenticate to the cloud endpoint
+	authJSON := map[string]string{}
+	authJSON["username"] = s.config.ActiveConfig.Username
+	authJSON["password"] = s.config.ActiveConfig.Password
+	authStr, _ := json.Marshal(authJSON)
+	body, err := postCall(authStr, s.config.ActiveConfig.Endpoint+"/api-token-auth/", "")
+	if err != nil {
+		return err
+	}
+	var respObj interface{}
+	if errJSON := json.Unmarshal(body, &respObj); errJSON != nil {
+		return errJSON
+	}
 	// 1. upload user job package to pfs
 	filepath.Walk(jobPackage, func(path string, info os.FileInfo, err error) error {
 		fmt.Printf("Uploading %s...\n", path)
@@ -116,20 +149,24 @@ func (s *Submitter) Submit(jobPackage string) error {
 		return err
 	}
 	fmt.Printf("Submitting job: %s to %s\n", jsonString, s.config.ActiveConfig.Endpoint+"/api/v1/jobs")
-	//return postCall(jsonString, s.config.activeConfig.endpoint+"/api/v1/jobs")
-	return nil
+	respBody, err := getCall([]byte(""), s.config.ActiveConfig.Endpoint+"/api/sample", respObj.(map[string]interface{})["token"].(string))
+	fmt.Println(respBody)
+	return err
 }
 
-func postCall(jsonString []byte, targetURL string) error {
-	req, err := http.NewRequest("POST", targetURL, bytes.NewBuffer(jsonString))
+func getCall(jsonString []byte, targetURL string, token string) ([]byte, error) {
+	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
-		return err
+		return []byte{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if len(token) > 0 {
+		req.Header.Set("Authorization", "Token "+token)
+	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return []byte{}, err
 	}
 	defer resp.Body.Close()
 
@@ -137,7 +174,27 @@ func postCall(jsonString []byte, targetURL string) error {
 	fmt.Println("response Headers:", resp.Header)
 	body, err := ioutil.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
-	return err
+	return body, err
+}
+
+func postCall(jsonString []byte, targetURL string, token string) ([]byte, error) {
+	req, err := http.NewRequest("POST", targetURL, bytes.NewBuffer(jsonString))
+	if err != nil {
+		return []byte{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return []byte{}, err
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+	return body, err
 }
 
 func postFile(filename string, targetURL string) error {

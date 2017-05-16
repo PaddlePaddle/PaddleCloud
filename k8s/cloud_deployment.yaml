@@ -30,16 +30,20 @@ spec:
           mountPath: /pcloud/paddlecloud/settings.py
         ports:
         - containerPort: 8000
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         livenessProbe:
-          httpGet:
-            host: 127.0.0.1
-            path: /healthz/
-            port: 8000
-            httpHeaders:
-            - name: User-Agent
-              value: kubernetes-health-check
-          initialDelaySeconds: 3
-          periodSeconds: 5
+         httpGet:
+           path: /healthz/
+           port: 8000
+           httpHeaders:
+           - name: User-Agent
+             value: kubernetes-health-check
+         initialDelaySeconds: 3
+         periodSeconds: 5
       - name: mysql
         image: mysql:5.7
         volumeMounts:
