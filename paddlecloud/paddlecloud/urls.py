@@ -21,6 +21,7 @@ urlpatterns = [
     url(r"^notestop/", notebook.views.stop_notebook_backend),
     url(r"^certsdown/", notebook.views.user_certs_download),
     url(r"^certsgen/", notebook.views.user_certs_generate),
+    url(r"^api/v1/jobs/", paddlejob.view.jobs_handler),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
