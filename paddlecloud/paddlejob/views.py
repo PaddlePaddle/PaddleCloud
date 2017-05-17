@@ -2,12 +2,16 @@ from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.conf import settings
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 from . import PaddleJob, CephFSVolume
 from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import json
+import utils
+import notebook.utils
+import logging
 
 class JobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -16,7 +20,10 @@ class JobsView(APIView):
         """
         List all jobs
         """
-        return Response(utils.simple_content(200, "OK"))
+        username = request.user.username
+        namespace = notebook.utils.email_escape(username)
+        job_list = client.BatchV1Api().list_namespaced_job(namespace)
+        return Response(job_list.to_dict())
 
     def post(self, request, format=None):
         """
@@ -26,17 +33,24 @@ class JobsView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         obj = json.loads(request.body)
+        if not obj.get("topology"):
+            return utils.simple_response(500, "no topology specified")
+
         paddle_job = PaddleJob(
-            name = obj.get("name", ""),
+            name = obj.get("name", "paddle-cluster-job"),
             job_package = obj.get("jobPackage", ""),
-            parallelism = obj.get("parallelism", ""),
+            parallelism = obj.get("parallelism", 1),
             cpu = obj.get("cpu", 1),
+            memory = obj.get("memory", "1Gi"),
+            pservers = obj.get("pservers", 1),
+            pscpu = obj.get("pscpu", 1),
+            psmemory = obj.get("psmemory", "1Gi"),
+            topology = obj["topology"],
             gpu = obj.get("gpu", 0),
-            memory = obj.get("memory", "1Gi")
-            topology = obj["topology"]
             image = obj.get("image", "yancey1989/paddle-job")
         )
         try:
+            print paddle_job.new_pserver_job()
             ret = client.ExtensionsV1beta1Api().create_namespaced_replica_set(
                 namespace,
                 paddle_job.new_pserver_job(),
@@ -60,4 +74,14 @@ class JobsView(APIView):
         """
         Kill a job
         """
-        return utils.simple_response(200, "OK")
+        username = request.user.username
+        namespace = notebook.utils.email_escape(username)
+        obj = json.loads(request.body)
+        jobname = obj.get("jobname")
+        if not jobname:
+            return utils.simple_response(500, "must specify jobname")
+        # FIXME: options needed: grace_period_seconds, orphan_dependents, preconditions
+        u_status = client.BatchV1Api().delete_namespaced_job(jobname, namespace, {})
+        pserver_name = "-".join(jobname.split("-")[:-1])
+        pserver_name += "pserver"
+        return utils.simple_response(200, u_status.status)
