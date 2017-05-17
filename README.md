@@ -55,3 +55,21 @@ If you are starting the server for the second time, just run:
 ./manage.py runserver
 ```
 
+### Deploy on Kubernetes
+We use [hostpath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) to store MySQL data and cert files
+- Create data folder on Kubernets host, for example:
+  ```bash
+  mkdir -p /home/yanxu/pcloud_data/mysql
+  mkdir -p /home/yanxu/pcloud_data/certs
+  ```
+- Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to the data folder
+- Configurate `cloud_deployment.yaml`
+  - `spec.template.spec.containers[0].volumes` change the `hostPath` which match your data folder.
+  - `spec.template.spec.containers[0].env`, chagne the value of `CLOUD_DOMAIN` to your domain. *NOTE*: the domain is unique in one Kubernetes cluster.
+  - `spec.template.spec.nodeSelector.`, edit the value `kubernetes.io/hostname` to host whcih data folder on.You can use `kubectl get nodes` to list all the Kubernetes nodes.
+- Configurate `cloud_ingress.yaml`
+  - `spec.rules[0].host` specify your domain name
+- Deploy cloud on Kubernetes
+  - `kubectl create -f k8s/cloud_deployment.yaml`
+  - `kubectl create -f k8s/cloud_service.yaml`
+  - `kubectl create -f k8s/cloud_ingress.yaml`
