@@ -23,6 +23,7 @@ class JobsView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         job_list = client.BatchV1Api().list_namespaced_job(namespace)
+        print job_list
         return Response(job_list.to_dict())
 
     def post(self, request, format=None):
@@ -81,6 +82,7 @@ class JobsView(APIView):
         if not jobname:
             return utils.simple_response(500, "must specify jobname")
         # FIXME: options needed: grace_period_seconds, orphan_dependents, preconditions
+        # FIXME: cascade delteing
         try:
             u_status = client.BatchV1Api().delete_namespaced_job(jobname, namespace, {})
         except ApiException, e:

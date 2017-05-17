@@ -82,7 +82,7 @@ class PaddleJob(object):
         return ports
 
     def _get_pserver_labels(self):
-        return {"paddle-job": self._name}
+        return {"paddle-job-pserver": self._name}
 
     def _get_pserver_entrypoint(self):
         return ["paddle_k8s", "start_pserver"]
