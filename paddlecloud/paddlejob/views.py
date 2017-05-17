@@ -56,7 +56,7 @@ class JobsView(APIView):
                 paddle_job.new_pserver_job(),
                 pretty=True)
         except ApiException, e:
-            logging.error("Exception when submit pserver job: %s " % e)
+            logging.error("error submitting pserver job: %s " % e)
             return utils.simple_response(500, str(e))
 
         #submit trainer job, it's Kubernetes Job
@@ -66,7 +66,7 @@ class JobsView(APIView):
                 paddle_job.new_trainer_job(),
                 pretty=True)
         except ApiException, e:
-            logging.err("Exception when submit trainer job: %s" % e)
+            logging.err("error submitting trainer job: %s" % e)
             return utils.simple_response(500, str(e))
         return utils.simple_response(200, "OK")
 
@@ -81,7 +81,17 @@ class JobsView(APIView):
         if not jobname:
             return utils.simple_response(500, "must specify jobname")
         # FIXME: options needed: grace_period_seconds, orphan_dependents, preconditions
-        u_status = client.BatchV1Api().delete_namespaced_job(jobname, namespace, {})
+        try:
+            u_status = client.BatchV1Api().delete_namespaced_job(jobname, namespace, {})
+        except ApiException, e:
+            logging.error("error deleting job: %s" % jobname)
+            return utils.simple_response(500, str(e))
+
         pserver_name = "-".join(jobname.split("-")[:-1])
-        pserver_name += "pserver"
-        return utils.simple_response(200, u_status.status)
+        pserver_name += "-pserver"
+        try:
+            u_status2 = client.ExtensionsV1beta1Api().delete_namespaced_replica_set(pserver_name, namespace, {"propagation_policy": "Background"})
+        except ApiException, e:
+            logging.error("error deleting pserver: %s" % pserver_name)
+            return utils.simple_response(500, str(e))
+        return utils.simple_response(200, u_status.status+"; "+u_status2.status)

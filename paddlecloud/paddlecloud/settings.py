@@ -20,7 +20,7 @@ DATABASES = {
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
-    "cloud.paddlepaddle.org",
+    os.getenv("CLOUD_DOMAIN", "cloud.paddlepaddle.org"),
 ]
 
 POD_IP = os.getenv("POD_IP")

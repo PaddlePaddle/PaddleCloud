@@ -35,6 +35,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: CLOUD_DOMAIN
+          value: "cloud.paddlepaddle.org"
 #        livenessProbe:
 #         httpGet:
 #           path: /healthz/
