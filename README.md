@@ -20,8 +20,9 @@
   docker build -t [your_docker_registry]/pcloud .
   docker push [your_docker_registry]/pcloud
   ```
-- Create data folder on Kubernets host, for example:
-  We use [hostpath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) to store MySQL data and cert files
+- We use [volume](https://kubernetes.io/docs/concepts/storage/volumes/) to mount MySQL data and cert files, such as CephFS, GlusterFS and etc..., the follow is a example using [hostpath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath):
+
+  - create data folder on a Kubernetes node as follow:
   ```bash
   mkdir -p /home/yanxu/pcloud_data/mysql
   mkdir -p /home/yanxu/pcloud_data/certs
