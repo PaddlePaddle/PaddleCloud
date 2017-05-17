@@ -8,6 +8,7 @@ type submitConfigDataCenter struct {
 	Usercert string `yaml:"usercert"`
 	Userkey  string `yaml:"userkey"`
 	Endpoint string `yaml:"endpoint"`
+	CAcert   string `yaml:"cacert"`
 }
 
 // Configuration load from user config yaml files
