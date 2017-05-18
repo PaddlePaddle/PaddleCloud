@@ -41,22 +41,26 @@ func (p *lsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 
 	cmd := pfsmod.NewCmd(p.Name(), f)
-
+	resp := pfsmod.LsCmdResponse{}
 	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
+
 	/*
-		if err != nil {
-			fmt.Printf("error NewPfsCommand: %v\n", err)
-			return subcommands.ExitFailure
+		lsCmd := &{
+			cmd :
 		}
+			if err != nil {
+				fmt.Printf("error NewPfsCommand: %v\n", err)
+				return subcommands.ExitFailure
+			}
 	*/
 
-	body, err := s.SubmitCmdReqeust(*cmd, "GET")
+	lsCmd := pfsmod.NewLsCmd(cmd, &resp)
+	_, err := s.SubmitCmdReqeust("GET", lsCmd)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		return subcommands.ExitFailure
 	}
 
-	fmt.Println(body)
-
+	//fmt.Println(body)
 	return subcommands.ExitSuccess
 }

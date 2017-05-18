@@ -11,6 +11,7 @@ import (
 	pfsmod "github.com/cloud/go/file_manager/pfsmodules"
 	log "github.com/golang/glog"
 	//"github.com/google/subcommands"
+	"errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
@@ -85,11 +86,10 @@ func NewCmdSubmitter(configFile string) *CmdSubmitter {
 }
 
 func (s *CmdSubmitter) SubmitCmdReqeust(
-	cmd pfsmod.Cmd,
-	//targetURL string,
-	httpMethod string) ([]byte, error) {
+	httpMethod string,
+	cmd pfsmod.Command) ([]byte, error) {
 
-	jsonString, err := json.Marshal(cmd)
+	jsonString, err := json.Marshal(cmd.GetCmd())
 	if err != nil {
 		return nil, err
 	}
@@ -109,9 +109,23 @@ func (s *CmdSubmitter) SubmitCmdReqeust(
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
+	/*
+		fmt.Println("response Status:", resp.Status)
+		fmt.Println("response Headers:", resp.Header)
+		body, err := ioutil.ReadAll(resp.Body)
+		fmt.Println("response Body:", string(body))
+		return body, err
+	*/
+	if resp.Status != HTTPOK {
+		return nil, errors.New("http server returned non-200 status: " + resp.Status)
+	}
 	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+	fmt.Printf("%s\n\n", body)
+
+	cmdResp := cmd.GetResponse()
+	if err := json.Unmarshal(body, cmdResp); err != nil {
+		cmdResp.SetErr(err.Error())
+		return nil, err
+	}
 	return body, err
 }
