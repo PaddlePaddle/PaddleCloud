@@ -6,8 +6,7 @@ import (
 	"github.com/cloud/go/file_manager/pfsserver/ops"
 	"log"
 	"net/http"
-
-	log "github.com/golang/glog"
+	//log "github.com/golang/glog"
 )
 
 func main() {

@@ -1,19 +1,22 @@
 package pfsmodules
 
 import (
-	"bytes"
-	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/json"
-	"flag"
-	"fmt"
+	//"bytes"
+	//"context"
+	//"crypto/tls"
+	//"crypto/x509"
+	//"encoding/json"
+	//"flag"
+	//"fmt"
 	//pfsmod "github.com/cloud/go/file_manager/pfsmodules"
-	log "github.com/golang/glog"
-	"github.com/google/subcommands"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"net/http"
+	//	log "github.com/golang/glog"
+	//"github.com/google/subcommands"
+	//"gopkg.in/yaml.v2"
+	//"io/ioutil"
+	//"net/http"
+	"log"
+	"os"
+	"path/filepath"
 )
 
 type flagFormal struct {
@@ -51,73 +54,42 @@ type LsCmdResponse struct {
 	Result  []LsCmdResult `json:"result"`
 }
 
-func (p *LsCmdResponse) GetErr() (int32, string) {
-	return ErrCode, Err
+func (p *LsCmdResponse) GetErr() string {
+	return p.Err
+}
+
+func (p *LsCmdResponse) SetErr(err string) {
+	p.Err = err
+}
+
+/*
+func (p *LsCmdResponse) GetErrCode() string {
+	return p.ErrCode
 }
 
 func (p *LsCmdResponse) SetErr(errCode int32, err string) {
 	p.errCode = errcode
 	p.Err = err
 }
+*/
 
 type LsCmd struct {
-	cmd    *Cmd
-	resp   *LsCmdResponse
-	formal flagFormal
+	cmd  *Cmd
+	resp *LsCmdResponse
 }
 
 func (p *LsCmd) GetCmd() *Cmd {
-	return p.Cmd
+	return p.cmd
 }
 
-func (p *LsCmd) GetResponse() *Response {
+func (p *LsCmd) GetResponse() Response {
 	return p.resp
-}
-
-func (*LsCmd) Name() string     { return "ls" }
-func (*LsCmd) Synopsis() string { return "List files on PaddlePaddle Cloud" }
-func (*LsCmd) Usage() string {
-	return `ls [-r] <pfspath>:
-	List files on PaddlePaddleCloud
-	Options:
-`
-}
-
-func (p *LsCmd) SetFlags(f *flag.FlagSet) {
-	f.BoolVar(&p.formal.r, "r", false, "list files recursively")
-}
-
-func (p *LsCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	if f.NArg() < 1 {
-		f.Usage()
-		return subcommands.ExitFailure
-	}
-
-	cmd := NewCmd(p.Name(), f)
-
-	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
-	/*
-		if err != nil {
-			fmt.Printf("error NewPfsCommand: %v\n", err)
-			return subcommands.ExitFailure
-		}
-	*/
-
-	body, err := s.SubmitCmdReqeust(*cmd, "GET")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		return subcommands.ExitFailure
-	}
-
-	fmt.Println(body)
-
-	return subcommands.ExitSuccess
 }
 
 func (p *LsCmd) Run() {
 }
 
-func lsPath(path string, r bool) ([]FileMeta, error) {
+func LsPath(path string, r bool) ([]FileMeta, error) {
 
 	metas := make([]FileMeta, 0, 100)
 

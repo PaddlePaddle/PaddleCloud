@@ -3,6 +3,8 @@ package pfsmodules
 import (
 	//"crypto/md5"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"github.com/cloud/go/file_manager/pfscommon"
 	"io"
 	"io/ioutil"
@@ -10,14 +12,23 @@ import (
 	"net/http"
 )
 
+/*
+const (
+	ErrFileNotFound = 1
+	ErrNoAuth       = 2
+)
+*/
+
 type Response interface {
-	GetErr() (int32, string)
-	SetErr(errcode int32, err string)
+	//GetErrCode() int32
+	GetErr() string
+	//SetErr(errcode int32, err string)
+	SetErr(err string)
 }
 
 type Command interface {
 	GetCmd() *Cmd
-	GetResponse() *Response
+	GetResponse() Response
 	/*
 		PushRequest()
 		RushResponse()
@@ -37,15 +48,15 @@ type Cmd struct {
 	Args    []string `json:"args"`
 }
 
-func NewCmd(cmdName string, f *flag.FlagSet) *pfsmod.Cmd {
-	cmd := pfsmod.Cmd{}
+func NewCmd(cmdName string, f *flag.FlagSet) *Cmd {
+	cmd := Cmd{}
 
 	cmd.Method = cmdName
-	cmd.Options = make([]pfsmod.Option, f.NFlag())
+	cmd.Options = make([]Option, f.NFlag())
 	cmd.Args = make([]string, f.NArg())
 
 	f.Visit(func(flag *flag.Flag) {
-		option := pfsmod.Option{}
+		option := Option{}
 		option.Name = flag.Name
 		option.Value = flag.Value.String()
 
@@ -66,7 +77,7 @@ func WriteJsonResponse(w http.ResponseWriter, r Response,
 
 	log.SetFlags(log.LstdFlags)
 
-	if len(r.GetErr()) > 0 {
+	if len(r.GetErr()) != 0 {
 		log.Printf("%s error:%s\n", pfscommon.CallerFileLine(), r.GetErr())
 	}
 

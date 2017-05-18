@@ -1,6 +1,7 @@
 package pfsmodules
 
 import (
+/*
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -14,4 +15,5 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
+*/
 )
