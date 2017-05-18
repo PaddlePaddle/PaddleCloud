@@ -1,63 +1,71 @@
 package pfsserver
 
 import (
-	"encoding/json"
-	"github.com/cloud/go/file_manager/pfscommon"
+	//"encoding/json"
+	//"github.com/cloud/go/file_manager/pfscommon"
 	"github.com/cloud/go/file_manager/pfsmodules"
 	"log"
 	"net/http"
 )
 
-func GetFiles(w http.ResponseWriter, r *http.Request) {
-	req := pfsmodules.GetFilesReq{}
-	rep := pfsmodules.GetFilesResponse{}
+func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 
-	if err := pfscommon.Body2Json(w, r, &req, &rep); err != nil {
+	resp := pfsmodules.LsCmdResponse{}
+
+	req, err := pfsmodules.GetJsonRequestCmd(r)
+	if err != nil {
+		resp.SetErr("Not surported method:" + req.Method)
+		pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
 		return
 	}
 
 	if req.Method != "ls" {
-		rep.SetErr("Not surported method:" + req.Method)
-		pfscommon.MakeResponse(w, &rep, 422)
+		resp.SetErr("Not surported method:" + req.Method)
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
 		return
 	}
 
 	log.Print(req)
-	t, _ := pfsmodules.LsPaths(req.FilesPath, false)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		panic(err)
-	}
+
+	lsCmd := pfsmodules.NewLsCmd(req, &resp)
+	lsCmd.RunAndResponse(w)
+	/*
+		WriteCmdJsonResponse(w, lsCmd.GetResponse, http.StatusAccepted)
+
+		t, _ := pfsmodules.LsPaths(req.FilesPath, false)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(t); err != nil {
+			panic(err)
+		}
+	*/
 }
 
-func PostFiles(w http.ResponseWriter, r *http.Request) {
-	req := pfsmodules.PostFilesReq{}
-	rep := pfsmodules.PostFilesResponse{}
+func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
+	/*
+			req := pfsmodules.PostFilesReq{}
+			rep := pfsmodules.PostFilesResponse{}
 
-	if err := pfscommon.Body2Json(w, r, &req, &rep); err != nil {
-		return
-	}
+			if err := pfscommon.Body2Json(w, r, &req, &rep); err != nil {
+				return
+			}
 
-	switch req.Method {
-	case "mkdir":
-		CreateDirs(req.Metas)
-	case "touch":
-		CreateFiles(req.Metas)
-	default:
-		rep.SetErr("not surpported method")
-		pfscommon.MakeResponse(w, &rep, 422)
-	}
-}
+		req, err := pfsmodules.GetCmdJsonRequest(r)
+		if err != nil {
+			resp.SetErr("Not surported method:" + req.Method)
+			WriteCmdJsonResponse(w, &resp, 422)
+			return
+		}
 
-func CreateDirs(Metas []pfsmodules.PostFileMeta) error {
-	return nil
-}
-
-func CreateFiles(Metas []pfsmodules.PostFileMeta) error {
-	return nil
-}
-
-func PatchFiles(w http.ResponseWriter, r *http.Request) error {
-	return nil
+			switch req.Method {
+			case "mkdir":
+				mkdirCmd := NewLsCmd
+				CreateDirs(req.Metas)
+			case "touch":
+				CreateFiles(req.Metas)
+			default:
+				rep.SetErr("not surpported method")
+				pfscommon.MakeResponse(w, &rep, 422)
+			}
+	*/
 }

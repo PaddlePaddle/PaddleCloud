@@ -16,12 +16,12 @@ var routes = Routes{
 		"GetFiles",
 		"GET",
 		"/api/v1/files",
-		GetFiles,
+		GetFilesHandler,
 	},
 	Route{
 		"PostFiles",
 		"Post",
 		"/api/v1/files",
-		PostFiles,
+		PostFilesHandler,
 	},
 }

@@ -29,9 +29,9 @@ type Response interface {
 type Command interface {
 	GetCmd() *Cmd
 	GetResponse() Response
+	PushRequest()
+	RushResponse()
 	/*
-		PushRequest()
-		RushResponse()
 		SetCmd(cmd *Cmd)
 		SetResponse(resp *Response)
 	*/
@@ -71,9 +71,29 @@ func NewCmd(cmdName string, f *flag.FlagSet) *Cmd {
 	return &cmd
 }
 
-//func (r *Response) WriteJsonResponse(w http.ResponseWriter, r *Response
-func WriteJsonResponse(w http.ResponseWriter, r Response,
-	status int) error {
+const (
+	MaxJsonRequestSize = 2048
+)
+
+func GetJsonRequestCmd(r *http.Request) (*Cmd, error) {
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, MaxJsonRequestSize))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	c := &Cmd{}
+	if err := json.Unmarshal(body, c); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func WriteCmdJsonResponse(w http.ResponseWriter, r Response, status int) error {
 
 	log.SetFlags(log.LstdFlags)
 
@@ -91,40 +111,6 @@ func WriteJsonResponse(w http.ResponseWriter, r Response,
 		return err
 	}
 
-	return nil
-}
-
-/*
-func NewCmd() {
-	return &Cmd{
-		Method : ""
-		Options :
-
-	}
-}
-*/
-
-const (
-	MaxJsonRequestSize = 2048
-)
-
-func (c *Cmd) GetJsonRequest(w http.ResponseWriter,
-	r *http.Request,
-	resp Response) error {
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, MaxJsonRequestSize))
-	if err != nil {
-		return err
-	}
-
-	if err := r.Body.Close(); err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(body, c); err != nil {
-		resp.SetErr(err.Error())
-		WriteJsonResponse(w, resp, 422)
-		return err
-	}
 	return nil
 }
 

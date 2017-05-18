@@ -1,5 +1,6 @@
 package pfscommon
 
+/*
 import (
 	"encoding/json"
 	"io"
@@ -54,3 +55,4 @@ func Body2Json(w http.ResponseWriter,
 	}
 	return nil
 }
+*/

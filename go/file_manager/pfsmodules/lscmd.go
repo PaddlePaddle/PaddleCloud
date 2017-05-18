@@ -5,7 +5,7 @@ import (
 	//"context"
 	//"crypto/tls"
 	//"crypto/x509"
-	//"encoding/json"
+	"encoding/json"
 	//"flag"
 	//"fmt"
 	//pfsmod "github.com/cloud/go/file_manager/pfsmodules"
@@ -13,8 +13,8 @@ import (
 	//"github.com/google/subcommands"
 	//"gopkg.in/yaml.v2"
 	//"io/ioutil"
-	//"net/http"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 )
@@ -24,7 +24,7 @@ type flagFormal struct {
 }
 
 type FileMeta struct {
-	Err     string `json:"Err"`
+	//Err     string `json:"Err"`
 	Path    string `json:"Path"`
 	ModTime string `json:"ModTime"`
 	Size    int64  `json:"Size"`
@@ -42,16 +42,17 @@ type LsCmdResponse struct {
 */
 
 type LsCmdResult struct {
-	Cmd     string     `json:"cmd"`
-	ErrCode int32      `json:"ErrCode"`
-	Err     string     `json:"err"`
-	Metas   []FileMeta `json:"metas"`
+	//Cmd string `json:"cmd"`
+	//ErrCode int32      `json:"ErrCode"`
+	Path  string     `json:"path"`
+	Err   string     `json:"err"`
+	Metas []FileMeta `json:"metas"`
 }
 
 type LsCmdResponse struct {
-	ErrCode int32         `json:"errcode"`
+	//ErrCode int32         `json:"errcode"`
 	Err     string        `json:"err"`
-	Result  []LsCmdResult `json:"result"`
+	Results []LsCmdResult `json:"result"`
 }
 
 func (p *LsCmdResponse) GetErr() string {
@@ -78,6 +79,13 @@ type LsCmd struct {
 	resp *LsCmdResponse
 }
 
+func NewLsCmd(cmd *Cmd, resp *LsCmdResponse) *LsCmd {
+	return &LsCmd{
+		cmd:  cmd,
+		resp: resp,
+	}
+}
+
 func (p *LsCmd) GetCmd() *Cmd {
 	return p.cmd
 }
@@ -86,71 +94,82 @@ func (p *LsCmd) GetResponse() Response {
 	return p.resp
 }
 
+func lsPath(path string, r bool) []FileMeta {
+
+	log.Println("path:\t" + path)
+
+	metas := make([]FileMeta, 0, 100)
+
+	filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
+		//log.Println("path:\t" + path)
+
+		m := FileMeta{}
+		m.Path = info.Name()
+		m.Size = info.Size()
+		m.ModTime = info.ModTime().Format("2006-01-02 15:04:05")
+		m.IsDir = info.IsDir()
+		metas = append(metas, m)
+
+		if info.IsDir() && !r && subpath != path {
+			return filepath.SkipDir
+		}
+
+		//log.Println(len(metas))
+		return nil
+	})
+
+	return metas
+}
+
 func (p *LsCmd) Run() {
-}
-
-func LsPath(path string, r bool) ([]FileMeta, error) {
-
-	metas := make([]FileMeta, 0, 100)
-
-	list, err := filepath.Glob(path)
-	if err != nil {
-		m := FileMeta{}
-		m.Err = err.Error()
-		metas = append(metas, m)
-
-		log.Printf("glob path:%s error:%s", path, m.Err)
-		return metas, err
+	r := false
+	for _, t := range p.cmd.Options {
+		if t.Name == "r" {
+			r = true
+			break
+		}
 	}
 
-	if len(list) == 0 {
-		m := FileMeta{}
-		m.Err = "file or directory not exist"
-		metas = append(metas, m)
+	results := make([]LsCmdResult, 0, 100)
+	for _, arg := range p.cmd.Args {
+		log.Printf("ls %s\n", arg)
+		m := LsCmdResult{}
+		m.Path = arg
 
-		log.Printf("glob path:%s error:%s", path, m.Err)
-		return metas, err
-	}
-
-	for _, v := range list {
-		log.Println("v:\t" + v)
-		filepath.Walk(v, func(path string, info os.FileInfo, err error) error {
-			//log.Println("path:\t" + path)
-
-			m := FileMeta{}
-			m.Path = info.Name()
-			m.Size = info.Size()
-			m.ModTime = info.ModTime().Format("2006-01-02 15:04:05")
-			m.IsDir = info.IsDir()
-			metas = append(metas, m)
-
-			if info.IsDir() && !r && v != path {
-				return filepath.SkipDir
-			}
-
-			//log.Println(len(metas))
-			return nil
-		})
-
-	}
-
-	return metas, nil
-}
-
-func LsPaths(paths []string, r bool) ([]FileMeta, error) {
-
-	metas := make([]FileMeta, 0, 100)
-
-	for _, path := range paths {
-		m, err := LsPath(path, r)
-
+		list, err := filepath.Glob(arg)
 		if err != nil {
-			metas = append(metas, m...)
+			m.Err = err.Error()
+			results = append(results, m)
+			log.Printf("glob path:%s error:%s", arg, m.Err)
 			continue
 		}
 
-		metas = append(metas, m...)
+		if len(list) == 0 {
+			m.Err = "file or directory not exist"
+			results = append(results, m)
+			log.Printf("glob path:%s error:%s", arg, m.Err)
+			continue
+		}
+
+		for _, path := range list {
+			m.Path = path
+			m.Metas = lsPath(path, r)
+			results = append(results, m)
+		}
 	}
 
-	return metas, nil
+	p.resp.Results = results
+}
+
+func (p *LsCmd) RunAndResponse(w http.ResponseWriter) error {
+	p.Run()
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(p.resp); err != nil {
+		//w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("write response error:%v", err)
+		return err
+	}
+	return nil
 }
