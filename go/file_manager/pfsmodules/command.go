@@ -11,49 +11,53 @@ import (
 )
 
 type Response interface {
-	GetErr() string
-	SetErr(err string)
+	GetErr() (int32, string)
+	SetErr(errcode int32, err string)
 }
 
-type FileAttr struct {
-	Path    string `json:"path"`
-	ModTime string `json:"modtime"`
-	Size    int64  `json:"size"`
-	IsDir   bool   `json:isdir`
+type Command interface {
+	GetCmd() *Cmd
+	GetResponse() *Response
+	/*
+		PushRequest()
+		RushResponse()
+		SetCmd(cmd *Cmd)
+		SetResponse(resp *Response)
+	*/
 }
 
-type LsCmdResult struct {
-	Cmd   string     `json:"cmd"`
-	Err   string     `json:"err"`
-	Metas []FileAttr `json:"metas"`
+type Option struct {
+	Name  string `json:"Name"`
+	Value string `json:"Value"`
 }
 
-type LsResponse struct {
-	Err    string        `json:"err"`
-	Result []LsCmdResult `json:"result"`
+type Cmd struct {
+	Method  string   `json:"method"`
+	Options []Option `json:"options"`
+	Args    []string `json:"args"`
 }
 
-type MD5SumResult struct {
-	Cmd    string `json:"cmd"`
-	Err    string `json:"err"`
-	Path   string `json:"path"`
-	MD5Sum []byte `json:"md5sum"`
-}
+func NewCmd(cmdName string, f *flag.FlagSet) *pfsmod.Cmd {
+	cmd := pfsmod.Cmd{}
 
-type MD5SumResponse struct {
-	Err    string         `json:"err"`
-	Result []MD5SumResult `json:"result"`
-}
+	cmd.Method = cmdName
+	cmd.Options = make([]pfsmod.Option, f.NFlag())
+	cmd.Args = make([]string, f.NArg())
 
-type UpdateFilesResult struct {
-	Cmd  string `json:"cmd"`
-	Err  string `json:"err"`
-	Path string `json:"path"`
-}
+	f.Visit(func(flag *flag.Flag) {
+		option := pfsmod.Option{}
+		option.Name = flag.Name
+		option.Value = flag.Value.String()
 
-type UpdateFilesResponse struct {
-	Err    string              `json:"Err"`
-	Result []UpdateFilesResult `json:"result"`
+		cmd.Options = append(cmd.Options, option)
+	})
+
+	for _, arg := range f.Args() {
+		fmt.Printf("%s\n", arg)
+		cmd.Args = append(cmd.Args, arg)
+	}
+
+	return &cmd
 }
 
 //func (r *Response) WriteJsonResponse(w http.ResponseWriter, r *Response
@@ -77,17 +81,6 @@ func WriteJsonResponse(w http.ResponseWriter, r Response,
 	}
 
 	return nil
-}
-
-type Option struct {
-	Name  string `json:"Name"`
-	Value string `json:"Value"`
-}
-
-type Cmd struct {
-	Method  string   `json:"method"`
-	Options []Option `json:"options"`
-	Args    []string `json:"args"`
 }
 
 /*
@@ -122,4 +115,15 @@ func (c *Cmd) GetJsonRequest(w http.ResponseWriter,
 		return err
 	}
 	return nil
+}
+
+type UpdateFilesResult struct {
+	Cmd  string `json:"cmd"`
+	Err  string `json:"err"`
+	Path string `json:"path"`
+}
+
+type UpdateFilesResponse struct {
+	Err    string              `json:"Err"`
+	Result []UpdateFilesResult `json:"result"`
 }

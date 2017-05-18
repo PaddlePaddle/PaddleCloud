@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cloud/go/file_manager/pfsserver"
+	"github.com/cloud/go/file_manager/pfsserver/ops"
 	"log"
 	"net/http"
+
+	log "github.com/golang/glog"
 )
 
 func main() {
