@@ -14,7 +14,7 @@ import (
 // HTTPOK is ok status of http api call
 const HTTPOK = "200 OK"
 
-func getCall(targetURL string, token string) ([]byte, error) {
+func getCall(targetURL string, query map[string]string, token string) ([]byte, error) {
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
 		return []byte{}, err
@@ -23,6 +23,13 @@ func getCall(targetURL string, token string) ([]byte, error) {
 	if len(token) > 0 {
 		req.Header.Set("Authorization", "Token "+token)
 	}
+
+	q := req.URL.Query()
+	for k, v := range query {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -56,7 +63,6 @@ func postCall(jsonString []byte, targetURL string, token string) ([]byte, error)
 		return []byte{}, errors.New("http server returned non-200 status: " + resp.Status)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("%s\n\n", body)
 	return body, err
 }
 
