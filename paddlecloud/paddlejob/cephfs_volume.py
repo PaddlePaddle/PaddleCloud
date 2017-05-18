@@ -27,7 +27,7 @@ class CephFSVolume(Volume):
              "name": "cephfs",
              "cephfs":{
                 "name": "cephfs",
-                "monitors": self._monitors,
+                "monitors": self._monitors.split(","),
                 "path": self._cephfs_path,
                 "user": self._user,
                 "secretRef": {

@@ -1,6 +1,8 @@
 import kubernetes
 from kubernetes import client, config
 import os
+from cephfs_volume import CephFSVolume
+
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164
 
@@ -88,7 +90,7 @@ class PaddleJob(object):
         return ["paddle_k8s", "start_pserver"]
 
     def _get_trainer_entrypoint(sefl):
-        return ["paddle_k8s", "start_trainer v1"]
+        return ["paddle_k8s", "start_trainer", "v1"]
 
     def _get_trainer_labels(self):
         return {"paddle-job": self._name}

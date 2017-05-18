@@ -257,3 +257,6 @@ if os.getenv("KUBERNETES_SERVICE_HOST", None):
 else:
     # init kubernetes client with ~/.kube/config file
     config.load_kube_config()
+
+CEPHFS_MONITORS_ADDR=os.getenv("CEPHFS_MONITORS_ADDR", "")
+CEPHFS_ADMIN_KEY = "/certs/admin.secret"

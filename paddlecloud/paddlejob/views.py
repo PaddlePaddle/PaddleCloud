@@ -48,7 +48,14 @@ class JobsView(APIView):
             psmemory = obj.get("psmemory", "1Gi"),
             topology = obj["topology"],
             gpu = obj.get("gpu", 0),
-            image = obj.get("image", "yancey1989/paddle-job")
+            image = obj.get("image", "yancey1989/paddlecloud-job"),
+            volumes = [CephFSVolume(
+                monitors_addr = settings.CEPHFS_MONITORS_ADDR,
+                user = "admin",
+                secret_name = "ceph-secret",
+                mount_path = "/pfs/datacentor1/home/%s/" % username,
+                cephfs_path = "/yanxu05@baidu.com"
+            )]
         )
         try:
             print paddle_job.new_pserver_job()
@@ -67,7 +74,7 @@ class JobsView(APIView):
                 paddle_job.new_trainer_job(),
                 pretty=True)
         except ApiException, e:
-            logging.err("error submitting trainer job: %s" % e)
+            logging.error("error submitting trainer job: %s" % e)
             return utils.simple_response(500, str(e))
         return utils.simple_response(200, "OK")
 
