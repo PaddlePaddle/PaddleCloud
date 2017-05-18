@@ -35,15 +35,17 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        livenessProbe:
-         httpGet:
-           path: /healthz/
-           port: 8000
-           httpHeaders:
-           - name: User-Agent
-             value: kubernetes-health-check
-         initialDelaySeconds: 3
-         periodSeconds: 5
+        - name: CLOUD_DOMAIN
+          value: "cloud.paddlepaddle.org"
+#        livenessProbe:
+#         httpGet:
+#           path: /healthz/
+#           port: 8000
+#           httpHeaders:
+#           - name: User-Agent
+#             value: kubernetes-health-check
+#         initialDelaySeconds: 3
+#         periodSeconds: 5
       - name: mysql
         image: mysql:5.7
         volumeMounts:

@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+start_pserver() {
+    paddle pserver \
+      --port=$PADDLE_INIT_PORT \
+      --ports_num=$PADDLE_INIT_PORTS_NUM \
+      --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
+      --nics=$NICES \
+      --comment=paddle_process_k8s \
+      --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
+}
+
+start_trainer() {
+    python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME}-pserver ${PSERVERS}
+    python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME}-trainer ${TRAINERS}
+    export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
+    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
+
+    rm -rf /root/trainer
+    cp -rf $TRAINER_PACKAGE /root/trainer
+    cd /root/trainer
+    export PYTHONPATH=/root/trainer:$PYTHONPATH
+    case "$2" in
+      v1)
+        paddle train \
+          --port=$PADDLE_INIT_PORT \
+          --nics=$NICS \
+          --ports_num=$PADDLE_INIT_PORTS_NUM \
+          --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
+          --logs_period=50 \
+          --num_passes=$PADDLE_INIT_NUM_PASSES \
+          --trainer_count=1 \
+          --saving_period=1 \
+          --local=0 \
+          --config=$TOPOLOGY \
+          --use_gpu=$USE_GPU \
+          --trainer_id=$PADDLE_INIT_TRAINER_ID \
+          --save_dir=$OUTPUT \
+          --pservers=$PADDLE_INIT_PSERVERS
+        ;;
+      v2)
+        python ${TOPOLOGY}
+        ;;
+      *)
+        ;;
+    esac
+}
+
+usage() {
+    echo "usage: paddle_k8s [<args>]:"
+    echo "  start_trainer  [v1|v2]    Start a trainer process with v1 or v2 API"
+    echo "  start_pserver             Start a pserver process"
+}
+
+case "$1" in
+    start_pserver)
+        start_pserver
+        ;;
+    start_trainer)
+        start_trainer
+        ;;
+    --help)
+        usage
+        ;;
+    *)
+        usage
+        ;;
+esac
