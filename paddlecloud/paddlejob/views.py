@@ -85,15 +85,16 @@ class JobsView(APIView):
         # FIXME: cascade delteing
         delete_status = ""
         # delete job
+        trainer_name = jobname + "-trainer"
         try:
-            u_status = client.BatchV1Api().delete_namespaced_job(jobname, namespace, {})
+            u_status = client.BatchV1Api().delete_namespaced_job(trainer_name, namespace, {})
             delete_status += u_status.status
         except ApiException, e:
             logging.error("error deleting job: %s, %s", jobname, str(e))
 
         # delete job pods
         try:
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="job-name=%s"%jobname)
+            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="job-name=%s"%trainer_name)
             logging.error("jobpodlist: %s", job_pod_list)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
@@ -102,8 +103,7 @@ class JobsView(APIView):
             logging.error("error deleting job pod: %s", str(e))
 
         # delete pserver rs
-        pserver_name = "-".join(jobname.split("-")[:-1])
-        pserver_name += "-pserver"
+        pserver_name = jobname + "-pserver"
         try:
             u_status = client.ExtensionsV1beta1Api().delete_namespaced_replica_set(pserver_name, namespace, {})
             delete_status += u_status.status
@@ -112,8 +112,8 @@ class JobsView(APIView):
 
         # delete pserver pods
         try:
-            pserver_pod_label = "-".join(jobname.split("-")[:-1])
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%pserver_pod_label)
+            # pserver replica set has label with jobname
+            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%jobname)
             logging.error("pserver podlist: %s", job_pod_list)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
