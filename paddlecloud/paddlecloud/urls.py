@@ -24,9 +24,13 @@ urlpatterns = [
     url(r"^notestop/", notebook.views.stop_notebook_backend),
     url(r"^certsdown/", notebook.views.user_certs_download),
     url(r"^certsgen/", notebook.views.user_certs_generate),
-    url(r"^api/v1/jobs/", paddlejob.views.JobsView.as_view()),
     url(r'^api-token-auth/', views.obtain_auth_token),
     url(r'^api/sample/$', notebook.views.SampleView.as_view()),
+
+    url(r"^api/v1/jobs/", paddlejob.views.JobsView.as_view()),
+    url(r"^api/v1/logs/", paddlejob.views.LogsView.as_view()),
+    url(r"^api/v1/workers/", paddlejob.views.WorkersView.as_view()),
+    url(r"^api/v1/quota/", paddlejob.views.QuotaView.as_view()),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
