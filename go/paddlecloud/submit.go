@@ -24,6 +24,7 @@ type submitCmd struct {
 	PSMemory    string `json:"psmemory"`
 	Entry       string `json:"entry"`
 	Topology    string `json:"topology"`
+	Datacenter  string `json:"datacenter"`
 }
 
 func (*submitCmd) Name() string     { return "submit" }
@@ -58,6 +59,7 @@ func (p *submitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		p.Pservers = p.Parallelism
 	}
 	p.Jobpackage = f.Arg(0)
+	p.Datacenter = config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
 	errS := s.Submit(f.Arg(0))
