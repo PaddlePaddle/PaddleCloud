@@ -47,7 +47,7 @@ class JobsView(APIView):
                     user = cfg["user"],
                     secret_name = cfg["secret"],
                     mount_path = cfg["mount_path"] % username,
-                    cephfs_path = cgg["cephfs_path"] % username
+                    cephfs_path = cfg["cephfs_path"] % username
                 ))
 
 

@@ -12,10 +12,13 @@ spec:
       volumes:
       - name: cert-volume
         hostPath:
-          path: /home/yanxu/pcloud_data/certs
+          path: /home/pcloud/data/certs
       - name: mysql-data
         hostPath:
-          path: /home/yanxu/pcloud_data/mysql
+          path: /home/pcloud/data/mysql
+      - name: settings
+        hostPath:
+          path: /home/pcloud/data/settings.py
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
@@ -23,6 +26,8 @@ spec:
         volumeMounts:
         - name: cert-volume
           mountPath: /certs
+        - name: settings
+          mountPath: /pcloud/paddlecloud/settings.py
         ports:
         - containerPort: 8000
         env:
@@ -30,8 +35,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        - name: CLOUD_DOMAIN
-          value: "cloud.paddlepaddle.org"
 #        livenessProbe:
 #         httpGet:
 #           path: /healthz/

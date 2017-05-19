@@ -277,7 +277,7 @@ DATACENTERS = {
         "secret": "ceph-secret",
         "user": "admin",
         "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
-        "cephfs_path": "/%s" # cephfs_path % username
+        "cephfs_path": "/%s", # cephfs_path % username
         "admin_key": "/certs/admin.secret"
     }
 }
