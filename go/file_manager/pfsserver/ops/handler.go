@@ -8,20 +8,39 @@ import (
 	"net/http"
 )
 
-func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
-
+func lsCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
 	resp := pfsmodules.LsCmdResponse{}
 
+	/*
+		if req.Method != "ls" {
+			resp.SetErr("not surported method:" + req.Method)
+			pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
+			return
+		}
+	*/
+
+	log.Print(req)
+
+	cmd := pfsmodules.NewLsCmd(req, &resp)
+	cmd.RunAndResponse(w)
+
+	return
+}
+
+func MD5SumCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
+	resp := pfsmodules.MD5SumResponse{}
+	log.Print(req)
+
+	cmd := pfsmodules.NewMD5SumCmd(req, &resp)
+	cmd.RunAndResponse(w)
+}
+
+func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
+	resp := pfsmodules.LsCmdResponse{}
 	req, err := pfsmodules.GetJsonRequestCmdAttr(r)
 	if err != nil {
 		resp.SetErr(err.Error())
 		pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
-		return
-	}
-
-	if req.Method != "ls" {
-		resp.SetErr("not surported method:" + req.Method)
-		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -32,10 +51,22 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	switch req.Method {
+	case "ls":
+		lsCmdHandler(w, req)
+	case "md5sum":
+		MD5SumCmdHandler(w, req)
+	default:
+		resp.SetErr("not surported method:" + req.Method)
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
+	}
+
+	if req.Method != "ls" {
+		return
+	}
+
 	log.Print(req)
 
-	lsCmd := pfsmodules.NewLsCmd(req, &resp)
-	lsCmd.RunAndResponse(w)
 	/*
 		WriteCmdJsonResponse(w, lsCmd.GetResponse, http.StatusAccepted)
 

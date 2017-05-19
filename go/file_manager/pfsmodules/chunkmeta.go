@@ -12,27 +12,21 @@ type ChunkMeta struct {
 	len        uint32
 }
 
-type Chunk struct {
-	Meta ChunkMeta
-	Data []byte
+type ChunkMetaCmdAttr struct {
+	Path      string
+	BlockSize uint32
 }
 
-type GetChunksMetaReq struct {
-	Path string `json:"Path"`
+type ChunkMetaCmdResponse struct {
+	Err   string      `json:"err"`
+	Path  string      `json:"path"`
+	Metas []ChunkMeta `json:"metas"`
 }
 
-type GetChunksMetaRep struct {
-	Err   string      `json:"Err"`
-	Metas []ChunkMeta `json:"Metas"`
+type ChunkMetaCmd struct {
+	cmdAttr *CmdAttr
+	resp    *ChunkMetaCmdResponse
 }
-
-type PostChunksRep struct {
-	Err string `json:"Err"`
-}
-
-const (
-	defaultMaxChunkSize = 2 * 1024 * 1024
-)
 
 func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 	f, err := os.Open(path) // For read access.
@@ -42,7 +36,7 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 
 	defer f.Close()
 
-	if len > defaultMaxChunkSize || len <= 1024 {
+	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
 		len = defaultMaxChunkSize
 	}
 
@@ -67,7 +61,7 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 
 		m := ChunkMeta{}
 		m.fileOffset = offset
-		sum := md5.Sum(data)
+		sum := md5.Sum(data[:n])
 		m.checksum = sum[:]
 		m.len = uint32(n)
 

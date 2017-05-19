@@ -19,9 +19,11 @@ import (
 	"path/filepath"
 )
 
+/*
 type flagFormal struct {
 	r bool
 }
+*/
 
 type FileMeta struct {
 	//Err     string `json:"Err"`
@@ -146,7 +148,7 @@ func (p *LsCmd) Run() {
 		}
 
 		if len(list) == 0 {
-			m.Err = "no such file or directory"
+			m.Err = FileNotFound
 			results = append(results, m)
 			log.Printf("glob path:%s error:%s", arg, m.Err)
 			continue

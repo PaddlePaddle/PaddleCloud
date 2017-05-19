@@ -26,6 +26,10 @@ type Response interface {
 	SetErr(err string)
 }
 
+const (
+	FileNotFound = "no such file or directory"
+)
+
 type Command interface {
 	GetCmdAttr() *CmdAttr
 	GetResponse() Response
@@ -46,6 +50,10 @@ type CmdAttr struct {
 	Method  string   `json:"method"`
 	Options []Option `json:"options"`
 	Args    []string `json:"args"`
+}
+
+func (c *CmdAttr) Name() string {
+	return c.Method
 }
 
 func NewCmdAttr(cmdName string, f *flag.FlagSet) *CmdAttr {
