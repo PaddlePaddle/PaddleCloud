@@ -27,7 +27,8 @@ type Response interface {
 }
 
 const (
-	FileNotFound = "no such file or directory"
+	FileNotFound      = "no such file or directory"
+	DirectoryNotAFile = "should be a file not a directory"
 )
 
 type Command interface {

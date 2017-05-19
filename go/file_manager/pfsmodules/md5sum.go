@@ -5,6 +5,7 @@ import (
 	//"context"
 	//"crypto/tls"
 	//"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	//"flag"
 	//"fmt"
@@ -89,9 +90,9 @@ func (p *MD5SumCmd) GetMD5Sum(path string) (*MD5SumResult, error) {
 
 	result := MD5SumResult{}
 	result.Path = path
-	result.MD5Sum = string(hash.Sum(nil))
+	result.MD5Sum = hex.EncodeToString(hash.Sum(nil))
 
-	log.Printf("%s MD5Sum:%s\n", result.MD5Sum)
+	log.Printf("%s MD5Sum:%s\n", path, result.MD5Sum)
 
 	return &result, err
 }
@@ -122,6 +123,16 @@ func (p *MD5SumCmd) Run() {
 		}
 
 		for _, path := range list {
+			fi, _ := os.Lstat(path)
+			if fi.IsDir() {
+				m.Err = DirectoryNotAFile
+				m.Path = path
+				results = append(results, m)
+				log.Printf("path:%s error:%s", path, m.Err)
+				continue
+			}
+
+			log.Printf("%s %s\n", p.cmdAttr.Name(), path)
 			m, err := p.GetMD5Sum(path)
 			if err != nil {
 				results = append(results, *m)
