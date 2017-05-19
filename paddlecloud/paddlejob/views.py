@@ -92,7 +92,7 @@ class JobsView(APIView):
 
         # delete job pods
         try:
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="job-name=%s"%jobname)
+            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
             logging.error("jobpodlist: %s", job_pod_list)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
@@ -135,7 +135,7 @@ class LogsView(APIView):
         jobname = request.query_params.get("jobname")
         num_lines = request.query_params.get("n")
         worker = request.query_params.get("w")
-        job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="job-name=%s"%jobname)
+        job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
         total_job_log = ""
         if not worker:
             for i in job_pod_list.items:
@@ -165,7 +165,7 @@ class WorkersView(APIView):
         jobname = request.query_params.get("jobname")
         if not jobname:
             return utils.simple_response(500, "must specify jobname")
-        job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="job-name=%s"%jobname)
+        job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
         return Response(job_pod_list.to_dict())
 
 class QuotaView(APIView):
