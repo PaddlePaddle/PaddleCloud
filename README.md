@@ -22,14 +22,14 @@
   ```
 - We use [volume](https://kubernetes.io/docs/concepts/storage/volumes/) to mount MySQL data and cert files, such as CephFS, GlusterFS and etc..., the follow is a example using [hostpath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath):
 
-  - create data folder on a Kubernetes node as follow:
+  - create data folder on a Kubernetes node, such as:
   ```bash
-  mkdir -p /home/yanxu/pcloud_data/mysql
-  mkdir -p /home/yanxu/pcloud_data/certs
+  mkdir -p /home/pcloud/data/mysql
+  mkdir -p /home/pcloud/data/certs
   ```
   - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `pcloud_data/certs` folder
   - Copy CephFS Key file(admin.secret) to `pcloud_data/certs` folder
-  - Copy `settings.py` file to `pcloud_data` folder
+  - Copy `/paddlecloud/settings.py` file to `pcloud_data` folder
 
 - Configure `cloud_deployment.yaml`
   - `spec.template.spec.containers[0].volumes` change the `hostPath` which match your data folder.
