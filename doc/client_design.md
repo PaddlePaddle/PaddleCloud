@@ -161,7 +161,8 @@ We define the APIs below:
   "pservers": 3,
   "pscpu": 1,
   "psmemory": "1Gi",
-  "topology": "train.py"
+  "topology": "train.py",
+  "datacenter": "datacenter1"
 }
 ```
 
