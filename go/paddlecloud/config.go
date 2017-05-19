@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/golang/glog"
@@ -41,7 +42,7 @@ func UserHomeDir() string {
 }
 
 func token() (string, error) {
-	tokenbytes, err := ioutil.ReadFile(UserHomeDir() + "/.paddle/token_cache")
+	tokenbytes, err := ioutil.ReadFile(filepath.Join(UserHomeDir(), ".paddle", "token_cache"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "previous token not found, fetching a new one...")
 		// Authenticate to the cloud endpoint
