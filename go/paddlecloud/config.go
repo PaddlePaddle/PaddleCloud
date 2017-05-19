@@ -59,7 +59,7 @@ func token() (string, error) {
 			return "", errJSON
 		}
 		tokenStr := respObj.(map[string]interface{})["token"].(string)
-		err = ioutil.WriteFile(UserHomeDir()+"/.paddle/token_cache", []byte(tokenStr), 0600)
+		err = ioutil.WriteFile(filepath.Join(UserHomeDir(), ".paddle", "token_cache"), []byte(tokenStr), 0600)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "write cache token file error: %v", err)
 		}
@@ -90,4 +90,4 @@ func parseConfig(configFile string) *submitConfig {
 	return nil
 }
 
-var config = parseConfig(UserHomeDir() + "/.paddle/config")
+var config = parseConfig(filepath.Join(UserHomeDir(), ".paddle", "config"))
