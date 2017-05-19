@@ -2,20 +2,20 @@
 cur_path="$(cd "$(dirname "$0")" && pwd -P)"
 
 #base Docker image
-if [ ! -n "$3" ]; then
+if [ ! -n "$1" ]; then
   base_image=paddlepaddle/paddle:latest
 else
-  base_image=$3
+  base_image=$1
 fi
 
 #PaddleCloud job Docker image
-if [ ! -n "$4" ]; then
+if [ ! -n "$2" ]; then
   pcloudjob_image=paddlepaddle/cloud-job
 else
-  pcloudjob_image=$4
+  pcloudjob_image=$2
 fi
 
-echo "base_image": $base_docker_image
+echo "base_image": $base_image
 echo "pcloudjob_image": $pcloudjob_image
 
 #Build Docker Image
