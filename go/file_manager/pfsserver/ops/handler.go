@@ -12,17 +12,24 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp := pfsmodules.LsCmdResponse{}
 
-	req, err := pfsmodules.GetJsonRequestCmd(r)
+	req, err := pfsmodules.GetJsonRequestCmdAttr(r)
 	if err != nil {
-		resp.SetErr("Not surported method:" + req.Method)
+		resp.SetErr(err.Error())
 		pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
 		return
 	}
 
 	if req.Method != "ls" {
-		resp.SetErr("Not surported method:" + req.Method)
+		resp.SetErr("not surported method:" + req.Method)
 		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
 		return
+	}
+
+	if len(req.Args) == 0 {
+		resp.SetErr("no args")
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
+		return
+
 	}
 
 	log.Print(req)

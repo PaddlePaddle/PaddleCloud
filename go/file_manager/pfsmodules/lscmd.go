@@ -75,19 +75,19 @@ func (p *LsCmdResponse) SetErr(errCode int32, err string) {
 */
 
 type LsCmd struct {
-	cmd  *Cmd
-	resp *LsCmdResponse
+	cmdAttr *CmdAttr
+	resp    *LsCmdResponse
 }
 
-func NewLsCmd(cmd *Cmd, resp *LsCmdResponse) *LsCmd {
+func NewLsCmd(cmdAttr *CmdAttr, resp *LsCmdResponse) *LsCmd {
 	return &LsCmd{
-		cmd:  cmd,
-		resp: resp,
+		cmdAttr: cmdAttr,
+		resp:    resp,
 	}
 }
 
-func (p *LsCmd) GetCmd() *Cmd {
-	return p.cmd
+func (p *LsCmd) GetCmdAttr() *CmdAttr {
+	return p.cmdAttr
 }
 
 func (p *LsCmd) GetResponse() Response {
@@ -123,15 +123,16 @@ func lsPath(path string, r bool) []FileMeta {
 
 func (p *LsCmd) Run() {
 	r := false
-	for _, t := range p.cmd.Options {
+	for _, t := range p.cmdAttr.Options {
 		if t.Name == "r" {
 			r = true
 			break
 		}
 	}
 
+	//log.Println(p.cmd.Args)
 	results := make([]LsCmdResult, 0, 100)
-	for _, arg := range p.cmd.Args {
+	for _, arg := range p.cmdAttr.Args {
 		log.Printf("ls %s\n", arg)
 		m := LsCmdResult{}
 		m.Path = arg
@@ -145,7 +146,7 @@ func (p *LsCmd) Run() {
 		}
 
 		if len(list) == 0 {
-			m.Err = "file or directory not exist"
+			m.Err = "no such file or directory"
 			results = append(results, m)
 			log.Printf("glob path:%s error:%s", arg, m.Err)
 			continue

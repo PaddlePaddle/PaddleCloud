@@ -27,12 +27,12 @@ type Response interface {
 }
 
 type Command interface {
-	GetCmd() *Cmd
+	GetCmdAttr() *CmdAttr
 	GetResponse() Response
-	PushRequest()
-	RushResponse()
+	//PushRequest()
+	//RushResponse()
 	/*
-		SetCmd(cmd *Cmd)
+		SetCmdAttr(cmd *CmdAttr)
 		SetResponse(resp *Response)
 	*/
 }
@@ -42,18 +42,18 @@ type Option struct {
 	Value string `json:"Value"`
 }
 
-type Cmd struct {
+type CmdAttr struct {
 	Method  string   `json:"method"`
 	Options []Option `json:"options"`
 	Args    []string `json:"args"`
 }
 
-func NewCmd(cmdName string, f *flag.FlagSet) *Cmd {
-	cmd := Cmd{}
+func NewCmdAttr(cmdName string, f *flag.FlagSet) *CmdAttr {
+	cmd := CmdAttr{}
 
 	cmd.Method = cmdName
 	cmd.Options = make([]Option, f.NFlag())
-	cmd.Args = make([]string, f.NArg())
+	cmd.Args = make([]string, 0, f.NArg())
 
 	f.Visit(func(flag *flag.Flag) {
 		option := Option{}
@@ -64,7 +64,7 @@ func NewCmd(cmdName string, f *flag.FlagSet) *Cmd {
 	})
 
 	for _, arg := range f.Args() {
-		fmt.Printf("%s\n", arg)
+		fmt.Println("arg:" + arg)
 		cmd.Args = append(cmd.Args, arg)
 	}
 
@@ -75,7 +75,7 @@ const (
 	MaxJsonRequestSize = 2048
 )
 
-func GetJsonRequestCmd(r *http.Request) (*Cmd, error) {
+func GetJsonRequestCmdAttr(r *http.Request) (*CmdAttr, error) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, MaxJsonRequestSize))
 	if err != nil {
@@ -86,7 +86,7 @@ func GetJsonRequestCmd(r *http.Request) (*Cmd, error) {
 		return nil, err
 	}
 
-	c := &Cmd{}
+	c := &CmdAttr{}
 	if err := json.Unmarshal(body, c); err != nil {
 		return nil, err
 	}
@@ -115,9 +115,9 @@ func WriteCmdJsonResponse(w http.ResponseWriter, r Response, status int) error {
 }
 
 type UpdateFilesResult struct {
-	Cmd  string `json:"cmd"`
-	Err  string `json:"err"`
-	Path string `json:"path"`
+	CmdAttr string `json:"cmd"`
+	Err     string `json:"err"`
+	Path    string `json:"path"`
 }
 
 type UpdateFilesResponse struct {

@@ -2,16 +2,13 @@ package main
 
 import (
 	"bytes"
-	//"context"
-	"crypto/tls"
+	"fmt"
+	//"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	//"flag"
-	"fmt"
+	"errors"
 	pfsmod "github.com/cloud/go/file_manager/pfsmodules"
 	log "github.com/golang/glog"
-	//"github.com/google/subcommands"
-	"errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
@@ -64,6 +61,7 @@ func NewCmdSubmitter(configFile string) *CmdSubmitter {
 		log.Fatal("LoadX509KeyPair:", err)
 	}
 
+	/*https
 	pair, e := tls.LoadX509KeyPair(config.ActiveConfig.Usercert,
 		config.ActiveConfig.Userkey)
 
@@ -78,6 +76,10 @@ func NewCmdSubmitter(configFile string) *CmdSubmitter {
 				Certificates: []tls.Certificate{pair},
 			},
 		}}
+	*/
+
+	//http
+	client := &http.Client{}
 
 	return &CmdSubmitter{
 		//cmd:    pfscmd,
@@ -87,14 +89,22 @@ func NewCmdSubmitter(configFile string) *CmdSubmitter {
 
 func (s *CmdSubmitter) SubmitCmdReqeust(
 	httpMethod string,
+	restPath string,
+	port uint32,
 	cmd pfsmod.Command) ([]byte, error) {
 
-	jsonString, err := json.Marshal(cmd.GetCmd())
+	jsonString, err := json.Marshal(cmd.GetCmdAttr())
 	if err != nil {
 		return nil, err
 	}
 
-	targetURL := s.config.ActiveConfig.Endpoint
+	//fmt.Println(jsonString[:len(jsonString)])
+	fmt.Println(string(jsonString))
+
+	//targetURL := s.config.ActiveConfig.Endpoint + port + ""
+	targetURL := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port, restPath)
+	//targetURL := "http://localhost:8080"
+	fmt.Println(targetURL)
 	req, err := http.NewRequest(httpMethod, targetURL, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return nil, err
