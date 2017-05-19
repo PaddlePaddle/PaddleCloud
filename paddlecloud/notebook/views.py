@@ -23,6 +23,7 @@ import hashlib
 import kubernetes
 import zipfile
 import cStringIO as StringIO
+import base64
 from wsgiref.util import FileWrapper
 from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, permissions
@@ -118,17 +119,7 @@ def user_certs_generate(request):
         logging.error(str(e))
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-@login_required
-def notebook_view(request):
-    """
-        call kubernetes client to create a Deployment of jupyter notebook,
-        mount user's default volume in the pod, then jump to the notebook webpage.
-    """
-    # NOTICE: username is the same to user's email
-    # NOTICE: escape the username to safe string to create namespaces
-    username = request.user.username
-
-    # FIXME: notebook must be started under username's namespace
+def create_user_namespace(username):
     v1api = kubernetes.client.CoreV1Api(utils.get_user_api_client(username))
     namespaces = v1api.list_namespace()
     user_namespace_found = False
@@ -144,6 +135,44 @@ def notebook_view(request):
             "metadata": {
                 "name": user_namespace
             }})
+    #create DataCenter sercret if not exists
+    secrets = v1api.list_namespaced_secret(user_namespace)
+    for dc, cfg in settings.DATACENTERS.items():
+        #create Kubernetes Secret for admin key
+        if cfg["type"] == "cephfs":
+            secret_found = False
+            for ss in secrets.items:
+                if ss.metadata.name == cfg["secret"]:
+                    secret_found = True
+                    break
+            if not secret_found:
+                with open(cfg["admin_key"], "r") as f:
+                    key = f.read()
+                    encoded = base64.b64encode(key)
+                    v1api.create_namespaced_secret(user_namespace, {
+                        "apiVersion": "v1",
+                        "kind": "Secret",
+                        "metadata": {
+                            "name": cfg["secret"]
+                        },
+                        "data": {
+                            "key": encoded
+                        }})
+    return user_namespace
+
+
+@login_required
+def notebook_view(request):
+    """
+        call kubernetes client to create a Deployment of jupyter notebook,
+        mount user's default volume in the pod, then jump to the notebook webpage.
+    """
+    # NOTICE: username is the same to user's email
+    # NOTICE: escape the username to safe string to create namespaces
+    username = request.user.username
+
+    # FIXME: notebook must be started under username's namespace
+    user_namespace = create_user_namespace(username)
 
     ub = utils.UserNotebook()
     ub.start_all(username, user_namespace)

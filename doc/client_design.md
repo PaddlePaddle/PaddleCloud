@@ -21,12 +21,22 @@ PaddleCloud Client is written in Go, which simplifies building for different pla
 
 Client configurations stores in a file: `~/.paddle/config` in the below `yaml` form:
 ```yaml
-datacenter1:
-  username: user
+datacenters:
+- name: datacenter1
+  active: true
+  username: user1
+  password: secret
   usercert: /path/to/user.pem
   userkey:  /path/to/user-key.pem
-  endpoint: dc1.paddlepaddle.org
+  endpoint: http://cloud.paddlepaddle.org
+- name: datacenter2
+  active: false
+  username: user1
+  password: secret
+  endpoint: http://cloud2.paddlepaddle.org
 ```
+
+***NOTICE:*** The ***first*** "active" configuration part will be used.
 
 # Client commands
 

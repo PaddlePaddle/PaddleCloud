@@ -20,7 +20,7 @@ DATABASES = {
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
-    os.getenv("CLOUD_DOMAIN", "cloud.paddlepaddle.org"),
+    "cloud.paddlepaddle.org",
 ]
 
 POD_IP = os.getenv("POD_IP")
@@ -257,3 +257,27 @@ if os.getenv("KUBERNETES_SERVICE_HOST", None):
 else:
     # init kubernetes client with ~/.kube/config file
     config.load_kube_config()
+
+#if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
+#the following is an example:
+#DATACENTERS = {
+#    "datacenter1":{
+#        "monitors_addr": "172.19.32.166:6789",
+#        "secret": "ceph-secret",
+#        "user": "admin",
+#        "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
+#        "cephfs_path": "/%s" # cephfs_path % username
+#        "admin_key": "/certs/admin.secret"
+#    }
+#}
+DATACENTERS = {
+    "datacenter1":{
+        "type": "cephfs",
+        "monitors_addr": "172.19.32.166:6789",
+        "secret": "ceph-secret",
+        "user": "admin",
+        "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
+        "cephfs_path": "/%s", # cephfs_path % username
+        "admin_key": "/certs/admin.secret"
+    }
+}

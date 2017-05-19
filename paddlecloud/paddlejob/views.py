@@ -35,6 +35,20 @@ class JobsView(APIView):
         obj = json.loads(request.body)
         if not obj.get("topology"):
             return utils.simple_response(500, "no topology specified")
+        if not obj.get("datacenter"):
+            return utils.simple_response(500, "no datacenter specified")
+        dc = obj.get("datacenter")
+        volumes = []
+        for name, cfg in settings.DATACENTERS.items():
+            if cfg["type"] == "cephfs":
+                volumes.append(CephFSVolume(
+                    monitors_addr = cfg["monitors_addr"],
+                    user = cfg["user"],
+                    secret_name = cfg["secret"],
+                    mount_path = cfg["mount_path"] % username,
+                    cephfs_path = cfg["cephfs_path"] % username
+                ))
+
 
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
@@ -47,7 +61,8 @@ class JobsView(APIView):
             psmemory = obj.get("psmemory", "1Gi"),
             topology = obj["topology"],
             gpu = obj.get("gpu", 0),
-            image = obj.get("image", "yancey1989/paddle-job")
+            image = obj.get("image", "yancey1989/paddlecloud-job"),
+            volumes = volumes
         )
         try:
             print paddle_job.new_pserver_job()
@@ -66,7 +81,7 @@ class JobsView(APIView):
                 paddle_job.new_trainer_job(),
                 pretty=True)
         except ApiException, e:
-            logging.err("error submitting trainer job: %s" % e)
+            logging.error("error submitting trainer job: %s" % e)
             return utils.simple_response(500, str(e))
         return utils.simple_response(200, "OK")
 
@@ -84,8 +99,9 @@ class JobsView(APIView):
         # FIXME: cascade delteing
         delete_status = ""
         # delete job
+        trainer_name = jobname + "-trainer"
         try:
-            u_status = client.BatchV1Api().delete_namespaced_job(jobname, namespace, {})
+            u_status = client.BatchV1Api().delete_namespaced_job(trainer_name, namespace, {})
             delete_status += u_status.status
         except ApiException, e:
             logging.error("error deleting job: %s, %s", jobname, str(e))
@@ -101,8 +117,7 @@ class JobsView(APIView):
             logging.error("error deleting job pod: %s", str(e))
 
         # delete pserver rs
-        pserver_name = "-".join(jobname.split("-")[:-1])
-        pserver_name += "-pserver"
+        pserver_name = jobname + "-pserver"
         try:
             u_status = client.ExtensionsV1beta1Api().delete_namespaced_replica_set(pserver_name, namespace, {})
             delete_status += u_status.status
@@ -111,8 +126,8 @@ class JobsView(APIView):
 
         # delete pserver pods
         try:
-            pserver_pod_label = "-".join(jobname.split("-")[:-1])
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%pserver_pod_label)
+            # pserver replica set has label with jobname
+            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%jobname)
             logging.error("pserver podlist: %s", job_pod_list)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})

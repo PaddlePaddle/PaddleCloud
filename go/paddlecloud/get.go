@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/google/subcommands"
 )
@@ -94,8 +95,12 @@ func jobs() error {
 		fmt.Printf("NUM\tNAME\tSUCC\tFAIL\tSTART\tCOMP\tACTIVE\n")
 	}
 	for idx, j := range items {
+		jobnameTrainer := j.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string)
+		jobnameParts := strings.Split(jobnameTrainer, "-")
+		jobname := strings.Join(jobnameParts[0:len(jobnameParts)-1], "-")
+
 		fmt.Printf("%d\t%s\t%v\t%v\t%v\t%v\t%v\n", idx,
-			j.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string),
+			jobname,
 			j.(map[string]interface{})["status"].(map[string]interface{})["succeeded"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["failed"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["start_time"],
