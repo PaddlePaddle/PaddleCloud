@@ -27,16 +27,17 @@
   mkdir -p /home/yanxu/pcloud_data/mysql
   mkdir -p /home/yanxu/pcloud_data/certs
   ```
-  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `certs` folder
-  - Copy CephFS Key file(admin.secret) to `certs` folder
+  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `pcloud_data/certs` folder
+  - Copy CephFS Key file(admin.secret) to `pcloud_data/certs` folder
+  - Copy `settings.py` file to `pcloud_data` folder
 
-- Configurate `cloud_deployment.yaml`
+- Configure `cloud_deployment.yaml`
   - `spec.template.spec.containers[0].volumes` change the `hostPath` which match your data folder.
-  - `spec.template.spec.containers[0].env`
-    - `CLOUD_DOMAIN` is the cloud domain name which is unique in one Kubernetes cluster.
-    - `CEPHFS_MONITORS_ADDR` is the monitor addresses of Ceph Cluster.
   - `spec.template.spec.nodeSelector.`, edit the value `kubernetes.io/hostname` to host which data folder on.You can use `kubectl get nodes` to list all the Kubernetes nodes.
-- Configurate `cloud_ingress.yaml`
+- Configure `settings.py`
+  - Add your domain name to `ALLOWED_HOSTS`.
+  - Configure `DATACENTERS` to your backend storage.
+- Configure `cloud_ingress.yaml`
   - `spec.rules[0].host` specify your domain name
 - Deploy cloud on Kubernetes
   - `kubectl create -f k8s/cloud_deployment.yaml`
@@ -76,4 +77,3 @@ If you are starting the server for the second time, just run:
 ```
 ./manage.py runserver
 ```
-

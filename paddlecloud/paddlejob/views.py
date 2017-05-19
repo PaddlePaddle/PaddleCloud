@@ -36,6 +36,20 @@ class JobsView(APIView):
         obj = json.loads(request.body)
         if not obj.get("topology"):
             return utils.simple_response(500, "no topology specified")
+        if not obj.get("datacenter"):
+            return utils.simple_response(500, "no datacenter specified")
+        dc = obj.get("datacenter")
+        volumes = []
+        for name, cfg in settings.DATACENTERS.items():
+            if cfg["type"] == "cephfs":
+                volumes.append(CephFSVolume(
+                    monitors_addr = cfg["monitors_addr"],
+                    user = cfg["user"],
+                    secret_name = cfg["secret"],
+                    mount_path = cfg["mount_path"] % username,
+                    cephfs_path = cgg["cephfs_path"] % username
+                ))
+
 
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
@@ -49,13 +63,7 @@ class JobsView(APIView):
             topology = obj["topology"],
             gpu = obj.get("gpu", 0),
             image = obj.get("image", "yancey1989/paddlecloud-job"),
-            volumes = [CephFSVolume(
-                monitors_addr = settings.CEPHFS_MONITORS_ADDR,
-                user = "admin",
-                secret_name = "ceph-secret",
-                mount_path = "/pfs/datacentor1/home/%s/" % username,
-                cephfs_path = "/yanxu05@baidu.com"
-            )]
+            volumes = volumes
         )
         try:
             print paddle_job.new_pserver_job()

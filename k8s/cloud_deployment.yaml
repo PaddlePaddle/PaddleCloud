@@ -32,8 +32,6 @@ spec:
               fieldPath: status.podIP
         - name: CLOUD_DOMAIN
           value: "cloud.paddlepaddle.org"
-        - name: CEPHFS_MONITORS_ADDR
-          value: "172.19.32.166:6789"
 #        livenessProbe:
 #         httpGet:
 #           path: /healthz/

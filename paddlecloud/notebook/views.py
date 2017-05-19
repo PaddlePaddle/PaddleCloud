@@ -135,27 +135,31 @@ def create_user_namespace(username):
             "metadata": {
                 "name": user_namespace
             }})
-    # Create CephFS key if not exits, it's a Kubernetes secret
-    secret_found = False
+    #create DataCenter sercret if not exists
     secrets = v1api.list_namespaced_secret(user_namespace)
-    cephfs_secret = "ceph-secret"
-    for ss in secrets.items:
-        if ss.metadata.name == cephfs_secret:
-            secret_found = True
-    if not secret_found:
-        with open(settings.CEPHFS_ADMIN_KEY , "r") as f:
-            key = f.read()
-            encoded = base64.b64encode(key)
-            v1api.create_namespaced_secret(user_namespace, {"apiVersion": "v1",
-                "kind": "Secret",
-                "metadata": {
-                    "name": "ceph-secret"
-                },
-                "data": {
-                    "key": encoded
-                }})
+    for dc, cfg in settings.DATACENTERS.items():
+        #create Kubernetes Secret for admin key
+        if cfg["type"] == "cephfs":
+            secret_found = False
+            for ss in secrets.items:
+                if ss.metadata.name == cfg["secret"]:
+                    secret_found = True
+                    break
+            if not secret_found:
+                with open(cfg["admin_key"], "r") as f:
+                    key = f.read()
+                    encoded = base64.b64encode(key)
+                    v1api.create_namespaced_secret(user_namespace, {
+                        "apiVersion": "v1",
+                        "kind": "Secret",
+                        "metadata": {
+                            "name": cfg["secret"]
+                        },
+                        "data": {
+                            "key": encoded
+                        }})
     return user_namespace
-   
+
 
 @login_required
 def notebook_view(request):
