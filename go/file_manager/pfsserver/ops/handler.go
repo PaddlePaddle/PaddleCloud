@@ -97,7 +97,7 @@ func rmCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
 func touchHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
 	resp := pfsmodules.TouchCmdResponse{}
 
-	log.Print(req)
+	//log.Print(req)
 
 	cmd := pfsmodules.NewTouchCmd(req, &resp)
 	cmd.RunAndResponse(w)

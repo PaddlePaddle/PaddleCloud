@@ -49,6 +49,7 @@ func (p *TouchCmd) GetResponse() Response {
 }
 
 func createSizedFile(path string, size int64) error {
+	log.Printf("%s %d\n", path, size)
 	fd, err := os.Create(path)
 	if err != nil {
 		return err
@@ -74,12 +75,14 @@ func createSizedFile(path string, size int64) error {
 func (p *TouchCmd) Run() error {
 	fileSize := int64(0)
 	for _, t := range p.cmdAttr.Options {
+		//log.Printf("%s:%s\n", t.Name, t.Value)
 		if t.Name == "file-size" {
-			fileSize, err := strconv.ParseInt(t.Value, 10, 64)
+			inputSize, err := strconv.ParseInt(t.Value, 10, 64)
 			if err != nil {
 				return err
 			}
 
+			fileSize = inputSize
 			if fileSize < 0 || fileSize > defaultMaxCreateFileSize {
 				return errors.New("too large file size")
 			}
@@ -89,7 +92,7 @@ func (p *TouchCmd) Run() error {
 	//log.Println(p.cmd.Args)
 	results := make([]TouchCmdResult, 0, 100)
 	for _, path := range p.cmdAttr.Args {
-		log.Printf("%s %s\n", p.cmdAttr.Name())
+		log.Printf("%s %s\n", p.cmdAttr.Name(), path)
 		m := TouchCmdResult{}
 		m.Path = path
 
@@ -101,6 +104,7 @@ func (p *TouchCmd) Run() error {
 			continue
 		}
 
+		//log.Printf("%d %d\n", fi.Size(), fileSize)
 		if os.IsNotExist(err) || fi.Size() != fileSize {
 			if err := createSizedFile(path, fileSize); err != nil {
 				m.Err = err.Error()
@@ -108,6 +112,8 @@ func (p *TouchCmd) Run() error {
 				log.Printf("touch path %s error:%s", path, m.Err)
 				continue
 			}
+			results = append(results, m)
+		} else {
 			results = append(results, m)
 		}
 	}
