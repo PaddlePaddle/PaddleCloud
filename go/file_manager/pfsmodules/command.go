@@ -45,6 +45,10 @@ const (
 	NotSourportedMethod = "not surported method"
 )
 
+const (
+	defaultMaxCreateFileSize = int64(4 * 1024 * 1024 * 1024 * 1024)
+)
+
 type Command interface {
 	GetCmdAttr() *CmdAttr
 	GetResponse() Response

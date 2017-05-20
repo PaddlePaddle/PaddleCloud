@@ -88,14 +88,12 @@ func (p *RmCmd) Run() {
 				continue
 			}
 
-			/*
-				if err := os.RemoveAll(path); err != nil {
-					m.Err = err.Error()
-					results = append(results, m)
-					log.Printf("rm path:%s", arg, m.Err)
-					continue
-				}
-			*/
+			if err := os.RemoveAll(path); err != nil {
+				m.Err = err.Error()
+				results = append(results, m)
+				log.Printf("rm path:%s", arg, m.Err)
+				continue
+			}
 			results = append(results, m)
 		}
 	}

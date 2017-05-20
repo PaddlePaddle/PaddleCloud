@@ -95,14 +95,12 @@ func rmCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
 }
 
 func touchHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
-	/*
-		resp := pfsmodules.TouchCmdResponse{}
+	resp := pfsmodules.TouchCmdResponse{}
 
-		log.Print(req)
+	log.Print(req)
 
-		cmd := pfsmodules.NewTouchCmd(req, &resp)
-		cmd.TouchAndResponse(w)
-	*/
+	cmd := pfsmodules.NewTouchCmd(req, &resp)
+	cmd.RunAndResponse(w)
 
 	return
 }
@@ -129,6 +127,11 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 	case "rm":
 		rmCmdHandler(w, req)
 	case "touch":
+		if len(req.Args) != 1 {
+			resp.SetErr("please create only one file")
+			pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
+			return
+		}
 		touchHandler(w, req)
 	default:
 		resp.SetErr(http.StatusText(http.StatusMethodNotAllowed))
