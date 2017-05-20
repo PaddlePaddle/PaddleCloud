@@ -27,8 +27,9 @@ type Response interface {
 }
 
 const (
-	FileNotFound      = "no such file or directory"
-	DirectoryNotAFile = "should be a file not a directory"
+	FileNotFound        = "no such file or directory"
+	DirectoryNotAFile   = "should be a file not a directory"
+	NotSourportedMethod = "not surported method"
 )
 
 type Command interface {

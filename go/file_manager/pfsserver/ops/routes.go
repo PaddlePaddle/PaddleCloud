@@ -1,6 +1,9 @@
 package pfsserver
 
-import "net/http"
+import (
+	//"github.com/gorilla/mux"
+	"net/http"
+)
 
 type Route struct {
 	Name        string
@@ -23,5 +26,17 @@ var routes = Routes{
 		"Post",
 		"/api/v1/files",
 		PostFilesHandler,
+	},
+	Route{
+		"PostChunks",
+		"GET",
+		"/api/v1/chunks",
+		GetChunksHandler,
+	},
+	Route{
+		"PostChunks",
+		"Post",
+		"/api/v1/chunks",
+		PostChunksHandler,
 	},
 }

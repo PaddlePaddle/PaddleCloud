@@ -6,6 +6,7 @@ import (
 	"github.com/cloud/go/file_manager/pfsmodules"
 	"log"
 	"net/http"
+	//"strconv"
 )
 
 func lsCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
@@ -57,7 +58,7 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 	case "md5sum":
 		MD5SumCmdHandler(w, req)
 	default:
-		resp.SetErr("not surported method:" + req.Method)
+		resp.SetErr(http.StatusText(http.StatusMethodNotAllowed))
 		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
 	}
 
@@ -106,4 +107,26 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 				pfscommon.MakeResponse(w, &rep, 422)
 			}
 	*/
+}
+
+func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+	method := r.URL.Query().Get("method")
+
+	switch method {
+	case "getchunkmeta":
+		cmd := pfsmodules.GetChunkMetaCmd(w, r)
+		if cmd == nil {
+			return
+		}
+		cmd.RunAndResponse(w)
+	default:
+	}
+}
+
+func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("w")
+	//for k
+	path := r.URL.Query().Get("path")
+
+	log.Println(path)
 }
