@@ -3,10 +3,11 @@ package pfsserver
 import (
 	//"encoding/json"
 	//"github.com/cloud/go/file_manager/pfscommon"
+	"fmt"
 	"github.com/cloud/go/file_manager/pfsmodules"
 	"log"
 	"net/http"
-	//"strconv"
+	"strconv"
 )
 
 func lsCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
@@ -124,6 +125,10 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		//w.Write(http.StatusText(http.StatusMethodNotAllowed))
+		fmt.Fprintf(w, "%s %s",
+			strconv.Itoa(http.StatusMethodNotAllowed),
+			http.StatusText(http.StatusMethodNotAllowed))
 	}
 }
 
