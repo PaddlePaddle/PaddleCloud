@@ -28,15 +28,15 @@ var routes = Routes{
 		PostFilesHandler,
 	},
 	Route{
-		"PostChunks",
+		"GetChunksMeta",
 		"GET",
 		"/api/v1/chunks",
 		GetChunksHandler,
 	},
 	Route{
-		"PostChunks",
-		"Post",
-		"/api/v1/chunks",
+		"GetChunksData",
+		"Get",
+		"/api/v1/storage/chunks",
 		PostChunksHandler,
 	},
 }

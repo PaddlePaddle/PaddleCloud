@@ -2,6 +2,7 @@ package pfsmodules
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -11,9 +12,9 @@ import (
 )
 
 type ChunkMeta struct {
-	fileOffset int64
-	checksum   []byte
-	len        uint32
+	Offset   int64  `json:"offset"`
+	Checksum string `json:"checksum"`
+	Len      uint32 `json:"len"`
 }
 
 /*
@@ -59,10 +60,12 @@ func NewChunkMetaCmd(cmdAttr *ChunkMetaCmdAttr,
 func GetChunkMetaCmd(w http.ResponseWriter, r *http.Request) *ChunkMetaCmd {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
-	chunkStr := r.URL.Query().Get("chunkStr")
+	chunkStr := r.URL.Query().Get("chunksize")
+
+	//log.Println(method + path + chunkStr)
 
 	resp := ChunkMetaCmdResponse{}
-	if len(method) == 0 || len(path) < 4 || len(chunkStr) == 0 {
+	if len(method) == 0 || len(path) < 4 {
 		resp.SetErr("check your params")
 		WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
 		return nil
@@ -80,11 +83,16 @@ func GetChunkMetaCmd(w http.ResponseWriter, r *http.Request) *ChunkMetaCmd {
 		return nil
 	}
 
-	chunkSize, err := strconv.Atoi(chunkStr)
-	if err != nil {
-		resp.SetErr("chunksize error")
-		WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
-		return nil
+	chunkSize := uint32(defaultChunkSize)
+	if len(chunkStr) == 0 {
+	} else {
+		inputSize, err := strconv.Atoi(chunkStr)
+		if err != nil {
+			resp.SetErr("chunksize error")
+			WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
+			return nil
+		}
+		chunkSize = uint32(inputSize)
 	}
 
 	if chunkSize < defaultMinChunkSize || chunkSize > defaultMaxChunkSize {
@@ -98,29 +106,34 @@ func GetChunkMetaCmd(w http.ResponseWriter, r *http.Request) *ChunkMetaCmd {
 	cmdAttr.Path = path
 	cmdAttr.ChunkSize = uint32(chunkSize)
 
+	log.Println(cmdAttr)
+
 	//cmd := ChunkMetaCmd{}
 	return NewChunkMetaCmd(&cmdAttr, &resp)
 }
 
-func (p *ChunkMetaCmd) RunAndResponse(w http.ResponseWriter) error {
+func (p *ChunkMetaCmd) RunAndResponse(w http.ResponseWriter) {
 	//c.Run()
 	metas, err := GetChunksMeta(p.cmdAttr.Path, p.cmdAttr.ChunkSize)
 	if err != nil {
-		return err
+		p.resp.SetErr(err.Error())
+		WriteCmdJsonResponse(w, p.resp, http.StatusExpectationFailed)
+		return
 	}
 
 	p.resp.Path = p.cmdAttr.Path
 	p.resp.Metas = metas
+	log.Println(len(metas))
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(p.resp); err != nil {
 		//w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("write response error:%v", err)
-		return err
+		return
 	}
 
-	return nil
+	return
 }
 
 func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
@@ -131,9 +144,11 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 
 	defer f.Close()
 
-	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
-		len = defaultMaxChunkSize
-	}
+	/*
+		if len > defaultMaxChunkSize || len < defaultMinChunkSize {
+			len = defaultMaxChunkSize
+		}
+	*/
 
 	fi, err := f.Stat()
 	if err != nil {
@@ -154,16 +169,18 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 			break
 		}
 
+		log.Println(n)
 		m := ChunkMeta{}
-		m.fileOffset = offset
+		m.Offset = offset
 		sum := md5.Sum(data[:n])
-		m.checksum = sum[:]
-		m.len = uint32(n)
+		m.Checksum = hex.EncodeToString(sum[:])
+		m.Len = uint32(n)
 
 		metas = append(metas, m)
 
 		offset += int64(n)
 	}
 
+	//log.Println(len()
 	return metas, nil
 }

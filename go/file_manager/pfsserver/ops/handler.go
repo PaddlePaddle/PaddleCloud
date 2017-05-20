@@ -112,6 +112,8 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	method := r.URL.Query().Get("method")
 
+	log.Println(r.URL.String())
+
 	switch method {
 	case "getchunkmeta":
 		cmd := pfsmodules.GetChunkMetaCmd(w, r)
@@ -120,6 +122,8 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		cmd.RunAndResponse(w)
 	default:
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 

@@ -2,6 +2,7 @@ package pfsmodules
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 const (
 	defaultMaxChunkSize = 2 * 1024 * 1024
 	defaultMinChunkSize = 4 * 1024
+	defaultChunkSize    = 1 * 1024 * 1024 * 1024
 )
 
 type Chunk struct {
@@ -65,10 +67,10 @@ func GetChunk(path string, offset int64, len uint32) (*Chunk, error) {
 		return nil, err
 	}
 
-	m.fileOffset = offset
+	m.Offset = offset
 	sum := md5.Sum(chunk.Data[:n])
-	m.checksum = sum[:]
-	m.len = uint32(n)
+	m.Checksum = hex.EncodeToString(sum[:])
+	m.Len = uint32(n)
 
 	return &chunk, nil
 }
