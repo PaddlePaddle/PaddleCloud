@@ -63,54 +63,80 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
 	}
 
-	if req.Method != "ls" {
+	log.Print(req)
+}
+
+/*
+func SendHttpTxtResponse(w http.ResponseWriter, status int32) {
+	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	fmt.Fprintf(w, "%s %s",
+		strconv.Itoa(http.StatusMethodNotAllowed),
+		http.StatusText(http.StatusMethodNotAllowed))
+}
+
+func SendJsonResponse(w http.ResponseWriter, status int32) {
+	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	fmt.Fprintf(w, "%s %s",
+		strconv.Itoa(http.StatusMethodNotAllowed),
+		http.StatusText(http.StatusMethodNotAllowed))
+}
+*/
+func rmCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
+	resp := pfsmodules.RmCmdResponse{}
+
+	log.Print(req)
+
+	cmd := pfsmodules.NewRmCmd(req, &resp)
+	cmd.RunAndResponse(w)
+
+	return
+}
+
+func touchHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
+	/*
+		resp := pfsmodules.TouchCmdResponse{}
+
+		log.Print(req)
+
+		cmd := pfsmodules.NewTouchCmd(req, &resp)
+		cmd.TouchAndResponse(w)
+	*/
+
+	return
+}
+
+func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
+	resp := pfsmodules.JsonResponse{}
+	req, err := pfsmodules.GetJsonRequestCmdAttr(r)
+	if err != nil {
+		resp.SetErr(err.Error())
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
 		return
+	}
+
+	if len(req.Args) == 0 {
+		resp.SetErr("no args")
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusExpectationFailed)
+		return
+
 	}
 
 	log.Print(req)
 
-	/*
-		WriteCmdJsonResponse(w, lsCmd.GetResponse, http.StatusAccepted)
-
-		t, _ := pfsmodules.LsPaths(req.FilesPath, false)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(t); err != nil {
-			panic(err)
-		}
-	*/
+	switch req.Method {
+	case "rm":
+		rmCmdHandler(w, req)
+	case "touch":
+		touchHandler(w, req)
+	default:
+		resp.SetErr(http.StatusText(http.StatusMethodNotAllowed))
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
+	}
 }
 
-func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
-	/*
-			req := pfsmodules.PostFilesReq{}
-			rep := pfsmodules.PostFilesResponse{}
-
-			if err := pfscommon.Body2Json(w, r, &req, &rep); err != nil {
-				return
-			}
-
-		req, err := pfsmodules.GetCmdJsonRequest(r)
-		if err != nil {
-			resp.SetErr("Not surported method:" + req.Method)
-			WriteCmdJsonResponse(w, &resp, 422)
-			return
-		}
-
-			switch req.Method {
-			case "mkdir":
-				mkdirCmd := NewLsCmd
-				CreateDirs(req.Metas)
-			case "touch":
-				CreateFiles(req.Metas)
-			default:
-				rep.SetErr("not surpported method")
-				pfscommon.MakeResponse(w, &rep, 422)
-			}
-	*/
-}
-
-func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	method := r.URL.Query().Get("method")
 
 	log.Println(r.URL.String())
@@ -131,6 +157,36 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 			http.StatusText(http.StatusMethodNotAllowed))
 	}
 }
+
+func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+func PatchChunksHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+/*
+func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+	method := r.URL.Query().Get("method")
+
+	log.Println(r.URL.String())
+
+	switch method {
+	case "rm":
+		cmd := pfsmodules.GetRMCmd(w, r)
+		if cmd == nil {
+			return
+		}
+		cmd.RunAndResponse(w)
+	default:
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		//w.Write(http.StatusText(http.StatusMethodNotAllowed))
+		fmt.Fprintf(w, "%s %s",
+			strconv.Itoa(http.StatusMethodNotAllowed),
+			http.StatusText(http.StatusMethodNotAllowed))
+	}
+}
+*/
 
 func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("w")

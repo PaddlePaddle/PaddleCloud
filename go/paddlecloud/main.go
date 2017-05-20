@@ -39,6 +39,7 @@ func main() {
 	subcommands.Register(&getCommand{}, "")
 	subcommands.Register(&killCommand{}, "")
 	subcommands.Register(&lsCommand{}, "")
+	subcommands.Register(&rmCommand{}, "")
 
 	flag.Parse()
 	ctx := context.Background()

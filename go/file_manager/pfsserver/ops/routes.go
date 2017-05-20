@@ -23,16 +23,32 @@ var routes = Routes{
 	},
 	Route{
 		"PostFiles",
-		"Post",
+		"POST",
 		"/api/v1/files",
 		PostFilesHandler,
 	},
+	/*
+		Route{
+			"UpdateFiles",
+			"PATCH",
+			"/api/v1/files",
+			PatchFilesHandler,
+		},
+	*/
+
 	Route{
 		"GetChunksMeta",
 		"GET",
 		"/api/v1/chunks",
 		GetChunksHandler,
 	},
+	Route{
+		"GetChunksData",
+		"Get",
+		"/api/v1/storage/chunks",
+		PostChunksHandler,
+	},
+
 	Route{
 		"GetChunksData",
 		"Get",

@@ -26,6 +26,19 @@ type Response interface {
 	SetErr(err string)
 }
 
+type JsonResponse struct {
+	Err     string `json:"err"`
+	Results []string
+}
+
+func (p *JsonResponse) GetErr() string {
+	return p.Err
+}
+
+func (p *JsonResponse) SetErr(err string) {
+	p.Err = err
+}
+
 const (
 	FileNotFound        = "no such file or directory"
 	DirectoryNotAFile   = "should be a file not a directory"
