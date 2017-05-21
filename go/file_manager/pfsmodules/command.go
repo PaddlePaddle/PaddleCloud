@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 /*
@@ -150,4 +151,8 @@ type UpdateFilesResult struct {
 type UpdateFilesResponse struct {
 	Err    string              `json:"Err"`
 	Result []UpdateFilesResult `json:"result"`
+}
+
+func IsRemotePath(path string) bool {
+	return strings.HasPrefix(path, "/pfs/")
 }
