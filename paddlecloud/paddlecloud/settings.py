@@ -274,6 +274,7 @@ else:
 #DATACENTERS = {
 #   ...
 #   "dc1":{
+#       "type": "hostpath",
 #       "host_path": "/mnt/hdfs/",
 #       "mount_path" "/pfs/dc1/home/%s/" # mount_path % username
 #    }

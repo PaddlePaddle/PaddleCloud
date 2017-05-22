@@ -1,4 +1,4 @@
-from . import Volume
+from volume import Volume
 __all__ = ["CephFSVolume"]
 
 
