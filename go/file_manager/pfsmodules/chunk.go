@@ -11,7 +11,7 @@ import (
 const (
 	defaultMaxChunkSize = 2 * 1024 * 1024
 	defaultMinChunkSize = 4 * 1024
-	defaultChunkSize    = 1 * 1024 * 1024 * 1024
+	DefaultChunkSize    = 1 * 1024 * 1024 * 1024
 )
 
 type Chunk struct {

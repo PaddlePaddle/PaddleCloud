@@ -34,6 +34,24 @@ func (p *lsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.r, "r", false, "list files recursively")
 }
 
+func RemoteLs(cmdAttr *pfsmod.CmdAttr) (*pfsmod.LsCmdResponse, error) {
+	resp := pfsmod.LsCmdResponse{}
+	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
+
+	lsCmd := pfsmod.NewLsCmd(cmdAttr, &resp)
+	_, err := s.SubmitCmdReqeust("GET", "api/v1/files", 8080, lsCmd)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		//return subcommands.ExitFailure
+		return &resp, err
+	}
+
+	//fmt.Println(body)
+	//return subcommands.ExitSuccess
+	return &resp, err
+
+}
+
 func (p *lsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 {
 		f.Usage()
@@ -41,26 +59,13 @@ func (p *lsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 
 	cmdAttr := pfsmod.NewCmdAttr(p.Name(), f)
-	resp := pfsmod.LsCmdResponse{}
-	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
 
-	/*
-		lsCmd := &{
-			cmd :
-		}
-			if err != nil {
-				fmt.Printf("error NewPfsCommand: %v\n", err)
-				return subcommands.ExitFailure
-			}
-	*/
-
-	lsCmd := pfsmod.NewLsCmd(cmdAttr, &resp)
-	_, err := s.SubmitCmdReqeust("GET", "api/v1/files", 8080, lsCmd)
+	resp, err := RemoteLs(cmdAttr)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
 		return subcommands.ExitFailure
 	}
 
-	//fmt.Println(body)
+	fmt.Println(resp)
+
 	return subcommands.ExitSuccess
 }

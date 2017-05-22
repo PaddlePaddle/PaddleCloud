@@ -137,5 +137,45 @@ func (s *CmdSubmitter) SubmitCmdReqeust(
 		cmdResp.SetErr(err.Error())
 		return nil, err
 	}
-	return cmdResp, err
+	return cmdResp, nil
+}
+
+func (s *CmdSubmitter) SubmitChunkMetaRequest(
+	port uint32,
+	cmd *pfsmod.ChunkMetaCmd) error {
+
+	baseUrl := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port)
+	targetURL, err := cmd.GetCmdAttr().GetRequestUrl(baseUrl)
+	fmt.Println(targetURL)
+
+	req, err := http.NewRequest("GET", targetURL, http.NoBody)
+	if err != nil {
+		return err
+	}
+
+	//req.Header.Set("Content-Type", "application/json")
+	client := s.client
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.Status != HTTPOK {
+		return errors.New("http server returned non-200 status: " + resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	//fmt.Printf("%s\n\n", body)
+
+	cmdResp := cmd.GetResponse()
+	if err := json.Unmarshal(body, cmdResp); err != nil {
+		cmdResp.SetErr(err.Error())
+		return err
+	}
+
+	return nil
 }

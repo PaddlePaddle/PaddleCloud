@@ -40,7 +40,8 @@ var routes = Routes{
 		"GetChunksMeta",
 		"GET",
 		"/api/v1/chunks",
-		GetChunksHandler,
+		//GetChunksHandler,
+		GetChunkMetaHandler,
 	},
 	Route{
 		"GetChunksData",

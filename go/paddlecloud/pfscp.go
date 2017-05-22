@@ -64,7 +64,8 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 
 	//results := make([]CpCmdResult, 0, 100)
 
-	var results []pfsmodules.CpCmdResult
+	var results, ret []pfsmodules.CpCmdResult
+	//var err error
 
 	for _, arg := range src {
 		log.Printf("ls %s\n", arg)
@@ -72,19 +73,115 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 		if pfsmodules.IsRemotePath(arg) {
 			if pfsmodules.IsRemotePath(dest) {
 				//remotecp
+				ret, err = RemoteCp(p, arg, dest)
 			} else {
 				//download
+				ret, err = Download(p, arg, dest)
 			}
 		} else {
 			if pfsmodules.IsRemotePath(dest) {
 				//upload
+				ret, err = Upload(p, arg, dest)
 			} else {
 				//can't do that
+				m := pfsmodules.CpCmdResult{}
+				m.Err = pfsmodules.CopyFromLocalToLocal
+				m.Src = arg
+				m.Dest = dest
+
+				ret = append(ret, m)
 			}
 		}
 
 		//m := CopyGlobPath(arg, dest)
-		//results = append(results, m)
+		results = append(results, ret...)
+	}
+
+	return results, nil
+}
+
+func GetRemoteChunksMeta(path string, chunkSize uint32) ([]pfsmodules.ChunkMeta, error) {
+	cmdAttr := pfsmodules.ChunkMetaCmdAttr{
+		Method:    "getchunkmeta",
+		Path:      path,
+		ChunkSize: chunkSize,
+	}
+	resp := pfsmodules.ChunkMetaCmdResponse{}
+	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
+
+	cmd := pfsmodules.NewChunkMetaCmd(&cmdAttr, &resp)
+	err := s.SubmitChunkMetaRequest(8080, cmd)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return resp.Metas, err
+	}
+
+	//fmt.Println(body)
+	//return subcommands.ExitSuccess
+	return resp.Metas, err
+}
+
+func DownloadChunks(src string, dest string, diffMeta []pfsmodules.ChunkMeta) error {
+	return nil
+}
+
+func DownloadFile(src string, dest string, chunkSize uint32) error {
+	srcMeta, err := GetRemoteChunksMeta(src, chunkSize)
+	if err != nil {
+		return err
+	}
+
+	destMeta, err := pfsmodules.GetChunksMeta(dest, chunkSize)
+	if err != nil {
+		return err
+	}
+
+	diffMeta, err := pfsmodules.GetDiffChunksMeta(srcMeta, destMeta)
+	if err != nil {
+		return err
+	}
+
+	err = DownloadChunks(src, dest, diffMeta)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Upload(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.CpCmdResult, error) {
+	return nil, nil
+}
+
+func Download(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.CpCmdResult, error) {
+	cmdAttr := cpCmdAttr.GetNewCmdAttr()
+
+	lsResp, err := RemoteLs(cmdAttr)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]pfsmodules.CpCmdResult, 0, 100)
+	for _, lsResult := range lsResp.Results {
+		m := pfsmodules.CpCmdResult{}
+		m.Src = lsResult.Path
+		m.Dest = dest
+
+		if len(lsResult.Err) > 0 {
+			fmt.Printf("%s error:%s\n", lsResult.Path, lsResult.Err)
+			m.Err = lsResult.Err
+			results = append(results, m)
+			continue
+		}
+
+		if err := DownloadFile(lsResult.Path, dest, pfsmodules.DefaultChunkSize); err != nil {
+			//fmt.Printf("%s error:%s\n", result.Path, result.Err)
+			m.Err = lsResult.Err
+			results = append(results, m)
+			continue
+		}
+
+		results = append(results, m)
 	}
 
 	return results, nil
@@ -92,15 +189,10 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 
 func RemoteCp(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.CpCmdResult, error) {
 	resp := pfsmodules.RemoteCpCmdResponse{}
-	cmdAttr := pfsmodules.CmdAttr{
-		Method:  cpCmdAttr.Method,
-		Options: cpCmdAttr.Options,
-		Args:    cpCmdAttr.Args,
-	}
-
+	cmdAttr := cpCmdAttr.GetNewCmdAttr()
 	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
 
-	remoteCpCmd := pfsmodules.NewRemoteCpCmd(&cmdAttr, &resp)
+	remoteCpCmd := pfsmodules.NewRemoteCpCmd(cmdAttr, &resp)
 	_, err := s.SubmitCmdReqeust("POST", "api/v1/files", 8080, remoteCpCmd)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -109,67 +201,3 @@ func RemoteCp(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.C
 
 	return resp.Results, nil
 }
-
-/*
-//local ... to remote
-//remote ... to local
-//remote ... to remote
-func check(attr *CpCmdAttr) error {
-	if len(attr.Src) < 1 || len(attr.Dest) < 1 {
-		return errors.New("too few aruments")
-	}
-
-	//if len(attr.Args)
-}
-
-func expand(src *CpCmdAttr) (*CpCmdAttr, error) {
-}
-
-func expandClientPath(path string) ([]string, error) {
-	return nil, nil
-}
-
-func expandRemotePath(path string) ([]string, error) {
-	return nil, nil
-}
-
-func expandPath(attr pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdAttr, error) {
-	return nil, nil
-}
-
-func cp(src, dest string) {
-}
-
-func upload(attr *pfsmodules.CpCmdAttr) error {
-	return nil
-}
-
-func download(attr *pfsmodules.CpCmdAttr) error {
-	return nil
-}
-
-func remoteCp(attr *pfsmodules.CpCmdAttr) error {
-	return nil
-}
-
-
-
-func RunOne(attr pfsmodules.CpCmdAttr) error {
-	var err error
-	if pfsmodules.IsRemotePath(attr.Src) {
-		if pfsmodules.IsRemotePath(attr.Dest) {
-			err = remoteCp(attr)
-		} else {
-			err = download(attr)
-		}
-		return err
-	}
-
-	if !pfsmodules.IsRemotePath(attr.Dest) {
-		return errors.New("can't cp local to local")
-	}
-
-	err = upload(attr)
-	return err
-}
-*/

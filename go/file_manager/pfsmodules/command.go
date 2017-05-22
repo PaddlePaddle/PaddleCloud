@@ -41,9 +41,10 @@ func (p *JsonResponse) SetErr(err string) {
 }
 
 const (
-	FileNotFound        = "no such file or directory"
-	DirectoryNotAFile   = "should be a file not a directory"
-	NotSourportedMethod = "not surported method"
+	FileNotFound         = "no such file or directory"
+	DirectoryNotAFile    = "should be a file not a directory"
+	NotSourportedMethod  = "not surported method"
+	CopyFromLocalToLocal = "don't support copy local to local"
 )
 
 const (

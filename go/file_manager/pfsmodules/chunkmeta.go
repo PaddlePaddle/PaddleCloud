@@ -4,9 +4,11 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -49,6 +51,18 @@ type ChunkMetaCmd struct {
 	resp    *ChunkMetaCmdResponse
 }
 
+func (p *ChunkMetaCmd) GetCmdAttr() *ChunkMetaCmdAttr {
+	return p.cmdAttr
+}
+
+func (p *ChunkMetaCmd) GetResponse() *ChunkMetaCmdResponse {
+	return p.resp
+}
+
+func (p *ChunkMetaCmd) SetResponse(resp *ChunkMetaCmdResponse) {
+	p.resp = resp
+}
+
 func NewChunkMetaCmd(cmdAttr *ChunkMetaCmdAttr,
 	resp *ChunkMetaCmdResponse) *ChunkMetaCmd {
 	return &ChunkMetaCmd{
@@ -83,7 +97,7 @@ func GetChunkMetaCmd(w http.ResponseWriter, r *http.Request) *ChunkMetaCmd {
 		return nil
 	}
 
-	chunkSize := uint32(defaultChunkSize)
+	chunkSize := uint32(DefaultChunkSize)
 	if len(chunkStr) == 0 {
 	} else {
 		inputSize, err := strconv.Atoi(chunkStr)
@@ -183,4 +197,26 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 
 	//log.Println(len()
 	return metas, nil
+}
+
+func (p *ChunkMetaCmdAttr) GetRequestUrl(urlPath string) (string, error) {
+	var Url *url.URL
+	Url, err := url.Parse(urlPath)
+	if err != nil {
+		return "", err
+	}
+
+	Url.Path += "/api/v1/chunks"
+	parameters := url.Values{}
+	parameters.Add("path", p.Path)
+	str := fmt.Sprint(p.ChunkSize)
+	parameters.Add("chunksize", str)
+	parameters.Add("method", p.Method)
+	Url.RawQuery = parameters.Encode()
+
+	return Url.RawQuery, nil
+}
+
+func GetDiffChunksMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, error) {
+	return nil, nil
 }

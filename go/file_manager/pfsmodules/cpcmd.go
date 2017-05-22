@@ -13,8 +13,8 @@ import (
 
 type CpCmdResult struct {
 	Err  string `json:"err"`
-	Src  string `json:"path"`
 	Dest string `json:"Dest"`
+	Src  string `json:"path"`
 }
 
 /*
@@ -34,6 +34,14 @@ func NewCpCmdAttr(cmdName string, f *flag.FlagSet) *CpCmdAttr {
 		Method:  attr.Method,
 		Options: attr.Options,
 		Args:    attr.Args,
+	}
+}
+
+func (p *CpCmdAttr) GetNewCmdAttr() *CmdAttr {
+	return &CmdAttr{
+		Method:  p.Method,
+		Options: p.Options,
+		Args:    p.Args,
 	}
 }
 
