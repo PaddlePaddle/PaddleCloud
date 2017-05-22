@@ -1,7 +1,7 @@
 import kubernetes
 from kubernetes import client, config
 import os
-from cephfs_volume import CephFSVolume
+from volumes import *
 
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164
@@ -99,13 +99,13 @@ class PaddleJob(object):
     def _get_trainer_volumes(self):
         volumes = []
         for item in self._volumes:
-            volumes.append(item.volume)
+            volumes.append(item["volume"])
         return volumes
 
     def _get_trainer_volume_mounts(self):
         volume_mounts = []
         for item in self._volumes:
-            volume_mounts.append(item.volume_mount)
+            volume_mounts.append(item["volume_mount"])
         return volume_mounts
 
     def new_trainer_job(self):

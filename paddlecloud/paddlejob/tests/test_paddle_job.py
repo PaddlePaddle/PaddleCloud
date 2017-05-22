@@ -1,6 +1,5 @@
 import unittest
 from paddle_job import PaddleJob
-from paddlejob import CephFSVolume
 class PaddleJobTest(unittest.TestCase):
     def __new_paddle_job(self):
         return PaddleJob(
@@ -14,14 +13,7 @@ class PaddleJobTest(unittest.TestCase):
             pscpu=1,
             psmemory="1Gi",
             topology="train.py",
-            volumes=[
-                CephFSVolume(
-                    monitors_addr="192.168.1.123:6789",
-                    user="admin",
-                    secret_name="cephfs-secret",
-                    mount_path="/mnt/cephfs",
-                    cephfs_path="/")
-            ])
+            volumes=[])
     def test_runtime_image(self):
         paddle_job=self.__new_paddle_job()
         self.assertEqual(paddle_job.pservers, 3)
