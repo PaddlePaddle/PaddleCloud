@@ -14,7 +14,6 @@ tmpl_volume_mount = {
 }
 
 def __render(tmpl, **kwargs):
-    tmpl.replace("$NAME", "sfsdf")
     for k, v in kwargs.items():
         tmpl_k = "$%s" % k.upper()
         if tmpl_k in tmpl:
