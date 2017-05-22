@@ -261,27 +261,28 @@ else:
 #if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
 #the following is an example:
 #DATACENTERS = {
-#    "datacenter1":{
-#        "monitors_addr": "172.19.32.166:6789",
-#        "secret": "ceph-secret",
-#        "user": "admin",
-#        "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
-#        "cephfs_path": "/%s" # cephfs_path % username
-#        "admin_key": "/certs/admin.secret"
-#    }
+#   "datacenter1":{
+#       "fstype": "cephfs",
+#       "monitors_addr": "172.19.32.166:6789",
+#       "secret": "ceph-secret",
+#       "user": "admin",
+#       "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
+#       "cephfs_path": "/%s" # cephfs_path % username
+#       "admin_key": "/certs/admin.secret"
+#   }
 #}
 #for HostPath example:
 #DATACENTERS = {
 #   ...
 #   "dc1":{
-#       "type": "hostpath",
+#       "fstype": "hostpath",
 #       "host_path": "/mnt/hdfs/",
 #       "mount_path" "/pfs/dc1/home/%s/" # mount_path % username
 #    }
 #}
 DATACENTERS = {
     "datacenter1":{
-        "type": "cephfs",
+        "fstype": "cephfs",
         "monitors_addr": "172.19.32.166:6789",
         "secret": "ceph-secret",
         "user": "admin",

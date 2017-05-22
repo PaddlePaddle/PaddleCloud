@@ -4,7 +4,6 @@ from django.conf import settings
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from . import PaddleJob
-from volumes import CephFSVolume, HostPathVolume
 from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
@@ -40,23 +39,8 @@ class JobsView(APIView):
             return utils.simple_response(500, "no datacenter specified")
         dc = obj.get("datacenter")
         volumes = []
-        for name, cfg in settings.DATACENTERS.items():
-            if dc == name:
-                if cfg["type"] == "cephfs":
-                    volumes.append(CephFSVolume(
-                        monitors_addr = cfg["monitors_addr"],
-                        user = cfg["user"],
-                        secret_name = cfg["secret"],
-                        mount_path = cfg["mount_path"] % username,
-                        cephfs_path = cfg["cephfs_path"] % username
-                    ))
-                elif cfg["type"] == "hostpath":
-                    volumes.append(HostPathVolume(
-                        name = dc.replace("_", "-"),
-                        host_path = cfg["host_path"],
-                        mount_path = cfg["mount_path"] % username
-                    ))
-
+        if dc in settings.DATACENTERS:
+            volumes.append(volume.get_volume_config(settings.DATACENTERS[dc]))
 
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
