@@ -1,7 +1,7 @@
 import kubernetes
 from kubernetes import client, config
 import os
-from cephfs_volume import CephFSVolume
+from volumes import *
 
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164

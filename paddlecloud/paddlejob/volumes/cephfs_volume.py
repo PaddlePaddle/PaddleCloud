@@ -1,17 +1,6 @@
+from . import Volume
 __all__ = ["CephFSVolume"]
 
-
-class Volume(object):
-    def __init__(self):
-        pass
-
-    @property
-    def volume(self):
-        return {}
-
-    @property
-    def volume_mount(self):
-        return {}
 
 class CephFSVolume(Volume):
     def __init__(self, monitors_addr, user, secret_name, mount_path, cephfs_path):

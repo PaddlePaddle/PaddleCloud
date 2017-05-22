@@ -270,6 +270,14 @@ else:
 #        "admin_key": "/certs/admin.secret"
 #    }
 #}
+#for HostPath example:
+#DATACENTERS = {
+#   ...
+#   "dc1":{
+#       "host_path": "/mnt/hdfs/",
+#       "mount_path" "/pfs/dc1/home/%s/" # mount_path % username
+#    }
+#}
 DATACENTERS = {
     "datacenter1":{
         "type": "cephfs",
