@@ -4,8 +4,11 @@ import (
 	//"encoding/json"
 	//"github.com/cloud/go/file_manager/pfscommon"
 	"fmt"
+	"github.com/cloud/go/file_manager/pfscommon"
 	"github.com/cloud/go/file_manager/pfsmodules"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 )
@@ -139,7 +142,7 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
+func GetChunksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	method := r.URL.Query().Get("method")
 
 	log.Println(r.URL.String())
@@ -162,9 +165,78 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+	multipart_reader := multipart.NewReader(&r, pfscommon.MultiPartBoundary)
+	for {
+		part, error := multipart_reader.NextPart()
+		if error == io.EOF {
+			break
+		}
+
+		/*
+			if part.FormName() == "offset"
+			part.FileName()
+
+			content, error := ioutil.ReadAll(part)
+			fmt.Println("Form name: ", part.FormName(), "'s", "Content is: ", string(content))
+		*/
+	}
+
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile(paramName, fi.Name())
 }
 
 func PatchChunksHandler(w http.ResponseWriter, r *http.Request) {
+	multipart_reader := multipart.NewReader(&r, pfscommon.MultiPartBoundary)
+	for {
+		part, error := multipart_reader.NextPart()
+		if error == io.EOF {
+			break
+		}
+
+		if part.FormName() == "chunk" {
+			file, offset, len := parse(part.FileName())
+
+			f, err := pfsmodules.GetChunkWriter(file, offset)
+			if err != nil {
+				return err
+			}
+
+			writen, err := io.Copy(f, part)
+			if err != nil {
+				return err
+			}
+
+			if writen != 
+ for {
+
+                         buffer := make([]byte, 100000)
+                         cBytes, err := part.Read(buffer)
+                         if err == io.EOF {
+                                 fmt.Printf("\nLast buffer read!")
+                                 break
+                         }
+                         read = read + int64(cBytes)
+
+                         //fmt.Printf("\r read: %v  length : %v \n", read, length)
+
+                         if read > 0 {
+                                 p = float32(read*100) / float32(length)
+                                 //fmt.Printf("progress: %v \n", p)
+                                 <-ticker
+                                 fmt.Printf("\rUploading progress %v", p) // for console
+                                 dst.Write(buffer[0:cBytes])
+                         } else {
+                                 break
+                         }
+
+                 }
+		}
+
+		content, error := ioutil.ReadAll(part)
+		fmt.Println("Form name: ", part.FormName(), "'s", "Content is: ", string(content))
+
+	}
+
 }
 
 /*

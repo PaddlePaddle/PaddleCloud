@@ -218,5 +218,8 @@ func (p *ChunkMetaCmdAttr) GetRequestUrl(urlPath string) (string, error) {
 }
 
 func GetDiffChunksMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, error) {
+	if destMeta == nil {
+		return srcMeta, nil
+	}
 	return nil, nil
 }

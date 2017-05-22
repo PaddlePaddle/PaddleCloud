@@ -48,7 +48,7 @@ func (p *TouchCmd) GetResponse() Response {
 	return p.resp
 }
 
-func createSizedFile(path string, size int64) error {
+func CreateSizedFile(path string, size int64) error {
 	log.Printf("%s %d\n", path, size)
 	fd, err := os.Create(path)
 	if err != nil {
@@ -106,7 +106,7 @@ func (p *TouchCmd) Run() error {
 
 		//log.Printf("%d %d\n", fi.Size(), fileSize)
 		if os.IsNotExist(err) || fi.Size() != fileSize {
-			if err := createSizedFile(path, fileSize); err != nil {
+			if err := CreateSizedFile(path, fileSize); err != nil {
 				m.Err = err.Error()
 				results = append(results, m)
 				log.Printf("touch path %s error:%s", path, m.Err)

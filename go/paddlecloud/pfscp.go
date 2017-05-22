@@ -5,10 +5,13 @@ import (
 	"flag"
 	//"fmt"
 	//"errors"
+	"errors"
 	"fmt"
 	"github.com/cloud/go/file_manager/pfsmodules"
 	"github.com/google/subcommands"
 	"log"
+	"os"
+	"path/filepath"
 )
 
 type cpCommand struct {
@@ -122,10 +125,11 @@ func GetRemoteChunksMeta(path string, chunkSize uint32) ([]pfsmodules.ChunkMeta,
 }
 
 func DownloadChunks(src string, dest string, diffMeta []pfsmodules.ChunkMeta) error {
+
 	return nil
 }
 
-func DownloadFile(src string, dest string, chunkSize uint32) error {
+func DownloadFile(src string, srcFileSize int64, dest string, chunkSize uint32) error {
 	srcMeta, err := GetRemoteChunksMeta(src, chunkSize)
 	if err != nil {
 		return err
@@ -133,7 +137,13 @@ func DownloadFile(src string, dest string, chunkSize uint32) error {
 
 	destMeta, err := pfsmodules.GetChunksMeta(dest, chunkSize)
 	if err != nil {
-		return err
+		if err == os.ErrNotExist {
+			if err := pfsmodules.CreateSizedFile(dest, srcFileSize); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	diffMeta, err := pfsmodules.GetDiffChunksMeta(srcMeta, destMeta)
@@ -162,26 +172,50 @@ func Download(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.C
 	}
 
 	results := make([]pfsmodules.CpCmdResult, 0, 100)
-	for _, lsResult := range lsResp.Results {
-		m := pfsmodules.CpCmdResult{}
-		m.Src = lsResult.Path
-		m.Dest = dest
+	m := pfsmodules.CpCmdResult{}
+	m.Src = src
+	m.Dest = dest
 
-		if len(lsResult.Err) > 0 {
-			fmt.Printf("%s error:%s\n", lsResult.Path, lsResult.Err)
-			m.Err = lsResult.Err
-			results = append(results, m)
-			continue
-		}
-
-		if err := DownloadFile(lsResult.Path, dest, pfsmodules.DefaultChunkSize); err != nil {
-			//fmt.Printf("%s error:%s\n", result.Path, result.Err)
-			m.Err = lsResult.Err
-			results = append(results, m)
-			continue
-		}
-
+	if len(lsResp.Err) > 0 {
+		fmt.Printf("%s error:%s\n", src, lsResp.Err)
+		m.Err = lsResp.Err
 		results = append(results, m)
+		return results, errors.New(m.Err)
+	}
+
+	if len(lsResp.Results) > 1 {
+		fi, err := os.Stat(dest)
+		if err != nil {
+			if err == os.ErrNotExist {
+				os.MkdirAll(dest, 0755)
+			}
+			return results, err
+		}
+
+		if !fi.IsDir() {
+			m.Err = pfsmodules.DestShouldBeDirectory
+			results = append(results, m)
+			return results, errors.New(m.Err)
+		}
+	}
+
+	for _, lsResult := range lsResp.Results {
+		for _, meta := range lsResult.Metas {
+
+			m := pfsmodules.CpCmdResult{}
+			m.Src = meta.Path
+			_, file := filepath.Split(meta.Path)
+			m.Dest = dest + "/" + file
+
+			if err := DownloadFile(m.Src, meta.Size, m.Dest, pfsmodules.DefaultChunkSize); err != nil {
+				//fmt.Printf("%s error:%s\n", result.Path, result.Err)
+				m.Err = lsResult.Err
+				results = append(results, m)
+				break
+			}
+
+			results = append(results, m)
+		}
 	}
 
 	return results, nil

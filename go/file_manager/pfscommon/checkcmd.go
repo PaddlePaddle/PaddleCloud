@@ -1,5 +1,6 @@
 package pfscommon
 
+/*
 type FilePath struct {
 	Path       string
 	Local      bool
@@ -33,3 +34,4 @@ func CheckCpSynopsis(cmdStr string) (Cmd, error) {
 func CheckCmdAuthor(cmd Cmd, user string) error {
 	return nil
 }
+*/
