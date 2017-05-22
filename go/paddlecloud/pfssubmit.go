@@ -91,7 +91,7 @@ func (s *CmdSubmitter) SubmitCmdReqeust(
 	httpMethod string,
 	restPath string,
 	port uint32,
-	cmd pfsmod.Command) ([]byte, error) {
+	cmd pfsmod.Command) (pfsmod.Response, error) {
 
 	jsonString, err := json.Marshal(cmd.GetCmdAttr())
 	if err != nil {
@@ -137,5 +137,5 @@ func (s *CmdSubmitter) SubmitCmdReqeust(
 		cmdResp.SetErr(err.Error())
 		return nil, err
 	}
-	return body, err
+	return cmdResp, err
 }

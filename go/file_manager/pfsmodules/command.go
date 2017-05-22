@@ -66,6 +66,12 @@ type Option struct {
 	Value string `json:"Value"`
 }
 
+/*
+type CmdAttrFace interface {
+	Name() string
+}
+*/
+
 type CmdAttr struct {
 	Method  string   `json:"method"`
 	Options []Option `json:"options"`

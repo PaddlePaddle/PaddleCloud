@@ -2,12 +2,12 @@ package pfsmodules
 
 import (
 	"encoding/json"
-	"errors"
-	"io"
+	//errors"
+	//"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
+	//"os"
+	//"path/filepath"
 )
 
 type RemoteCpCmdResponse struct {
@@ -43,48 +43,35 @@ func (p *RemoteCpCmd) GetResponse() Response {
 	return p.resp
 }
 
-func (p *RemoteCpCmd) Run() {
-	//log.Println(p.cmd.Args)
-	results := make([]RemoteCpCmdResult, 0, 100)
+func (p *RemoteCpCmd) Run() error {
+	cpCmdAttr := CpCmdAttr{
+		Method:  p.cmdAttr.Method,
+		Options: p.cmdAttr.Options,
+		Args:    p.cmdAttr.Args,
+	}
 
-	src, err := p.getSrc()
+	srcs, err := cpCmdAttr.GetSrc()
 	if err != nil {
 		return err
 	}
 
-	dest, err := p.getDest()
+	dest, err := cpCmdAttr.GetDest()
 	if err != nil {
-		return err
+		return nil
 	}
 
-	for _, arg := range src {
-		log.Printf("ls %s\n", arg)
-		m := RemoteCpCmdResult{}
-		m.Path = arg
+	results := make([]CpCmdResult, 0, 100)
+	for _, src := range srcs {
+		m, err := CopyGlobPath(src, dest)
+		results = append(results, m...)
 
-		list, err := filepath.Glob(arg)
 		if err != nil {
-			m.Err = err.Error()
-			results = append(results, m)
-			log.Printf("glob path:%s error:%s", arg, m.Err)
-			continue
-		}
-
-		if len(list) == 0 {
-			m.Err = FileNotFound
-			results = append(results, m)
-			log.Printf("glob path:%s error:%s", arg, m.Err)
-			continue
-		}
-
-		for _, path := range list {
-			m.Path = path
-			m.Metas = lsPath(path, r)
-			results = append(results, m)
+			return err
 		}
 	}
 
 	p.resp.Results = results
+	return nil
 }
 
 func (p *RemoteCpCmd) RunAndResponse(w http.ResponseWriter) error {

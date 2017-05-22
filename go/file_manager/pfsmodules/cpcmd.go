@@ -1,11 +1,12 @@
 package pfsmodules
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"errors"
 	"io"
 	"log"
-	"net/http"
+	//"net/http"
+	"flag"
 	"os"
 	"path/filepath"
 )
@@ -16,10 +17,24 @@ type CpCmdResult struct {
 	Dest string `json:"Dest"`
 }
 
+/*
 type CpCmdAttr struct {
 	Method  string   `json:"method"`
 	Options []Option `json:"options"`
 	Args    []string `json:"args"`
+}
+*/
+
+type CpCmdAttr CmdAttr
+
+func NewCpCmdAttr(cmdName string, f *flag.FlagSet) *CpCmdAttr {
+	attr := NewCmdAttr(cmdName, f)
+
+	return &CpCmdAttr{
+		Method:  attr.Method,
+		Options: attr.Options,
+		Args:    attr.Args,
+	}
 }
 
 func (p *CpCmdAttr) Check() error {
@@ -29,22 +44,22 @@ func (p *CpCmdAttr) Check() error {
 	return nil
 }
 
-func (p *CpCmdAtr) GetSrc() []string {
-	if err := p.check(); err != nil {
-		return err
+func (p *CpCmdAttr) GetSrc() ([]string, error) {
+	if err := p.Check(); err != nil {
+		return nil, err
 	}
 
 	src := p.Args[:len(p.Args)-1]
-	return &src
+	return src, nil
 }
 
-func (p *CpCmdAttr) GetDest() []string {
-	if err := p.check(); err != nil {
-		return err
+func (p *CpCmdAttr) GetDest() (string, error) {
+	if err := p.Check(); err != nil {
+		return "", err
 	}
 
-	dest := p.Args[len(p.Args)-1 : len(p.Args)]
-	return &dest
+	dest := p.Args[len(p.Args)-1]
+	return dest, nil
 }
 
 // Copies file source to destination dest.
@@ -69,11 +84,11 @@ func CopyFile(source string, dest string) (err error) {
 	return nil
 }
 
-func CopyDir(src, dest string) []CpCmdResult {
+func CopyDir(src, dest string) ([]CpCmdResult, error) {
 	log.Printf("src %s dest %s", src, dest)
 
 	//results := CpCmdResults{}
-	Results := make([]CpCmdResult, 0, 100)
+	results := make([]CpCmdResult, 0, 100)
 
 	filepath.Walk(src, func(subpath string, info os.FileInfo, err error) error {
 		//log.Println("path:\t" + path)
@@ -82,29 +97,32 @@ func CopyDir(src, dest string) []CpCmdResult {
 		m.Src = subpath + info.Name()
 		m.Dest = dest + info.Name()
 
-		if info.IsFile() {
-			m.err = CopyFile(m.Src, m.Dest)
-			Results = append(Results, m)
-			continue
+		if !info.IsDir() {
+			err := CopyFile(m.Src, m.Dest)
+			if err != nil {
+				m.Err = err.Error()
+				results = append(results, m)
+				return err
+			}
+			results = append(results, m)
+			return err
 		}
 
 		if subpath != src {
-			m.err = os.MkdirAll(m.Dest, 0666)
+			err := os.MkdirAll(m.Dest, 0666)
 			if err != nil {
-				Results = append(Results, m)
-				//return filepath.
-				goto Last
+				m.Err = err.Error()
+				results = append(results, m)
+				return err
 			}
 			return filepath.SkipDir
 		}
 
-		//log.Println(len(Results))
+		//log.Println(len(results))
 		return nil
 	})
 
-Last:
-	//results.Results = Results
-	return &Results
+	return results, nil
 }
 
 func CopyGlobPath(src, dest string) ([]CpCmdResult, error) {
@@ -118,68 +136,45 @@ func CopyGlobPath(src, dest string) ([]CpCmdResult, error) {
 	if err != nil {
 		m.Err = err.Error()
 		results = append(results, m)
-		log.Printf("glob path:%s error:%s", arg, m.Err)
+		log.Printf("glob path:%s error:%s", src, m.Err)
 		return results, err
 	}
 
 	if len(list) == 0 {
 		m.Err = FileNotFound
 		results = append(results, m)
-		log.Printf("%s error:%s", arg, m.Err)
+		log.Printf("%s error:%s", src, m.Err)
 		return results, errors.New(m.Err)
 	}
 
 	for _, path := range list {
 		m := CpCmdResult{}
 		m.Src = path
-		m.Dest = Dest
+		m.Dest = dest
 
-		fi, err := os.Stat(path)
+		fi, err := os.Stat(m.Src)
 		if err != nil {
 			m.Err = err.Error()
 			results = append(results, m)
-			log.Printf("%s error:%s", arg, m.Err)
-			continue
+			log.Printf("%s to %s error:%s", m.Src, m.Dest, m.Err)
+			return results, err
 		}
 
 		if fi.IsDir() {
-			ret := CopyDir(m.Src, m.Dest)
-			results = append(results, ret)
+			ret, err := CopyDir(m.Src, m.Dest)
+			results = append(results, ret...)
+			return results, err
 		} else {
-			err := CopyFile(path, dest)
+			err := CopyFile(m.Src, m.Dest)
 			if err != nil {
 				m.Err = err.Error()
 				results = append(results, m)
-				log.Printf("%s error:%s", arg, m.Err)
+				log.Printf("%s to %s error:%s", m.Src, m.Dest, m.Err)
 			} else {
 				results = append(results, m)
-				log.Printf("%s error:%s", arg, m.Err)
+				log.Printf("%s to %s error:%s", m.Src, m.Dest, m.Err)
 			}
 		}
-	}
-
-	return results, nil
-}
-
-func (p *CpCmdAttr) Run([]CpCmdResult, error) {
-	//log.Println(p.cmd.Args)
-	src, err := p.getSrc()
-	if err != nil {
-		return nil, err
-	}
-
-	dest, err := p.getDest()
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]CpCmdResult, 0, 100)
-
-	for _, arg := range src {
-		log.Printf("ls %s\n", arg)
-
-		m := CopyGlobPath(arg, dest)
-		results = append(results, m)
 	}
 
 	return results, nil
