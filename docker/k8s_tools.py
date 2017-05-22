@@ -36,14 +36,14 @@ def wait_pods_running(label_selector, desired):
 
 
 def fetch_pserver_ips():
-    label_selector = "paddle-job=%s-pserver" % PADDLE_JOB_NAME
+    label_selector = "paddle-job-pserver=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     pserver_ips = [item[1] for item in pod_list]
     return ",".join(pserver_ips)
 
 
 def fetch_trainer_id():
-    label_selector = "paddle-job=%s-trainer" % PADDLE_JOB_NAME
+    label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     trainer_ips = [item[1] for item in pod_list]
     trainer_ips.sort()
