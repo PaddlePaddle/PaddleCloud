@@ -17,7 +17,7 @@ def __render(tmpl, **kwargs):
     for k, v in kwargs.items():
         tmpl_k = "$%s" % k.upper()
         if tmpl_k in tmpl:
-            if type(v) is str:
+            if type(v) is str or type(v) is unicode:
                 tmpl = tmpl.replace(tmpl_k, "\"%s\"" % v)
             elif type(v) is list:
                 tmpl = tmpl.replace(tmpl_k, json.dumps(v))

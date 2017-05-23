@@ -41,7 +41,7 @@ class JobsView(APIView):
         dc = obj.get("datacenter")
         volumes = []
         if dc in settings.DATACENTERS:
-            volumes.append(volume.get_volume_config(**settings.DATACENTERS[dc]))
+            volumes.append(volume.get_volume_config(name=dc.replace("_","-"), **settings.DATACENTERS[dc]))
 
         registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         paddle_job = PaddleJob(

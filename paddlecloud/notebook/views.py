@@ -139,7 +139,7 @@ def create_user_namespace(username):
     secrets = v1api.list_namespaced_secret(user_namespace)
     for dc, cfg in settings.DATACENTERS.items():
         #create Kubernetes Secret for admin key
-        if cfg["type"] == "cephfs":
+        if cfg["fstype"] == "cephfs":
             secret_found = False
             for ss in secrets.items:
                 if ss.metadata.name == cfg["secret"]:
