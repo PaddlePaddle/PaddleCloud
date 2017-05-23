@@ -3,26 +3,20 @@ package pfsserver
 import (
 	//"encoding/json"
 	//"github.com/cloud/go/file_manager/pfscommon"
-	"fmt"
-	"github.com/cloud/go/file_manager/pfscommon"
+	//"fmt"
+	//"github.com/cloud/go/file_manager/pfscommon"
 	"github.com/cloud/go/file_manager/pfsmodules"
 	"io"
 	"log"
+	//"mime/multipart"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strconv"
 )
 
 func lsCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
 	resp := pfsmodules.LsCmdResponse{}
-
-	/*
-		if req.Method != "ls" {
-			resp.SetErr("not surported method:" + req.Method)
-			pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
-			return
-		}
-	*/
 
 	log.Print(req)
 
@@ -69,23 +63,6 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 	log.Print(req)
 }
 
-/*
-func SendHttpTxtResponse(w http.ResponseWriter, status int32) {
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-	w.WriteHeader(http.StatusMethodNotAllowed)
-	fmt.Fprintf(w, "%s %s",
-		strconv.Itoa(http.StatusMethodNotAllowed),
-		http.StatusText(http.StatusMethodNotAllowed))
-}
-
-func SendJsonResponse(w http.ResponseWriter, status int32) {
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-	w.WriteHeader(http.StatusMethodNotAllowed)
-	fmt.Fprintf(w, "%s %s",
-		strconv.Itoa(http.StatusMethodNotAllowed),
-		http.StatusText(http.StatusMethodNotAllowed))
-}
-*/
 func rmCmdHandler(w http.ResponseWriter, req *pfsmodules.CmdAttr) {
 	resp := pfsmodules.RmCmdResponse{}
 
@@ -147,6 +124,7 @@ func GetChunksMetaHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Println(r.URL.String())
 
+	resp := pfsmodules.JsonResponse{}
 	switch method {
 	case "getchunkmeta":
 		cmd := pfsmodules.GetChunkMetaCmd(w, r)
@@ -155,118 +133,150 @@ func GetChunksMetaHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		cmd.RunAndResponse(w)
 	default:
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		//w.Write(http.StatusText(http.StatusMethodNotAllowed))
-		fmt.Fprintf(w, "%s %s",
-			strconv.Itoa(http.StatusMethodNotAllowed),
-			http.StatusText(http.StatusMethodNotAllowed))
+		resp.SetErr(http.StatusText(http.StatusMethodNotAllowed))
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
 	}
+}
+
+/*
+// Streams upload directly from file -> mime/multipart -> pipe -> http-request
+func streamingUploadFile(fileName string, offset int64, len int64, w *io.PipeWriter, file *os.File) error {
+	defer file.Close()
+	defer w.Close()
+	writer := multipart.NewWriter(w)
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return err
+	}
+	_, err = io.CopyN(part, file, len)
+	if err != nil {
+		return err
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getChunkData(path string, offset int64, len int64, w *http.ResponseWriter) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return err
+	}
+
+	reader, writer := io.Pipe()
+	fileName := pfsmodules.GetFileNameParam(path, offset, len)
+	log.Printf("filename param %s", fileName)
+
+	go streamingUploadFile(fileName, offset, len, writer, file)
+
+	_, err = http.NewRequest("POST", uri, reader)
+	return err
+}
+*/
+
+func writeStreamChunkData(path string, offset int64, len int64, w http.ResponseWriter) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return err
+	}
+
+	writer := multipart.NewWriter(w)
+	defer writer.Close()
+
+	fileName := pfsmodules.GetFileNameParam(path, offset, len)
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.CopyN(part, file, len)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
-	multipart_reader := multipart.NewReader(&r, pfscommon.MultiPartBoundary)
-	for {
-		part, error := multipart_reader.NextPart()
-		if error == io.EOF {
-			break
-		}
-
-		/*
-			if part.FormName() == "offset"
-			part.FileName()
-
-			content, error := ioutil.ReadAll(part)
-			fmt.Println("Form name: ", part.FormName(), "'s", "Content is: ", string(content))
-		*/
+	resp := pfsmodules.JsonResponse{}
+	req, err := pfsmodules.NewChunkCmdAttr(r)
+	if err != nil {
+		resp.SetErr(err.Error())
+		pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
+		return
 	}
 
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(paramName, fi.Name())
+	switch req.Method {
+	case "getchunkdata":
+		if err := writeStreamChunkData(req.Path, req.Offset, int64(req.ChunkSize), w); err != nil {
+			resp.SetErr(err.Error())
+			pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
+			return
+		}
+	default:
+		resp.SetErr(http.StatusText(http.StatusMethodNotAllowed))
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusMethodNotAllowed)
+	}
+
+	return
 }
 
 func PatchChunksHandler(w http.ResponseWriter, r *http.Request) {
-	multipart_reader := multipart.NewReader(&r, pfscommon.MultiPartBoundary)
+}
+
+func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
+	resp := pfsmodules.JsonResponse{}
+	partReader, err := r.MultipartReader()
+
+	if err != nil {
+		resp.SetErr("error:" + err.Error())
+		pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusBadRequest)
+		return
+	}
+
 	for {
-		part, error := multipart_reader.NextPart()
+		part, error := partReader.NextPart()
 		if error == io.EOF {
 			break
 		}
 
 		if part.FormName() == "chunk" {
-			file, offset, len := parse(part.FileName())
-
-			f, err := pfsmodules.GetChunkWriter(file, offset)
+			chunkCmdAttr, err := pfsmodules.ParseFileNameParam(part.FileName())
 			if err != nil {
-				return err
+				resp.SetErr("error:" + err.Error())
+				pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusInternalServerError)
+				break
 			}
+
+			f, err := pfsmodules.GetChunkWriter(chunkCmdAttr.Path, chunkCmdAttr.Offset)
+			if err != nil {
+				resp.SetErr("open " + chunkCmdAttr.Path + "error:" + err.Error())
+				pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusInternalServerError)
+				//return err
+				break
+			}
+			defer f.Close()
 
 			writen, err := io.Copy(f, part)
-			if err != nil {
-				return err
+			if err != nil || writen != int64(chunkCmdAttr.ChunkSize) {
+				resp.SetErr("read " + strconv.FormatInt(writen, 10) + "error:" + err.Error())
+				pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusBadRequest)
+				//return err
+				break
 			}
-
-			if writen != 
- for {
-
-                         buffer := make([]byte, 100000)
-                         cBytes, err := part.Read(buffer)
-                         if err == io.EOF {
-                                 fmt.Printf("\nLast buffer read!")
-                                 break
-                         }
-                         read = read + int64(cBytes)
-
-                         //fmt.Printf("\r read: %v  length : %v \n", read, length)
-
-                         if read > 0 {
-                                 p = float32(read*100) / float32(length)
-                                 //fmt.Printf("progress: %v \n", p)
-                                 <-ticker
-                                 fmt.Printf("\rUploading progress %v", p) // for console
-                                 dst.Write(buffer[0:cBytes])
-                         } else {
-                                 break
-                         }
-
-                 }
 		}
-
-		content, error := ioutil.ReadAll(part)
-		fmt.Println("Form name: ", part.FormName(), "'s", "Content is: ", string(content))
-
 	}
-
-}
-
-/*
-func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
-	method := r.URL.Query().Get("method")
-
-	log.Println(r.URL.String())
-
-	switch method {
-	case "rm":
-		cmd := pfsmodules.GetRMCmd(w, r)
-		if cmd == nil {
-			return
-		}
-		cmd.RunAndResponse(w)
-	default:
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		//w.Write(http.StatusText(http.StatusMethodNotAllowed))
-		fmt.Fprintf(w, "%s %s",
-			strconv.Itoa(http.StatusMethodNotAllowed),
-			http.StatusText(http.StatusMethodNotAllowed))
-	}
-}
-*/
-
-func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("w")
-	//for k
-	path := r.URL.Query().Get("path")
-
-	log.Println(path)
 }

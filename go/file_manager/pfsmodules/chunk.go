@@ -3,9 +3,15 @@ package pfsmodules
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 )
 
 const (
@@ -20,9 +26,10 @@ type Chunk struct {
 }
 
 type ChunkCmdAttr struct {
-	Path   string `json:"path"`
-	Offset int64  `json:"offset"`
-	len    uint32 `json:len`
+	Method    string `json:"method"`
+	Path      string `json:"path"`
+	Offset    int64  `json:"offset"`
+	ChunkSize uint32 `chunksize`
 }
 
 type ChunkCmd struct {
@@ -30,33 +37,31 @@ type ChunkCmd struct {
 	resp    *Chunk
 }
 
-func WriteChunk(chunk Chunk) {
-	fd, err := os.OpenFile(chunk.Meta.Path, os.O_RDWR, 0666)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
+func NewChunkCmdAttr(r *http.Request) (*ChunkCmdAttr, error) {
 
-	_, err = fd.Seek(chunk.Meta.Offset, 0)
-	if err != nil {
-		return err
-	}
-
-	_, err = fd.Write([]chunk.Meta.Data[:chunk.Meta.Len])
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func GetChunkWriter(path string, int offset) (*File, error) {
-	fd, err := os.OpenFile(chunk.Meta.Path, os.O_RDWR, 0666)
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, MaxJsonRequestSize))
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = fd.Seek(chunk.Meta.Offset, 0)
+	if err := r.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	c := &ChunkCmdAttr{}
+	if err := json.Unmarshal(body, c); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func GetChunkWriter(path string, offset int64) (*os.File, error) {
+	fd, err := os.OpenFile(path, os.O_RDWR, 0666)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = fd.Seek(offset, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -74,19 +79,6 @@ func GetChunk(path string, offset int64, len uint32) (*Chunk, error) {
 	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
 		return nil, errors.New("invalid len:" + string(len))
 	}
-
-	/*
-		fi, err := f.Stat()
-		if err != nil {
-			return nil, err
-		}
-	*/
-
-	/*
-		if offset < 0 || offset > fi.Size() {
-			return nil, Errors.New("offset > filesize:" + string(fi.Size()))
-		}
-	*/
 
 	chunk := Chunk{}
 	chunk.Data = make([]byte, len)
@@ -109,42 +101,35 @@ func GetChunk(path string, offset int64, len uint32) (*Chunk, error) {
 	return &chunk, nil
 }
 
-// https://github.com/gebi/go-fileupload-example/blob/master/main.go
-// Streams upload directly from file -> mime/multipart -> pipe -> http-request
-func streamingUploadFile(params map[string]string, paramName, path string, w *io.PipeWriter, file *os.File) {
-	defer file.Close()
-	defer w.Close()
-	writer := multipart.NewWriter(w)
-	part, err := writer.CreateFormFile(paramName, filepath.Base(path))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = io.Copy(part, file)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	for key, val := range params {
-		_ = writer.WriteField(key, val)
-	}
-
-	err = writer.Close()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+func GetFileNameParam(path string, offset int64, len int64) string {
+	return fmt.Sprintf("filename=%s&offset=%d&chunksize=%d", path, offset, len)
 }
 
-// Creates a new file upload http request with optional extra params
-func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
+// path example:
+// 	  filename=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
+func ParseFileNameParam(path string) (*ChunkCmdAttr, error) {
+	attr := ChunkCmdAttr{}
+
+	m, err := url.ParseQuery(path)
+	if err != nil ||
+		len(m["path"]) == 0 ||
+		len(m["offset"]) == 0 ||
+		len(m["chunksize"]) == 0 {
+		return &attr, errors.New(http.StatusText(http.StatusBadGateway))
 	}
 
-	r, w := io.Pipe()
-	go streamingUploadFile(params, paramName, path, w, file)
-	return http.NewRequest("POST", uri, r)
+	//var err error
+	attr.Path = m["path"][0]
+	attr.Offset, err = strconv.ParseInt(m["offset"][0], 10, 64)
+	if err != nil {
+		return &attr, errors.New("bad arguments offset")
+	}
+
+	chunkSize, err := strconv.ParseInt(m["chunksize"][0], 10, 64)
+	if err != nil {
+		return &attr, errors.New("bad arguments offset")
+	}
+	attr.ChunkSize = uint32(chunkSize)
+
+	return &attr, nil
 }
