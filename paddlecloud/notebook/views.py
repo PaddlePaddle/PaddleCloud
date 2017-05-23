@@ -66,6 +66,11 @@ class SignupView(account.views.SignupView):
         self.update_profile(form)
         logging.info("creating default user certs...")
         tls.create_user_cert(settings.CA_PATH, form.cleaned_data["email"])
+        # HACK: username is the same as user email
+        # create user's default RBAC permissions
+        logging.info("creating default user namespace and RBAC...")
+        create_user_namespace(form.cleaned_data["email"])
+        create_user_RBAC_permissions(form.cleaned_data["email"])
 
         super(SignupView, self).after_signup(form)
 
@@ -119,8 +124,51 @@ def user_certs_generate(request):
         logging.error(str(e))
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+def create_user_RBAC_permissions(username):
+    namespace = utils.email_escape(username)
+    rbacapi = kubernetes.client.RbacAuthorizationV1beta1Api(utils.get_admin_api_client())
+    body = {
+    "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+    "kind": "RoleBinding",
+    "metadata": {
+        "name": "%s-admin-binding"%namespace,
+        "namespace": namespace
+        },
+    "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "admin"
+        },
+    "subjects": [{
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "User",
+        "name": username
+        }]
+    }
+    rbacapi.create_namespaced_role_binding(namespace, body)
+    # create service account permissions
+    body = {
+    "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+    "kind": "RoleBinding",
+    "metadata": {
+        "name": "%s-sa-view"%namespace,
+        "namespace": namespace
+        },
+    "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "view"
+        },
+    "subjects": [{
+        "kind": "ServiceAccount",
+        "name": "default",
+        "namespace": namespace
+        }]
+    }
+    rbacapi.create_namespaced_role_binding(namespace, body)
+
 def create_user_namespace(username):
-    v1api = kubernetes.client.CoreV1Api(utils.get_user_api_client(username))
+    v1api = kubernetes.client.CoreV1Api(utils.get_admin_api_client())
     namespaces = v1api.list_namespace()
     user_namespace_found = False
     user_namespace = utils.email_escape(username)
@@ -139,7 +187,7 @@ def create_user_namespace(username):
     secrets = v1api.list_namespaced_secret(user_namespace)
     for dc, cfg in settings.DATACENTERS.items():
         #create Kubernetes Secret for admin key
-        if cfg["type"] == "cephfs":
+        if cfg["fstype"] == "cephfs":
             secret_found = False
             for ss in secrets.items:
                 if ss.metadata.name == cfg["secret"]:
