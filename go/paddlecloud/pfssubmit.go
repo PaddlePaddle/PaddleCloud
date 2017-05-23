@@ -7,11 +7,15 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"github.com/cloud/go/file_manager/pfscommon"
 	pfsmod "github.com/cloud/go/file_manager/pfsmodules"
 	log "github.com/golang/glog"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 func getConfig(file string) (*submitConfig, error) {
@@ -141,10 +145,10 @@ func (s *CmdSubmitter) SubmitCmdReqeust(
 }
 
 func (s *CmdSubmitter) SubmitChunkRequest(port uint32,
-	cmd *pfsmod.ChunkCmd) error {
+	cmd *pfsmod.ChunkCmdAttr) error {
 
 	baseUrl := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port)
-	targetURL, err := cmd.GetCmdAttr().GetRequestUrl(baseUrl)
+	targetURL, err := cmd.GetRequestUrl(baseUrl)
 	if err != nil {
 		return err
 	}
@@ -166,41 +170,33 @@ func (s *CmdSubmitter) SubmitChunkRequest(port uint32,
 		return errors.New("http server returned non-200 status: " + resp.Status)
 	}
 
-	/*
-		partReader := resp.MultipartReader()
-			for {
-				part, error := partReader.NextPart()
-				if error == io.EOF {
-					break
-				}
+	partReader := multipart.NewReader(resp.Body, pfscommon.MultiPartBoundary)
+	for {
+		part, error := partReader.NextPart()
+		if error == io.EOF {
+			break
+		}
 
-				if part.FormName() == "chunk" {
-					chunkCmdAttr, err := pfsmodules.ParseFileNameParam(part.FileName())
-					if err != nil {
-						resp.SetErr("error:" + err.Error())
-						pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusInternalServerError)
-						break
-					}
-
-					f, err := pfsmodules.GetChunkWriter(chunkCmdAttr.Path, chunkCmdAttr.Offset)
-					if err != nil {
-						resp.SetErr("open " + chunkCmdAttr.Path + "error:" + err.Error())
-						pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusInternalServerError)
-						//return err
-						break
-					}
-					defer f.Close()
-
-					writen, err := io.Copy(f, part)
-					if err != nil || writen != int64(chunkCmdAttr.ChunkSize) {
-						resp.SetErr("read " + strconv.FormatInt(writen, 10) + "error:" + err.Error())
-						pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusBadRequest)
-						//return err
-						break
-					}
-				}
+		if part.FormName() == "chunk" {
+			chunkCmdAttr, err := pfsmod.ParseFileNameParam(part.FileName())
+			if err != nil {
+				log.Error("parse filename error")
+				return err
 			}
-	*/
+
+			f, err := pfsmod.GetChunkWriter(chunkCmdAttr.Path, chunkCmdAttr.Offset)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			writen, err := io.Copy(f, part)
+			if err != nil || writen != int64(chunkCmdAttr.ChunkSize) {
+				log.Error("read " + strconv.FormatInt(writen, 10) + "error:" + err.Error())
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -245,4 +241,37 @@ func (s *CmdSubmitter) SubmitChunkMetaRequest(
 	}
 
 	return nil
+}
+
+func (s *CmdSubmitter) SubmitChunkData(port uint32, cmd *pfsmod.ChunkCmdAttr) {
+	/*
+		baseUrl := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port)
+		targetURL, err := cmd.GetRequestUrl(baseUrl)
+		if err != nil {
+			return err
+		}
+		fmt.Println("chunkquest targetURL: " + targetURL)
+
+		req, err := http.NewRequest("POST", targetURL, http.NoBody)
+		if err != nil {
+			return err
+		}
+
+		client := s.client
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.Status != HTTPOK {
+			return errors.New("http server returned non-200 status: " + resp.Status)
+		}
+
+		if err := pfsmodules.writeStreamChunkData(req.Path, req.Offset, int64(req.ChunkSize), w); err != nil {
+			resp.SetErr(err.Error())
+			pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
+			return
+		}
+	*/
 }

@@ -121,10 +121,11 @@ func DownloadChunks(src string, dest string, diffMeta []pfsmodules.ChunkMeta) er
 		return nil
 	}
 
-	/*
-		for _, meta := range diffMeta {
-		}
-	*/
+	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
+	for _, meta := range diffMeta {
+		cmdAttr := pfsmodules.FromArgs(src, meta.Offset, meta.Len)
+		s.SubmitChunkRequest(8080, cmdAttr)
+	}
 
 	return nil
 }
@@ -173,8 +174,6 @@ func Download(src, dest string) ([]pfsmodules.CpCmdResult, error) {
 
 	if len(lsResp.Err) > 0 {
 		fmt.Printf("%s error:%s\n", src, lsResp.Err)
-		//m.Err = lsResp.Err
-		//results = append(results, m)
 		return nil, errors.New(lsResp.Err)
 	}
 
@@ -189,8 +188,6 @@ func Download(src, dest string) ([]pfsmodules.CpCmdResult, error) {
 		}
 
 		if !fi.IsDir() {
-			//m.Err = pfsmodules.DestShouldBeDirectory
-			//results = append(results, m)
 			return nil, errors.New(pfsmodules.DestShouldBeDirectory)
 		}
 	}

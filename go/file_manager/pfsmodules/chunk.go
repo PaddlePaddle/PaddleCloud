@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,12 +30,21 @@ type ChunkCmdAttr struct {
 	Method    string `json:"method"`
 	Path      string `json:"path"`
 	Offset    int64  `json:"offset"`
-	ChunkSize uint32 `chunksize`
+	ChunkSize int64  `chunksize`
 }
 
 type ChunkCmd struct {
 	cmdAttr *ChunkCmdAttr
 	resp    *Chunk
+}
+
+func FromArgs(path string, offset int64, chunkSize int64) *ChunkCmdAttr {
+	return &ChunkCmdAttr{
+		Method:    "getchunkdata",
+		Path:      path,
+		Offset:    offset,
+		ChunkSize: chunkSize,
+	}
 }
 
 func (p *ChunkCmd) GetCmdAttr() *ChunkCmdAttr {
@@ -100,7 +110,7 @@ func GetChunk(path string, offset int64, len uint32) (*Chunk, error) {
 	m.Offset = offset
 	sum := md5.Sum(chunk.Data[:n])
 	m.Checksum = hex.EncodeToString(sum[:])
-	m.Len = uint32(n)
+	m.Len = int64(n)
 
 	return &chunk, nil
 }
@@ -133,7 +143,7 @@ func ParseFileNameParam(path string) (*ChunkCmdAttr, error) {
 	if err != nil {
 		return &attr, errors.New("bad arguments offset")
 	}
-	attr.ChunkSize = uint32(chunkSize)
+	attr.ChunkSize = chunkSize
 
 	return &attr, nil
 }
@@ -159,4 +169,33 @@ func (p *ChunkCmdAttr) GetRequestUrl(urlPath string) (string, error) {
 	Url.RawQuery = parameters.Encode()
 
 	return Url.RawQuery, nil
+}
+
+//func writeStreamChunkData(path string, offset int64, len int64, w http.ResponseWriter) error {
+func writeStreamChunkData(path string, offset int64, len int64, w io.Writer) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return err
+	}
+
+	writer := multipart.NewWriter(w)
+	defer writer.Close()
+
+	fileName := GetFileNameParam(path, offset, len)
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.CopyN(part, file, len)
+	if err != nil {
+		return err
+	}
+	return nil
 }

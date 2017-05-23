@@ -18,7 +18,7 @@ import (
 type ChunkMeta struct {
 	Offset   int64  `json:"offset"`
 	Checksum string `json:"checksum"`
-	Len      uint32 `json:"len"`
+	Len      int64  `json:"len"`
 }
 
 /*
@@ -189,7 +189,7 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 		m.Offset = offset
 		sum := md5.Sum(data[:n])
 		m.Checksum = hex.EncodeToString(sum[:])
-		m.Len = uint32(n)
+		m.Len = int64(n)
 
 		metas = append(metas, m)
 
@@ -240,10 +240,8 @@ func GetDiffChunksMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, 
 	}
 
 	dstIdx := 0
-	diff := make([]ChunkMeta, 0, len(srcMeta))
-
 	srcIdx := 0
-	//src := srcMeta[0]
+	diff := make([]ChunkMeta, 0, len(srcMeta))
 
 	for {
 		if srcMeta[srcIdx].Offset < destMeta[dstIdx].Offset {

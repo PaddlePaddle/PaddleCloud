@@ -182,34 +182,6 @@ func getChunkData(path string, offset int64, len int64, w *http.ResponseWriter) 
 }
 */
 
-func writeStreamChunkData(path string, offset int64, len int64, w http.ResponseWriter) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.Seek(offset, 0)
-	if err != nil {
-		return err
-	}
-
-	writer := multipart.NewWriter(w)
-	defer writer.Close()
-
-	fileName := pfsmodules.GetFileNameParam(path, offset, len)
-	part, err := writer.CreateFormFile("file", fileName)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.CopyN(part, file, len)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	resp := pfsmodules.JsonResponse{}
 	req, err := pfsmodules.NewChunkCmdAttr(r)
@@ -221,7 +193,7 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Method {
 	case "getchunkdata":
-		if err := writeStreamChunkData(req.Path, req.Offset, int64(req.ChunkSize), w); err != nil {
+		if err := pfsmodules.writeStreamChunkData(req.Path, req.Offset, int64(req.ChunkSize), w); err != nil {
 			resp.SetErr(err.Error())
 			pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
 			return
