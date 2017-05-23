@@ -4,14 +4,15 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
-	//"strings"
 )
 
 type ChunkMeta struct {
@@ -159,11 +160,10 @@ func GetChunksMeta(path string, len uint32) ([]ChunkMeta, error) {
 
 	defer f.Close()
 
-	/*
-		if len > defaultMaxChunkSize || len < defaultMinChunkSize {
-			len = defaultMaxChunkSize
-		}
-	*/
+	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
+		//len = defaultMaxChunkSize
+		return nil, errors.New(BadChunkSizeArguments)
+	}
 
 	fi, err := f.Stat()
 	if err != nil {
@@ -209,18 +209,67 @@ func (p *ChunkMetaCmdAttr) GetRequestUrl(urlPath string) (string, error) {
 
 	Url.Path += "/api/v1/chunks"
 	parameters := url.Values{}
+	parameters.Add("method", p.Method)
 	parameters.Add("path", p.Path)
+
 	str := fmt.Sprint(p.ChunkSize)
 	parameters.Add("chunksize", str)
-	parameters.Add("method", p.Method)
+
 	Url.RawQuery = parameters.Encode()
 
 	return Url.RawQuery, nil
 }
 
+type metaSlice []ChunkMeta
+
+func (a metaSlice) Len() int           { return len(a) }
+func (a metaSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a metaSlice) Less(i, j int) bool { return a[i].Offset < a[j].Offset }
+
 func GetDiffChunksMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, error) {
-	if destMeta == nil {
+	if destMeta == nil || len(srcMeta) == 0 {
 		return srcMeta, nil
 	}
+
+	if !sort.IsSorted(metaSlice(srcMeta)) {
+		sort.Sort(metaSlice(srcMeta))
+	}
+
+	if !sort.IsSorted(metaSlice(destMeta)) {
+		sort.Sort(metaSlice(destMeta))
+	}
+
+	dstIdx := 0
+	diff := make([]ChunkMeta, 0, len(srcMeta))
+
+	srcIdx := 0
+	//src := srcMeta[0]
+
+	for {
+		if srcMeta[srcIdx].Offset < destMeta[dstIdx].Offset {
+			diff = append(diff, srcMeta[srcIdx])
+			srcIdx += 1
+		} else if srcMeta[srcIdx].Offset > destMeta[dstIdx].Offset {
+			dstIdx += 1
+		} else {
+			if srcMeta[srcIdx].Checksum != destMeta[dstIdx].Checksum {
+				diff = append(diff, srcMeta[srcIdx])
+			}
+
+			dstIdx += 1
+			srcIdx += 1
+		}
+
+		if dstIdx >= len(destMeta) {
+			break
+		}
+
+		if srcIdx >= len(srcMeta) {
+			break
+		}
+	}
+
+	diff = append(diff, srcMeta[srcIdx:len(srcMeta)]...)
+
 	return nil, nil
 }

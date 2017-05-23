@@ -34,6 +34,7 @@ func (p *lsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.r, "r", false, "list files recursively")
 }
 
+//func RemoteLs(path string, r bool) (*pfsmod.LsCmdResponse, error) {
 func RemoteLs(cmdAttr *pfsmod.CmdAttr) (*pfsmod.LsCmdResponse, error) {
 	resp := pfsmod.LsCmdResponse{}
 	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
@@ -42,12 +43,9 @@ func RemoteLs(cmdAttr *pfsmod.CmdAttr) (*pfsmod.LsCmdResponse, error) {
 	_, err := s.SubmitCmdReqeust("GET", "api/v1/files", 8080, lsCmd)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		//return subcommands.ExitFailure
 		return &resp, err
 	}
 
-	//fmt.Println(body)
-	//return subcommands.ExitSuccess
 	return &resp, err
 
 }

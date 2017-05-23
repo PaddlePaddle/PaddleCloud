@@ -140,13 +140,80 @@ func (s *CmdSubmitter) SubmitCmdReqeust(
 	return cmdResp, nil
 }
 
+func (s *CmdSubmitter) SubmitChunkRequest(port uint32,
+	cmd *pfsmod.ChunkCmd) error {
+
+	baseUrl := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port)
+	targetURL, err := cmd.GetCmdAttr().GetRequestUrl(baseUrl)
+	if err != nil {
+		return err
+	}
+	fmt.Println("chunkquest targetURL: " + targetURL)
+
+	req, err := http.NewRequest("GET", targetURL, http.NoBody)
+	if err != nil {
+		return err
+	}
+
+	client := s.client
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.Status != HTTPOK {
+		return errors.New("http server returned non-200 status: " + resp.Status)
+	}
+
+	/*
+		partReader := resp.MultipartReader()
+			for {
+				part, error := partReader.NextPart()
+				if error == io.EOF {
+					break
+				}
+
+				if part.FormName() == "chunk" {
+					chunkCmdAttr, err := pfsmodules.ParseFileNameParam(part.FileName())
+					if err != nil {
+						resp.SetErr("error:" + err.Error())
+						pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusInternalServerError)
+						break
+					}
+
+					f, err := pfsmodules.GetChunkWriter(chunkCmdAttr.Path, chunkCmdAttr.Offset)
+					if err != nil {
+						resp.SetErr("open " + chunkCmdAttr.Path + "error:" + err.Error())
+						pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusInternalServerError)
+						//return err
+						break
+					}
+					defer f.Close()
+
+					writen, err := io.Copy(f, part)
+					if err != nil || writen != int64(chunkCmdAttr.ChunkSize) {
+						resp.SetErr("read " + strconv.FormatInt(writen, 10) + "error:" + err.Error())
+						pfsmodules.WriteCmdJsonResponse(w, &resp, http.StatusBadRequest)
+						//return err
+						break
+					}
+				}
+			}
+	*/
+	return nil
+}
+
 func (s *CmdSubmitter) SubmitChunkMetaRequest(
 	port uint32,
 	cmd *pfsmod.ChunkMetaCmd) error {
 
 	baseUrl := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port)
 	targetURL, err := cmd.GetCmdAttr().GetRequestUrl(baseUrl)
-	fmt.Println(targetURL)
+	if err != nil {
+		return err
+	}
+	fmt.Println("chunkmeta request targetURL: " + targetURL)
 
 	req, err := http.NewRequest("GET", targetURL, http.NoBody)
 	if err != nil {
@@ -169,7 +236,7 @@ func (s *CmdSubmitter) SubmitChunkMetaRequest(
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("%s\n\n", body)
+	log.Info("body: %s\n", body)
 
 	cmdResp := cmd.GetResponse()
 	if err := json.Unmarshal(body, cmdResp); err != nil {

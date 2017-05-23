@@ -37,6 +37,10 @@ type ChunkCmd struct {
 	resp    *Chunk
 }
 
+func (p *ChunkCmd) GetCmdAttr() *ChunkCmdAttr {
+	return p.cmdAttr
+}
+
 func NewChunkCmdAttr(r *http.Request) (*ChunkCmdAttr, error) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, MaxJsonRequestSize))
@@ -132,4 +136,27 @@ func ParseFileNameParam(path string) (*ChunkCmdAttr, error) {
 	attr.ChunkSize = uint32(chunkSize)
 
 	return &attr, nil
+}
+
+func (p *ChunkCmdAttr) GetRequestUrl(urlPath string) (string, error) {
+	var Url *url.URL
+	Url, err := url.Parse(urlPath)
+	if err != nil {
+		return "", err
+	}
+
+	Url.Path += "/api/v1/storage/chunks"
+	parameters := url.Values{}
+	parameters.Add("method", p.Method)
+	parameters.Add("path", p.Path)
+
+	str := fmt.Sprint(p.Offset)
+	parameters.Add("offset", str)
+
+	str = fmt.Sprint(p.ChunkSize)
+	parameters.Add("chunksize", str)
+
+	Url.RawQuery = parameters.Encode()
+
+	return Url.RawQuery, nil
 }

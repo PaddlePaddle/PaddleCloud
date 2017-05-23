@@ -38,11 +38,6 @@ func (p *cpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 
 	attrs := pfsmodules.NewCpCmdAttr("cp", f)
-	/*
-		if err != nil {
-			return subcommands.ExitFailure
-		}
-	*/
 
 	results, err := RunCp(attrs)
 	if err != nil {
@@ -65,10 +60,7 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 		return nil, err
 	}
 
-	//results := make([]CpCmdResult, 0, 100)
-
 	var results, ret []pfsmodules.CpCmdResult
-	//var err error
 
 	for _, arg := range src {
 		log.Printf("ls %s\n", arg)
@@ -79,7 +71,7 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 				ret, err = RemoteCp(p, arg, dest)
 			} else {
 				//download
-				ret, err = Download(p, arg, dest)
+				ret, err = Download(arg, dest)
 			}
 		} else {
 			if pfsmodules.IsRemotePath(dest) {
@@ -96,7 +88,6 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 			}
 		}
 
-		//m := CopyGlobPath(arg, dest)
 		results = append(results, ret...)
 	}
 
@@ -119,12 +110,21 @@ func GetRemoteChunksMeta(path string, chunkSize uint32) ([]pfsmodules.ChunkMeta,
 		return resp.Metas, err
 	}
 
-	//fmt.Println(body)
-	//return subcommands.ExitSuccess
+	fmt.Printf("remote chunk meta ")
+	fmt.Println(resp)
 	return resp.Metas, err
 }
 
 func DownloadChunks(src string, dest string, diffMeta []pfsmodules.ChunkMeta) error {
+	if len(diffMeta) == 0 {
+		log.Println("src'chunkmeta %s equals dest's chunkmeta %s", src, dest)
+		return nil
+	}
+
+	/*
+		for _, meta := range diffMeta {
+		}
+	*/
 
 	return nil
 }
@@ -163,24 +163,19 @@ func Upload(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.CpC
 	return nil, nil
 }
 
-func Download(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.CpCmdResult, error) {
-	cmdAttr := cpCmdAttr.GetNewCmdAttr()
+func Download(src, dest string) ([]pfsmodules.CpCmdResult, error) {
+	cmdAttr := pfsmodules.NewLsCmdAttr(src, true)
 
 	lsResp, err := RemoteLs(cmdAttr)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]pfsmodules.CpCmdResult, 0, 100)
-	m := pfsmodules.CpCmdResult{}
-	m.Src = src
-	m.Dest = dest
-
 	if len(lsResp.Err) > 0 {
 		fmt.Printf("%s error:%s\n", src, lsResp.Err)
-		m.Err = lsResp.Err
-		results = append(results, m)
-		return results, errors.New(m.Err)
+		//m.Err = lsResp.Err
+		//results = append(results, m)
+		return nil, errors.New(lsResp.Err)
 	}
 
 	if len(lsResp.Results) > 1 {
@@ -188,16 +183,22 @@ func Download(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.C
 		if err != nil {
 			if err == os.ErrNotExist {
 				os.MkdirAll(dest, 0755)
+			} else {
+				return nil, err
 			}
-			return results, err
 		}
 
 		if !fi.IsDir() {
-			m.Err = pfsmodules.DestShouldBeDirectory
-			results = append(results, m)
-			return results, errors.New(m.Err)
+			//m.Err = pfsmodules.DestShouldBeDirectory
+			//results = append(results, m)
+			return nil, errors.New(pfsmodules.DestShouldBeDirectory)
 		}
 	}
+
+	results := make([]pfsmodules.CpCmdResult, 0, 100)
+	m := pfsmodules.CpCmdResult{}
+	m.Src = src
+	m.Dest = dest
 
 	for _, lsResult := range lsResp.Results {
 		for _, meta := range lsResult.Metas {
@@ -207,11 +208,12 @@ func Download(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.C
 			_, file := filepath.Split(meta.Path)
 			m.Dest = dest + "/" + file
 
+			log.Printf("src :%s dest %s\n", m.Src, m.Dest)
 			if err := DownloadFile(m.Src, meta.Size, m.Dest, pfsmodules.DefaultChunkSize); err != nil {
 				//fmt.Printf("%s error:%s\n", result.Path, result.Err)
-				m.Err = lsResult.Err
+				m.Err = err.Error()
 				results = append(results, m)
-				break
+				return results, err
 			}
 
 			results = append(results, m)

@@ -19,40 +19,20 @@ import (
 	"path/filepath"
 )
 
-/*
-type flagFormal struct {
-	r bool
-}
-*/
-
 type FileMeta struct {
-	//Err     string `json:"Err"`
 	Path    string `json:"Path"`
 	ModTime string `json:"ModTime"`
 	Size    int64  `json:"Size"`
 	IsDir   bool   `json:IsDir`
 }
 
-/*
-type LsCmdResponse struct {
-	ErrCode      int32      `json:"ErrCode"`
-	Err          string     `json:"Err"`
-	Metas        []FileMeta `json:"Metas"`
-	TotalObjects int        `json:"TotalObjects"`
-	TotalSize    int64      `json:"TotalSize"`
-}
-*/
-
 type LsCmdResult struct {
-	//Cmd string `json:"cmd"`
-	//ErrCode int32      `json:"ErrCode"`
 	Path  string     `json:"path"`
 	Err   string     `json:"err"`
 	Metas []FileMeta `json:"metas"`
 }
 
 type LsCmdResponse struct {
-	//ErrCode int32         `json:"errcode"`
 	Err     string        `json:"err"`
 	Results []LsCmdResult `json:"result"`
 }
@@ -64,17 +44,6 @@ func (p *LsCmdResponse) GetErr() string {
 func (p *LsCmdResponse) SetErr(err string) {
 	p.Err = err
 }
-
-/*
-func (p *LsCmdResponse) GetErrCode() string {
-	return p.ErrCode
-}
-
-func (p *LsCmdResponse) SetErr(errCode int32, err string) {
-	p.errCode = errcode
-	p.Err = err
-}
-*/
 
 type LsCmd struct {
 	cmdAttr *CmdAttr
@@ -88,6 +57,18 @@ func NewLsCmd(cmdAttr *CmdAttr, resp *LsCmdResponse) *LsCmd {
 	}
 }
 
+func NewLsCmdAttr(path string, r bool) *CmdAttr {
+	options := []Option{}
+	if r {
+		options = []Option{{"r", ""}}
+	}
+
+	return &CmdAttr{
+		Method:  "ls",
+		Options: options,
+		Args:    []string{path},
+	}
+}
 func (p *LsCmd) GetCmdAttr() *CmdAttr {
 	return p.cmdAttr
 }

@@ -1,7 +1,6 @@
 package pfsmodules
 
 import (
-	//"crypto/md5"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -13,17 +12,8 @@ import (
 	"strings"
 )
 
-/*
-const (
-	ErrFileNotFound = 1
-	ErrNoAuth       = 2
-)
-*/
-
 type Response interface {
-	//GetErrCode() int32
 	GetErr() string
-	//SetErr(errcode int32, err string)
 	SetErr(err string)
 }
 
@@ -46,6 +36,7 @@ const (
 	NotSourportedMethod   = "not surported method"
 	CopyFromLocalToLocal  = "don't support copy local to local"
 	DestShouldBeDirectory = "dest should be a directory"
+	BadChunkSizeArguments = "bad chunksize arguments"
 )
 
 const (
