@@ -31,7 +31,7 @@ def __get_template(tmpls, fstype):
     else:
         return ""
 
-def get_volume_config(fstype, **kwargs):
+def get_volume_config(**kwargs):
     """
     :param fstype: which filesystem type
     :type fstype: str
@@ -60,6 +60,7 @@ def get_volume_config(fstype, **kwargs):
     :param mount_path: mount path in Pod
     :type mount_path: str
     """
+    fstype = kwargs["fstype"]
     tmpl_v = __get_template(tmpl_volume, fstype)
     tmpl_vm = __get_template(tmpl_volume_mount, fstype)
     return {"volume":json.loads(__render(tmpl=tmpl_v, **kwargs)),
