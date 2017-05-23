@@ -141,7 +141,7 @@ class PaddleJob(object):
             }
         }
         if self._registry_secret:
-            job["spec"]["template"]["spec"]["imagePullSecrets"] = [{"name": self._registry_secret}]
+            job["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
         return job
     def new_pserver_job(self):
         """
@@ -172,5 +172,5 @@ class PaddleJob(object):
             }
         }
         if self._registry_secret:
-            rs["spec"]["template"]["spec"]["imagePullSecrets"] = [{"name": self._registry_secret}]
+            rs["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
         return rs
