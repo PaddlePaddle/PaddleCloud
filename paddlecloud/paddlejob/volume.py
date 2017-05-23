@@ -17,7 +17,7 @@ def __render(tmpl, **kwargs):
     for k, v in kwargs.items():
         tmpl_k = "$%s" % k.upper()
         if tmpl_k in tmpl:
-            if type(v) is str:
+            if type(v) is str or type(v) is unicode:
                 tmpl = tmpl.replace(tmpl_k, "\"%s\"" % v)
             elif type(v) is list:
                 tmpl = tmpl.replace(tmpl_k, json.dumps(v))
@@ -31,7 +31,7 @@ def __get_template(tmpls, fstype):
     else:
         return ""
 
-def get_volume_config(fstype, **kwargs):
+def get_volume_config(**kwargs):
     """
     :param fstype: which filesystem type
     :type fstype: str
@@ -60,6 +60,7 @@ def get_volume_config(fstype, **kwargs):
     :param mount_path: mount path in Pod
     :type mount_path: str
     """
+    fstype = kwargs["fstype"]
     tmpl_v = __get_template(tmpl_volume, fstype)
     tmpl_vm = __get_template(tmpl_volume_mount, fstype)
     return {"volume":json.loads(__render(tmpl=tmpl_v, **kwargs)),
