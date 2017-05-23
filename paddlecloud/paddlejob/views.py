@@ -42,6 +42,7 @@ class JobsView(APIView):
         if dc in settings.DATACENTERS:
             volumes.append(volume.get_volume_config(settings.DATACENTERS[dc]))
 
+        registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
             job_package = obj.get("jobPackage", ""),
@@ -53,7 +54,8 @@ class JobsView(APIView):
             psmemory = obj.get("psmemory", "1Gi"),
             topology = obj["topology"],
             gpu = obj.get("gpu", 0),
-            image = obj.get("image", "yancey1989/paddlecloud-job"),
+            image = obj.get("image", settings.JOB_DOCKER_IMAGE["image"]),
+            registry_secret = registry_secret,
             volumes = volumes
         )
         try:

@@ -291,3 +291,11 @@ DATACENTERS = {
         "admin_key": "/certs/admin.secret"
     }
 }
+
+JOB_DOCKER_IMAGE = {
+    "image": "yancey1989/paddlecloud-job",
+    "registry_secret": "job-registry-secret",
+    "docker_config":{"auths":
+                     {"registry.baidu.com":
+                      {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
+}

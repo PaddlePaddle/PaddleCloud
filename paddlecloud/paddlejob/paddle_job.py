@@ -1,7 +1,7 @@
 import kubernetes
 from kubernetes import client, config
 import os
-
+from settings import JOB_DOCKER_IMAGE
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164
 
@@ -21,7 +21,8 @@ class PaddleJob(object):
                  topology,
                  image,
                  gpu=0,
-                 volumes=[]):
+                 volumes=[],
+                 registry_secret=None):
 
         self._ports_num=1
         self._ports_num_for_sparse=1
@@ -39,6 +40,7 @@ class PaddleJob(object):
         self._topology = topology
         self._image = image
         self._volumes = volumes
+        self._registry_secret = registry_secret
 
     @property
     def pservers(self):
@@ -111,7 +113,7 @@ class PaddleJob(object):
         """
         return: Trainer job, it's a Kubernetes Job
         """
-        return {
+        job = {
             "apiVersion": "batch/v1",
             "kind": "Job",
             "metadata": {
@@ -139,11 +141,14 @@ class PaddleJob(object):
                 }
             }
         }
+        if self._registry_secret:
+            job["spec"]["template"]["spec"]["imagePullSecrets"] = [{"name": self._registry_secret}]
+        return job
     def new_pserver_job(self):
         """
         return: PServer job, it's a Kubernetes ReplicaSet
         """
-        return {
+        rs = {
             "apiVersion": "extensions/v1beta1",
             "kind": "ReplicaSet",
             "metadata":{
@@ -167,3 +172,6 @@ class PaddleJob(object):
                 }
             }
         }
+        if self._registry_secret:
+            rs["spec"]["template"]["spec"]["imagePullSecrets"] = [{"name": self._registry_secret}]
+        return rs
