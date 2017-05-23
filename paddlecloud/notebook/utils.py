@@ -27,6 +27,19 @@ def get_user_api_client(username):
     api_client = kubernetes.client.ApiClient(config=conf_obj)
     return api_client
 
+def get_admin_api_client():
+    """
+        Update kubernetes client to use admin user to create namespace and authorizations
+    """
+
+    conf_obj = kubernetes.client.Configuration()
+    conf_obj.host = settings.K8S_HOST
+    conf_obj.ssl_ca_cert = os.path.join(settings.CA_PATH)
+    conf_obj.cert_file = os.path.join(settings.USER_CERTS_PATH, "admin.pem")
+    conf_obj.key_file = os.path.join(settings.USER_CERTS_PATH, "admin-key.pem")
+    api_client = kubernetes.client.ApiClient(config=conf_obj)
+    return api_client
+
 def user_certs_exist(username):
     """
         Return True if the user's certs already generated. User's keys are of pairs.

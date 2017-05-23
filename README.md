@@ -28,6 +28,7 @@
   mkdir -p /home/pcloud/data/certs
   ```
   - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `pcloud_data/certs` folder
+  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `pcloud_data/certs` folder
   - Copy CephFS Key file(admin.secret) to `pcloud_data/certs` folder
   - Copy `/paddlecloud/settings.py` file to `pcloud_data` folder
 
