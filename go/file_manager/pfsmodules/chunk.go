@@ -172,7 +172,7 @@ func (p *ChunkCmdAttr) GetRequestUrl(urlPath string) (string, error) {
 }
 
 //func writeStreamChunkData(path string, offset int64, len int64, w http.ResponseWriter) error {
-func writeStreamChunkData(path string, offset int64, len int64, w io.Writer) error {
+func WriteStreamChunkData(path string, offset int64, len int64, w io.Writer) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err

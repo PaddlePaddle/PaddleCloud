@@ -9,9 +9,9 @@ import (
 	"io"
 	"log"
 	//"mime/multipart"
-	"mime/multipart"
+	//"mime/multipart"
 	"net/http"
-	"os"
+	//"os"
 	"strconv"
 )
 
@@ -193,7 +193,7 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Method {
 	case "getchunkdata":
-		if err := pfsmodules.writeStreamChunkData(req.Path, req.Offset, int64(req.ChunkSize), w); err != nil {
+		if err := pfsmodules.WriteStreamChunkData(req.Path, req.Offset, int64(req.ChunkSize), w); err != nil {
 			resp.SetErr(err.Error())
 			pfsmodules.WriteCmdJsonResponse(w, &resp, 422)
 			return

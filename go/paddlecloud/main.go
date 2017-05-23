@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/google/subcommands"
+	"log"
 )
 
 type logsCommand struct {
@@ -41,6 +42,8 @@ func main() {
 	subcommands.Register(&lsCommand{}, "")
 	subcommands.Register(&rmCommand{}, "")
 	subcommands.Register(&cpCommand{}, "")
+
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	flag.Parse()
 	ctx := context.Background()

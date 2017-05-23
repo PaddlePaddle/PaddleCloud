@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type cpCommand struct {
@@ -61,6 +62,9 @@ func RunCp(p *pfsmodules.CpCmdAttr) ([]pfsmodules.CpCmdResult, error) {
 	}
 
 	var results, ret []pfsmodules.CpCmdResult
+	//return nil, nil
+	log.Println(src)
+	log.Println(dest)
 
 	for _, arg := range src {
 		log.Printf("ls %s\n", arg)
@@ -164,6 +168,12 @@ func Upload(cpCmdAttr *pfsmodules.CpCmdAttr, src, dest string) ([]pfsmodules.CpC
 	return nil, nil
 }
 
+func isRoot(root, path string) bool {
+}
+
+func getPathUnderRoot(root, path string) string {
+}
+
 func Download(src, dest string) ([]pfsmodules.CpCmdResult, error) {
 	cmdAttr := pfsmodules.NewLsCmdAttr(src, true)
 
@@ -199,13 +209,29 @@ func Download(src, dest string) ([]pfsmodules.CpCmdResult, error) {
 
 	for _, lsResult := range lsResp.Results {
 		for _, meta := range lsResult.Metas {
+			startsWith := strings.HasPrefix(meta.Path, src)
+			if !startsWith {
+				log.Printf("path:%s not in src:%s", meta.Path, src)
+				return results, err
+			}
+			log.Printf("start with:%v", startsWith)
+
+			if meta.IsDir {
+				dest := "/" + meta.Path[len(src):len(meta.Path)]
+				log.Printf("mkdir %s\n", dest)
+				if err := os.MkdirAll(dest, 0755); err != nil {
+					log.Printf("mkdir %s error:%v\n", dest, err)
+				}
+
+				continue
+			}
 
 			m := pfsmodules.CpCmdResult{}
 			m.Src = meta.Path
 			_, file := filepath.Split(meta.Path)
 			m.Dest = dest + "/" + file
 
-			log.Printf("src :%s dest %s\n", m.Src, m.Dest)
+			log.Printf("src_path:%s dest_path:%s\n", m.Src, m.Dest)
 			if err := DownloadFile(m.Src, meta.Size, m.Dest, pfsmodules.DefaultChunkSize); err != nil {
 				//fmt.Printf("%s error:%s\n", result.Path, result.Err)
 				m.Err = err.Error()

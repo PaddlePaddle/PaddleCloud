@@ -87,7 +87,7 @@ func lsPath(path string, r bool) []FileMeta {
 		//log.Println("path:\t" + path)
 
 		m := FileMeta{}
-		m.Path = info.Name()
+		m.Path = subpath
 		m.Size = info.Size()
 		m.ModTime = info.ModTime().Format("2006-01-02 15:04:05")
 		m.IsDir = info.IsDir()
