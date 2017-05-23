@@ -1,7 +1,6 @@
 import kubernetes
 from kubernetes import client, config
 import os
-from settings import JOB_DOCKER_IMAGE
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164
 
