@@ -185,29 +185,25 @@ def create_user_namespace(username):
             }})
     #create DataCenter sercret if not exists
     secrets = v1api.list_namespaced_secret(user_namespace)
+    secret_names = [item.metadata.name for item in secrets.items]
     for dc, cfg in settings.DATACENTERS.items():
-        #create Kubernetes Secret for admin key
-        if cfg["fstype"] == "cephfs":
-            secret_found = False
-            for ss in secrets.items:
-                if ss.metadata.name == cfg["secret"]:
-                    secret_found = True
-                    break
-            if not secret_found:
-                with open(cfg["admin_key"], "r") as f:
-                    key = f.read()
-                    encoded = base64.b64encode(key)
-                    v1api.create_namespaced_secret(user_namespace, {
-                        "apiVersion": "v1",
-                        "kind": "Secret",
-                        "metadata": {
-                            "name": cfg["secret"]
-                        },
-                        "data": {
-                            "key": encoded
-                        }})
+        # create Kubernetes Secret for ceph admin key
+        if cfg["fstype"] == "cephfs" and cfg["secret"] not in secret_names:
+            with open(cfg["admin_key"], "r") as f:
+                key = f.read()
+                encoded = base64.b64encode(key)
+                v1api.create_namespaced_secret(user_namespace, {
+                    "apiVersion": "v1",
+                    "kind": "Secret",
+                    "metadata": {
+                        "name": cfg["secret"]
+                    },
+                    "data": {
+                        "key": encoded
+                    }})
+    # create docker registry secret
     registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
-    if registry_secret and registry_secret not in secrets:
+    if registry_secret and registry_secret not in secret_names:
         docker_config = settings.JOB_DOCKER_IMAGE["docker_config"]
         encode = base64.b64encode(json.dumps(docker_config))
         v1api.create_namespaced_secret(user_namespace, {
@@ -218,7 +214,8 @@ def create_user_namespace(username):
             },
             "data": {
                 ".dockerconfigjson": encode
-            }
+            },
+            "type": "kubernetes.io/dockerconfigjson"
         })
     return user_namespace
 
