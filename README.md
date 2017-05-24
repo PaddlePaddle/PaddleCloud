@@ -2,7 +2,9 @@
 
 ## Using Command-line To Submit Cloud Training Jobs
 
-You can find a useful documentation [here](./doc/usage_en.md).
+[English tutorials](./doc/usage_en.md)
+
+[中文手册](./doc/usage_en.md)
 
 ## Deploy PaddlePaddle Cloud
 
