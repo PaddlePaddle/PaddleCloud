@@ -40,8 +40,27 @@ class JobsView(APIView):
             return utils.simple_response(500, "no datacenter specified")
         dc = obj.get("datacenter")
         volumes = []
-        if dc in settings.DATACENTERS:
-            volumes.append(volume.get_volume_config(name=dc.replace("_","-"), **settings.DATACENTERS[dc]))
+        cfg = settings.DATACENTERS.get(dc, None)
+        if cfg and cfg["fstype"] == "hostpath":
+            volumes.append(volume.get_volume_config(
+                fstype = "hostpath",
+                name = dc.replace("_", "-"),
+                mount_path = cfg["mount_path"] % username,
+                host_path = cfg["host_path"]
+            ))
+        elif cfg and cfg["fstype"] == "cephfs":
+            volumes.append(volume.get_volume_config(
+                fstype = "cephfs",
+                name = dc.replace("_", "-"),
+                monitors_addr = cfg["monitors_addr"],
+                secret = cfg["secret"],
+                user = cfg["user"],
+                mount_path = cfg["mount_path"] % username,
+                cephfs_path = cfg["cephfs_path"] % username,
+                admin_key = cfg["admin_key"]
+            ))
+        else:
+            pass
 
         registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         paddle_job = PaddleJob(
