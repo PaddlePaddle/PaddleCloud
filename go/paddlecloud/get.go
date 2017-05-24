@@ -1,4 +1,4 @@
-package main
+package paddlecloud
 
 import (
 	"context"
@@ -11,23 +11,31 @@ import (
 	"github.com/google/subcommands"
 )
 
-type getCommand struct {
+// GetCommand exports get subcommand for fetching status
+type GetCommand struct {
 	a bool
 }
 
-func (*getCommand) Name() string     { return "get" }
-func (*getCommand) Synopsis() string { return "Print resources" }
-func (*getCommand) Usage() string {
+// Name is subcommands name
+func (*GetCommand) Name() string { return "get" }
+
+// Synopsis is subcommands synopsis
+func (*GetCommand) Synopsis() string { return "Print resources" }
+
+// Usage is subcommands usage
+func (*GetCommand) Usage() string {
 	return `get:
 	Print resources.
 `
 }
 
-func (p *getCommand) SetFlags(f *flag.FlagSet) {
+// SetFlags registers subcommands flags
+func (p *GetCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.a, "a", false, "Get all resources.")
 }
 
-func (p *getCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+// Execute get command
+func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 || f.NArg() > 2 {
 		f.Usage()
 		return subcommands.ExitFailure

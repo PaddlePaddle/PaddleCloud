@@ -5,16 +5,17 @@ import (
 	"flag"
 	"os"
 
+	"github.com/PaddlePaddle/cloud/go/paddlecloud"
 	"github.com/google/subcommands"
 )
 
 func main() {
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
-	subcommands.Register(&submitCmd{}, "")
-	subcommands.Register(&logsCommand{}, "")
-	subcommands.Register(&getCommand{}, "")
-	subcommands.Register(&killCommand{}, "")
+	subcommands.Register(&paddlecloud.SubmitCmd{}, "")
+	subcommands.Register(&paddlecloud.LogsCommand{}, "")
+	subcommands.Register(&paddlecloud.GetCommand{}, "")
+	subcommands.Register(&paddlecloud.KillCommand{}, "")
 
 	flag.Parse()
 	ctx := context.Background()
