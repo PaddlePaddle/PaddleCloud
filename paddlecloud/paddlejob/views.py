@@ -75,6 +75,7 @@ class JobsView(APIView):
             topology = obj["topology"],
             gpu = obj.get("gpu", 0),
             image = obj.get("image", settings.JOB_DOCKER_IMAGE["image"]),
+            passes = obj.get("passes", 1),
             registry_secret = registry_secret,
             volumes = volumes
         )
