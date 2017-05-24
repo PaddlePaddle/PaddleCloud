@@ -185,15 +185,11 @@ def create_user_namespace(username):
             }})
     #create DataCenter sercret if not exists
     secrets = v1api.list_namespaced_secret(user_namespace)
+    secret_names = [item.metadata.name for item in secrets.items]
     for dc, cfg in settings.DATACENTERS.items():
         #create Kubernetes Secret for admin key
         if cfg["fstype"] == "cephfs":
-            secret_found = False
-            for ss in secrets.items:
-                if ss.metadata.name == cfg["secret"]:
-                    secret_found = True
-                    break
-            if not secret_found:
+            if cfg["secret"] not in secret_names:
                 with open(cfg["admin_key"], "r") as f:
                     key = f.read()
                     encoded = base64.b64encode(key)
@@ -208,12 +204,7 @@ def create_user_namespace(username):
                         }})
     # create docker registry secret
     registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
-    registry_secret_created = False
-    for i in secrets.items:
-        if registry_secret == i.metadata.name:
-            registry_secret_created = True
-            break
-    if registry_secret and (not registry_secret_created):
+    if registry_secret and registry_secret not in secret_names:
         docker_config = settings.JOB_DOCKER_IMAGE["docker_config"]
         encode = base64.b64encode(json.dumps(docker_config))
         v1api.create_namespaced_secret(user_namespace, {
