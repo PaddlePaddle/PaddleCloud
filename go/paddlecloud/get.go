@@ -24,7 +24,7 @@ func (*GetCommand) Synopsis() string { return "Print resources" }
 
 // Usage is subcommands usage
 func (*GetCommand) Usage() string {
-	return `get:
+	return `get [jobs|workers [jobname]|quota]:
 	Print resources.
 `
 }
@@ -45,6 +45,10 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 	} else if f.Arg(0) == "quota" {
 		quota()
 	} else if f.Arg(0) == "workers" {
+		if f.NArg() != 2 {
+			f.Usage()
+			return subcommands.ExitFailure
+		}
 		workers(f.Arg(1))
 	}
 
