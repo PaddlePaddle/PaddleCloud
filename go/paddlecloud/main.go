@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/google/subcommands"
+	"log"
 )
 
 func main() {
@@ -15,6 +16,11 @@ func main() {
 	subcommands.Register(&logsCommand{}, "")
 	subcommands.Register(&getCommand{}, "")
 	subcommands.Register(&killCommand{}, "")
+	subcommands.Register(&lsCommand{}, "")
+	subcommands.Register(&rmCommand{}, "")
+	subcommands.Register(&cpCommand{}, "")
+
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	flag.Parse()
 	ctx := context.Background()
