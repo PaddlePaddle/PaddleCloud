@@ -1,4 +1,4 @@
-package main
+package paddlecloud
 
 import (
 	"context"
@@ -11,26 +11,34 @@ import (
 	"github.com/google/subcommands"
 )
 
-type logsCommand struct {
+// LogsCommand print aggregated job logs
+type LogsCommand struct {
 	n int
 	w string
 }
 
-func (*logsCommand) Name() string     { return "logs" }
-func (*logsCommand) Synopsis() string { return "Print logs of the job." }
-func (*logsCommand) Usage() string {
+// Name is subcommands name
+func (*LogsCommand) Name() string { return "logs" }
+
+// Synopsis is subcommands synopsis
+func (*LogsCommand) Synopsis() string { return "Print logs of the job." }
+
+// Usage is subcommands usage
+func (*LogsCommand) Usage() string {
 	return `logs <job name>:
 	Print logs of the job.
 	Options:
 `
 }
 
-func (p *logsCommand) SetFlags(f *flag.FlagSet) {
+// SetFlags registers subcommands flags
+func (p *LogsCommand) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.n, "n", 10, "Number of lines to print from tail.")
 	f.StringVar(&p.w, "w", "", "Print logs for a single worker.")
 }
 
-func (p *logsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+// Execute logs command
+func (p *LogsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() != 1 {
 		f.Usage()
 		return subcommands.ExitFailure
