@@ -1,6 +1,12 @@
 # PaddlePaddle Cloud
 
-## Getting Started
+## Using Command-line To Submit Cloud Training Jobs
+
+[English tutorials](./doc/usage_en.md)
+
+[中文手册](./doc/usage_en.md)
+
+## Deploy PaddlePaddle Cloud
 
 ### Pre-Requirements
 - PaddlePaddle Cloud needs python to support `OPENSSL 1.2`. To check it out, simply run:
