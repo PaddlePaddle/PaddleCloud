@@ -26,7 +26,7 @@ class PaddleJob(object):
 
         self._ports_num=1
         self._ports_num_for_sparse=1
-        self._num_gradient_servers=1
+        self._num_gradient_servers=parallelism
 
         self._name = name
         self._job_package = job_package
@@ -69,7 +69,7 @@ class PaddleJob(object):
         envs.append({"name":"TOPOLOGY",             "value":self._topology})
         envs.append({"name":"TRAINER_PACKAGE",      "value":self._job_package})
         envs.append({"name":"PADDLE_INIT_PORT",     "value":str(DEFAULT_PADDLE_PORT)})
-        envs.append({"name":"PADDLE_INIT_TRAINER_COUNT",        "value":str(self._parallelism)})
+        envs.append({"name":"PADDLE_INIT_TRAINER_COUNT",        "value":str(self._cpu)})
         envs.append({"name":"PADDLE_INIT_PORTS_NUM",            "value":str(self._ports_num)})
         envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self._ports_num_for_sparse)})
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
