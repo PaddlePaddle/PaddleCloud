@@ -206,8 +206,14 @@ def create_user_namespace(username):
                         "data": {
                             "key": encoded
                         }})
+    # create docker registry secret
     registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
-    if registry_secret and registry_secret not in secrets:
+    registry_secret_created = False
+    for i in secrets.items:
+        if registry_secret == i.metadata.name:
+            registry_secret_created = True
+            break
+    if registry_secret and (not registry_secret_created):
         docker_config = settings.JOB_DOCKER_IMAGE["docker_config"]
         encode = base64.b64encode(json.dumps(docker_config))
         v1api.create_namespaced_secret(user_namespace, {
