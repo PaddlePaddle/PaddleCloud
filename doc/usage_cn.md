@@ -4,6 +4,8 @@
 
 ## 下载并配置paddlecloud
 
+`paddlecloud`是提交PaddlePaddleCloud分布式训练任务的命令行工具。
+
 步骤1: 访问链接 https://github.com/PaddlePaddle/cloud/releases 下载最新的`paddlecloud`二进制客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`
 
 步骤2: 创建`~/.paddle/config`文件(windows系统创建当前用户目录下的`.paddle\config`文件)，并写入下面内容，
@@ -27,7 +29,7 @@ datacenters:
 配置文件创建完成后，执行`paddlecloud`会显示该客户端的帮助信息：
 
 ```
-Usage: paddlecloud.darwin <flags> <subcommand> <subcommand args>
+Usage: paddlecloud <flags> <subcommand> <subcommand args>
 
 Subcommands:
 	commands         list all command names
@@ -126,7 +128,7 @@ scp -r my_training_package/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mypack
 执行下面的命令提交准备好的任务:
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 100 -pscpu 1 -pservers 3 -psmemory 1Gi -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 100 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 参数说明：
@@ -139,6 +141,7 @@ paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parall
 - `-pservers`：parameter server的节点个数
 - `-psmemory`：parameter server占用的内存资源，格式为“数字+单位”，单位可以是：Ki，Mi，Gi
 - `-topology`：指定PaddlePaddle v1训练的模型配置python文件
+- `-passes`：执行训练的pass个数
 - `package`：HDFS 训练任务package的路径
 
 ## 查看任务状态
