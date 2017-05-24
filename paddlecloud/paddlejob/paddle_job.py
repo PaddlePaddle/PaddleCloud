@@ -75,9 +75,9 @@ class PaddleJob(object):
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
         envs.append({"name":"PADDLE_INIT_NUM_PASSES",           "value":str(self._passes)})
         if self._gpu:
-            envs.append{"name":"PADDLE_INIT_USE_GPU", "value":str("true")}
+            envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("true")})
         else:
-            envs.append{"name":"PADDLE_INIT_USE_GPU", "value":str("false")}
+            envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("false")})
         envs.append({"name":"NAMESPACE", "valueFrom":{
             "fieldRef":{"fieldPath":"metadata.namespace"}}})
         return envs
