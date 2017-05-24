@@ -215,7 +215,8 @@ def create_user_namespace(username):
             },
             "data": {
                 ".dockerconfigjson": encode
-            }
+            },
+            "type": "kubernetes.io/dockerconfigjson"
         })
     return user_namespace
 
