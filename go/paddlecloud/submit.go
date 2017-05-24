@@ -26,6 +26,7 @@ type SubmitCmd struct {
 	Entry       string `json:"entry"`
 	Topology    string `json:"topology"`
 	Datacenter  string `json:"datacenter"`
+	Passes      int    `json:"passes"`
 }
 
 // Name is subcommands name
@@ -54,6 +55,7 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.PSMemory, "psmemory", "1Gi", "Parameter server momory resource. Defaults to 1Gi.")
 	f.StringVar(&p.Entry, "entry", "paddle train", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
+	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
 }
 
 // Execute submit command

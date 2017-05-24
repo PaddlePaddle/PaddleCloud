@@ -19,6 +19,7 @@ class PaddleJob(object):
                  psmemory,
                  topology,
                  image,
+                 passes,
                  gpu=0,
                  volumes=[],
                  registry_secret=None):
@@ -40,6 +41,7 @@ class PaddleJob(object):
         self._image = image
         self._volumes = volumes
         self._registry_secret = registry_secret
+        self._passes = passes
 
     @property
     def pservers(self):
@@ -71,6 +73,11 @@ class PaddleJob(object):
         envs.append({"name":"PADDLE_INIT_PORTS_NUM",            "value":str(self._ports_num)})
         envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self._ports_num_for_sparse)})
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
+        envs.append({"name":"PADDLE_INIT_NUM_PASSES",           "value":str(self._passes)})
+        if self._gpu:
+            envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("1")})
+        else:
+            envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("0")})
         envs.append({"name":"NAMESPACE", "valueFrom":{
             "fieldRef":{"fieldPath":"metadata.namespace"}}})
         return envs

@@ -23,9 +23,9 @@ start_trainer() {
     export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
     cd $TRAINER_PACKAGE
 
-    echo "Starting training job: ", $TRAINER_PACKAGE, "num_gradient_servers", \
-    $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: ", $PADDLE_INIT_TRAINER_ID, \
-    "version: ", $1
+    echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
+    $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
+    "version: " $1
 
     case "$1" in
       "v1")
