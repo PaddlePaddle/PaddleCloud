@@ -19,12 +19,12 @@ datacenters:
   endpoint: http://cloud.paddlepaddle.org
 ```
 
-配置文件用于指定使用的PaddlePaddle Cloud服务器集群的接入地址，并需要配置用户的登录信息：
+配置文件用于指定使用的PaddlePaddleCloud服务器集群的接入地址，并需要配置用户的登录信息：
 - name: 自定义的datacenter名称，可以是任意字符串
 - active: 为true说明使用这个datacenter作为当前操作的datacenter，配置文件中只能有一个datacenter的配置为true
-- username: PaddlePaddle Cloud的用户名，账号在未开放注册前需要联系管理员分配，通常用户名为邮箱地址
+- username: PaddlePaddleCloud的用户名，账号在未开放注册前需要联系管理员分配，通常用户名为邮箱地址
 - password: 账号对应的密码
-- endpoint: PaddlePaddle Cloud集群API地址，可以从集群管理员处获得
+- endpoint: PaddlePaddleCloud集群API地址，可以从集群管理员处获得
 
 配置文件创建完成后，执行`paddlecloud`会显示该客户端的帮助信息：
 
@@ -45,14 +45,11 @@ Use "paddlecloud.darwin flags" for a list of top-level flags
 
 ## 准备训练数据
 
-不同的PaddlePaddleCloud集群环境会提供不同的分布式存储服务。目前PaddlePaddleCloud支持
-HDFS和CephFS。
+不同的PaddlePaddleCloud集群环境会提供不同的分布式存储服务。目前PaddlePaddleCloud支持HDFS和CephFS。
 
 ### 手动上传训练数据到HDFS
 
-使用`ssh`登录到集群中的公用数据中转服务器上，进行数据上传，下载，更新等操作。您可以在
-中转服务器的`/mnt`路径下找到集群HDFS的目录，并可以访问当前有权限的目录。上传数据则可以使用管理
-普通Linux文件的方式，将数据`scp`到中转服务器`/mnt`下的用户数据目录。比如：
+使用`ssh`登录到集群中的公用数据中转服务器上，进行数据上传，下载，更新等操作。您可以在中转服务器的`/mnt`路径下找到集群HDFS的目录，并可以访问当前有权限的目录。上传数据则可以使用管理普通Linux文件的方式，将数据`scp`到中转服务器`/mnt`下的用户数据目录。比如：
 
 ```bash
 scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir/
@@ -60,8 +57,7 @@ scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir
 
 ***说明：您可能需要联系集群管理员以获得数据中转服务器的登录地址和权限。***
 
-在训练任务提交后，每个训练节点会把HDFS挂载在`/pfs/[datacenter_name]/home/[username]/`目录下
-这样训练程序即可使用这个路径读取训练数据并开始训练。
+在训练任务提交后，每个训练节点会把HDFS挂载在`/pfs/[datacenter_name]/home/[username]/`目录下这样训练程序即可使用这个路径读取训练数据并开始训练。
 
 
 ## 训练程序包
@@ -109,16 +105,13 @@ def gen_train_list(data_dir):
 
 ### 上传训练程序包到HDFS
 
-上传训练程序包到HDFS的方式和上传训练数
-据方式相同。使用公用数据中转服务器，将训练程序包上传到HDFS。比如：
+上传训练程序包到HDFS的方式和上传训练数据方式相同。使用公用数据中转服务器，将训练程序包上传到HDFS。比如：
 
 ```bash
 scp -r my_training_package/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mypackage/
 ```
 
-在下面提交任务的步骤中，需要指定集群上的程序包的位置：
-`/pfs/[datacenter_name]/home/[username]/idl/idl-dl/mypackage/`即可在集群中执行这个
-程序包中的训练程序。
+在下面提交任务的步骤中，需要指定集群上的程序包的位置：`/pfs/[datacenter_name]/home/[username]/idl/idl-dl/mypackage/`即可在集群中执行这个程序包中的训练程序。
 
 ***注意: 此方式会逐步淘汰***
 
