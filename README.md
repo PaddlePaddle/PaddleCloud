@@ -4,7 +4,7 @@
 
 [English tutorials](./doc/usage_en.md)
 
-[中文手册](./doc/usage_en.md)
+[中文手册](./doc/usage_cn.md)
 
 ## Deploy PaddlePaddle Cloud
 
