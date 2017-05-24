@@ -177,9 +177,9 @@ class LogsView(APIView):
                 total_job_log = "\n".join((total_job_log, pod_log))
         else:
             if num_lines:
-                pod_log = client.CoreV1Api().read_namespaced_pod_log(i.metadata.name, namespace, tail_lines=int(num_lines))
+                pod_log = client.CoreV1Api().read_namespaced_pod_log(worker, namespace, tail_lines=int(num_lines))
             else:
-                pod_log = client.CoreV1Api().read_namespaced_pod_log(i.metadata.name, namespace)
+                pod_log = client.CoreV1Api().read_namespaced_pod_log(worker, namespace)
             total_job_log = pod_log
         return utils.simple_response(200, total_job_log)
 
