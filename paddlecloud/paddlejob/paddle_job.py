@@ -143,11 +143,11 @@ class PaddleJob(object):
                             "volumeMounts": self._get_trainer_volume_mounts(),
                             "resources": {
                                 "requests": {
-                                    "memory": str(self._memory)
+                                    "memory": str(self._memory),
                                     "cpu": str(self._cpu)
                                 },
                                 "limits": {
-                                    "memory": str(self._memory)
+                                    "memory": str(self._memory),
                                     "cpu" : str(self._cpu*1.5)
                                 }
                             }
