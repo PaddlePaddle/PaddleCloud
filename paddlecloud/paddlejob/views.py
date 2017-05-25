@@ -112,44 +112,46 @@ class JobsView(APIView):
             return utils.simple_response(500, "must specify jobname")
         # FIXME: options needed: grace_period_seconds, orphan_dependents, preconditions
         # FIXME: cascade delteing
-        delete_status = ""
+        delete_status = []
         # delete job
         trainer_name = jobname + "-trainer"
         try:
             u_status = client.BatchV1Api().delete_namespaced_job(trainer_name, namespace, {})
-            delete_status += u_status.status
         except ApiException, e:
             logging.error("error deleting job: %s, %s", jobname, str(e))
+            delete_status.append(str(e))
 
         # delete job pods
         try:
             job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
-            logging.error("jobpodlist: %s", job_pod_list)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
-                delete_status += u_status.status
         except ApiException, e:
             logging.error("error deleting job pod: %s", str(e))
+            delete_status.append(str(e))
 
         # delete pserver rs
         pserver_name = jobname + "-pserver"
         try:
             u_status = client.ExtensionsV1beta1Api().delete_namespaced_replica_set(pserver_name, namespace, {})
-            delete_status += u_status.status
         except ApiException, e:
             logging.error("error deleting pserver: %s" % str(e))
+            delete_status.append(str(e))
 
         # delete pserver pods
         try:
             # pserver replica set has label with jobname
             job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%jobname)
-            logging.error("pserver podlist: %s", job_pod_list)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
-                delete_status += u_status.status
         except ApiException, e:
             logging.error("error deleting pserver pods: %s" % str(e))
-        return utils.simple_response(200, delete_status)
+            delete_status.append(str(e))
+        if len(delete_status) > 0:
+            retcode = 500
+        else:
+            retcode = 200
+        return utils.simple_response(retcode, "\n".join(delete_status))
 
 
 class LogsView(APIView):
