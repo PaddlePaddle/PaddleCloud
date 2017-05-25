@@ -140,7 +140,17 @@ class PaddleJob(object):
                             "imagePullPolicy": "Always",
                             "command": self._get_trainer_entrypoint(),
                             "env": self.get_env(),
-                            "volumeMounts": self._get_trainer_volume_mounts()
+                            "volumeMounts": self._get_trainer_volume_mounts(),
+                            "resources": {
+                                "requests": {
+                                    "memory": str(self._memory)
+                                    "cpu": str(self._cpu)
+                                },
+                                "limits": {
+                                    "memory": str(self._memory)
+                                    "cpu" : str(self._cpu*1.5)
+                                }
+                            }
                         }],
                         "restartPolicy": "Never"
                     }
@@ -172,7 +182,17 @@ class PaddleJob(object):
                             "image": self._image,
                             "ports": self._get_pserver_container_ports(),
                             "env": self.get_env(),
-                            "command": self._get_pserver_entrypoint()
+                            "command": self._get_pserver_entrypoint(),
+                            "resources": {
+                                "requests": {
+                                    "memory": str(self._psmemory),
+                                    "cpu": str(self._pscpu)
+                                },
+                                "limits": {
+                                    "memory": str(self._psmemory),
+                                    "cpu": str(self._pscpu*1.5)
+                                }
+                            }
                         }]
                     }
                 }
