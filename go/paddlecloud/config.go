@@ -14,7 +14,6 @@ import (
 )
 
 type submitConfigDataCenter struct {
-	Active   bool   `yaml:"active"`
 	Name     string `yaml:"name"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
@@ -25,8 +24,9 @@ type submitConfigDataCenter struct {
 
 // Configuration load from user config yaml files
 type submitConfig struct {
-	DC           []submitConfigDataCenter `yaml:"datacenters"`
-	ActiveConfig *submitConfigDataCenter
+	DC                []submitConfigDataCenter `yaml:"datacenters"`
+	ActiveConfig      *submitConfigDataCenter
+	CurrentDatacenter string `yaml:"current-datacenter"`
 }
 
 // UserHomeDir get user home dierctory on different platforms
@@ -81,7 +81,7 @@ func parseConfig(configFile string) *submitConfig {
 		// put active config
 		config.ActiveConfig = nil
 		for _, item := range config.DC {
-			if item.Active {
+			if item.Name == config.CurrentDatacenter {
 				config.ActiveConfig = &item
 				break
 			}
