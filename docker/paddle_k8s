@@ -47,7 +47,7 @@ start_trainer() {
           --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
         ;;
       "v2")
-        python ${TOPOLOGY}
+        ${ENTRY}
         ;;
       *)
         ;;
