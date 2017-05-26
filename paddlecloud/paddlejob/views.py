@@ -34,8 +34,8 @@ class JobsView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         obj = json.loads(request.body)
-        if not obj.get("topology"):
-            return utils.simple_response(500, "no topology specified")
+        if not obj.get("topology") or obj.get("entry"):
+            return utils.simple_response(500, "no topology or entry specified")
         if not obj.get("datacenter"):
             return utils.simple_response(500, "no datacenter specified")
         dc = obj.get("datacenter")

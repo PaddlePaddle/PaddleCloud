@@ -82,6 +82,7 @@ func parseConfig(configFile string) *submitConfig {
 		for _, item := range config.DC {
 			if item.Name == config.CurrentDatacenter {
 				config.ActiveConfig = &item
+				break
 			}
 		}
 		return &config
