@@ -12,13 +12,13 @@ spec:
       volumes:
       - name: cert-volume
         hostPath:
-          path: /root/wuyi/certs
+          path: /home/pcloud/data/certs
       - name: mysql-data
         hostPath:
-          path: /root/wuyi/mysql
+          path: /home/pcloud/data/mysql
       - name: settings
         hostPath:
-          path: /root/wuyi/settings.py
+          path: /home/pcloud/data/settings.py
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
