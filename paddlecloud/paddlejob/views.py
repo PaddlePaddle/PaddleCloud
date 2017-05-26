@@ -63,6 +63,25 @@ class JobsView(APIView):
             pass
 
         registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
+        # get user specified image
+        job_image = obj.get("image", None)
+        gpu_count = obj.get("gpu", 0)
+        # use default images
+        if not job_image :
+            if gpu_count > 0:
+                job_image = settings.JOB_DOCKER_IMAGE["image-gpu"]
+            else:
+                job_image = settings.JOB_DOCKER_IMAGE["image"]
+
+        # add Nvidia lib volume if training with GPU
+        if gpu_count > 0:
+            volumes.append(volume.get_volume_config(
+                fstype = "hostpath",
+                name = "nvidia-libs",
+                mount_path = "/usr/local/nvidia/lib64",
+                host_path = settings.NVIDIA_LIB_PATH
+            ))
+
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
             job_package = obj.get("jobPackage", ""),
@@ -74,7 +93,7 @@ class JobsView(APIView):
             psmemory = obj.get("psmemory", "1Gi"),
             topology = obj["topology"],
             gpu = obj.get("gpu", 0),
-            image = obj.get("image", settings.JOB_DOCKER_IMAGE["image"]),
+            image = job_image,
             passes = obj.get("passes", 1),
             registry_secret = registry_secret,
             volumes = volumes

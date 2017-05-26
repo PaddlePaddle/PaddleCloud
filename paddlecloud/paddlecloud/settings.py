@@ -258,8 +258,10 @@ else:
     # init kubernetes client with ~/.kube/config file
     config.load_kube_config()
 
+# ============== Datacenter Storage Config Samples ==============
 #if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
 #the following is an example:
+
 #DATACENTERS = {
 #   "datacenter1":{
 #       "fstype": "cephfs",
@@ -295,10 +297,17 @@ DATACENTERS = {
 # where cephfs root is mounted when using cephfs storage service
 STORAGE_PATH="/pfs"
 
+# ===================== Docker image registry =====================
 JOB_DOCKER_IMAGE = {
-    "image": "yancey1989/paddlecloud-job",
-    "registry_secret": "job-registry-secret",
+    # These images are built by `docker/build_docker.sh` under this repo.
+    "image": "typhoon1986/paddlecloud-job",
+    "image-gpu": "typhoon1986/paddlecloud-job:gpu",
+    # docker registry credentials
+    "registry_secret": "job-registry-secret", # put this to None if not using registry login
     "docker_config":{"auths":
                      {"registry.baidu.com":
                       {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
 }
+
+# Path store all cuda, nvidia driver libs
+NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
