@@ -13,18 +13,18 @@
 ```yaml
 datacenters:
 - name: datacenter1
-  active: true
   username: [your user name]
   password: [secret]
   endpoint: http://cloud.paddlepaddle.org
+current-datacenter: datacenter1
 ```
 
 配置文件用于指定使用的PaddlePaddleCloud服务器集群的接入地址，并需要配置用户的登录信息：
 - name: 自定义的datacenter名称，可以是任意字符串
-- active: 为true说明使用这个datacenter作为当前操作的datacenter，配置文件中只能有一个datacenter的配置为true
 - username: PaddlePaddleCloud的用户名，账号在未开放注册前需要联系管理员分配，通常用户名为邮箱地址
 - password: 账号对应的密码
 - endpoint: PaddlePaddleCloud集群API地址，可以从集群管理员处获得
+- current-datacenter: 标明使用哪个datacenter作为当前操作的datacenter
 
 配置文件创建完成后，执行`paddlecloud`会显示该客户端的帮助信息：
 
