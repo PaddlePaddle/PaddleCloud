@@ -77,6 +77,7 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		fmt.Fprintf(os.Stderr, "error submiting job: %v\n", errS)
 		return subcommands.ExitFailure
 	}
+	fmt.Printf("%s submited.\n", p.Jobname)
 	return subcommands.ExitSuccess
 }
 
