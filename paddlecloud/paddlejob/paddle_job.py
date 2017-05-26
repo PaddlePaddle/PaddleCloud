@@ -18,6 +18,7 @@ class PaddleJob(object):
                  pscpu,
                  psmemory,
                  topology,
+                 entry,
                  image,
                  passes,
                  gpu=0,
@@ -38,6 +39,7 @@ class PaddleJob(object):
         self._pscpu = pscpu
         self._psmemory = psmemory
         self._topology = topology
+        self._entry = entry
         self._image = image
         self._volumes = volumes
         self._registry_secret = registry_secret
@@ -67,6 +69,7 @@ class PaddleJob(object):
         envs.append({"name":"TRAINERS",             "value":str(self._parallelism)})
         envs.append({"name":"PSERVERS",             "value":str(self._pservers)})
         envs.append({"name":"TOPOLOGY",             "value":self._topology})
+        envs.append({"name":"ENTRY",                "value":self._entry})
         envs.append({"name":"TRAINER_PACKAGE",      "value":self._job_package})
         envs.append({"name":"PADDLE_INIT_PORT",     "value":str(DEFAULT_PADDLE_PORT)})
         envs.append({"name":"PADDLE_INIT_TRAINER_COUNT",        "value":str(self._cpu)})
@@ -97,6 +100,8 @@ class PaddleJob(object):
         return ["paddle_k8s", "start_pserver"]
 
     def _get_trainer_entrypoint(sefl):
+        if self._entry:
+            return ["paddle_k8s", "start_trainer", "v2"]
         return ["paddle_k8s", "start_trainer", "v1"]
 
     def _get_trainer_labels(self):

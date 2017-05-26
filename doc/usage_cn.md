@@ -40,7 +40,7 @@ Subcommands:
 	submit           Submit job to PaddlePaddle Cloud.
 
 
-Use "paddlecloud.darwin flags" for a list of top-level flags
+Use "paddlecloud flags" for a list of top-level flags
 ```
 
 ## 准备训练数据
@@ -120,8 +120,16 @@ scp -r my_training_package/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mypack
 
 执行下面的命令提交准备好的任务:
 
+- 提交基于V1 API的训练任务
+
 ```bash
 paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+```
+
+- 提交基于V2 API的训练任务
+
+```bash
+paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -entry "python trainer_config.py" /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 参数说明：
@@ -134,6 +142,7 @@ paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parall
 - `-pservers`：parameter server的节点个数
 - `-psmemory`：parameter server占用的内存资源，格式为“数字+单位”，单位可以是：Ki，Mi，Gi
 - `-topology`：指定PaddlePaddle v1训练的模型配置python文件
+- `-entry`: 指定PaddlePaddle v2训练程序的启动命令
 - `-passes`：执行训练的pass个数
 - `package`：HDFS 训练任务package的路径
 

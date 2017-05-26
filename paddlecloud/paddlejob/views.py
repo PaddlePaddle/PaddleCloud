@@ -34,8 +34,10 @@ class JobsView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         obj = json.loads(request.body)
-        if not obj.get("topology"):
-            return utils.simple_response(500, "no topology specified")
+        topology = obj.get("topology", "")
+        entry = obj.get("entry", "")
+        if not topology and not entry:
+            return utils.simple_response(500, "no topology or entry specified")
         if not obj.get("datacenter"):
             return utils.simple_response(500, "no datacenter specified")
         dc = obj.get("datacenter")
@@ -72,7 +74,8 @@ class JobsView(APIView):
             pservers = obj.get("pservers", 1),
             pscpu = obj.get("pscpu", 1),
             psmemory = obj.get("psmemory", "1Gi"),
-            topology = obj["topology"],
+            topology = topology,
+            entry = entry,
             gpu = obj.get("gpu", 0),
             image = obj.get("image", settings.JOB_DOCKER_IMAGE["image"]),
             passes = obj.get("passes", 1),
