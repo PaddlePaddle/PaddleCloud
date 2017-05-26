@@ -1,5 +1,17 @@
-language: go
-
-go:
-  - 1.7.x
-  - 1.8.x
+matrix:
+  include:
+    - language: go
+      go: 1.8.x
+      script: cd go && go test ./...
+    - language: python
+      python: 2.7
+      sudo: required
+      env:
+        - DJANGO_SETTINGS_MODULE="paddlecloud.travis_settings"
+      before_script:
+        - mysql -e 'create database paddlecloud;'
+        - mkdir $HOME/.kube && cp ./k8s/config $HOME/.kube/
+        - pip install -r paddlecloud/requirements.txt
+        - cd paddlecloud && python manage.py migrate
+      script:
+        - python -m unittest discover
