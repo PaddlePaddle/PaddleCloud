@@ -10,7 +10,7 @@ tmpl_volume = {
 }
 tmpl_volume_mount = {
     "hostpath": "{\"name\": $NAME, \"mountPath\":$MOUNT_PATH}",
-    "cephfs":"{\"mount_path\": $MOUNT_PATH, \"name\": $NAME}"
+    "cephfs":"{\"mountPath\": $MOUNT_PATH, \"name\": $NAME}"
 }
 
 def __render(tmpl, **kwargs):

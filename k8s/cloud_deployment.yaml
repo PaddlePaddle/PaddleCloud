@@ -19,6 +19,14 @@ spec:
       - name: settings
         hostPath:
           path: /home/pcloud/data/settings.py
+      # - name: data-storage
+      #   cephfs:
+      #     name: cephfs
+      #     monitors: ["172.19.32.166:6789"]
+      #     path: "/"
+      #     user: "admin"
+      #     secretRef:
+      #       name: ceph-secret
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
@@ -28,6 +36,8 @@ spec:
           mountPath: /certs
         - name: settings
           mountPath: /pcloud/paddlecloud/settings.py
+        # - name: data-storage
+        #   mountPath: /pfs
         ports:
         - containerPort: 8000
         env:

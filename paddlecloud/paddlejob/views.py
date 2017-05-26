@@ -45,7 +45,7 @@ class JobsView(APIView):
             volumes.append(volume.get_volume_config(
                 fstype = "hostpath",
                 name = dc.replace("_", "-"),
-                mount_path = cfg["mount_path"] % username,
+                mount_path = cfg["mount_path"] % (dc, username),
                 host_path = cfg["host_path"]
             ))
         elif cfg and cfg["fstype"] == "cephfs":
@@ -55,7 +55,7 @@ class JobsView(APIView):
                 monitors_addr = cfg["monitors_addr"],
                 secret = cfg["secret"],
                 user = cfg["user"],
-                mount_path = cfg["mount_path"] % username,
+                mount_path = cfg["mount_path"] % (dc, username),
                 cephfs_path = cfg["cephfs_path"] % username,
                 admin_key = cfg["admin_key"]
             ))
@@ -80,7 +80,6 @@ class JobsView(APIView):
             volumes = volumes
         )
         try:
-            print paddle_job.new_pserver_job()
             ret = client.ExtensionsV1beta1Api().create_namespaced_replica_set(
                 namespace,
                 paddle_job.new_pserver_job(),
@@ -195,9 +194,12 @@ class WorkersView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         jobname = request.query_params.get("jobname")
+        job_pod_list = None
         if not jobname:
-            return utils.simple_response(500, "must specify jobname")
-        job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
+            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace)
+        else:
+            selector = "paddle-job=%s"%jobname
+            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector=selector)
         return Response(job_pod_list.to_dict())
 
 class QuotaView(APIView):

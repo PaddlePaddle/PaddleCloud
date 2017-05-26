@@ -266,7 +266,7 @@ else:
 #       "monitors_addr": "172.19.32.166:6789",
 #       "secret": "ceph-secret",
 #       "user": "admin",
-#       "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
+#       "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
 #       "cephfs_path": "/%s" # cephfs_path % username
 #       "admin_key": "/certs/admin.secret"
 #   }
@@ -277,20 +277,23 @@ else:
 #   "dc1":{
 #       "fstype": "hostpath",
 #       "host_path": "/mnt/hdfs/",
-#       "mount_path" "/pfs/dc1/home/%s/" # mount_path % username
+#       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
 #    }
 #}
 DATACENTERS = {
     "datacenter1":{
         "fstype": "cephfs",
-        "monitors_addr": "172.19.32.166:6789",
+        "monitors_addr": ["172.19.32.166:6789"],  # must be a list
         "secret": "ceph-secret",
         "user": "admin",
-        "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
+        "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
         "cephfs_path": "/%s", # cephfs_path % username
         "admin_key": "/certs/admin.secret"
     }
 }
+
+# where cephfs root is mounted when using cephfs storage service
+STORAGE_PATH="/pfs"
 
 JOB_DOCKER_IMAGE = {
     "image": "yancey1989/paddlecloud-job",

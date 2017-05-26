@@ -71,6 +71,12 @@ class SignupView(account.views.SignupView):
         logging.info("creating default user namespace and RBAC...")
         create_user_namespace(form.cleaned_data["email"])
         create_user_RBAC_permissions(form.cleaned_data["email"])
+        # create user's cephfs storage dir
+        try:
+            os.mkdir(os.path.join(settings.STORAGE_PATH, form.cleaned_data["email"]))
+        except Exception, e:
+            # FIXME: all exception is ignored
+            logging.error("create user's storage path error: %s", e)
 
         super(SignupView, self).after_signup(form)
 
