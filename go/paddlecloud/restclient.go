@@ -86,7 +86,6 @@ func deleteCall(jsonString []byte, targetURL string, token string) ([]byte, erro
 		return []byte{}, errors.New("http server returned non-200 status: " + resp.Status)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("%s\n\n", body)
 	return body, err
 }
 

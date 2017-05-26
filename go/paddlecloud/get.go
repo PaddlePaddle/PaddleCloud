@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/google/subcommands"
 )
@@ -50,6 +51,9 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 			return subcommands.ExitFailure
 		}
 		workers(f.Arg(1))
+	} else {
+		f.Usage()
+		return subcommands.ExitFailure
 	}
 
 	return subcommands.ExitSuccess
@@ -73,17 +77,20 @@ func workers(jobname string) error {
 		fmt.Fprintf(os.Stderr, "bad server return: %s", respBody)
 		return err
 	}
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
-	fmt.Printf("NAME\tSTATUS\tSTART\n")
+	fmt.Fprintln(w, "NAME\tSTATUS\tSTART\t")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error parsing: %s", err)
 		return err
 	}
 	for _, item := range respObj.(map[string]interface{})["items"].([]interface{}) {
-		fmt.Printf("%s\t%s\t%v\n", item.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string),
+		fmt.Fprintf(w, "%s\t%s\t%v\t\n",
+			item.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string),
 			item.(map[string]interface{})["status"].(map[string]interface{})["phase"].(string),
 			item.(map[string]interface{})["status"].(map[string]interface{})["start_time"])
 	}
+	w.Flush()
 	return nil
 }
 
@@ -103,15 +110,16 @@ func jobs() error {
 		return err
 	}
 	items := respObj.(map[string]interface{})["items"].([]interface{})
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	if len(items) >= 0 {
-		fmt.Printf("NUM\tNAME\tSUCC\tFAIL\tSTART\tCOMP\tACTIVE\n")
+		fmt.Fprintf(w, "NUM\tNAME\tSUCC\tFAIL\tSTART\tCOMP\tACTIVE\t\n")
 	}
 	for idx, j := range items {
 		jobnameTrainer := j.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string)
 		jobnameParts := strings.Split(jobnameTrainer, "-")
 		jobname := strings.Join(jobnameParts[0:len(jobnameParts)-1], "-")
 
-		fmt.Printf("%d\t%s\t%v\t%v\t%v\t%v\t%v\n", idx,
+		fmt.Fprintf(w, "%d\t%s\t%v\t%v\t%v\t%v\t%v\t\n", idx,
 			jobname,
 			j.(map[string]interface{})["status"].(map[string]interface{})["succeeded"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["failed"],
@@ -119,6 +127,7 @@ func jobs() error {
 			j.(map[string]interface{})["status"].(map[string]interface{})["completion_time"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["active"])
 	}
+	w.Flush()
 
 	return err
 }
@@ -138,14 +147,15 @@ func quota() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("RESOURCE\tLIMIT\n")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintf(w, "RESOURCE\tLIMIT\t\n")
 	for _, item := range respObj.(map[string]interface{})["items"].([]interface{}) {
-		fmt.Printf("-----\t-----\n")
+		fmt.Fprintf(w, "-----\t-----\t\n")
 		hardLimits := item.(map[string]interface{})["status"].(map[string]interface{})["hard"].(map[string]interface{})
 		for k, v := range hardLimits {
-			fmt.Printf("%s\t%s\n", k, v.(string))
+			fmt.Fprintf(w, "%s\t%s\t\n", k, v.(string))
 		}
-
 	}
+	w.Flush()
 	return nil
 }

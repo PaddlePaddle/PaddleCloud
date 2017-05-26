@@ -2,7 +2,10 @@ package paddlecloud
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/google/subcommands"
 )
@@ -41,6 +44,21 @@ func (p *KillCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		return subcommands.ExitFailure
 	}
 
-	deleteCall([]byte("{\"jobname\": \""+f.Arg(0)+"\"}"), config.ActiveConfig.Endpoint+"/api/v1/jobs/", token)
+	body, err := deleteCall([]byte("{\"jobname\": \""+f.Arg(0)+"\"}"), config.ActiveConfig.Endpoint+"/api/v1/jobs/", token)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error kill job: %v\n", err)
+		return subcommands.ExitFailure
+	}
+	var jsonObj interface{}
+	err = json.Unmarshal(body, &jsonObj)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error kill job: %v\n", err)
+		return subcommands.ExitFailure
+	}
+	respCode := jsonObj.(map[string]interface{})["code"].(float64)
+	if respCode != 200 {
+		fmt.Fprintf(os.Stderr, "error kill job: %s\n", jsonObj.(map[string]interface{})["msg"].(string))
+	}
+
 	return subcommands.ExitSuccess
 }

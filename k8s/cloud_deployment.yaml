@@ -22,7 +22,7 @@ spec:
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
-        image: yancey1989/paddlecloud
+        image: typhoon1986/paddlecloud
         volumeMounts:
         - name: cert-volume
           mountPath: /certs
@@ -53,4 +53,4 @@ spec:
           - name: MYSQL_ROOT_PASSWORD
             value: root
       nodeSelector:
-        kubernetes.io/hostname: nmg01-jpaas-paddle00-wrk99.nmg01.baidu.com
+        kubernetes.io/hostname: k8s-node1

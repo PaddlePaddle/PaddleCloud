@@ -44,7 +44,7 @@ func UserHomeDir() string {
 func token() (string, error) {
 	tokenbytes, err := ioutil.ReadFile(filepath.Join(UserHomeDir(), ".paddle", "token_cache"))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "previous token not found, fetching a new one...")
+		fmt.Fprintf(os.Stderr, "previous token not found, fetching a new one...\n")
 		// Authenticate to the cloud endpoint
 		authJSON := map[string]string{}
 		authJSON["username"] = config.ActiveConfig.Username
@@ -79,6 +79,7 @@ func parseConfig(configFile string) *submitConfig {
 			glog.Fatalf("load config %s error: %v", configFile, err)
 		}
 		// put active config
+		config.ActiveConfig = nil
 		for _, item := range config.DC {
 			if item.Name == config.CurrentDatacenter {
 				config.ActiveConfig = &item
