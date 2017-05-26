@@ -164,6 +164,8 @@ class PaddleJob(object):
         }
         if self._registry_secret:
             job["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
+        if self._gpu > 0:
+            job["spec"]["template"]["spec"]["containers"][0]["resources"]["limites"]["alpha.kubernetes.io/nvidia-gpu"] = str(self._gpu)
         return job
     def new_pserver_job(self):
         """
