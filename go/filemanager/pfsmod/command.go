@@ -9,10 +9,10 @@ import (
 type Command interface {
 	ToUrl() string
 	ToJson() []byte
-	Run() interface{}
+	Run() (interface{}, error)
 }
 
-func IsRemotePath(path string) bool {
+func IsCloudPath(path string) bool {
 	return strings.HasPrefix(path, "/pfs/")
 }
 

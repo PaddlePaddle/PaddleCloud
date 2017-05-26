@@ -1,15 +1,65 @@
 package paddlecoud
 
-func DownloadChunks(src string, dest string, diffMeta []pfsmodules.ChunkMeta) error {
+import (
+	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	"github.com/google/subcommands"
+	"log"
+	"os"
+	"path/filepath"
+)
+
+func GetChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.ChunkMeta, error) {
+
+	cmd := pfsmod.NewChunkMetaCmd(path, chunkSize)
+
+	ret, err := s.GetChunkMeta(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	results := pfsmod.ChunkMetaCmdReult
+	if err := json.Unmarshal(ret, results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func GetFileAttr(s *PfsSubmitter, filePath string) (*pfsmod.FileAttr, error) {
+	lsCmd := pfsMod.NewLsCmd(false, filePath)
+
+	lsResp, err := RemoteLs(lsCmd)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(lsResp.StatusCode) != 0 {
+		return nil, errors.New(lsResp.StatusText)
+	}
+
+	for _, attr := range lsResp.Attrs {
+		if len(attr.StatusCode) != 0 {
+			return nil, errors.New(lsResp.StatusText)
+		}
+
+		return &attr, nil
+	}
+
+	return nil, errors.New("internal error")
+}
+
+func DownloadFileChunks(s *PfsSubmitter, src string, dest string, diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
-		log.Printf("srcfile:%s and destfile:%s are same\n", src, dest)
+		fmt.Printf("srcfile:%s and destfile:%s are already same\n", src, dest)
 		return nil
 	}
 
-	s := NewCmdSubmitter(UserHomeDir() + "/.paddle/config")
-
 	for _, meta := range diffMeta {
-		cmdAttr := pfsmodules.FromArgs("getchunkdata", src, meta.Offset, meta.Len)
+		cmdAttr := pfsmod.FromArgs("getchunkdata", src, meta.Offset, meta.Len)
 		err := s.GetChunkData(8080, cmdAttr, dest)
 		if err != nil {
 			log.Printf("download chunk error:%v\n", err)
@@ -20,17 +70,16 @@ func DownloadChunks(src string, dest string, diffMeta []pfsmodules.ChunkMeta) er
 	return nil
 }
 
-func DownloadFile(src string, srcFileSize int64, dest string, chunkSize int64) error {
-	srcMeta, err := GetRemoteChunksMeta(src, chunkSize)
+func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) error {
+	srcMeta, err := pfsmod.GetChunkMeta(src, chunkSize)
 	if err != nil {
 		return err
 	}
 
-	destMeta, err := pfsmodules.GetChunksMeta(dest, chunkSize)
-	//log.Printf("GetChunkMeta %v\n", dest, err)
+	destMeta, err := pfsmod.GetChunkMeta(dest, chunkSize)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := pfsmodules.CreateSizedFile(dest, srcFileSize); err != nil {
+			if err := pfsmod.CreateSizedFile(dest, srcFileSize); err != nil {
 				return err
 			}
 		} else {
@@ -38,7 +87,7 @@ func DownloadFile(src string, srcFileSize int64, dest string, chunkSize int64) e
 		}
 	}
 
-	diffMeta, err := pfsmodules.GetDiffChunksMeta(srcMeta, destMeta)
+	diffMeta, err := pfsmod.GetDiffChunksMeta(srcMeta, destMeta)
 	if err != nil {
 		return err
 	}
