@@ -9,11 +9,11 @@ const (
 )
 
 var statusText = map[int]string{
-	StatusFileNotFound:                     "no such file or directory",
-	StatusDirectoryNotAFile:                "should be a file not a directory",
-	StatusCopyFromLocalToLocal:             "don't support copy local to local",
-	StatusDestShouldBeDirectory:            "dest should be a directory",
-	StatusOnlySupportUploadOrDownloadFiles: "only support upload or download files, not directories",
+	StatusFileNotFound:             "no such file or directory",
+	StatusDirectoryNotAFile:        "should be a file not a directory",
+	StatusNotSupportCpLocalToLocal: "don't support copy local to local",
+	StatusDestShouldBeDirectory:    "dest should be a directory",
+	StatusOnlySupportFiles:         "only support upload or download files, not directories",
 }
 
 func StatusText(code int) string {

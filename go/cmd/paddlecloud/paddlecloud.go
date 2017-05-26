@@ -16,6 +16,8 @@ func main() {
 	subcommands.Register(&paddlecloud.LogsCommand{}, "")
 	subcommands.Register(&paddlecloud.GetCommand{}, "")
 	subcommands.Register(&paddlecloud.KillCommand{}, "")
+	subcommands.Register(&paddlecloud.LsCommand{}, "")
+	subcommands.Register(&paddlecloud.CpCommand{}, "")
 
 	flag.Parse()
 	ctx := context.Background()

@@ -25,7 +25,7 @@ func (p *LsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.R, "r", false, "list files recursively")
 }
 
-func RemoteLs(s *NewPfsSubmitter, cmd *LsCommand) (pfsmod.LsCommandResult, error) {
+func RemoteLs(s *PfsSubmitter, cmd *LsCommand) (*pfsmod.LsCommandResult, error) {
 	body, err := s.GetFiles(cmd)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func RemoteLs(s *NewPfsSubmitter, cmd *LsCommand) (pfsmod.LsCommandResult, error
 		return err
 	}
 
-	return result.(pfsmod.LsCommandResult), nil
+	return &result.(pfsmod.LsCommandResult), nil
 }
 
 func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {

@@ -41,8 +41,8 @@ func (p *LsCommand) ToJson() []byte {
 func (p *LsCommand) Run() interface{} {
 }
 
-func NewLsCommand(f *flag.FlagSet) (*LsCommand, error) {
-	cmd = LsCommand{}
+func NewLsCommandFromFlag(f *flag.FlagSet) (*LsCommand, error) {
+	cmd := LsCommand{}
 
 	cmd.Method = "ls"
 	cmd.Args = make([]string, 0, f.NArg())
@@ -58,4 +58,12 @@ func NewLsCommand(f *flag.FlagSet) (*LsCommand, error) {
 	}
 
 	return &cmd, nil
+}
+
+func NewLsCommand(r bool, path string) (*LsCommand, error) {
+	return &LsCommand{
+		R:    r,
+		Args: []string{arg},
+	}
+
 }
