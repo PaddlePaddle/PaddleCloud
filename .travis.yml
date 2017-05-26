@@ -14,4 +14,4 @@ matrix:
         - pip install -r paddlecloud/requirements.txt
         - cd paddlecloud && python manage.py migrate
       script:
-        - python -m unittest discover
+        - python manage.py test
