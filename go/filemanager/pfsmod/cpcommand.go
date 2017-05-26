@@ -6,31 +6,32 @@ import (
 	"log"
 )
 
-type CpCommandResult struct {
-	StatusCode int32  `json:"StatusCode"`
-	StatusText string `json:"StatusText"`
-	Src        string `json:"Path"`
-	Dst        string `json:"Dst"`
+type CpCmdResult struct {
+	Src string `json:"Path"`
+	Dst string `json:"Dst"`
 }
 
-type CpCommand struct {
+type CpCmd struct {
 	Method string
 	V      bool
 	Src    []string
 	Dst    string
 }
 
-func (p *CpCommand) ToUrl() string {
+func (p *CpCmd) ToUrlParam() string {
+	return ""
 }
 
-func (p *CpCommand) ToJson() []byte {
+func (p *CpCmd) ToJson() ([]byte, error) {
+	return nil, nil
 }
 
-func (p *cpCommand) Run() interface{} {
+func (p *cpCmd) Run() (interface{}, error) {
+	return nil, nil
 }
 
-func NewCpCommand(f *flag.FlagSet) (*CpCommand, error) {
-	cmd := CpCommand{}
+func NewCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
+	cmd := CpCmd{}
 
 	cmd.Method = "cp"
 	cmd.Src = make([]string, 0, f.NArg())
@@ -51,7 +52,7 @@ func NewCpCommand(f *flag.FlagSet) (*CpCommand, error) {
 	return &cmd, nil
 }
 
-func (p *CpCommand) ToString(src, dst string) string {
+func (p *CpCmd) PartToString(src, dst string) string {
 	if p.V {
 		return fmt.Printf("cp -v %s %s\n", src, dst)
 	}

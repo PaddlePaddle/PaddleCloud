@@ -1,9 +1,24 @@
 package pfsmod
 
-type ChunkMetaCmdResult struct {
-	StatusCode int32       `json:"status"`
-	StatusText string      `json:"statustext"`
-	Metas      []ChunkMeta `json:"meta"`
+import (
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"sort"
+	"strconv"
+)
+
+type ChunkMeta struct {
+	Offset   int64  `json:"offset"`
+	Checksum string `json:"checksum"`
+	Len      int64  `json:"len"`
 }
 
 type ChunkMataCmd struct {
@@ -12,7 +27,7 @@ type ChunkMataCmd struct {
 	ChunkSize int64  `json:"chunksize"`
 }
 
-func (p *ChunkMetaCmd) ToUrl(urlPath string) string {
+func (p *ChunkMetaCmd) ToUrlParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("path", p.Path)
@@ -20,7 +35,7 @@ func (p *ChunkMetaCmd) ToUrl(urlPath string) string {
 	str := fmt.Sprint(p.ChunkSize)
 	parameters.Add("chunksize", str)
 
-	return fmt.Sprintf("%s/api/v1/chunks?%s", urlPath, parameters.Encode())
+	return parameters.Encode()
 }
 
 func (p *ChunkMetaCmd) ToJson() ([]byte, error) {
@@ -28,15 +43,19 @@ func (p *ChunkMetaCmd) ToJson() ([]byte, error) {
 }
 
 func (p *ChunkMetaCmd) Run() (interface{}, error) {
-	return getChunksMeta(p.FilePath, p.ChunkSize)
+	metas, err := getChunkMeta(p.FilePath, p.ChunkSize)
+	if err != nil {
+		return nil, err
+	}
+
+	return metas, nil
 }
 
-func NewChunkMetaCmdFromUrl(w http.ResponseWriter, r *http.Request) (*ChunkMetaCmd, int32) {
+func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, int32) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
 	chunkStr := r.URL.Query().Get("chunksize")
 
-	resp := ChunkMetaCmdResponse{}
 	if len(method) == 0 ||
 		method != "GetChunkMeta" ||
 		len(path) < 4 ||
@@ -124,7 +143,7 @@ func GetDiffChunkMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, e
 }
 
 func getChunkMeta(path string, len int64) ([]ChunkMeta, error) {
-	f, err := os.Open(path) // For read access.
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}

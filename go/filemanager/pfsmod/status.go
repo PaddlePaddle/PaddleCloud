@@ -6,6 +6,8 @@ const (
 	StatusCopyFromLocalToLocal             = 523
 	StatusDestShouldBeDirectory            = 524
 	StatusOnlySupportUploadOrDownloadFiles = 526
+	StatusBadFileSize                      = 527
+	StatusDirectoryAlreadyExist            = 528
 )
 
 var statusText = map[int]string{
@@ -14,6 +16,8 @@ var statusText = map[int]string{
 	StatusNotSupportCpLocalToLocal: "don't support copy local to local",
 	StatusDestShouldBeDirectory:    "dest should be a directory",
 	StatusOnlySupportFiles:         "only support upload or download files, not directories",
+	StatusBadFileSize:              "bad file size",
+	StatusDirectoryAlreadyExist:    "directory already exist",
 }
 
 func StatusText(code int) string {

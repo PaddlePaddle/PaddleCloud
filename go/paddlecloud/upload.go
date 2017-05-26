@@ -12,30 +12,50 @@ import (
 	"path/filepath"
 )
 
-func UploadFile(src, dest string, srcFileSize int64) error {
-	if err := RemoteTouch(dest, srcFileSize); err != nil {
+func RemoteTouch(s *PfsSubmitter, cmd *TouchCmd) (TouchResult, error) {
+	body, err := s.PostFiles(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := pfsmod.TouchResponse{}
+	if err := json.Unmarshal(body, &resp); err != nil {
 		return err
 	}
 
-	dstMeta, err := GetRemoteChunksMeta(dest, pfsmodules.DefaultChunkSize)
+	if len(resp.Err) == 0 {
+		return resp.Result, nil
+	}
+
+	return resp.Result, errors.New(resp.Err)
+}
+
+func UploadFile(s *PfsSubmitter,
+	src, dst string, srcFileSize int64) error {
+
+	if err := RemoteTouch(s, pfsmod.NewTouchCmd(dst, srcFileSize)); err != nil {
+		return err
+	}
+
+	dstMeta, err := GetRemoteChunksMeta(s, dst, pfsmod.DefaultChunkSize)
 	if err != nil {
 		return err
 	}
-	log.Printf("dest %s chunkMeta:%v\n", dest, dstMeta)
+	log.Printf("dst %s chunkMeta:%v\n", dst, dstMeta)
 
-	log.Printf("src:%s dest:%s\n", src, dest)
-	srcMeta, err := pfsmodules.GetChunksMeta(src, pfsmodules.DefaultChunkSize)
+	log.Printf("src:%s dst:%s\n", src, dst)
+	srcMeta, err := pfsmod.GetChunksMeta(src, pfsmod.DefaultChunkSize)
 	if err != nil {
 		return err
 	}
 	log.Printf("src %s chunkMeta:%v\n", src, srcMeta)
 
-	diffMeta, err := pfsmodules.GetDiffChunksMeta(srcMeta, dstMeta)
+	diffMeta, err := pfsmod.GetDiffChunksMeta(srcMeta, dstMeta)
 	if err != nil {
 		return err
 	}
 
-	err = UploadChunks(src, dest, diffMeta)
+	err = UploadChunks(s, src, dst, diffMeta)
 	if err != nil {
 		return err
 	}
@@ -43,62 +63,44 @@ func UploadFile(src, dest string, srcFileSize int64) error {
 	return nil
 }
 
-func Upload(src, dest string) ([]pfsmodules.CpCmdResult, error) {
-	resp, err := localLs(src)
+func Upload(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCmdResult, error) {
+	lsCmd := pfsmod.NewLsCmd(true, src)
+	srcMetas, err := lsCmd.Run()
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("dest file:%s\n", dest)
-	destMeta, err := GetRemoteMeta(dest)
-	if err != nil {
+	dstMetas, err := RemoteLs(s, NewLsCmd(false, src))
+	if err != nil && !pfsmod.IsNotExist(err) {
 		return nil, err
 	}
 
-	results := make([]pfsmodules.CpCmdResult, 0, 100)
+	//files must save under directories
+	if len(srcMetas) > 1 && !pfsmod.IsDir(dstMeta) {
+		return results, errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
+	}
 
-	for _, result := range resp.Results {
-		m := pfsmodules.CpCmdResult{}
-		m.Src = result.Path
-		_, file := filepath.Split(m.Src)
-		if destMeta.IsDir {
-			m.Dest = dest + "/" + file
-		} else {
-			m.Dest = dest
+	results := make([]pfsmod.CpCmdResult, 0, 100)
+
+	for _, srcMeta := range srcMetas {
+		if srcMeta.IsDir {
+			return results, errors.New(pfsmod.StatusText[pfsmod.StatusOnlySupportFiles])
 		}
 
-		if len(result.Err) > 0 {
-			results = append(results, m)
-			log.Printf("%s is a directory\n", m.Src)
-			return results, errors.New(result.Err)
+		realSrc := srcMeta.Path
+		realDst := dst
+
+		_, file := filepath.Split(srcMeta.Path)
+		if dstMeta.IsDir {
+			realDst = dst + "/" + file
 		}
 
-		for _, meta := range result.Metas {
-			m.Src = meta.Path
-			_, file := filepath.Split(meta.Path)
-			if destMeta.IsDir {
-				m.Dest = dest + "/" + file
-			} else {
-				m.Dest = dest
-			}
-
-			if meta.IsDir {
-				m.Err = pfsmodules.OnlySupportUploadOrDownloadFiles
-				results = append(results, m)
-				log.Printf("%s is a directory\n", meta.Path)
-				return results, errors.New(m.Err)
-			}
-
-			log.Printf("src_path:%s dest_path:%s\n", m.Src, m.Dest)
-			if err := UploadFile(m.Src, m.Dest, meta.Size); err != nil {
-				m.Err = err.Error()
-				results = append(results, m)
-				log.Printf("upload %s  error:%s\n", meta.Path, m.Err)
-				return results, errors.New(m.Err)
-			}
-
-			results = append(results, m)
+		fmt.Printf("upload src_path:%s dst_path:%s\n", realSrc, realDst)
+		if ret, err := UploadFile(realSrc, realDst, srcMeta.Size); err != nil {
+			return results, err
 		}
+
+		results = append(results, ret...)
 	}
 
 	return nil, nil

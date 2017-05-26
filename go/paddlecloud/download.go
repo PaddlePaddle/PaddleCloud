@@ -107,10 +107,6 @@ func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCommandResult, error
 		return nil, err
 	}
 
-	if len(lsRet.StatusCode) != 0 {
-		return nil, errors.New(lsRet.StatusText)
-	}
-
 	if len(lsRet.Attr) > 1 {
 		fi, err := os.Stat(dst)
 		if err != nil {

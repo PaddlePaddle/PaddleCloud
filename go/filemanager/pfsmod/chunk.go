@@ -7,7 +7,7 @@ type ChunkCmd struct {
 	Data      []byte
 }
 
-func (p *ChunkCmd) ToUrl() string {
+func (p *ChunkCmd) ToUrlParam() string {
 	parameters := url.Values{}
 	parameters.Add("path", p.path)
 
@@ -20,12 +20,12 @@ func (p *ChunkCmd) ToUrl() string {
 	return parameters.Encode()
 }
 
-func (p *ChunkCmd) ToJson() []byte {
-	return nil
+func (p *ChunkCmd) ToJson() ([]byte, error) {
+	return nil, nil
 }
 
-func (p *ChunkCmd) Run() interface{} {
-	return nil
+func (p *ChunkCmd) Run() (interface{}, error) {
+	return nil, nil
 }
 
 // path example:
