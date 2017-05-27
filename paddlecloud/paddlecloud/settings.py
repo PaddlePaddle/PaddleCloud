@@ -301,7 +301,7 @@ STORAGE_PATH="/pfs"
 JOB_DOCKER_IMAGE = {
     # These images are built by `docker/build_docker.sh` under this repo.
     "image": "typhoon1986/paddlecloud-job",
-    "image-gpu": "typhoon1986/paddlecloud-job:gpu",
+    "image_gpu": "typhoon1986/paddlecloud-job:gpu",
     # docker registry credentials
     "registry_secret": "job-registry-secret", # put this to None if not using registry login
     "docker_config":{"auths":

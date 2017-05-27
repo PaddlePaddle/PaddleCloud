@@ -69,7 +69,7 @@ class JobsView(APIView):
         # use default images
         if not job_image :
             if gpu_count > 0:
-                job_image = settings.JOB_DOCKER_IMAGE["image-gpu"]
+                job_image = settings.JOB_DOCKER_IMAGE["image_gpu"]
             else:
                 job_image = settings.JOB_DOCKER_IMAGE["image"]
 
