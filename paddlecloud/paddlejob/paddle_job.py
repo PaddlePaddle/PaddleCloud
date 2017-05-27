@@ -102,7 +102,7 @@ class PaddleJob(object):
     def _get_pserver_entrypoint(self):
         return ["paddle_k8s", "start_pserver"]
 
-    def _get_trainer_entrypoint(sefl):
+    def _get_trainer_entrypoint(self):
         if self._entry:
             return ["paddle_k8s", "start_trainer", "v2"]
         return ["paddle_k8s", "start_trainer", "v1"]
