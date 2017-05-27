@@ -77,10 +77,10 @@ func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) er
 }
 
 // Download files to dst
-func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCmdResult, error) {
+func Download(s *PfsSubmitter, src, dst string) error {
 	lsRet, err := RemoteLs(s, pfsmod.NewLsCmd(true, src))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(lsRet) > 1 {
@@ -89,19 +89,18 @@ func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCmdResult, error) {
 			if err == os.ErrNotExist {
 				os.MkdirAll(dst, 0755)
 			} else {
-				return nil, err
+				return err
 			}
 		}
 
 		if !fi.IsDir() {
-			return nil, errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
+			return errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
 		}
 	}
 
-	results := make([]pfsmod.CpCmdResult, 0, 100)
 	for _, attr := range lsRet {
 		if attr.IsDir {
-			return results, errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
+			return errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 		}
 
 		realSrc := attr.Path
@@ -110,16 +109,10 @@ func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCmdResult, error) {
 
 		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
 		if err := DownloadFile(s, realSrc, attr.Size, realDst); err != nil {
-			return results, err
+			return err
 		}
 
-		m := pfsmod.CpCmdResult{
-			Src: realSrc,
-			Dst: realDst,
-		}
-
-		results = append(results, m)
 	}
 
-	return results, nil
+	return nil
 }

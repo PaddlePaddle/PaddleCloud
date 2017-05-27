@@ -68,7 +68,8 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	return &cmd, nil
 }
 
-func NewLsCmdFromUrlParam(path string) (*LsCmd, int32) {
+func NewLsCmdFromUrlParam(path string) (*LsCmd, int) {
+	//func NewLsCmdFromUrlValues(m url.Values) (*LsCmd, int32) {
 	cmd := LsCmd{}
 
 	m, err := url.ParseQuery(path)

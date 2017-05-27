@@ -60,7 +60,7 @@ func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) error {
 			if pfsmod.IsCloudPath(cmd.Dst) {
 				err = errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 			} else {
-				ret, err = Download(s, arg, cmd.Dst)
+				err = Download(s, arg, cmd.Dst)
 			}
 		} else {
 			if pfsmod.IsCloudPath(cmd.Dst) {

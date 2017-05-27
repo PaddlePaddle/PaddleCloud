@@ -55,7 +55,7 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	return GetChunkMeta(p.FilePath, p.ChunkSize)
 }
 
-func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, int32) {
+func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, int) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
 	chunkStr := r.URL.Query().Get("chunksize")

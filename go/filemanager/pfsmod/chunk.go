@@ -48,7 +48,7 @@ func (p *ChunkCmd) Run() (interface{}, error) {
 
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
-func NewChunkCmdFromUrl(path string) (*ChunkCmd, int) {
+func NewChunkCmdFromUrlParam(path string) (*ChunkCmd, int) {
 	cmd := ChunkCmd{}
 
 	m, err := url.ParseQuery(path)
@@ -75,7 +75,7 @@ func NewChunkCmdFromUrl(path string) (*ChunkCmd, int) {
 	return &cmd, http.StatusOK
 }
 
-func (p *ChunkCmd) GetChunkData(w io.Writer) error {
+func (p *ChunkCmd) WriteChunkData(w io.Writer) error {
 	f, err := os.Open(p.Path)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (p *ChunkCmd) GetChunkData(w io.Writer) error {
 	return nil
 }
 
-func (p *ChunkCmd) WriteChunkData(r io.Reader) error {
+func (p *ChunkCmd) GetChunkData(r io.Reader) error {
 	f, err := os.Open(p.Path)
 	if err != nil {
 		return err
