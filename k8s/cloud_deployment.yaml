@@ -1,0 +1,66 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: paddle-cloud
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: paddle-cloud
+    spec:
+      volumes:
+      - name: cert-volume
+        hostPath:
+          path: /home/pcloud/data/certs
+      - name: mysql-data
+        hostPath:
+          path: /home/pcloud/data/mysql
+      - name: settings
+        hostPath:
+          path: /home/pcloud/data/settings.py
+      # - name: data-storage
+      #   cephfs:
+      #     name: cephfs
+      #     monitors: ["172.19.32.166:6789"]
+      #     path: "/"
+      #     user: "admin"
+      #     secretRef:
+      #       name: ceph-secret
+      containers:
+      - name: paddle-cloud
+        imagePullPolicy: Always
+        image: typhoon1986/paddlecloud
+        volumeMounts:
+        - name: cert-volume
+          mountPath: /certs
+        - name: settings
+          mountPath: /pcloud/paddlecloud/settings.py
+        # - name: data-storage
+        #   mountPath: /pfs
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+#        livenessProbe:
+#         httpGet:
+#           path: /healthz/
+#           port: 8000
+#           httpHeaders:
+#           - name: User-Agent
+#             value: kubernetes-health-check
+#         initialDelaySeconds: 3
+#         periodSeconds: 5
+      - name: mysql
+        image: mysql:5.7
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: root
+      nodeSelector:
+        kubernetes.io/hostname: k8s-node1

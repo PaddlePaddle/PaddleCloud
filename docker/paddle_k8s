@@ -1,0 +1,77 @@
+#!/bin/bash
+set -e
+start_pserver() {
+    paddle pserver \
+      --port=$PADDLE_INIT_PORT \
+      --ports_num=$PADDLE_INIT_PORTS_NUM \
+      --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
+      --nics=$NICES \
+      --comment=paddle_process_k8s \
+      --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
+}
+
+start_trainer() {
+    python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
+    python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
+    export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
+    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
+    echo $PADDLE_INIT_TRAINER_ID > /trainer_id
+    # FIXME: /trainer_count = PADDLE_INIT_NUM_GRADIENT_SERVERS
+    echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count
+
+    # NOTE: $TRAINER_PACKAGE may be large, do not copy
+    export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
+    cd $TRAINER_PACKAGE
+
+    echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
+    $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
+    "version: " $1
+
+    case "$1" in
+      "v1")
+        paddle train \
+          --port=$PADDLE_INIT_PORT \
+          --nics=eth0 \
+          --ports_num=$PADDLE_INIT_PORTS_NUM \
+          --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
+          --num_passes=$PADDLE_INIT_NUM_PASSES \
+          --trainer_count=$PADDLE_INIT_TRAINER_COUNT \
+          --saving_period=1 \
+          --log_period=20 \
+          --local=0 \
+          --rdma_tcp=tcp \
+          --config=$TOPOLOGY \
+          --use_gpu=$PADDLE_INIT_USE_GPU \
+          --trainer_id=$PADDLE_INIT_TRAINER_ID \
+          --save_dir=$OUTPUT \
+          --pservers=$PADDLE_INIT_PSERVERS \
+          --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
+        ;;
+      "v2")
+        ${ENTRY}
+        ;;
+      *)
+        ;;
+    esac
+}
+
+usage() {
+    echo "usage: paddle_k8s [<args>]:"
+    echo "  start_trainer  [v1|v2]    Start a trainer process with v1 or v2 API"
+    echo "  start_pserver             Start a pserver process"
+}
+
+case "$1" in
+    start_pserver)
+        start_pserver
+        ;;
+    start_trainer)
+        start_trainer $2
+        ;;
+    --help)
+        usage
+        ;;
+    *)
+        usage
+        ;;
+esac
