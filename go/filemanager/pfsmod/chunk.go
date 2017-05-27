@@ -106,6 +106,7 @@ func (p *ChunkCmd) WriteChunkData(w io.Writer) error {
 }
 
 func (p *ChunkCmd) GetChunkData(r io.Reader) error {
+	//func (p *ChunkCmd) GetChunkData(r multipart.Reader) error {
 	f, err := os.Open(p.Path)
 	if err != nil {
 		return err

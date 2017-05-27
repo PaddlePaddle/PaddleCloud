@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	//log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
 
@@ -27,6 +28,10 @@ func (p *LsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.R, "r", false, "list files recursively")
 }
 
+func formatPrint(result []pfsmod.LsResult) {
+	fmt.Println(result)
+}
+
 func RemoteLs(s *PfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
 	body, err := s.GetFiles(cmd)
 	if err != nil {
@@ -45,6 +50,26 @@ func RemoteLs(s *PfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
 	return resp.Results, errors.New(resp.Err)
 }
 
+func remoteLs(s *PfsSubmitter, cmd *pfsmod.LsCmd) error {
+	for _, arg := range cmd.Args {
+		subcmd := pfsmod.NewLsCmd(
+			cmd.R,
+			arg,
+		)
+		result, err := RemoteLs(s, subcmd)
+
+		//fmt.Printf("ls -r=%v %s\n", cmd.R, arg)
+		fmt.Printf("%s :\n", arg)
+		if err != nil {
+			fmt.Printf("  error:%s\n", err.Error())
+			return err
+		}
+
+		formatPrint(result)
+	}
+	return nil
+}
+
 func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 {
 		f.Usage()
@@ -57,11 +82,8 @@ func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 
 	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
-	result, err := RemoteLs(s, cmd)
-	if err != nil {
+	if err := remoteLs(s, cmd); err != nil {
 		return subcommands.ExitFailure
 	}
-
-	fmt.Println(result)
 	return subcommands.ExitSuccess
 }

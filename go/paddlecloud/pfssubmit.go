@@ -14,6 +14,7 @@ import (
 	"net/http"
 	//"os"
 	//"strconv"
+	log "github.com/golang/glog"
 )
 
 type PfsSubmitter struct {
@@ -44,6 +45,8 @@ func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
 			},
 		}}
 	*/
+
+	log.V(1).Info(config)
 
 	//http
 	client := &http.Client{}
@@ -95,7 +98,7 @@ func (s *PfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 		s.port,
 		path,
 		cmd.ToUrlParam())
-	fmt.Printf("target url: " + url)
+	log.V(1).Info("target url: " + url)
 
 	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
@@ -133,7 +136,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
 		s.port,
 		cmd.ToUrlParam())
 
-	fmt.Printf("target url: " + url)
+	log.V(1).Info("target url: " + url)
 
 	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
@@ -158,12 +161,12 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
 		}
 
 		if part.FormName() == "chunk" {
-			recvCmd, status := pfsmod.NewChunkCmdFromUrl(part.FileName())
+			recvCmd, status := pfsmod.NewChunkCmdFromUrlParam(part.FileName())
 			if err != nil {
 				return errors.New(http.StatusText(status))
 			}
 
-			if err := recvCmd.WriteChunkData(part); err != nil {
+			if err := recvCmd.GetChunkData(part); err != nil {
 				return err
 			}
 		}
@@ -183,7 +186,7 @@ func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, url string) (*http.Request, e
 		return nil, err
 	}
 
-	if err := cmd.GetChunkData(part); err != nil {
+	if err := cmd.WriteChunkData(part); err != nil {
 		return nil, err
 	}
 

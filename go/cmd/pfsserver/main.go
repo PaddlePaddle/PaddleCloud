@@ -4,9 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsserver"
-	"log"
 	"net/http"
-	//log "github.com/golang/glog"
+
+	log "github.com/golang/glog"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	addr := fmt.Sprintf("0.0.0.0:%d", *portPtr)
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Printf("server on:%s\n", addr)
+	//log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Infof("server on:%s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, router))
 }

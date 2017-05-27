@@ -1,13 +1,12 @@
 package pfsserver
 
 import (
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	"github.com/golang/glog"
-	"io"
-	"net/http"
-	//"strconv"
 	"encoding/json"
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	log "github.com/golang/glog"
+	"io"
 	"io/ioutil"
+	"net/http"
 )
 
 func lsHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,13 +45,13 @@ func writeJsonResponse(w http.ResponseWriter,
 	resp *pfsmod.JsonResponse) {
 
 	if httpStatus != http.StatusOK || len(resp.Err) > 0 {
-		glog.Error("%s httpStatus:%d resp:v\n",
+		log.Error("%s httpStatus:%d resp:v\n",
 			r.URL.RawQuery, httpStatus, resp)
 	} else {
-		glog.Infof("%s httpStatus:%d\n",
+		log.Infof("%s httpStatus:%d\n",
 			r.URL.RawQuery, httpStatus)
 
-		glog.V(1).Infof("%s httpStatus:%d resp:%v\n",
+		log.V(1).Infof("%s httpStatus:%d resp:%v\n",
 			r.URL.RawQuery, httpStatus, resp)
 	}
 
@@ -60,7 +59,7 @@ func writeJsonResponse(w http.ResponseWriter,
 	w.WriteHeader(httpStatus)
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		glog.Error(err)
+		log.Error(err)
 	}
 }
 
@@ -124,6 +123,9 @@ func touchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
+
+	log.V(1).Infof("begin proc PostFilesHandler\n")
+
 	/*
 		resp := pfsmod.JsonResponse{}
 
@@ -157,9 +159,12 @@ func getChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp.Results = result
 	writeJsonResponse(w, r, http.StatusOK, &pfsmod.JsonResponse{})
+
+	log.V(1).Infof("proc %s ok\n", r.URL.RawQuery)
 }
 
 func GetChunksMetaHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin proc %s\n", r.URL.RawQuery)
 	method := r.URL.Query().Get("method")
 
 	switch method {
@@ -171,6 +176,8 @@ func GetChunksMetaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetChunkData(w http.ResponseWriter, r *http.Request) {
+	//log.V(1).Infof("begin proc %s\n", r.URL.RawQuery)
+
 	cmd, status := pfsmod.NewChunkCmdFromUrlParam(r.URL.RawQuery)
 	if status != http.StatusOK {
 		writeJsonResponse(w, r, status, &pfsmod.JsonResponse{})
@@ -183,9 +190,12 @@ func GetChunkData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//writeJsonResponse(w, r, http.StatusOK, &resp)
+	log.Infof("proc %s ok\n", r.URL.RawQuery)
 }
 
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin proc %s\n", r.URL.RawQuery)
+
 	method := r.URL.Query().Get("method")
 	resp := pfsmod.JsonResponse{}
 
@@ -200,6 +210,8 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin proc PostChunksHandler\n")
+
 	resp := pfsmod.JsonResponse{}
 	partReader, err := r.MultipartReader()
 
@@ -232,4 +244,6 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 		writeJsonResponse(w, r, http.StatusOK, &resp)
 	}
+
+	log.V(1).Infof("proc PostChunksHandler ok\n")
 }

@@ -9,6 +9,7 @@ const (
 	StatusBadFileSize           = 527
 	StatusDirectoryAlreadyExist = 528
 	StatusBadChunkSize          = 529
+	StatusShouldBePfsPath       = 530
 )
 
 var statusText = map[int]string{
@@ -20,6 +21,7 @@ var statusText = map[int]string{
 	StatusBadFileSize:           "bad file size",
 	StatusDirectoryAlreadyExist: "directory already exist",
 	StatusBadChunkSize:          "chunksize error",
+	StatusShouldBePfsPath:       "should be pfs path",
 }
 
 func StatusText(code int) string {

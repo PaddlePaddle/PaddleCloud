@@ -1,7 +1,7 @@
 package pfsserver
 
 import (
-	"log"
+	log "github.com/golang/glog"
 	"net/http"
 	"time"
 )
@@ -12,7 +12,7 @@ func Logger(inner http.Handler, name string) http.Handler {
 
 		inner.ServeHTTP(w, r)
 
-		log.Printf(
+		log.Infof(
 			"%s\t%s\t%s\t%s",
 			r.Method,
 			r.RequestURI,

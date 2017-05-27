@@ -3,7 +3,7 @@ package pfsmod
 import (
 	"errors"
 	"flag"
-	"log"
+	log "github.com/golang/glog"
 	"net/http"
 	"net/url"
 	"os"
@@ -139,7 +139,10 @@ func (p *LsCmd) Run() (interface{}, error) {
 	results := make([]LsResult, 0, 100)
 
 	for _, arg := range p.Args {
-		log.Printf("ls %s\n", arg)
+		log.V(1).Infof("ls %s\n", arg)
+		if !IsCloudPath(arg) {
+			return nil, errors.New(StatusText(StatusShouldBePfsPath))
+		}
 
 		list, err := filepath.Glob(arg)
 		if err != nil {
