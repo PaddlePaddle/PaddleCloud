@@ -77,8 +77,11 @@ class PaddleJob(object):
         envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self._ports_num_for_sparse)})
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
         envs.append({"name":"PADDLE_INIT_NUM_PASSES",           "value":str(self._passes)})
+
         if self._gpu:
             envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("1")})
+            # HACK: add nvidia lib LD_LIBRARY_PATH for all pods
+            envs.append({"name":"LD_LIBRARY_PATH",                  "value":"/usr/local/nvidia/lib64"})
         else:
             envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("0")})
         envs.append({"name":"NAMESPACE", "valueFrom":{
@@ -164,6 +167,8 @@ class PaddleJob(object):
         }
         if self._registry_secret:
             job["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
+        if self._gpu > 0:
+            job["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["alpha.kubernetes.io/nvidia-gpu"] = str(self._gpu)
         return job
     def new_pserver_job(self):
         """
@@ -182,11 +187,13 @@ class PaddleJob(object):
                         "labels": self._get_pserver_labels()
                     },
                     "spec": {
+                        "volumes": self._get_trainer_volumes(),
                         "containers":[{
                             "name": self._name,
                             "image": self._image,
                             "ports": self._get_pserver_container_ports(),
                             "env": self.get_env(),
+                            "volumeMounts": self._get_trainer_volume_mounts(),
                             "command": self._get_pserver_entrypoint(),
                             "resources": {
                                 "requests": {
@@ -205,4 +212,7 @@ class PaddleJob(object):
         }
         if self._registry_secret:
             rs["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
+        # FIXME: pserver also need GPU to start! This can double the gpu resource
+        if self._gpu > 0:
+            rs["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["alpha.kubernetes.io/nvidia-gpu"] = str(self._gpu)
         return rs
