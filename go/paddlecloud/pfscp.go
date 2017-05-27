@@ -7,13 +7,10 @@ import (
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
 	"github.com/google/subcommands"
-	"log"
-	"os"
-	"path/filepath"
 )
 
 type CpCommand struct {
-	cmd pfsmod.CpComand
+	cmd pfsmod.CpCmd
 }
 
 func (*CpCommand) Name() string     { return "cp" }
@@ -35,9 +32,9 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		return subcommands.ExitFailure
 	}
 
-	cmd := pfsmod.NewCpCommand(f)
+	cmd := pfsmod.NewCpCmdFromFlag(f)
 
-	s := NewPfsSubmitter(UserHomeDir() + "/.paddle/config")
+	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
 
 	results, err := RunCp(s, cmd)
 	if err != nil {
@@ -49,34 +46,34 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 }
 
 // Run cp command, return err when meet any error
-func RunCp(s *NewPfsSubmitter, cmd *pfsmod.CpCommand) ([]pfsmod.CpCommandResult, error) {
+func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) ([]pfsmod.CpCmdResult, error) {
 
-	var results []pfmod.CpCommandResult
+	var results []pfsmod.CpCmdResult
 
-	for _, arg := range src {
-		fmt.Println(cmd.ToString(arg, cmd.Dst))
+	for _, arg := range cmd.Src {
+		fmt.Println(cmd.PartToString(arg, cmd.Dst))
 
-		var ret []pfmod.CpCommandResult
+		var ret []pfsmod.CpCmdResult
 		var err error
 
-		if pfsmod.IsRemotePath(arg) {
-			if pfsmod.IsRemotePath(dst) {
-				err := errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportUploadOrDownloadFiles))
+		if pfsmod.IsCloudPath(arg) {
+			if pfsmod.IsCloudPath(cmd.Dst) {
+				err := errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 			} else {
-				ret, err = Download(s, arg, dst)
+				ret, err = Download(s, arg, cmd.Dst)
 			}
 		} else {
-			if pfsmod.IsRemotePath(dst) {
-				ret, err = Upload(s, arg, dst)
+			if pfsmod.IsCloudPath(cmd.Dst) {
+				ret, err = Upload(s, arg, cmd.Dst)
 			} else {
 				//can't do that
-				err := errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportUploadOrDownloadFiles))
+				err := errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 			}
 		}
 
 		if err != nil {
 			fmt.Printf("%v\n", err)
-			return err
+			return results, err
 		}
 
 		if ret != nil {

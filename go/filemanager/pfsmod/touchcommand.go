@@ -1,13 +1,17 @@
-package pfsmodules
+package pfsmod
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
+)
+
+const (
+	defaultMaxCreateFileSize = int64(4 * 1024 * 1024 * 1024)
 )
 
 const (
@@ -25,23 +29,23 @@ type TouchCmd struct {
 	Path     string `json:path`
 }
 
-func (p *LsCmd) ToUrlParam() string {
+func (p *TouchCmd) ToUrlParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
-	parameters.Add("path", p.path)
+	parameters.Add("path", p.Path)
 
-	str := fmt.Printf("%d", FileSize)
+	str := fmt.Sprint(p.FileSize)
 	parameters.Add("path", str)
 
 	return parameters.Encode()
 }
 
-func (p *TouchCmd) ToJson() []byte {
+func (p *TouchCmd) ToJson() ([]byte, error) {
 	return json.Marshal(p)
 }
 
-func NewTouchCmdFromUrl(r *http.Request) (*TouchCmd, int32) {
-	cmd := LsCmd{}
+func NewTouchCmdFromUrlParam(path string) (*TouchCmd, int32) {
+	cmd := TouchCmd{}
 
 	m, err := url.ParseQuery(path)
 	if err != nil ||
@@ -56,7 +60,6 @@ func NewTouchCmdFromUrl(r *http.Request) (*TouchCmd, int32) {
 		return nil, http.StatusBadRequest
 	}
 
-	var err error
 	cmd.FileSize, err = strconv.ParseInt(m["filesize"][0], 0, 64)
 	if err != nil {
 		return nil, http.StatusBadRequest
@@ -67,10 +70,10 @@ func NewTouchCmdFromUrl(r *http.Request) (*TouchCmd, int32) {
 		return nil, http.StatusBadRequest
 	}
 
-	return &cmd, nil
+	return &cmd, http.StatusOK
 }
 
-func NewTouchCmd(path string, fileSize int64) TouchCmd {
+func NewTouchCmd(path string, fileSize int64) *TouchCmd {
 	return &TouchCmd{
 		Method:   touchCmdName,
 		Path:     path,
@@ -78,7 +81,7 @@ func NewTouchCmd(path string, fileSize int64) TouchCmd {
 	}
 }
 
-func createSizedFile(path string, size int64) error {
+func CreateSizedFile(path string, size int64) error {
 	fd, err := os.Create(path)
 	if err != nil {
 		return err
@@ -102,17 +105,17 @@ func createSizedFile(path string, size int64) error {
 }
 
 func (p *TouchCmd) Run() error {
-	if cmd.FileSize < 0 || cmd.FileSize > defaultMaxCreateFileSize {
+	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
 		return errors.New(StatusText(StatusBadFileSize))
 	}
 
-	fi, err := os.Stat(path)
+	fi, err := os.Stat(p.Path)
 	if os.IsExist(err) && fi.IsDir() {
-		return error.New(StatusText(StatusDirectoryAlreadyExist))
+		return errors.New(StatusText(StatusDirectoryAlreadyExist))
 	}
 
-	if os.IsNotExist(err) || fi.Size() != fileSize {
-		if err := createSizedFile(path, fileSize); err != nil {
+	if os.IsNotExist(err) || fi.Size() != p.FileSize {
+		if err := CreateSizedFile(p.Path, p.FileSize); err != nil {
 			return err
 		}
 	}

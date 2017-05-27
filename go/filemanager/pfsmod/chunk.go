@@ -1,5 +1,15 @@
 package pfsmod
 
+import (
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+)
+
 type ChunkCmd struct {
 	Path      string
 	Offset    int64
@@ -7,14 +17,22 @@ type ChunkCmd struct {
 	Data      []byte
 }
 
+func NewChunkCmd(path string, offset, chunkSize int64) *ChunkCmd {
+	return &ChunkCmd{
+		Path:      path,
+		Offset:    offset,
+		ChunkSize: chunkSize,
+	}
+}
+
 func (p *ChunkCmd) ToUrlParam() string {
 	parameters := url.Values{}
-	parameters.Add("path", p.path)
+	parameters.Add("path", p.Path)
 
-	str := fmt.Sprint(offset)
-	parameters.Add("offset", p.Meta.offset)
+	str := fmt.Sprint(p.Offset)
+	parameters.Add("offset", str)
 
-	str = fmt.Sprint(p.Meta.ChunkSize)
+	str = fmt.Sprint(p.ChunkSize)
 	parameters.Add("chunksize", str)
 
 	return parameters.Encode()
@@ -50,15 +68,15 @@ func NewChunkCmdFromUrl(path string) (*ChunkCmd, int32) {
 
 	chunkSize, err := strconv.ParseInt(m["chunksize"][0], 10, 64)
 	if err != nil {
-		return nil, errors.New("bad arguments offset")
+		return nil, http.StatusBadRequest
 	}
 	cmd.ChunkSize = chunkSize
 
-	return &cmd, nil
+	return &cmd, http.StatusOK
 }
 
 func (p *ChunkCmd) WriteChunkData(w io.Writer) error {
-	f, err := os.Open(p.path)
+	f, err := os.Open(p.Path)
 	if err != nil {
 		return err
 	}
@@ -74,7 +92,7 @@ func (p *ChunkCmd) WriteChunkData(w io.Writer) error {
 
 	writer.SetBoundary(DefaultMultiPartBoundary)
 
-	fName := p.ToUrl()
+	fName := p.ToUrlParam()
 	part, err := writer.CreateFormFile("chunk", fName)
 	if err != nil {
 		return err

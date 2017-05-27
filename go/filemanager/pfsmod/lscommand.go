@@ -1,7 +1,8 @@
 package pfsmod
 
 import (
-	"encoding/json"
+	"errors"
+	"flag"
 	"log"
 	"net/http"
 	"net/url"
@@ -24,13 +25,13 @@ type LsResult struct {
 type LsCmd struct {
 	Method string
 	R      bool
-	Args   string
+	Args   []string
 }
 
 func (p *LsCmd) ToUrlParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
-	parameters.Add("r", p.R)
+	parameters.Add("r", strconv.FormatBool(p.R))
 
 	for _, arg := range p.Args {
 		parameters.Add("arg", arg)
@@ -41,7 +42,7 @@ func (p *LsCmd) ToUrlParam() string {
 }
 
 func (p *LsCmd) ToJson() ([]byte, error) {
-	return nil
+	return nil, nil
 }
 
 func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
@@ -50,9 +51,13 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	cmd.Method = lsCmdName
 	cmd.Args = make([]string, 0, f.NArg())
 
+	var err error
 	f.Visit(func(flag *flag.Flag) {
 		if flag.Name == "r" {
-			cmd.R = flag.Value.(bool)
+			cmd.R, err = strconv.ParseBool(flag.Value.String())
+			if err != nil {
+				panic(err)
+			}
 		}
 	})
 
@@ -63,7 +68,7 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	return &cmd, nil
 }
 
-func NewLsCmdFromUrl(r *http.Request) (*LsCmd, int32) {
+func NewLsCmdFromUrlParam(path string) (*LsCmd, int32) {
 	cmd := LsCmd{}
 
 	m, err := url.ParseQuery(path)
@@ -80,34 +85,35 @@ func NewLsCmdFromUrl(r *http.Request) (*LsCmd, int32) {
 		return nil, http.StatusBadRequest
 	}
 
-	rArg, err := strconv.ParseBool(m["r"][0])
+	cmd.R, err = strconv.ParseBool(m["r"][0])
 	if err != nil {
 		return nil, http.StatusBadRequest
 	}
 
-	cmd.Args = make([]string, 0, len(m["arg"]+1))
+	cmd.Args = make([]string, 0, len(m["arg"])+1)
 	for _, arg := range m["arg"] {
 		cmd.Args = append(cmd.Args, arg)
 	}
 
-	return &cmd, nil
+	return &cmd, http.StatusOK
 }
 
-func NewLsCmd(r bool, path string) LsCmd {
+func NewLsCmd(r bool, path string) *LsCmd {
 	return &LsCmd{
-		R:    r,
-		Args: []string{arg},
+		Method: lsCmdName,
+		R:      r,
+		Args:   []string{path},
 	}
 }
 
 func lsPath(path string, r bool) ([]LsResult, error) {
-	ret := make([]FileAttr, 0, 100)
+	ret := make([]LsResult, 0, 100)
 
 	filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
 		//log.Println("path:\t" + path)
 
 		if err != nil {
-			return ret, err
+			return err
 		}
 
 		m := LsResult{}
@@ -145,7 +151,7 @@ func (p *LsCmd) Run() (interface{}, error) {
 		}
 
 		for _, path := range list {
-			ret, err := lsPath(path, r)
+			ret, err := lsPath(path, p.R)
 			if err != nil {
 				return results, err
 			}
@@ -173,5 +179,5 @@ func IsDir(r []LsResult) bool {
 }
 
 func IsNotExist(err error) bool {
-	return err.Error() == pfsmod.StatusText(pfsmod.StatusFileNotFound)
+	return err.Error() == StatusText(StatusFileNotFound)
 }

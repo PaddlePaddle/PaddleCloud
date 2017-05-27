@@ -1,5 +1,22 @@
 package paddlecloud
 
+import (
+	"bytes"
+	//"crypto/x509"
+	//"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	//"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
+	"log"
+	"mime/multipart"
+	"net/http"
+	//"os"
+	"strconv"
+)
+
 type PfsSubmitter struct {
 	config *submitConfig
 	client *http.Client
@@ -30,23 +47,23 @@ func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
 	//http
 	client := &http.Client{}
 
-	return &CmdSubmitter{
+	return &PfsSubmitter{
 		config: config,
 		client: client,
 		port:   8080,
 	}
 }
 
-func (s *PfsSubmitter) PostFiles(cmd Command) ([]byte, error) {
-	jsonString, err := c.ToJson()
+func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
+	jsonString, err := cmd.ToJson()
 	if err != nil {
 		return nil, err
 	}
 
-	targetURL := fmt.Sprintf("%s:%d/%s", s.config.ActiveConfig.Endpoint, port, restPath)
-	fmt.Printf("target url:%s\n", targetUrl)
+	url := fmt.Sprintf("%s:%d/api/v1/files", s.config.ActiveConfig.Endpoint, s.port)
+	fmt.Printf("target url:%s\n", url)
 
-	req, err := http.NewRequest("POST", targetURL, bytes.NewBuffer(jsonString))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return nil, err
 	}
@@ -71,15 +88,15 @@ func (s *PfsSubmitter) PostFiles(cmd Command) ([]byte, error) {
 	return body, nil
 }
 
-func (s *PfsSubmitter) get(cmd Commnad, path string) ([]byte, error) {
+func (s *PfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/%s?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
 		path,
-		cmd.ToUrl())
-	fmt.Printf("target url: " + targetURL)
+		cmd.ToUrlParam())
+	fmt.Printf("target url: " + url)
 
-	req, err := http.NewRequest("GET", targetURL, http.NoBody)
+	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -102,22 +119,22 @@ func (s *PfsSubmitter) get(cmd Commnad, path string) ([]byte, error) {
 	return body, nil
 }
 
-func (s *PfsSubmitter) GetFiles(cmd Comand) ([]byte, error) {
-	return get(cmd, "api/v1/files")
+func (s *PfsSubmitter) GetFiles(cmd pfsmod.Command) ([]byte, error) {
+	return s.get(cmd, "api/v1/files")
 }
-func (s *PfsSubmitter) GetChunkMeta(cmd Comand) ([]byte, error) {
-	return get(cmd, "api/v1/chunks")
+func (s *PfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
+	return s.get(cmd, "api/v1/chunks")
 }
 
-func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) ([]body, error) {
-	baseUrl := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
+func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
+	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
-		cmd.ToUrl())
+		cmd.ToUrlParam())
 
-	fmt.Printf("target url: " + targetURL)
+	fmt.Printf("target url: " + url)
 
-	req, err := http.NewRequest("GET", targetURL, http.NoBody)
+	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +146,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) ([]body, error) {
 	defer resp.Body.Close()
 
 	if resp.Status != HTTPOK {
-		return errors.New("http server returned non-200 status: " + resp.Status)
+		return nil, errors.New("http server returned non-200 status: " + resp.Status)
 	}
 
 	partReader := multipart.NewReader(resp.Body, pfsmod.DefaultMultiPartBoundary)
@@ -162,7 +179,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) ([]body, error) {
 	return nil
 }
 
-func newPostChunkDataRequest(cmd *ChunkCommand) {
+func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
@@ -189,7 +206,7 @@ func newPostChunkDataRequest(cmd *ChunkCommand) {
 	return req, nil
 }
 
-func (s *PfsSubmitter) PostChunkData(cmd *ChunkCommand) []byte {
+func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
 	targetUrl := fmt.Sprintf("%s:%d/api/v1/storage/chunks", s.config.ActiveConfig.Endpoint, port)
 	fmt.Printf("chunk data target url: " + targetUrl)
 

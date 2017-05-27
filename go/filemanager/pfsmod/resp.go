@@ -6,8 +6,8 @@ type Response struct {
 }
 
 type LsResponse struct {
-	Err     string        `json:"err"`
-	Results []LsCmdResult `json:"results"`
+	Err     string     `json:"err"`
+	Results []LsResult `json:"results"`
 }
 
 type ChunkMetaResponse struct {
@@ -18,4 +18,8 @@ type ChunkMetaResponse struct {
 type TouchResponse struct {
 	Err    string      `json:"err"`
 	Result TouchResult `json:"results"`
+}
+
+type UploadChunkResponse struct {
+	Err string `json:"err"`
 }

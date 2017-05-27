@@ -1,18 +1,15 @@
-package paddlecoud
+package paddlecloud
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	"github.com/google/subcommands"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-func GetChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.ChunkMeta, error) {
+func RemoteChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.ChunkMeta, error) {
 
 	cmd := pfsmod.NewChunkMetaCmd(path, chunkSize)
 
@@ -21,48 +18,27 @@ func GetChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.Chunk
 		return nil, err
 	}
 
-	results := pfsmod.ChunkMetaCmdReult
-	if err := json.Unmarshal(ret, results); err != nil {
+	resp := pfsmod.ChunkMetaResponse{}
+	if err := json.Unmarshal(ret, &resp); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	if len(resp.Err) == 0 {
+		return resp.Results, nil
+	}
+
+	return resp.Results, errors.New(resp.Err)
 }
 
-func GetFileAttr(s *PfsSubmitter, filePath string) (*pfsmod.FileAttr, error) {
-	lsCmd := pfsMod.NewLsCmd(false, filePath)
-
-	lsResp, err := RemoteLs(lsCmd)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(lsResp.StatusCode) != 0 {
-		return nil, errors.New(lsResp.StatusText)
-	}
-
-	for _, attr := range lsResp.Attrs {
-		if len(attr.StatusCode) != 0 {
-			return nil, errors.New(lsResp.StatusText)
-		}
-
-		return &attr, nil
-	}
-
-	return nil, errors.New("internal error")
-}
-
-func DownloadFileChunks(s *PfsSubmitter, src string, dest string, diffMeta []pfsmod.ChunkMeta) error {
+func DownloadChunks(s *PfsSubmitter, src string, dest string, diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
 		fmt.Printf("srcfile:%s and destfile:%s are already same\n", src, dest)
 		return nil
 	}
 
 	for _, meta := range diffMeta {
-		cmdAttr := pfsmod.FromArgs("getchunkdata", src, meta.Offset, meta.Len)
-		err := s.GetChunkData(8080, cmdAttr, dest)
+		body, err := s.GetChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len))
 		if err != nil {
-			log.Printf("download chunk error:%v\n", err)
 			return err
 		}
 	}
@@ -71,15 +47,15 @@ func DownloadFileChunks(s *PfsSubmitter, src string, dest string, diffMeta []pfs
 }
 
 func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) error {
-	srcMeta, err := pfsmod.GetChunkMeta(src, chunkSize)
+	srcMeta, err := RemoteChunkMeta(s, src, pfsmod.DefaultChunkSize)
 	if err != nil {
 		return err
 	}
 
-	destMeta, err := pfsmod.GetChunkMeta(dest, chunkSize)
+	dstMeta, err := pfsmod.GetChunkMeta(dst, pfsmod.DefaultChunkSize)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := pfsmod.CreateSizedFile(dest, srcFileSize); err != nil {
+			if err := pfsmod.CreateSizedFile(dst, srcFileSize); err != nil {
 				return err
 			}
 		} else {
@@ -87,12 +63,12 @@ func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) er
 		}
 	}
 
-	diffMeta, err := pfsmod.GetDiffChunksMeta(srcMeta, destMeta)
+	diffMeta, err := pfsmod.GetDiffChunkMeta(srcMeta, dstMeta)
 	if err != nil {
 		return err
 	}
 
-	err = DownloadChunks(src, dest, diffMeta)
+	err = DownloadChunks(s, src, dst, diffMeta)
 	if err != nil {
 		return err
 	}
@@ -101,13 +77,13 @@ func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) er
 }
 
 // Download files to dst
-func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCommandResult, error) {
-	lsRet, err := RemoteLs(s, NewLsCommand(true, src))
+func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCmdResult, error) {
+	lsRet, err := RemoteLs(s, pfsmod.NewLsCmd(true, src))
 	if err != nil {
 		return nil, err
 	}
 
-	if len(lsRet.Attr) > 1 {
+	if len(lsRet) > 1 {
 		fi, err := os.Stat(dst)
 		if err != nil {
 			if err == os.ErrNotExist {
@@ -118,30 +94,28 @@ func Download(s *PfsSubmitter, src, dst string) ([]pfsmod.CpCommandResult, error
 		}
 
 		if !fi.IsDir() {
-			return nil, errors.New(pfsmod.DestShouldBeDirectory)
+			return nil, errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
 		}
 	}
 
-	results := make([]pfsmod.CpCommandResult, 0, 100)
-	for _, attr := range lsRet.Attr {
+	results := make([]pfsmod.CpCmdResult, 0, 100)
+	for _, attr := range lsRet {
 		if attr.IsDir {
 			return results, errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 		}
 
-		realSrc = attr.Path
+		realSrc := attr.Path
 		_, file := filepath.Split(attr.Path)
-		realDst = dst + "/" + file
+		realDst := dst + "/" + file
 
-		fmt.Printf("download src_path:%s dst_path:%s\n", m.Src, m.Dest)
-		if err := DownloadFile(m.Src, attr.Size, m.Dest, pfsmod.DefaultChunkSize); err != nil {
+		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
+		if err := DownloadFile(s, realSrc, attr.Size, realDst); err != nil {
 			return results, err
 		}
 
-		m := pfsmod.CpCommandResult{
-			StatusCode: 0,
-			StatusText: "",
-			Src:        realSrc,
-			Dst:        realDst,
+		m := pfsmod.CpCmdResult{
+			Src: realSrc,
+			Dst: realDst,
 		}
 
 		results = append(results, m)

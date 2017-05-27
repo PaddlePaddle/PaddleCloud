@@ -2,14 +2,16 @@ package paddlecloud
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
-	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
 	"github.com/google/subcommands"
 )
 
 type LsCommand struct {
-	cmd pfsmod.LsCommand
+	cmd pfsmod.LsCmd
 }
 
 func (*LsCommand) Name() string     { return "ls" }
@@ -25,7 +27,7 @@ func (p *LsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.R, "r", false, "list files recursively")
 }
 
-func RemoteLs(s *PfsSubmitter, cmd *LsCommand) ([]pfsmod.LsCmdResult, error) {
+func RemoteLs(s *PfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
 	body, err := s.GetFiles(cmd)
 	if err != nil {
 		return nil, err
@@ -33,7 +35,7 @@ func RemoteLs(s *PfsSubmitter, cmd *LsCommand) ([]pfsmod.LsCmdResult, error) {
 
 	resp := pfsmod.LsResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
+		return resp.Results, err
 	}
 
 	if len(resp.Err) == 0 {
@@ -49,12 +51,12 @@ func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		return subcommands.ExitFailure
 	}
 
-	cmd, err := pfsmod.NewLsCommand(f)
+	cmd, err := pfsmod.NewLsCmdFromFlag(f)
 	if err != nil {
-		return err
+		return subcommands.ExitFailure
 	}
 
-	s := NewPfsSubmitter(UserHomeDir() + "/.paddle/config")
+	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
 	result, err := RemoteLs(s, cmd)
 	if err != nil {
 		return subcommands.ExitFailure

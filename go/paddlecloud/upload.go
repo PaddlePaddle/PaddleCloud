@@ -1,18 +1,18 @@
 package paddlecloud
 
 import (
-	"context"
+	//"context"
 	"errors"
-	"flag"
+	//"flag"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	"github.com/google/subcommands"
+	//"github.com/google/subcommands"
 	"log"
-	"os"
+	//"os"
 	"path/filepath"
 )
 
-func RemoteTouch(s *PfsSubmitter, cmd *TouchCmd) (TouchResult, error) {
+func RemoteTouch(s *PfsSubmitter, cmd *pfsmod.TouchCmd) (pfsmod.TouchResult, error) {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
 		return nil, err
@@ -28,6 +28,60 @@ func RemoteTouch(s *PfsSubmitter, cmd *TouchCmd) (TouchResult, error) {
 	}
 
 	return resp.Result, errors.New(resp.Err)
+}
+
+/*
+func RemoteTouch(s *PfsSubmitter, cmd *ChunkMetaCmd) ([]ChunkMeta, error) {
+	body, err := s.PostFiles(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := pfsmod.ChunkMetaResponse{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return err
+	}
+
+	if len(resp.Err) == 0 {
+		return resp.Results, nil
+	}
+
+	return resp.Results, errors.New(resp.Err)
+
+}
+*/
+
+func UploadChunks(s *PfsSubmitter,
+	src string,
+	dest string,
+	diffMeta []pfsmod.ChunkMeta) error {
+	if len(diffMeta) == 0 {
+		log.Printf("srcfile:%s and destfile:%s are same\n", src, dest)
+		return nil
+	}
+
+	for _, meta := range diffMeta {
+		log.Printf("diffMeta:%v\n", meta)
+		//cmdAttr := pfsmod.FromArgs("postchunkdata", dest, meta.Offset, meta.Len)
+		//err := s.PostChunkData(8080, cmdAttr, src)
+		body, err := s.PostChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.ChunkSize))
+		if err != nil {
+			return err
+		}
+
+		resp := pfsmod.UploadChunkResponse{}
+		if err := json.Unmarshal(body, &resp); err != nil {
+			return err
+		}
+
+		if len(resp.Err) == 0 {
+			return nil
+		}
+
+		return errors.New(resp.Err)
+	}
+
+	return nil
 }
 
 func UploadFile(s *PfsSubmitter,
