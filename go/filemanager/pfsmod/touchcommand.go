@@ -19,7 +19,6 @@ const (
 )
 
 type TouchResult struct {
-	Err  string `json:"err"`
 	Path string `json:"path"`
 }
 
@@ -104,21 +103,23 @@ func CreateSizedFile(path string, size int64) error {
 	return nil
 }
 
-func (p *TouchCmd) Run() error {
+func (p *TouchCmd) Run() (interface{}, error) {
 	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
-		return errors.New(StatusText(StatusBadFileSize))
+		return nil, errors.New(StatusText(StatusBadFileSize))
 	}
 
 	fi, err := os.Stat(p.Path)
 	if os.IsExist(err) && fi.IsDir() {
-		return errors.New(StatusText(StatusDirectoryAlreadyExist))
+		return nil, errors.New(StatusText(StatusDirectoryAlreadyExist))
 	}
 
 	if os.IsNotExist(err) || fi.Size() != p.FileSize {
 		if err := CreateSizedFile(p.Path, p.FileSize); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return &TouchResult{
+		Path: p.Path,
+	}, nil
 }

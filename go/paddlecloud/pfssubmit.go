@@ -10,11 +10,10 @@ import (
 	//"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	//"os"
-	"strconv"
+	//"strconv"
 )
 
 type PfsSubmitter struct {
@@ -24,10 +23,12 @@ type PfsSubmitter struct {
 }
 
 func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
-	config, err := getConfig(configFile)
-	if err != nil {
-		log.Fatal("LoadX509KeyPair:", err)
-	}
+	/*
+		config, err := getConfig(configFile)
+		if err != nil {
+			log.Fatal("LoadX509KeyPair:", err)
+		}
+	*/
 
 	/*https
 	pair, e := tls.LoadX509KeyPair(config.ActiveConfig.Usercert,
@@ -126,7 +127,7 @@ func (s *PfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
 	return s.get(cmd, "api/v1/chunks")
 }
 
-func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
+func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
@@ -136,83 +137,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
 
 	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.Status != HTTPOK {
-		return nil, errors.New("http server returned non-200 status: " + resp.Status)
-	}
-
-	partReader := multipart.NewReader(resp.Body, pfsmod.DefaultMultiPartBoundary)
-	for {
-		part, error := partReader.NextPart()
-		if error == io.EOF {
-			break
-		}
-
-		if part.FormName() == "chunk" {
-			chunkCmdAttr, err := pfsmod.ParseFileNameParam(part.FileName())
-			recvCmd, err := pfsmod.NewChunkCmd
-			if err != nil {
-				return nil, err
-			}
-
-			f, err := pfsmod.GetChunkWriter(dest, chunkCmdAttr.Offset)
-			if err != nil {
-				return nil, err
-			}
-			defer f.Close()
-
-			writen, err := io.Copy(f, part)
-			if err != nil || writen != int64(chunkCmdAttr.ChunkSize) {
-				fmt.Errorf("read " + strconv.FormatInt(writen, 10) + "error:" + err.Error())
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd) {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
-
-	fileName := cmd.ToUrl()
-	part, err := writer.CreateFormFile("chunk", fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	cmd.WriteChunkData(part)
-
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", uri, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	return req, nil
-}
-
-func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
-	targetUrl := fmt.Sprintf("%s:%d/api/v1/storage/chunks", s.config.ActiveConfig.Endpoint, port)
-	fmt.Printf("chunk data target url: " + targetUrl)
-
-	req, err := newPostChunkDataRequest(cmd)
-	if err != nil {
-		return nil, nil
+		return err
 	}
 
 	resp, err := s.client.Do(req)
@@ -223,6 +148,77 @@ func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
 
 	if resp.Status != HTTPOK {
 		return errors.New("http server returned non-200 status: " + resp.Status)
+	}
+
+	partReader := multipart.NewReader(resp.Body, pfsmod.DefaultMultiPartBoundary)
+	for {
+		part, error := partReader.NextPart()
+		if error == io.EOF {
+			break
+		}
+
+		if part.FormName() == "chunk" {
+			recvCmd, status := pfsmod.NewChunkCmdFromUrl(part.FileName())
+			if err != nil {
+				return errors.New(http.StatusText(status))
+			}
+
+			if err := recvCmd.WriteChunkData(part); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, url string) (*http.Request, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
+
+	fileName := cmd.ToUrlParam()
+	part, err := writer.CreateFormFile("chunk", fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cmd.GetChunkData(part); err != nil {
+		return nil, err
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	return req, nil
+}
+
+func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
+	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
+		s.config.ActiveConfig.Endpoint, s.port)
+	fmt.Printf("chunk data target url: " + url)
+
+	req, err := newPostChunkDataRequest(cmd, url)
+	if err != nil {
+		return nil, nil
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.Status != HTTPOK {
+		return nil, errors.New("http server returned non-200 status: " + resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

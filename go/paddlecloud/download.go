@@ -37,7 +37,7 @@ func DownloadChunks(s *PfsSubmitter, src string, dest string, diffMeta []pfsmod.
 	}
 
 	for _, meta := range diffMeta {
-		body, err := s.GetChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len))
+		err := s.GetChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len))
 		if err != nil {
 			return err
 		}

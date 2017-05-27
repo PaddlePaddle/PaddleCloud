@@ -36,17 +36,17 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 
 	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
 
-	results, err := RunCp(s, cmd)
+	err := RunCp(s, cmd)
 	if err != nil {
 		return subcommands.ExitFailure
 	}
 
-	fmt.Println(results)
+	//fmt.Println(results)
 	return subcommands.ExitSuccess
 }
 
 // Run cp command, return err when meet any error
-func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) ([]pfsmod.CpCmdResult, error) {
+func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) error {
 
 	var results []pfsmod.CpCmdResult
 
@@ -58,22 +58,22 @@ func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) ([]pfsmod.CpCmdResult, error) {
 
 		if pfsmod.IsCloudPath(arg) {
 			if pfsmod.IsCloudPath(cmd.Dst) {
-				err := errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
+				err = errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 			} else {
 				ret, err = Download(s, arg, cmd.Dst)
 			}
 		} else {
 			if pfsmod.IsCloudPath(cmd.Dst) {
-				ret, err = Upload(s, arg, cmd.Dst)
+				err = Upload(s, arg, cmd.Dst)
 			} else {
 				//can't do that
-				err := errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
+				err = errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
 			}
 		}
 
 		if err != nil {
 			fmt.Printf("%v\n", err)
-			return results, err
+			return err
 		}
 
 		if ret != nil {
@@ -81,5 +81,5 @@ func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) ([]pfsmod.CpCmdResult, error) {
 		}
 	}
 
-	return results, nil
+	return nil
 }
