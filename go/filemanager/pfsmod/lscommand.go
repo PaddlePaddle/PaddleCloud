@@ -68,8 +68,7 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	return &cmd, nil
 }
 
-func NewLsCmdFromUrlParam(path string) (*LsCmd, int) {
-	//func NewLsCmdFromUrlValues(m url.Values) (*LsCmd, int32) {
+func NewLsCmdFromUrlParam(path string) (*LsCmd, error) {
 	cmd := LsCmd{}
 
 	m, err := url.ParseQuery(path)
@@ -77,18 +76,17 @@ func NewLsCmdFromUrlParam(path string) (*LsCmd, int) {
 		len(m["method"]) == 0 ||
 		len(m["r"]) == 0 ||
 		len(m["arg"]) == 0 {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(StatusText(StatusNotEnoughArgs))
 	}
 
-	//var err error
 	cmd.Method = m["method"][0]
 	if cmd.Method != lsCmdName {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(http.StatusText(http.StatusMethodNotAllowed) + ":" + cmd.Method)
 	}
 
 	cmd.R, err = strconv.ParseBool(m["r"][0])
 	if err != nil {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(StatusText(StatusInvalidArgs) + ":r")
 	}
 
 	cmd.Args = make([]string, 0, len(m["arg"])+1)
@@ -96,7 +94,7 @@ func NewLsCmdFromUrlParam(path string) (*LsCmd, int) {
 		cmd.Args = append(cmd.Args, arg)
 	}
 
-	return &cmd, http.StatusOK
+	return &cmd, nil
 }
 
 func NewLsCmd(r bool, path string) *LsCmd {
@@ -122,7 +120,15 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 		m.Size = info.Size()
 		m.ModTime = info.ModTime().Format("2006-01-02 15:04:05")
 		m.IsDir = info.IsDir()
-		ret = append(ret, m)
+
+		if subpath == path {
+			if info.IsDir() {
+			} else {
+				ret = append(ret, m)
+			}
+		} else {
+			ret = append(ret, m)
+		}
 
 		if info.IsDir() && !r && subpath != path {
 			return filepath.SkipDir
@@ -135,14 +141,29 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 	return ret, nil
 }
 
+func (p *LsCmd) Check() error {
+	if len(p.Args) == 0 {
+		return errors.New(StatusText(StatusNotEnoughArgs))
+	}
+
+	for _, arg := range p.Args {
+		if !IsCloudPath(arg) {
+			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + arg)
+		}
+
+		if !CheckUser(arg) {
+			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + arg)
+		}
+	}
+
+	return nil
+}
+
 func (p *LsCmd) Run() (interface{}, error) {
 	results := make([]LsResult, 0, 100)
 
 	for _, arg := range p.Args {
 		log.V(1).Infof("ls %s\n", arg)
-		if !IsCloudPath(arg) {
-			return nil, errors.New(StatusText(StatusShouldBePfsPath))
-		}
 
 		list, err := filepath.Glob(arg)
 		if err != nil {

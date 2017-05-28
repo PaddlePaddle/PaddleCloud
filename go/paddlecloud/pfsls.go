@@ -9,6 +9,7 @@ import (
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
 	//log "github.com/golang/glog"
 	"github.com/google/subcommands"
+	//"path/filepath"
 )
 
 type LsCommand struct {
@@ -28,8 +29,32 @@ func (p *LsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.R, "r", false, "list files recursively")
 }
 
+func getFormatString(result []pfsmod.LsResult) string {
+	max := 0
+	for _, t := range result {
+		str := fmt.Sprintf("%d", t.Size)
+
+		if len(str) > max {
+			max = len(str)
+		}
+	}
+
+	return fmt.Sprintf("%%s %%s %%%dd %%s\n", max)
+}
+
 func formatPrint(result []pfsmod.LsResult) {
-	fmt.Println(result)
+	formatStr := getFormatString(result)
+	//fmt.Println(formatStr)
+
+	for _, t := range result {
+		if t.IsDir {
+			fmt.Printf(formatStr, t.ModTime, "d", t.Size, t.Path)
+		} else {
+			fmt.Printf(formatStr, t.ModTime, "f", t.Size, t.Path)
+		}
+	}
+
+	fmt.Printf("\n")
 }
 
 func RemoteLs(s *PfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
@@ -61,7 +86,7 @@ func remoteLs(s *PfsSubmitter, cmd *pfsmod.LsCmd) error {
 		//fmt.Printf("ls -r=%v %s\n", cmd.R, arg)
 		fmt.Printf("%s :\n", arg)
 		if err != nil {
-			fmt.Printf("  error:%s\n", err.Error())
+			fmt.Printf("  error:%s\n\n", err.Error())
 			return err
 		}
 

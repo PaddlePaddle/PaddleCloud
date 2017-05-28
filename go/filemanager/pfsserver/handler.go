@@ -10,10 +10,18 @@ import (
 )
 
 func lsHandler(w http.ResponseWriter, r *http.Request) {
-	cmd, status := pfsmod.NewLsCmdFromUrlParam(r.URL.RawQuery)
 	resp := pfsmod.JsonResponse{}
-	if status != http.StatusOK {
-		writeJsonResponse(w, r, status, &resp)
+
+	cmd, err := pfsmod.NewLsCmdFromUrlParam(r.URL.RawQuery)
+	if err != nil {
+		resp.Err = err.Error()
+		writeJsonResponse(w, r, http.StatusOK, &resp)
+		return
+	}
+
+	if err := cmd.Check(); err != nil {
+		resp.Err = err.Error()
+		writeJsonResponse(w, r, http.StatusOK, &resp)
 		return
 	}
 
@@ -45,8 +53,8 @@ func writeJsonResponse(w http.ResponseWriter,
 	resp *pfsmod.JsonResponse) {
 
 	if httpStatus != http.StatusOK || len(resp.Err) > 0 {
-		log.Error("%s httpStatus:%d resp:v\n",
-			r.URL.RawQuery, httpStatus, resp)
+		log.Errorf("%s httpStatus:%d resp:=%v\n",
+			r.URL.RawQuery, httpStatus, resp.Err)
 	} else {
 		log.Infof("%s httpStatus:%d\n",
 			r.URL.RawQuery, httpStatus)
@@ -214,7 +222,6 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp := pfsmod.JsonResponse{}
 	partReader, err := r.MultipartReader()
-
 	if err != nil {
 		writeJsonResponse(w, r, http.StatusBadRequest, &resp)
 		return

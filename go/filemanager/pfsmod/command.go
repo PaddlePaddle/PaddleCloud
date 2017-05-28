@@ -21,3 +21,8 @@ type Command interface {
 func IsCloudPath(path string) bool {
 	return strings.HasPrefix(path, "/pfs/")
 }
+
+func CheckUser(path string) bool {
+	//TODO
+	return true
+}

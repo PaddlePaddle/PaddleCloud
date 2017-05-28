@@ -1,5 +1,8 @@
 package pfsmod
 
+//TODO:
+// need a custome error type?
+
 const (
 	StatusFileNotFound          = 520
 	StatusDirectoryNotAFile     = 521
@@ -10,6 +13,9 @@ const (
 	StatusDirectoryAlreadyExist = 528
 	StatusBadChunkSize          = 529
 	StatusShouldBePfsPath       = 530
+	StatusNotEnoughArgs         = 531
+	StatusInvalidArgs           = 532
+	StatusUnAuthorized          = 533
 )
 
 var statusText = map[int]string{
@@ -22,6 +28,9 @@ var statusText = map[int]string{
 	StatusDirectoryAlreadyExist: "directory already exist",
 	StatusBadChunkSize:          "chunksize error",
 	StatusShouldBePfsPath:       "should be pfs path",
+	StatusNotEnoughArgs:         "not enough arguments",
+	StatusInvalidArgs:           "invalid arguments",
+	StatusUnAuthorized:          "what you request is unauthorized",
 }
 
 func StatusText(code int) string {

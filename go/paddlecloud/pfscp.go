@@ -41,7 +41,6 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		return subcommands.ExitFailure
 	}
 
-	//fmt.Println(results)
 	return subcommands.ExitSuccess
 }
 
