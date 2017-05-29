@@ -194,25 +194,3 @@ func (p *LsCmd) Run() (interface{}, error) {
 
 	return results, nil
 }
-
-/*
-func IsFile(r []LsResult) bool {
-	if len(r) != 1 {
-		return false
-	}
-
-	return !r[0].IsDir
-}
-
-func IsDir(r []LsResult) bool {
-	if len(r) != 1 {
-		return false
-	}
-
-	return r[0].IsDir
-}
-
-func IsNotExist(err error) bool {
-	return err.Error() == StatusText(StatusFileNotFound)
-}
-*/

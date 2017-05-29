@@ -26,6 +26,11 @@ type TouchResponse struct {
 	Results TouchResult `json:"results"`
 }
 
+type RmResponse struct {
+	Err     string     `json:"err"`
+	Results []RmResult `json:"path"`
+}
+
 type UploadChunkResponse struct {
 	Err string `json:"err"`
 }

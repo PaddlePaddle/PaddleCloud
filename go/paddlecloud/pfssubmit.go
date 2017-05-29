@@ -89,6 +89,7 @@ func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 		return nil, err
 	}
 
+	log.V(2).Info(string(body[:]))
 	return body, nil
 }
 

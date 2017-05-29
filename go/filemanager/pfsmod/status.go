@@ -17,6 +17,7 @@ const (
 	StatusInvalidArgs           = 532
 	StatusUnAuthorized          = 533
 	StatusJsonErr               = 534
+	StatusCannotDelDirectory    = 535
 )
 
 var statusText = map[int]string{
@@ -33,6 +34,7 @@ var statusText = map[int]string{
 	StatusInvalidArgs:           "invalid arguments",
 	StatusUnAuthorized:          "what you request is unauthorized",
 	StatusJsonErr:               "parse json error",
+	StatusCannotDelDirectory:    "can't del directory",
 }
 
 func StatusText(code int) string {

@@ -120,7 +120,20 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rmHandler(w http.ResponseWriter, body []byte) {
-	return
+	log.V(1).Infof("begin proc rmHandler\n")
+	cmd := pfsmod.RmCmd{}
+
+	resp := pfsmod.JsonResponse{}
+	if err := json.Unmarshal(body, &cmd); err != nil {
+		writeJsonResponse(w, string(body[:]), http.StatusOK, &resp)
+		return
+	}
+
+	log.V(1).Infof("request :%#v\n", cmd)
+
+	cmdHandler(w, string(body[:]), &cmd)
+	log.V(1).Infof("end proc handler\n")
+
 }
 
 func touchHandler(w http.ResponseWriter, body []byte) {
