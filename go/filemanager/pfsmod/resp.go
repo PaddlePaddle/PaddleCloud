@@ -30,11 +30,16 @@ type UploadChunkResponse struct {
 	Err string `json:"err"`
 }
 
+type StatResponse struct {
+	Err    string   `json:"err"`
+	Result LsResult `json:"results"`
+}
+
+/*
 func (p *JsonResponse) GetErr() string {
 	return p.Err
 }
 
-/*
 func (p *LsResponse) GetErr() string {
 	return p.Err
 }

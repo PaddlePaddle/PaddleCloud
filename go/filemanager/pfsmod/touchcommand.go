@@ -28,6 +28,21 @@ type TouchCmd struct {
 	Path     string `json:path`
 }
 
+func (p *TouchCmd) Check() error {
+	if !IsCloudPath(p.Path) {
+		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
+	}
+
+	if !CheckUser(p.Path) {
+		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
+	}
+
+	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
+		return errors.New(StatusText(StatusBadFileSize) + ":" + fmt.Sprint(p.FileSize))
+	}
+	return nil
+}
+
 func (p *TouchCmd) ToUrlParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)

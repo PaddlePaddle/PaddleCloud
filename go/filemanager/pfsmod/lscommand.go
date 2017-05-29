@@ -62,6 +62,7 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	})
 
 	for _, arg := range f.Args() {
+		log.V(2).Info(arg)
 		cmd.Args = append(cmd.Args, arg)
 	}
 
@@ -187,6 +188,7 @@ func (p *LsCmd) Run() (interface{}, error) {
 	return results, nil
 }
 
+/*
 func IsFile(r []LsResult) bool {
 	if len(r) != 1 {
 		return false
@@ -206,3 +208,4 @@ func IsDir(r []LsResult) bool {
 func IsNotExist(err error) bool {
 	return err.Error() == StatusText(StatusFileNotFound)
 }
+*/

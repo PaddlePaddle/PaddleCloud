@@ -46,7 +46,7 @@ func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
 		}}
 	*/
 
-	log.V(1).Info(config)
+	log.V(1).Infof("%#v\n", config)
 
 	//http
 	client := &http.Client{}

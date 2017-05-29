@@ -7,9 +7,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	//log "github.com/golang/glog"
+	log "github.com/golang/glog"
 	"github.com/google/subcommands"
-	//"path/filepath"
 )
 
 type LsCommand struct {
@@ -105,6 +104,7 @@ func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	if err != nil {
 		return subcommands.ExitFailure
 	}
+	log.V(1).Infof("%#v\n", cmd)
 
 	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
 	if err := remoteLs(s, cmd); err != nil {

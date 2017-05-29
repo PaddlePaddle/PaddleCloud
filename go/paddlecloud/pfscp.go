@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	//log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
 
@@ -71,7 +72,7 @@ func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) error {
 		}
 
 		if err != nil {
-			fmt.Printf("%v\n", err)
+			fmt.Printf("%#v\n", err)
 			return err
 		}
 

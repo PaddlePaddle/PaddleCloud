@@ -9,6 +9,35 @@ import (
 	"net/http"
 )
 
+func cmdHandler(w http.ResponseWriter, r *http.Request, cmd pfsmod.Command) {
+	resp := pfsmod.JsonResponse{}
+
+	cmd, err := pfsmod.NewLsCmdFromUrlParam(r.URL.RawQuery)
+	if err != nil {
+		resp.Err = err.Error()
+		writeJsonResponse(w, r, http.StatusOK, &resp)
+		return
+	}
+
+	if err := cmd.Check(); err != nil {
+		resp.Err = err.Error()
+		writeJsonResponse(w, r, http.StatusOK, &resp)
+		return
+	}
+
+	result, err := cmd.Run()
+	if err != nil {
+		resp.Err = err.Error()
+		resp.Results = result
+		writeJsonResponse(w, r, http.StatusOK, &resp)
+		return
+	}
+
+	resp.Results = result
+	writeJsonResponse(w, r, http.StatusOK, &resp)
+
+}
+
 func lsHandler(w http.ResponseWriter, r *http.Request) {
 	resp := pfsmod.JsonResponse{}
 
@@ -59,7 +88,7 @@ func writeJsonResponse(w http.ResponseWriter,
 		log.Infof("%s httpStatus:%d\n",
 			r.URL.RawQuery, httpStatus)
 
-		log.V(1).Infof("%s httpStatus:%d resp:%v\n",
+		log.V(1).Infof("%s httpStatus:%d resp:%#v\n",
 			r.URL.RawQuery, httpStatus, resp)
 	}
 
@@ -79,6 +108,8 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 		lsHandler(w, r)
 	case "md5sum":
 		//err := md5Handler(w, r)
+	case "stat":
+		statHandler(w, r)
 	default:
 		resp := pfsmod.JsonResponse{}
 		writeJsonResponse(w, r,
@@ -109,11 +140,18 @@ func parseJson(r *http.Request, cmd interface{}) error {
 }
 
 func touchHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin proc touchHandler\n")
 	resp := pfsmod.JsonResponse{}
 
 	cmd := pfsmod.TouchCmd{}
 	if err := parseJson(r, &cmd); err != nil {
-		writeJsonResponse(w, r, http.StatusBadRequest, &resp)
+		writeJsonResponse(w, r, http.StatusOK, &resp)
+		return
+	}
+
+	if err := cmd.Check(); err != nil {
+		resp.Err = err.Error()
+		writeJsonResponse(w, r, http.StatusOK, &resp)
 		return
 	}
 
