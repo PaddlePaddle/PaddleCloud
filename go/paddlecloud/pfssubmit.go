@@ -161,12 +161,12 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
 		}
 
 		if part.FormName() == "chunk" {
-			recvCmd, status := pfsmod.NewChunkCmdFromUrlParam(part.FileName())
+			recvCmd, err := pfsmod.NewChunkCmdFromUrlParam(part.FileName())
 			if err != nil {
-				return errors.New(http.StatusText(status))
+				return errors.New(err.Error())
 			}
 
-			if err := recvCmd.GetChunkData(part); err != nil {
+			if err := recvCmd.SaveChunkData(part); err != nil {
 				return err
 			}
 		}
@@ -175,18 +175,24 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
 	return nil
 }
 
-func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, url string) (*http.Request, error) {
+func getDstParam(src *pfsmod.ChunkCmd, dst string) string {
+	cmd := pfsmod.NewChunkCmd(dst, src.Offset, src.ChunkSize)
+
+	return cmd.ToUrlParam()
+}
+
+func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, dst string, url string) (*http.Request, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
 
-	fileName := cmd.ToUrlParam()
+	fileName := getDstParam(cmd, dst)
 	part, err := writer.CreateFormFile("chunk", fileName)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := cmd.WriteChunkData(part); err != nil {
+	if err := cmd.LoadChunkData(part); err != nil {
 		return nil, err
 	}
 
@@ -204,12 +210,12 @@ func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, url string) (*http.Request, e
 	return req, nil
 }
 
-func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
+func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd, dst string) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
 		s.config.ActiveConfig.Endpoint, s.port)
 	log.V(1).Info("target url: " + url)
 
-	req, err := newPostChunkDataRequest(cmd, url)
+	req, err := newPostChunkDataRequest(cmd, dst, url)
 	if err != nil {
 		return nil, nil
 	}

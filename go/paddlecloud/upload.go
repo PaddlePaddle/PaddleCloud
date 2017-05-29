@@ -49,17 +49,17 @@ func RemoteTouch(s *PfsSubmitter, cmd *pfsmod.TouchCmd) error {
 
 func UploadChunks(s *PfsSubmitter,
 	src string,
-	dest string,
+	dst string,
 	diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
-		log.V(1).Infof("srcfile:%s and destfile:%s are same\n", src, dest)
+		log.V(1).Infof("srcfile:%s and destfile:%s are same\n", src, dst)
 		fmt.Printf("upload ok!\n")
 		return nil
 	}
 
 	for _, meta := range diffMeta {
 		log.V(1).Infof("diffMeta:%v\n", meta)
-		body, err := s.PostChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len))
+		body, err := s.PostChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len), dst)
 		if err != nil {
 			return err
 		}

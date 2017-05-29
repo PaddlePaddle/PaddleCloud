@@ -1,10 +1,11 @@
 package pfsmod
 
 import (
+	"errors"
 	"fmt"
+	log "github.com/golang/glog"
 	"io"
-	"mime/multipart"
-	"net/http"
+	//"mime/multipart"
 	"net/url"
 	"os"
 	"strconv"
@@ -48,7 +49,7 @@ func (p *ChunkCmd) Run() (interface{}, error) {
 
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
-func NewChunkCmdFromUrlParam(path string) (*ChunkCmd, int) {
+func NewChunkCmdFromUrlParam(path string) (*ChunkCmd, error) {
 	cmd := ChunkCmd{}
 
 	m, err := url.ParseQuery(path)
@@ -56,26 +57,26 @@ func NewChunkCmdFromUrlParam(path string) (*ChunkCmd, int) {
 		len(m["path"]) == 0 ||
 		len(m["offset"]) == 0 ||
 		len(m["chunksize"]) == 0 {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(StatusText(StatusJsonErr))
 	}
 
 	//var err error
 	cmd.Path = m["path"][0]
 	cmd.Offset, err = strconv.ParseInt(m["offset"][0], 10, 64)
 	if err != nil {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(StatusText(StatusJsonErr))
 	}
 
 	chunkSize, err := strconv.ParseInt(m["chunksize"][0], 10, 64)
 	if err != nil {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(StatusText(StatusBadChunkSize))
 	}
 	cmd.ChunkSize = chunkSize
 
-	return &cmd, http.StatusOK
+	return &cmd, nil
 }
 
-func (p *ChunkCmd) WriteChunkData(w io.Writer) error {
+func (p *ChunkCmd) LoadChunkData(w io.Writer) error {
 	f, err := os.Open(p.Path)
 	if err != nil {
 		return err
@@ -87,27 +88,17 @@ func (p *ChunkCmd) WriteChunkData(w io.Writer) error {
 		return err
 	}
 
-	writer := multipart.NewWriter(w)
-	defer writer.Close()
-
-	writer.SetBoundary(DefaultMultiPartBoundary)
-
-	fName := p.ToUrlParam()
-	part, err := writer.CreateFormFile("chunk", fName)
+	writen, err := io.CopyN(w, f, p.ChunkSize)
+	log.V(2).Infof("writen:%d\n", writen)
 	if err != nil {
 		return err
 	}
 
-	_, err = io.CopyN(part, f, p.ChunkSize)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
-func (p *ChunkCmd) GetChunkData(r io.Reader) error {
-	//func (p *ChunkCmd) GetChunkData(r multipart.Reader) error {
-	f, err := os.Open(p.Path)
+func (p *ChunkCmd) SaveChunkData(r io.Reader) error {
+	f, err := os.OpenFile(p.Path, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
@@ -118,9 +109,11 @@ func (p *ChunkCmd) GetChunkData(r io.Reader) error {
 		return err
 	}
 
-	_, err = io.CopyN(f, r, p.ChunkSize)
+	writen, err := io.CopyN(f, r, p.ChunkSize)
+	log.V(2).Infof("chunksize:%d writen:%d\n", p.ChunkSize, writen)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

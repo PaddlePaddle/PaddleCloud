@@ -226,13 +226,13 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetChunkData(w http.ResponseWriter, r *http.Request) {
-	cmd, status := pfsmod.NewChunkCmdFromUrlParam(r.URL.RawQuery)
-	if status != http.StatusOK {
-		writeJsonResponse(w, r.URL.RawQuery, status, &pfsmod.JsonResponse{})
+	cmd, err := pfsmod.NewChunkCmdFromUrlParam(r.URL.RawQuery)
+	if err != nil {
+		writeJsonResponse(w, r.URL.RawQuery, http.StatusOK, &pfsmod.JsonResponse{})
 		return
 	}
 
-	if err := cmd.WriteChunkData(w); err != nil {
+	if err := cmd.LoadChunkData(w); err != nil {
 		return
 	}
 
@@ -275,19 +275,21 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		cmd, status := pfsmod.NewChunkCmdFromUrlParam(part.FileName())
-		if status != http.StatusOK {
-			writeJsonResponse(w, part.FileName(), status, &resp)
-			break
-		}
-
-		if err := cmd.GetChunkData(part); err != nil {
+		cmd, err := pfsmod.NewChunkCmdFromUrlParam(part.FileName())
+		if err != nil {
 			resp.Err = err.Error()
 			writeJsonResponse(w, part.FileName(), http.StatusOK, &resp)
-			break
+			return
 		}
 
-		resp.Err = ""
+		log.V(1).Infof("recv cmd:%#v\n", cmd)
+
+		if err := cmd.SaveChunkData(part); err != nil {
+			resp.Err = err.Error()
+			writeJsonResponse(w, part.FileName(), http.StatusOK, &resp)
+			return
+		}
+
 		writeJsonResponse(w, part.FileName(), http.StatusOK, &resp)
 	}
 
