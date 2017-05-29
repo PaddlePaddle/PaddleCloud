@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	log "github.com/golang/glog"
 	"os"
 	"path/filepath"
 )
@@ -30,14 +31,15 @@ func RemoteChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.Ch
 	return resp.Results, errors.New(resp.Err)
 }
 
-func DownloadChunks(s *PfsSubmitter, src string, dest string, diffMeta []pfsmod.ChunkMeta) error {
+func DownloadChunks(s *PfsSubmitter, src string, dst string, diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
-		fmt.Printf("srcfile:%s and destfile:%s are already same\n", src, dest)
+		log.V(1).Infof("srcfile:%s and dstfile:%s are already same\n", src, dst)
+		fmt.Printf("download ok\n")
 		return nil
 	}
 
 	for _, meta := range diffMeta {
-		err := s.GetChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len))
+		err := s.GetChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len), dst)
 		if err != nil {
 			return err
 		}
@@ -51,6 +53,7 @@ func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) er
 	if err != nil {
 		return err
 	}
+	log.V(2).Infof("srcMeta:%#v\n", srcMeta)
 
 	dstMeta, err := pfsmod.GetChunkMeta(dst, pfsmod.DefaultChunkSize)
 	if err != nil {

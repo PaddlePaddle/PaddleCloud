@@ -130,7 +130,7 @@ func (s *PfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
 	return s.get(cmd, "api/v1/chunks")
 }
 
-func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
+func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
@@ -165,6 +165,8 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd) error {
 			if err != nil {
 				return errors.New(err.Error())
 			}
+
+			recvCmd.Path = dst
 
 			if err := recvCmd.SaveChunkData(part); err != nil {
 				return err

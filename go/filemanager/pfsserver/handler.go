@@ -8,6 +8,7 @@ import (
 	log "github.com/golang/glog"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -225,33 +226,37 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetChunkData(w http.ResponseWriter, r *http.Request) {
+func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin proc GetChunkHandler")
+
 	cmd, err := pfsmod.NewChunkCmdFromUrlParam(r.URL.RawQuery)
 	if err != nil {
 		writeJsonResponse(w, r.URL.RawQuery, http.StatusOK, &pfsmod.JsonResponse{})
 		return
 	}
 
-	if err := cmd.LoadChunkData(w); err != nil {
+	writer := multipart.NewWriter(w)
+	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
+
+	fileName := cmd.ToUrlParam()
+	part, err := writer.CreateFormFile("chunk", fileName)
+	if err != nil {
+		log.Error(err)
 		return
 	}
 
-	log.Infof("proc GetChunkDat ok\n")
-}
-
-func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
-	log.V(1).Infof("begin proc %s\n", r.URL.RawQuery)
-
-	method := r.URL.Query().Get("method")
-	resp := pfsmod.JsonResponse{}
-
-	switch method {
-	case "GetChunkData":
-		GetChunkData(w, r)
-	default:
-		writeJsonResponse(w, r.URL.RawQuery, http.StatusMethodNotAllowed, &resp)
+	if err := cmd.LoadChunkData(part); err != nil {
+		log.Error(err)
+		return
 	}
 
+	err = writer.Close()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	log.V(1).Info("end proc GetChunkHandler")
 	return
 }
 
