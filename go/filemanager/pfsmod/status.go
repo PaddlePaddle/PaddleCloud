@@ -18,6 +18,7 @@ const (
 	StatusUnAuthorized          = 533
 	StatusJsonErr               = 534
 	StatusCannotDelDirectory    = 535
+	StatusAlreadyExist          = 536
 )
 
 var statusText = map[int]string{
@@ -35,6 +36,7 @@ var statusText = map[int]string{
 	StatusUnAuthorized:          "what you request is unauthorized",
 	StatusJsonErr:               "parse json error",
 	StatusCannotDelDirectory:    "can't del directory",
+	StatusAlreadyExist:          "already exist",
 }
 
 func StatusText(code int) string {

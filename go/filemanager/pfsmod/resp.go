@@ -40,6 +40,11 @@ type StatResponse struct {
 	Results LsResult `json:"results"`
 }
 
+type MkdirResponse struct {
+	Err     string        `json:"err"`
+	Results []MkdirResult `json:"results"`
+}
+
 /*
 func (p *JsonResponse) GetErr() string {
 	return p.Err

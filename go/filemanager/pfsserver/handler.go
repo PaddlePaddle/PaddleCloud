@@ -136,6 +136,23 @@ func rmHandler(w http.ResponseWriter, body []byte) {
 
 }
 
+func mkdirHandler(w http.ResponseWriter, body []byte) {
+	log.V(1).Infof("begin proc mkdir\n")
+	cmd := pfsmod.MkdirCmd{}
+
+	resp := pfsmod.JsonResponse{}
+	if err := json.Unmarshal(body, &cmd); err != nil {
+		writeJsonResponse(w, string(body[:]), http.StatusOK, &resp)
+		return
+	}
+
+	log.V(1).Infof("request :%#v\n", cmd)
+
+	cmdHandler(w, string(body[:]), &cmd)
+	log.V(1).Infof("end proc mkdir\n")
+
+}
+
 func touchHandler(w http.ResponseWriter, body []byte) {
 	log.V(1).Infof("begin proc touch\n")
 	cmd := pfsmod.TouchCmd{}
@@ -207,6 +224,8 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 		rmHandler(w, body)
 	case "touch":
 		touchHandler(w, body)
+	case "mkdir":
+		mkdirHandler(w, body)
 	default:
 		resp := pfsmod.JsonResponse{}
 		writeJsonResponse(w, string(body[:]), http.StatusMethodNotAllowed, &resp)
