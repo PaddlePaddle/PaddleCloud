@@ -21,7 +21,7 @@ const (
 	DefaultChunkSize    = 2 * 1024 * 1024
 )
 const (
-	chunkMetaCmdName = "touch"
+	chunkMetaCmdName = "GetChunkMeta"
 )
 
 type ChunkMeta struct {
@@ -55,7 +55,27 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	return GetChunkMeta(p.FilePath, p.ChunkSize)
 }
 
-func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, int) {
+func (p *ChunkMetaCmd) checkChunkSize() error {
+	if p.ChunkSize < defaultMinChunkSize ||
+		p.ChunkSize > defaultMaxChunkSize {
+		return errors.New(StatusText(StatusBadChunkSize))
+	}
+
+	return nil
+}
+
+func (p *ChunkMetaCmd) CloudCheck() error {
+	if !IsCloudPath(p.FilePath) {
+		return errors.New(StatusText(StatusShouldBePfsPath) + ": p.FilePath")
+	}
+	return p.checkChunkSize()
+}
+
+func (p *ChunkMetaCmd) LocalCheck() error {
+	return p.checkChunkSize()
+}
+
+func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, error) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
 	chunkStr := r.URL.Query().Get("chunksize")
@@ -64,23 +84,25 @@ func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, int) {
 		method != chunkMetaCmdName ||
 		len(path) < 4 ||
 		len(chunkStr) == 0 {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(http.StatusText(http.StatusBadRequest))
 	}
 
 	chunkSize, err := strconv.ParseInt(chunkStr, 10, 64)
 	if err != nil {
-		return nil, http.StatusBadRequest
+		return nil, errors.New(StatusText(StatusBadChunkSize))
 	}
 
-	if chunkSize < defaultMinChunkSize || chunkSize > defaultMaxChunkSize {
-		return nil, http.StatusBadRequest
-	}
+	/*
+		if chunkSize < defaultMinChunkSize || chunkSize > defaultMaxChunkSize {
+			return nil, http.StatusBadRequest
+		}
+	*/
 
 	return &ChunkMetaCmd{
 		Method:    method,
 		FilePath:  path,
 		ChunkSize: chunkSize,
-	}, 0
+	}, nil
 }
 
 func NewChunkMetaCmd(path string, chunkSize int64) *ChunkMetaCmd {

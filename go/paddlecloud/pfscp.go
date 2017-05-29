@@ -51,7 +51,7 @@ func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) error {
 	var results []pfsmod.CpCmdResult
 
 	for _, arg := range cmd.Src {
-		fmt.Println(cmd.PartToString(arg, cmd.Dst))
+		fmt.Printf(cmd.PartToString(arg, cmd.Dst))
 
 		var ret []pfsmod.CpCmdResult
 		var err error
@@ -79,6 +79,7 @@ func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) error {
 		if ret != nil {
 			results = append(results, ret...)
 		}
+		fmt.Println("")
 	}
 
 	return nil

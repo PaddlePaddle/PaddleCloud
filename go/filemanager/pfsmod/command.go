@@ -16,6 +16,8 @@ type Command interface {
 	ToUrlParam() string
 	ToJson() ([]byte, error)
 	Run() (interface{}, error)
+	LocalCheck() error
+	CloudCheck() error
 }
 
 func IsCloudPath(path string) bool {

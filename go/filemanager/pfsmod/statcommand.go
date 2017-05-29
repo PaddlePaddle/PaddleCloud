@@ -2,17 +2,13 @@ package pfsmod
 
 import (
 	"errors"
-	"flag"
-	log "github.com/golang/glog"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
-	"strconv"
 )
 
 const (
-	statCmdName = "ls"
+	statCmdName = "stat"
 )
 
 type StatCmd struct {
@@ -23,7 +19,7 @@ type StatCmd struct {
 func (p *StatCmd) ToUrlParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
-	parameters.Add("path", Path)
+	parameters.Add("path", p.Path)
 
 	return parameters.Encode()
 
@@ -59,21 +55,23 @@ func NewStatCmd(path string) *StatCmd {
 	}
 }
 
-func (p *StatCmd) Check() error {
+func (p *StatCmd) LocalCheck() error {
+	return nil
+}
+
+func (p *StatCmd) CloudCheck() error {
 	if !IsCloudPath(p.Path) {
 		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
 	}
 
 	if !CheckUser(p.Path) {
-		return errors.New(StatusText(StatusUnAuthorized) + ":" + arg)
+		return errors.New(StatusText(StatusUnAuthorized) + ":" + p.Path)
 	}
 
 	return nil
 }
 
 func (p *StatCmd) Run() (interface{}, error) {
-	result := LsResult{}
-
 	fi, err := os.Stat(p.Path)
 	if err != nil {
 		return nil, err

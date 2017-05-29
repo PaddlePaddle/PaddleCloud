@@ -142,7 +142,7 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 	return ret, nil
 }
 
-func (p *LsCmd) Check() error {
+func (p *LsCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
 	}
@@ -157,6 +157,13 @@ func (p *LsCmd) Check() error {
 		}
 	}
 
+	return nil
+}
+
+func (p *LsCmd) LocalCheck() error {
+	if len(p.Args) == 0 {
+		return errors.New(StatusText(StatusNotEnoughArgs))
+	}
 	return nil
 }
 

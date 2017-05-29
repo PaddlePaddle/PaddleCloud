@@ -16,6 +16,7 @@ const (
 	StatusNotEnoughArgs         = 531
 	StatusInvalidArgs           = 532
 	StatusUnAuthorized          = 533
+	StatusJsonErr               = 534
 )
 
 var statusText = map[int]string{
@@ -31,6 +32,7 @@ var statusText = map[int]string{
 	StatusNotEnoughArgs:         "not enough arguments",
 	StatusInvalidArgs:           "invalid arguments",
 	StatusUnAuthorized:          "what you request is unauthorized",
+	StatusJsonErr:               "parse json error",
 }
 
 func StatusText(code int) string {

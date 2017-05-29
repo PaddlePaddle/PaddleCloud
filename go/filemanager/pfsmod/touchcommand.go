@@ -28,7 +28,18 @@ type TouchCmd struct {
 	Path     string `json:path`
 }
 
-func (p *TouchCmd) Check() error {
+func (p *TouchCmd) checkFileSize() error {
+	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
+		return errors.New(StatusText(StatusBadFileSize) + ":" + fmt.Sprint(p.FileSize))
+	}
+	return nil
+}
+
+func (p *TouchCmd) LocalCheck() error {
+	return p.checkFileSize()
+}
+
+func (p *TouchCmd) CloudCheck() error {
 	if !IsCloudPath(p.Path) {
 		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
 	}
@@ -37,10 +48,7 @@ func (p *TouchCmd) Check() error {
 		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
 	}
 
-	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
-		return errors.New(StatusText(StatusBadFileSize) + ":" + fmt.Sprint(p.FileSize))
-	}
-	return nil
+	return p.checkFileSize()
 }
 
 func (p *TouchCmd) ToUrlParam() string {

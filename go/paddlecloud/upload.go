@@ -9,6 +9,26 @@ import (
 	"path/filepath"
 )
 
+func RemoteStat(s *PfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
+	body, err := s.GetFiles(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := pfsmod.StatResponse{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, err
+	}
+
+	log.V(1).Infof("stat %s result:%#v\n", resp)
+
+	if len(resp.Err) != 0 {
+		return nil, errors.New(resp.Err)
+	}
+
+	return &resp.Results, nil
+}
+
 func RemoteTouch(s *PfsSubmitter, cmd *pfsmod.TouchCmd) error {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
@@ -32,7 +52,8 @@ func UploadChunks(s *PfsSubmitter,
 	dest string,
 	diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
-		fmt.Printf("srcfile:%s and destfile:%s are same\n", src, dest)
+		log.V(1).Infof("srcfile:%s and destfile:%s are same\n", src, dest)
+		fmt.Printf("upload ok!\n")
 		return nil
 	}
 
@@ -70,19 +91,19 @@ func UploadFile(s *PfsSubmitter,
 	if err != nil {
 		return err
 	}
-	log.V(1).Infof("dst %s chunkMeta:%#v\n", dst, dstMeta)
+	log.V(2).Infof("dst %s chunkMeta:%#v\n", dst, dstMeta)
 
 	srcMeta, err := pfsmod.GetChunkMeta(src, pfsmod.DefaultChunkSize)
 	if err != nil {
 		return err
 	}
-	log.V(1).Infof("src %s chunkMeta:%#v\n", src, srcMeta)
+	log.V(2).Infof("src %s chunkMeta:%#v\n", src, srcMeta)
 
 	diffMeta, err := pfsmod.GetDiffChunkMeta(srcMeta, dstMeta)
 	if err != nil {
 		return err
 	}
-	log.V(1).Infof("diff chunkMeta:%#v\n", diffMeta)
+	log.V(2).Infof("diff chunkMeta:%#v\n", diffMeta)
 
 	err = UploadChunks(s, src, dst, diffMeta)
 	if err != nil {
@@ -90,24 +111,6 @@ func UploadFile(s *PfsSubmitter,
 	}
 
 	return nil
-}
-
-func RemoteStat(s *PfsSubmitter, cmd *pfsmod.StatCmd) (LsResult, error) {
-	body, err := s.GetFiles(cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := pfsmod.StatResponse{}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
-
-	if len(resp.Err) != 0 {
-		return nil, errors.New(resp.Err)
-	}
-
-	return resp.Results, nil
 }
 
 func Upload(s *PfsSubmitter, src, dst string) error {
@@ -118,17 +121,13 @@ func Upload(s *PfsSubmitter, src, dst string) error {
 	}
 	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
 
-	dstMetas, err := RemoteLs(s, pfsmod.NewLsCmd(false, dst))
-	if err != nil && !pfsmod.IsNotExist(err) {
+	dstMeta, err := RemoteStat(s, pfsmod.NewStatCmd(dst))
+	if err != nil {
 		return err
 	}
-	log.V(1).Infof("ls dst:%s result:%#v\n", dst, dstMetas)
+	log.V(1).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
 
 	srcMetas := srcRet.([]pfsmod.LsResult)
-	//files must save under directories
-	if len(srcMetas) > 1 && !pfsmod.IsDir(dstMetas) {
-		return errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
-	}
 
 	for _, srcMeta := range srcMetas {
 		if srcMeta.IsDir {
@@ -139,12 +138,13 @@ func Upload(s *PfsSubmitter, src, dst string) error {
 		realDst := dst
 
 		_, file := filepath.Split(srcMeta.Path)
-		if pfsmod.IsDir(dstMetas) {
+		if dstMeta != nil && dstMeta.IsDir {
 			realDst = dst + "/" + file
 		}
 
-		fmt.Printf("upload src_path:%s src_file_size:%d dst_path:%s\n",
+		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
+		fmt.Printf("uploading %s\n", realSrc)
 		if err := UploadFile(s, realSrc, realDst, srcMeta.Size); err != nil {
 			return err
 		}

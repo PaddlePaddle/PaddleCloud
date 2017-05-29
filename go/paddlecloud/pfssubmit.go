@@ -65,7 +65,7 @@ func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 	}
 
 	url := fmt.Sprintf("%s:%d/api/v1/files", s.config.ActiveConfig.Endpoint, s.port)
-	fmt.Printf("target url:%s\n", url)
+	log.V(1).Info("target url: " + url)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonString))
 	if err != nil {
@@ -207,7 +207,7 @@ func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, url string) (*http.Request, e
 func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
 		s.config.ActiveConfig.Endpoint, s.port)
-	fmt.Printf("chunk data target url: " + url)
+	log.V(1).Info("target url: " + url)
 
 	req, err := newPostChunkDataRequest(cmd, url)
 	if err != nil {

@@ -22,8 +22,8 @@ type ChunkMetaResponse struct {
 }
 
 type TouchResponse struct {
-	Err    string      `json:"err"`
-	Result TouchResult `json:"results"`
+	Err     string      `json:"err"`
+	Results TouchResult `json:"results"`
 }
 
 type UploadChunkResponse struct {
@@ -31,8 +31,8 @@ type UploadChunkResponse struct {
 }
 
 type StatResponse struct {
-	Err    string   `json:"err"`
-	Result LsResult `json:"results"`
+	Err     string   `json:"err"`
+	Results LsResult `json:"results"`
 }
 
 /*
