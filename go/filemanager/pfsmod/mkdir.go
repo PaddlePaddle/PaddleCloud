@@ -16,15 +16,18 @@ const (
 	mkdirCmdName = "mkdir"
 )
 
+//MkdirResult means Mkdir command's result
 type MkdirResult struct {
 	Path string `json:"path"`
 }
 
+//MkdirCmd means Mkdir command
 type MkdirCmd struct {
 	Method string   `json:"method"`
-	Args   []string `json:path`
+	Args   []string `json:"path"`
 }
 
+//LocalCheck checks the conditions when running on local
 func (p *MkdirCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -32,6 +35,7 @@ func (p *MkdirCmd) LocalCheck() error {
 	return nil
 }
 
+//CloudCheck checks the conditions when running on cloud
 func (p *MkdirCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -51,20 +55,25 @@ func (p *MkdirCmd) CloudCheck() error {
 
 }
 
-func (p *MkdirCmd) ToUrlParam() string {
+//ToURLParam need not to be implemented
+func (p *MkdirCmd) ToURLParam() string {
 	return ""
 }
 
-func (p *MkdirCmd) ToJson() ([]byte, error) {
+//ToJSON encodes MkdirCmd to JSON string
+func (p *MkdirCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
+//NewMkdirCmd returns a new MkdirCmd
 func NewMkdirCmd(path string) *MkdirCmd {
 	return &MkdirCmd{
 		Method: mkdirCmdName,
 		Args:   []string{path},
 	}
 }
+
+//NewMkdirCmdFromFlag returns a new MkdirCmd from parsed flags
 func NewMkdirCmdFromFlag(f *flag.FlagSet) (*MkdirCmd, error) {
 	cmd := MkdirCmd{}
 
@@ -79,6 +88,7 @@ func NewMkdirCmdFromFlag(f *flag.FlagSet) (*MkdirCmd, error) {
 	return &cmd, nil
 }
 
+//Run runs MkdirCmd
 func (p *MkdirCmd) Run() (interface{}, error) {
 	results := make([]MkdirResult, 0, 100)
 	for _, path := range p.Args {
@@ -88,7 +98,7 @@ func (p *MkdirCmd) Run() (interface{}, error) {
 			return results, errors.New(StatusText(StatusAlreadyExist))
 		}
 
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0700); err != nil {
 			return results, err
 		}
 

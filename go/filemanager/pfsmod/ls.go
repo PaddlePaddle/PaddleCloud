@@ -15,20 +15,23 @@ const (
 	lsCmdName = "ls"
 )
 
+//LsResult is LsCmd's result
 type LsResult struct {
 	Path    string `json:"Path"`
 	ModTime string `json:"ModTime"`
 	Size    int64  `json:"Size"`
-	IsDir   bool   `json:IsDir`
+	IsDir   bool   `json:"IsDir"`
 }
 
+//LsCmd is LsCommand structure
 type LsCmd struct {
 	Method string
 	R      bool
 	Args   []string
 }
 
-func (p *LsCmd) ToUrlParam() string {
+//ToURLParam encoding LsCmd to URL Encoding string
+func (p *LsCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("r", strconv.FormatBool(p.R))
@@ -41,10 +44,12 @@ func (p *LsCmd) ToUrlParam() string {
 
 }
 
-func (p *LsCmd) ToJson() ([]byte, error) {
+//ToJSON does't need to be implemented
+func (p *LsCmd) ToJSON() ([]byte, error) {
 	return nil, nil
 }
 
+//NewLsCmdFromFlag returen a new LsCmd
 func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	cmd := LsCmd{}
 
@@ -69,7 +74,8 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	return &cmd, nil
 }
 
-func NewLsCmdFromUrlParam(path string) (*LsCmd, error) {
+//NewLsCmdFromURLParam returns a new LsCmd according path variable
+func NewLsCmdFromURLParam(path string) (*LsCmd, error) {
 	cmd := LsCmd{}
 
 	m, err := url.ParseQuery(path)
@@ -91,13 +97,12 @@ func NewLsCmdFromUrlParam(path string) (*LsCmd, error) {
 	}
 
 	cmd.Args = make([]string, 0, len(m["arg"])+1)
-	for _, arg := range m["arg"] {
-		cmd.Args = append(cmd.Args, arg)
-	}
+	cmd.Args = append(cmd.Args, m["arg"]...)
 
 	return &cmd, nil
 }
 
+//NewLsCmd return a new LsCmd according r and path variable
 func NewLsCmd(r bool, path string) *LsCmd {
 	return &LsCmd{
 		Method: lsCmdName,
@@ -109,7 +114,7 @@ func NewLsCmd(r bool, path string) *LsCmd {
 func lsPath(path string, r bool) ([]LsResult, error) {
 	ret := make([]LsResult, 0, 100)
 
-	filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
 		//log.Println("path:\t" + path)
 
 		if err != nil {
@@ -139,9 +144,10 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 		return nil
 	})
 
-	return ret, nil
+	return ret, err
 }
 
+//CloudCheck checks the conditions when running on cloud
 func (p *LsCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -160,6 +166,7 @@ func (p *LsCmd) CloudCheck() error {
 	return nil
 }
 
+//LocalCheck checks the conditions when running local
 func (p *LsCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -167,6 +174,7 @@ func (p *LsCmd) LocalCheck() error {
 	return nil
 }
 
+//Run functions runs LsCmd and return LsResult and error if any happened
 func (p *LsCmd) Run() (interface{}, error) {
 	results := make([]LsResult, 0, 100)
 
@@ -180,7 +188,6 @@ func (p *LsCmd) Run() (interface{}, error) {
 
 		if len(list) == 0 {
 			return results, errors.New(StatusText(StatusFileNotFound))
-			break
 		}
 
 		for _, path := range list {

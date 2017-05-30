@@ -16,7 +16,7 @@ const (
 	StatusNotEnoughArgs         = 531
 	StatusInvalidArgs           = 532
 	StatusUnAuthorized          = 533
-	StatusJsonErr               = 534
+	StatusJSONErr               = 534
 	StatusCannotDelDirectory    = 535
 	StatusAlreadyExist          = 536
 )
@@ -34,7 +34,7 @@ var statusText = map[int]string{
 	StatusNotEnoughArgs:         "not enough arguments",
 	StatusInvalidArgs:           "invalid arguments",
 	StatusUnAuthorized:          "what you request is unauthorized",
-	StatusJsonErr:               "parse json error",
+	StatusJSONErr:               "parse json error",
 	StatusCannotDelDirectory:    "can't del directory",
 	StatusAlreadyExist:          "already exist",
 }

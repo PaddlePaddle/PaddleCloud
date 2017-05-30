@@ -18,25 +18,29 @@ import (
 const (
 	defaultMaxChunkSize = 4 * 1024 * 1024
 	defaultMinChunkSize = 4 * 1024
-	DefaultChunkSize    = 2 * 1024 * 1024
+	//DefaultChunkSize is the default chunk's size
+	DefaultChunkSize = 2 * 1024 * 1024
 )
 const (
 	chunkMetaCmdName = "GetChunkMeta"
 )
 
+//ChunkMeta holds the chunk meta's info
 type ChunkMeta struct {
 	Offset   int64  `json:"offset"`
 	Checksum string `json:"checksum"`
 	Len      int64  `json:"len"`
 }
 
+//ChunkMetaCmd is a command
 type ChunkMetaCmd struct {
 	Method    string `json:"method"`
 	FilePath  string `json:"path"`
 	ChunkSize int64  `json:"chunksize"`
 }
 
-func (p *ChunkMetaCmd) ToUrlParam() string {
+//ToURLParam encodes ChunkMetaCmd to URL encoding string
+func (p *ChunkMetaCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("path", p.FilePath)
@@ -47,10 +51,12 @@ func (p *ChunkMetaCmd) ToUrlParam() string {
 	return parameters.Encode()
 }
 
-func (p *ChunkMetaCmd) ToJson() ([]byte, error) {
+//ToJSON encodes ChunkMetaCmd to JSON string
+func (p *ChunkMetaCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
+//Run is a functions which run ChunkMetaCmd
 func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	return GetChunkMeta(p.FilePath, p.ChunkSize)
 }
@@ -64,18 +70,24 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 	return nil
 }
 
+//CloudCheck checks the conditions when running on cloud
 func (p *ChunkMetaCmd) CloudCheck() error {
 	if !IsCloudPath(p.FilePath) {
 		return errors.New(StatusText(StatusShouldBePfsPath) + ": p.FilePath")
 	}
+	if !CheckUser(p.FilePath) {
+		return errors.New(StatusText(StatusUnAuthorized) + ":" + p.FilePath)
+	}
 	return p.checkChunkSize()
 }
 
+//LocalCheck checks the conditions when running local
 func (p *ChunkMetaCmd) LocalCheck() error {
 	return p.checkChunkSize()
 }
 
-func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, error) {
+//NewChunkMetaCmdFromURLParam get a new ChunkMetaCmd
+func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
 	chunkStr := r.URL.Query().Get("chunksize")
@@ -92,12 +104,6 @@ func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, error) {
 		return nil, errors.New(StatusText(StatusBadChunkSize))
 	}
 
-	/*
-		if chunkSize < defaultMinChunkSize || chunkSize > defaultMaxChunkSize {
-			return nil, http.StatusBadRequest
-		}
-	*/
-
 	return &ChunkMetaCmd{
 		Method:    method,
 		FilePath:  path,
@@ -105,6 +111,7 @@ func NewChunkMetaCmdFromUrl(r *http.Request) (*ChunkMetaCmd, error) {
 	}, nil
 }
 
+//NewChunkMetaCmd get a new ChunkMetaCmd with path and chunksize
 func NewChunkMetaCmd(path string, chunkSize int64) *ChunkMetaCmd {
 	return &ChunkMetaCmd{
 		Method:    chunkMetaCmdName,
@@ -119,8 +126,9 @@ func (a metaSlice) Len() int           { return len(a) }
 func (a metaSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a metaSlice) Less(i, j int) bool { return a[i].Offset < a[j].Offset }
 
-func GetDiffChunkMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, error) {
-	if destMeta == nil || len(destMeta) == 0 || len(srcMeta) == 0 {
+//GetDiffChunkMeta gets difference between srcMeta and dstMeta
+func GetDiffChunkMeta(srcMeta []ChunkMeta, dstMeta []ChunkMeta) ([]ChunkMeta, error) {
+	if len(dstMeta) == 0 || len(srcMeta) == 0 {
 		return srcMeta, nil
 	}
 
@@ -128,8 +136,8 @@ func GetDiffChunkMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, e
 		sort.Sort(metaSlice(srcMeta))
 	}
 
-	if !sort.IsSorted(metaSlice(destMeta)) {
-		sort.Sort(metaSlice(destMeta))
+	if !sort.IsSorted(metaSlice(dstMeta)) {
+		sort.Sort(metaSlice(dstMeta))
 	}
 
 	dstIdx := 0
@@ -137,21 +145,21 @@ func GetDiffChunkMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, e
 	diff := make([]ChunkMeta, 0, len(srcMeta))
 
 	for {
-		if srcMeta[srcIdx].Offset < destMeta[dstIdx].Offset {
+		if srcMeta[srcIdx].Offset < dstMeta[dstIdx].Offset {
 			diff = append(diff, srcMeta[srcIdx])
-			srcIdx += 1
-		} else if srcMeta[srcIdx].Offset > destMeta[dstIdx].Offset {
-			dstIdx += 1
+			srcIdx++
+		} else if srcMeta[srcIdx].Offset > dstMeta[dstIdx].Offset {
+			dstIdx++
 		} else {
-			if srcMeta[srcIdx].Checksum != destMeta[dstIdx].Checksum {
+			if srcMeta[srcIdx].Checksum != dstMeta[dstIdx].Checksum {
 				diff = append(diff, srcMeta[srcIdx])
 			}
 
-			dstIdx += 1
-			srcIdx += 1
+			dstIdx++
+			srcIdx++
 		}
 
-		if dstIdx >= len(destMeta) {
+		if dstIdx >= len(dstMeta) {
 			break
 		}
 
@@ -161,18 +169,19 @@ func GetDiffChunkMeta(srcMeta []ChunkMeta, destMeta []ChunkMeta) ([]ChunkMeta, e
 	}
 
 	if srcIdx < len(srcMeta) {
-		diff = append(diff, srcMeta[srcIdx:len(srcMeta)]...)
+		diff = append(diff, srcMeta[srcIdx:]...)
 	}
 
 	return diff, nil
 }
 
+//GetChunkMeta gets chunk metas from path of file
 func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer Close(f)
 
 	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
 		return nil, errors.New(StatusText(StatusBadChunkSize))
@@ -183,7 +192,7 @@ func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 		return nil, err
 	}
 
-	metas := make([]ChunkMeta, 0, fi.Size()/int64(len)+1)
+	metas := make([]ChunkMeta, 0, fi.Size()/len+1)
 	data := make([]byte, len)
 	offset := int64(0)
 

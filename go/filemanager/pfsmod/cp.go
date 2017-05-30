@@ -10,11 +10,13 @@ const (
 	cpCmdName = "cp"
 )
 
+//CpCmdResult means the copy-command's result
 type CpCmdResult struct {
 	Src string `json:"Path"`
 	Dst string `json:"Dst"`
 }
 
+//CpCmd means copy-command
 type CpCmd struct {
 	Method string
 	V      bool
@@ -22,18 +24,23 @@ type CpCmd struct {
 	Dst    string
 }
 
-func (p *CpCmd) ToUrlParam() string {
+/*
+//ToURLParam needs not to be implemented
+func (p *CpCmd) ToURLParam() string {
 	return ""
 }
 
-func (p *CpCmd) ToJson() ([]byte, error) {
+//toJSON needs not to be implemented
+func (p *CpCmd) ToJSON() ([]byte, error) {
 	return nil, nil
 }
 
 func (p *CpCmd) Run() (interface{}, error) {
 	return nil, nil
 }
+*/
 
+//NewCpCmdFromFlag returns a new CpCmd from parsed flags
 func NewCpCmdFromFlag(f *flag.FlagSet) *CpCmd {
 	cmd := CpCmd{}
 
@@ -62,6 +69,7 @@ func NewCpCmdFromFlag(f *flag.FlagSet) *CpCmd {
 	return &cmd
 }
 
+//PartToString prints command's info
 func (p *CpCmd) PartToString(src, dst string) string {
 	if p.V {
 		return fmt.Sprintf("cp -v %s %s\n", src, dst)

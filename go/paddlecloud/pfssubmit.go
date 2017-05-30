@@ -59,7 +59,7 @@ func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
 }
 
 func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
-	jsonString, err := cmd.ToJson()
+	jsonString, err := cmd.ToJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (s *PfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 		s.config.ActiveConfig.Endpoint,
 		s.port,
 		path,
-		cmd.ToUrlParam())
+		cmd.ToURLParam())
 	log.V(1).Info("target url: " + url)
 
 	req, err := http.NewRequest("GET", url, http.NoBody)
@@ -135,7 +135,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
-		cmd.ToUrlParam())
+		cmd.ToURLParam())
 
 	log.V(1).Info("target url: " + url)
 
@@ -162,7 +162,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 		}
 
 		if part.FormName() == "chunk" {
-			recvCmd, err := pfsmod.NewChunkCmdFromUrlParam(part.FileName())
+			recvCmd, err := pfsmod.NewChunkCmdFromURLParam(part.FileName())
 			if err != nil {
 				return errors.New(err.Error())
 			}
@@ -181,7 +181,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 func getDstParam(src *pfsmod.ChunkCmd, dst string) string {
 	cmd := pfsmod.NewChunkCmd(dst, src.Offset, src.ChunkSize)
 
-	return cmd.ToUrlParam()
+	return cmd.ToURLParam()
 }
 
 func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, dst string, url string) (*http.Request, error) {

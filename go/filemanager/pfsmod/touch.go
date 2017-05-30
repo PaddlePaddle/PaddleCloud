@@ -18,14 +18,16 @@ const (
 	touchCmdName = "touch"
 )
 
+//TouchResult is touch command's result
 type TouchResult struct {
 	Path string `json:"path"`
 }
 
+//TouchCmd is holds touch command's variables
 type TouchCmd struct {
 	Method   string `json:"method"`
 	FileSize int64  `json:"filesize"`
-	Path     string `json:path`
+	Path     string `json:"path"`
 }
 
 func (p *TouchCmd) checkFileSize() error {
@@ -35,10 +37,12 @@ func (p *TouchCmd) checkFileSize() error {
 	return nil
 }
 
+//LocalCheck check the conditions when running local
 func (p *TouchCmd) LocalCheck() error {
 	return p.checkFileSize()
 }
 
+//CloudCheck check the conditions when running on cloud
 func (p *TouchCmd) CloudCheck() error {
 	if !IsCloudPath(p.Path) {
 		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
@@ -51,7 +55,8 @@ func (p *TouchCmd) CloudCheck() error {
 	return p.checkFileSize()
 }
 
-func (p *TouchCmd) ToUrlParam() string {
+//ToURLParam encodes a TouchCmd to a URL encoding string
+func (p *TouchCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("path", p.Path)
@@ -62,11 +67,13 @@ func (p *TouchCmd) ToUrlParam() string {
 	return parameters.Encode()
 }
 
-func (p *TouchCmd) ToJson() ([]byte, error) {
+//ToJSON encodes a TouchCmd to a JSON string
+func (p *TouchCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
-func NewTouchCmdFromUrlParam(path string) (*TouchCmd, int32) {
+//NewTouchCmdFromURLParam return a new TouchCmd with specified path
+func NewTouchCmdFromURLParam(path string) (*TouchCmd, int32) {
 	cmd := TouchCmd{}
 
 	m, err := url.ParseQuery(path)
@@ -95,6 +102,7 @@ func NewTouchCmdFromUrlParam(path string) (*TouchCmd, int32) {
 	return &cmd, http.StatusOK
 }
 
+//NewTouchCmd return a new TouchCmd with specified path and fileSize
 func NewTouchCmd(path string, fileSize int64) *TouchCmd {
 	return &TouchCmd{
 		Method:   touchCmdName,
@@ -103,12 +111,13 @@ func NewTouchCmd(path string, fileSize int64) *TouchCmd {
 	}
 }
 
+//CreateSizedFile creates a file with specified size
 func CreateSizedFile(path string, size int64) error {
 	fd, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer fd.Close()
+	defer Close(fd)
 
 	if size <= 0 {
 		return nil
@@ -120,12 +129,10 @@ func CreateSizedFile(path string, size int64) error {
 	}
 
 	_, err = fd.Write([]byte{0})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
+//Run is a function runs TouchCmd
 func (p *TouchCmd) Run() (interface{}, error) {
 	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
 		return nil, errors.New(StatusText(StatusBadFileSize))
