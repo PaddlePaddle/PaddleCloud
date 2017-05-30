@@ -2,19 +2,14 @@ package paddlecloud
 
 import (
 	"bytes"
-	//"crypto/x509"
-	//"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	//"gopkg.in/yaml.v2"
+	log "github.com/golang/glog"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	//"os"
-	//"strconv"
-	log "github.com/golang/glog"
 )
 
 type PfsSubmitter struct {
@@ -24,13 +19,6 @@ type PfsSubmitter struct {
 }
 
 func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
-	/*
-		config, err := getConfig(configFile)
-		if err != nil {
-			log.Fatal("LoadX509KeyPair:", err)
-		}
-	*/
-
 	/*https
 	pair, e := tls.LoadX509KeyPair(config.ActiveConfig.Usercert,
 		config.ActiveConfig.Userkey)

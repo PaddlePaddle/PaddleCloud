@@ -27,11 +27,6 @@ func (p *MkdirCommand) SetFlags(f *flag.FlagSet) {
 }
 
 func formatMkdirPrint(results []pfsmod.MkdirResult, err error) {
-	/*
-		for _, result := range results {
-			fmt.Printf("mkdir %s\n", result.Path)
-		}
-	*/
 
 	if err != nil {
 		fmt.Println("\t" + err.Error())

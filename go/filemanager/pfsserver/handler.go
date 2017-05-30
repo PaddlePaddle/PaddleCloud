@@ -60,19 +60,6 @@ func statHandler(w http.ResponseWriter, r *http.Request) {
 	cmdHandler(w, r.URL.RawQuery, cmd)
 }
 
-/*
-func md5sumHandler(w http.ResponseWriter, r *http.Request) {
-	cmd, err := pfsmod.NewMd5CmdFromURLParam(r.URL.RawQuery)
-	if err != nil {
-		resp.Err = err.Error()
-		writeJSONResponse(w, r, http.StatusOK, &resp)
-		return
-	}
-
-	cmdHandler(w, r, cmd)
-}
-*/
-
 func writeJSONResponse(w http.ResponseWriter,
 	req string,
 	httpStatus int,
@@ -95,11 +82,6 @@ func writeJSONResponse(w http.ResponseWriter,
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error(err)
 	}
-
-	/*
-		ret, _ := json.Marshal(&resp)
-		log.V(2).Info(string(ret[:]))
-	*/
 }
 
 func GetFilesHandler(w http.ResponseWriter, r *http.Request) {

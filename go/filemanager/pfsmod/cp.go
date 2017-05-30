@@ -24,22 +24,6 @@ type CpCmd struct {
 	Dst    string
 }
 
-/*
-//ToURLParam needs not to be implemented
-func (p *CpCmd) ToURLParam() string {
-	return ""
-}
-
-//toJSON needs not to be implemented
-func (p *CpCmd) ToJSON() ([]byte, error) {
-	return nil, nil
-}
-
-func (p *CpCmd) Run() (interface{}, error) {
-	return nil, nil
-}
-*/
-
 //NewCpCmdFromFlag returns a new CpCmd from parsed flags
 func NewCpCmdFromFlag(f *flag.FlagSet) *CpCmd {
 	cmd := CpCmd{}

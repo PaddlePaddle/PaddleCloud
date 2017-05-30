@@ -92,9 +92,3 @@ func (p *StatCmd) Run() (interface{}, error) {
 		Size:    fi.Size(),
 	}, nil
 }
-
-/*
-func IsNotExist(err error) bool {
-	return err.Error() == StatusText(StatusFileNotFound)
-}
-*/

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	log "github.com/golang/glog"
 	"io"
-	//"mime/multipart"
 	"net/url"
 	"os"
 	"strconv"

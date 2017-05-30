@@ -3,13 +3,9 @@ package pfsmod
 import (
 	"encoding/json"
 	"errors"
-	//"fmt"
-	//"net/http"
-	//"net/url"
-	"os"
-	//"strconv"
 	"flag"
 	log "github.com/golang/glog"
+	"os"
 )
 
 const (
