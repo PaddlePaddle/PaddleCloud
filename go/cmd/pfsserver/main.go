@@ -18,7 +18,6 @@ func main() {
 
 	addr := fmt.Sprintf("0.0.0.0:%d", *portPtr)
 
-	//log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Infof("server on:%s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, router))
 }
