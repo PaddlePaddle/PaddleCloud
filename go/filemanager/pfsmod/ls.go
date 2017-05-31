@@ -80,11 +80,14 @@ func NewLsCmdFromURLParam(path string) (*LsCmd, error) {
 	cmd := LsCmd{}
 
 	m, err := url.ParseQuery(path)
-	if err != nil ||
-		len(m["method"]) == 0 ||
+	if err != nil {
+		return nil, err
+	}
+
+	if len(m["method"]) == 0 ||
 		len(m["r"]) == 0 ||
 		len(m["arg"]) == 0 {
-		return nil, errors.New(StatusText(StatusNotEnoughArgs))
+		return nil, errors.New(StatusNotEnoughArgs)
 	}
 
 	cmd.Method = m["method"][0]
@@ -94,7 +97,7 @@ func NewLsCmdFromURLParam(path string) (*LsCmd, error) {
 
 	cmd.R, err = strconv.ParseBool(m["r"][0])
 	if err != nil {
-		return nil, errors.New(StatusText(StatusInvalidArgs) + ":r")
+		return nil, errors.New(StatusInvalidArgs + ":r")
 	}
 
 	cmd.Args = make([]string, 0, len(m["arg"])+1)
@@ -149,16 +152,16 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 // CloudCheck checks the conditions when running on cloud
 func (p *LsCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
-		return errors.New(StatusText(StatusNotEnoughArgs))
+		return errors.New(StatusNotEnoughArgs)
 	}
 
 	for _, arg := range p.Args {
 		if !IsCloudPath(arg) {
-			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + arg)
+			return errors.New(StatusShouldBePfsPath + ":" + arg)
 		}
 
 		if !CheckUser(arg) {
-			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + arg)
+			return errors.New(StatusShouldBePfsPath + ":" + arg)
 		}
 	}
 
@@ -168,7 +171,7 @@ func (p *LsCmd) CloudCheck() error {
 // LocalCheck checks the conditions when running local
 func (p *LsCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
-		return errors.New(StatusText(StatusNotEnoughArgs))
+		return errors.New(StatusNotEnoughArgs)
 	}
 	return nil
 }
@@ -186,7 +189,7 @@ func (p *LsCmd) Run() (interface{}, error) {
 		}
 
 		if len(list) == 0 {
-			return results, errors.New(StatusText(StatusFileNotFound))
+			return results, errors.New(StatusFileNotFound)
 		}
 
 		for _, path := range list {

@@ -27,7 +27,7 @@ type MkdirCmd struct {
 // LocalCheck checks the conditions when running on local
 func (p *MkdirCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
-		return errors.New(StatusText(StatusNotEnoughArgs))
+		return errors.New(StatusNotEnoughArgs)
 	}
 	return nil
 }
@@ -35,16 +35,16 @@ func (p *MkdirCmd) LocalCheck() error {
 // CloudCheck checks the conditions when running on cloud
 func (p *MkdirCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
-		return errors.New(StatusText(StatusNotEnoughArgs))
+		return errors.New(StatusNotEnoughArgs)
 	}
 
 	for _, arg := range p.Args {
 		if !IsCloudPath(arg) {
-			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + arg)
+			return errors.New(StatusShouldBePfsPath + ":" + arg)
 		}
 
 		if !CheckUser(arg) {
-			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + arg)
+			return errors.New(StatusShouldBePfsPath + ":" + arg)
 		}
 	}
 
@@ -92,7 +92,7 @@ func (p *MkdirCmd) Run() (interface{}, error) {
 		fi, err := os.Stat(path)
 
 		if os.IsExist(err) && !fi.IsDir() {
-			return results, errors.New(StatusText(StatusAlreadyExist))
+			return results, errors.New(StatusAlreadyExist)
 		}
 
 		if err := os.MkdirAll(path, 0700); err != nil {

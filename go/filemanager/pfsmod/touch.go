@@ -32,7 +32,7 @@ type TouchCmd struct {
 
 func (p *TouchCmd) checkFileSize() error {
 	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
-		return errors.New(StatusText(StatusBadFileSize) + ":" + fmt.Sprint(p.FileSize))
+		return errors.New(StatusBadFileSize + ":" + fmt.Sprint(p.FileSize))
 	}
 	return nil
 }
@@ -45,11 +45,11 @@ func (p *TouchCmd) LocalCheck() error {
 // CloudCheck check the conditions when running on cloud
 func (p *TouchCmd) CloudCheck() error {
 	if !IsCloudPath(p.Path) {
-		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
+		return errors.New(StatusShouldBePfsPath + ":" + p.Path)
 	}
 
 	if !CheckUser(p.Path) {
-		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
+		return errors.New(StatusShouldBePfsPath + ":" + p.Path)
 	}
 
 	return p.checkFileSize()
@@ -135,12 +135,12 @@ func CreateSizedFile(path string, size int64) error {
 // Run is a function runs TouchCmd
 func (p *TouchCmd) Run() (interface{}, error) {
 	if p.FileSize < 0 || p.FileSize > defaultMaxCreateFileSize {
-		return nil, errors.New(StatusText(StatusBadFileSize))
+		return nil, errors.New(StatusBadFileSize)
 	}
 
 	fi, err := os.Stat(p.Path)
 	if os.IsExist(err) && fi.IsDir() {
-		return nil, errors.New(StatusText(StatusDirectoryAlreadyExist))
+		return nil, errors.New(StatusDirectoryAlreadyExist)
 	}
 
 	if os.IsNotExist(err) || fi.Size() != p.FileSize {

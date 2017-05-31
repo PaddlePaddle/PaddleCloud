@@ -127,7 +127,7 @@ func (s *pfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
 }
 
 // GetChunkData implements Chunks's GET method
-func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
+func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.Chunk, dst string) error {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
@@ -158,7 +158,7 @@ func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 		}
 
 		if part.FormName() == "chunk" {
-			recvCmd, err := pfsmod.NewChunkCmdFromURLParam(part.FileName())
+			recvCmd, err := pfsmod.ParseChunk(part.FileName())
 			if err != nil {
 				return errors.New(err.Error())
 			}
@@ -174,13 +174,13 @@ func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 	return nil
 }
 
-func getDstParam(src *pfsmod.ChunkCmd, dst string) string {
-	cmd := pfsmod.NewChunkCmd(dst, src.Offset, src.ChunkSize)
+func getDstParam(src *pfsmod.Chunk, dst string) string {
+	cmd := pfsmod.NewChunk(dst, src.Offset, src.Size)
 
 	return cmd.ToURLParam()
 }
 
-func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, dst string, url string) (*http.Request, error) {
+func newPostChunkDataRequest(cmd *pfsmod.Chunk, dst string, url string) (*http.Request, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	if err := writer.SetBoundary(pfsmod.DefaultMultiPartBoundary); err != nil {
@@ -212,7 +212,7 @@ func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, dst string, url string) (*htt
 }
 
 // PostChunkData implements chunks's POST method
-func (s *pfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd, dst string) ([]byte, error) {
+func (s *pfsSubmitter) PostChunkData(cmd *pfsmod.Chunk, dst string) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
 		s.config.ActiveConfig.Endpoint, s.port)
 	log.V(1).Info("target url: " + url)

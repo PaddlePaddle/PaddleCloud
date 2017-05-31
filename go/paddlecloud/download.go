@@ -41,7 +41,7 @@ func downloadChunks(s *pfsSubmitter, src string, dst string, diffMeta []pfsmod.C
 	}
 
 	for _, meta := range diffMeta {
-		err := s.GetChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len), dst)
+		err := s.GetChunkData(pfsmod.NewChunk(src, meta.Offset, meta.Len), dst)
 		if err != nil {
 			return err
 		}
@@ -84,7 +84,7 @@ func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
 	if err == nil {
 		bDir = fi.IsDir()
 		if !fi.IsDir() && len(src) > 1 {
-			return bDir, errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
+			return bDir, errors.New(pfsmod.StatusDestShouldBeDirectory)
 		}
 	} else if err == os.ErrNotExist {
 		if err = os.MkdirAll(dst, 0700); err != nil {
@@ -110,7 +110,7 @@ func Download(s *pfsSubmitter, src, dst string) error {
 
 	for _, attr := range lsRet {
 		if attr.IsDir {
-			return errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
+			return errors.New(pfsmod.StatusOnlySupportFiles)
 		}
 
 		realSrc := attr.Path

@@ -40,7 +40,7 @@ func NewStatCmdFromURLParam(path string) (*StatCmd, error) {
 	if err != nil ||
 		len(m["method"]) == 0 ||
 		len(m["path"]) == 0 {
-		return nil, errors.New(StatusText(StatusNotEnoughArgs))
+		return nil, errors.New(StatusNotEnoughArgs)
 	}
 
 	cmd.Method = m["method"][0]
@@ -68,11 +68,11 @@ func (p *StatCmd) LocalCheck() error {
 // CloudCheck checks the conditions when running on cloud
 func (p *StatCmd) CloudCheck() error {
 	if !IsCloudPath(p.Path) {
-		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
+		return errors.New(StatusShouldBePfsPath + ":" + p.Path)
 	}
 
 	if !CheckUser(p.Path) {
-		return errors.New(StatusText(StatusUnAuthorized) + ":" + p.Path)
+		return errors.New(StatusUnAuthorized + ":" + p.Path)
 	}
 
 	return nil

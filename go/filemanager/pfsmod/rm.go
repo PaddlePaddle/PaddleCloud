@@ -30,7 +30,7 @@ type RmCmd struct {
 // LocalCheck checks the conditions when running local
 func (p *RmCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
-		return errors.New(StatusText(StatusInvalidArgs))
+		return errors.New(StatusInvalidArgs)
 	}
 	return nil
 }
@@ -38,16 +38,16 @@ func (p *RmCmd) LocalCheck() error {
 // CloudCheck checks the conditions when running on cloud
 func (p *RmCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
-		return errors.New(StatusText(StatusInvalidArgs))
+		return errors.New(StatusInvalidArgs)
 	}
 
 	for _, path := range p.Args {
 		if !IsCloudPath(path) {
-			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + path)
+			return errors.New(StatusShouldBePfsPath + ":" + path)
 		}
 
 		if !CheckUser(path) {
-			return errors.New(StatusText(StatusShouldBePfsPath) + ":" + path)
+			return errors.New(StatusShouldBePfsPath + ":" + path)
 		}
 	}
 
@@ -114,7 +114,7 @@ func (p *RmCmd) Run() (interface{}, error) {
 			}
 
 			if fi.IsDir() && !p.R {
-				return result, errors.New(StatusText(StatusCannotDelDirectory) + ":" + arg)
+				return result, errors.New(StatusCannotDelDirectory + ":" + arg)
 			}
 
 			if err := os.RemoveAll(arg); err != nil {

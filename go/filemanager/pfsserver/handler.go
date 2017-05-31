@@ -170,17 +170,17 @@ func getBody(r *http.Request) ([]byte, error) {
 func getMethod(body []byte) (string, error) {
 	o, err := sjson.NewJson(body)
 	if err != nil {
-		return "", errors.New(pfsmod.StatusText(pfsmod.StatusJSONErr))
+		return "", errors.New(pfsmod.StatusJSONErr)
 	}
 
 	j := o.Get("method")
 	if j == nil {
-		return "", errors.New(pfsmod.StatusText(pfsmod.StatusJSONErr))
+		return "", errors.New(pfsmod.StatusJSONErr)
 	}
 
 	method, _ := j.String()
 	if err != nil {
-		return "", errors.New(pfsmod.StatusText(pfsmod.StatusJSONErr))
+		return "", errors.New(pfsmod.StatusJSONErr)
 	}
 
 	return method, nil
@@ -249,7 +249,7 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
 
-	cmd, err := pfsmod.NewChunkCmdFromURLParam(r.URL.RawQuery)
+	cmd, err := pfsmod.ParseChunk(r.URL.RawQuery)
 	if err != nil {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, &pfsmod.JSONResponse{})
 		return
@@ -301,7 +301,7 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		cmd, err := pfsmod.NewChunkCmdFromURLParam(part.FileName())
+		cmd, err := pfsmod.ParseChunk(part.FileName())
 		if err != nil {
 			resp.Err = err.Error()
 			writeJSONResponse(w, part.FileName(), http.StatusOK, &resp)

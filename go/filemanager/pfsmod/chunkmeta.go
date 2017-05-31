@@ -61,7 +61,7 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 func (p *ChunkMetaCmd) checkChunkSize() error {
 	if p.ChunkSize < defaultMinChunkSize ||
 		p.ChunkSize > defaultMaxChunkSize {
-		return errors.New(StatusText(StatusBadChunkSize))
+		return errors.New(StatusBadChunkSize)
 	}
 
 	return nil
@@ -70,10 +70,10 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 // CloudCheck checks the conditions when running on cloud
 func (p *ChunkMetaCmd) CloudCheck() error {
 	if !IsCloudPath(p.FilePath) {
-		return errors.New(StatusText(StatusShouldBePfsPath) + ": p.FilePath")
+		return errors.New(StatusShouldBePfsPath + ": p.FilePath")
 	}
 	if !CheckUser(p.FilePath) {
-		return errors.New(StatusText(StatusUnAuthorized) + ":" + p.FilePath)
+		return errors.New(StatusUnAuthorized + ":" + p.FilePath)
 	}
 	return p.checkChunkSize()
 }
@@ -98,7 +98,7 @@ func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 
 	chunkSize, err := strconv.ParseInt(chunkStr, 10, 64)
 	if err != nil {
-		return nil, errors.New(StatusText(StatusBadChunkSize))
+		return nil, errors.New(StatusBadChunkSize)
 	}
 
 	return &ChunkMetaCmd{
@@ -181,7 +181,7 @@ func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 	defer Close(f)
 
 	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
-		return nil, errors.New(StatusText(StatusBadChunkSize))
+		return nil, errors.New(StatusBadChunkSize)
 	}
 
 	fi, err := f.Stat()

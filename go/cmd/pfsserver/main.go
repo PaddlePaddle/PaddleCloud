@@ -1,12 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsserver"
 	log "github.com/golang/glog"
-	"github.com/namsral/flag"
 )
 
 func main() {

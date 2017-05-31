@@ -62,7 +62,7 @@ func uploadChunks(s *pfsSubmitter,
 
 	for _, meta := range diffMeta {
 		log.V(1).Infof("diffMeta:%v\n", meta)
-		body, err := s.PostChunkData(pfsmod.NewChunkCmd(src, meta.Offset, meta.Len), dst)
+		body, err := s.PostChunkData(pfsmod.NewChunk(src, meta.Offset, meta.Len), dst)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func Upload(s *pfsSubmitter, src, dst string) error {
 
 	for _, srcMeta := range srcMetas {
 		if srcMeta.IsDir {
-			return errors.New(pfsmod.StatusText(pfsmod.StatusOnlySupportFiles))
+			return errors.New(pfsmod.StatusOnlySupportFiles)
 		}
 
 		realSrc := srcMeta.Path
