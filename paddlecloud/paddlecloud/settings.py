@@ -251,13 +251,6 @@ K8S_HOST = "https://%s:%s" % (os.getenv("KUBERNETES_SERVICE_HOST"),
 PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
 PADDLE_BOOK_PORT=8888
 
-if os.getenv("KUBERNETES_SERVICE_HOST", None):
-    # init kubernete client with service account
-    config.load_incluster_config()
-else:
-    # init kubernetes client with ~/.kube/config file
-    config.load_kube_config()
-
 # ============== Datacenter Storage Config Samples ==============
 #if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
 #the following is an example:

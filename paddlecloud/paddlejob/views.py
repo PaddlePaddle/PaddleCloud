@@ -23,7 +23,8 @@ class JobsView(APIView):
         """
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
-        job_list = client.BatchV1Api().list_namespaced_job(namespace)
+        user_client = notebook.utils.get_user_api_client(username)
+        job_list = user_client.BatchV1Api().list_namespaced_job(namespace)
         return Response(job_list.to_dict())
 
     def post(self, request, format=None):
@@ -101,8 +102,9 @@ class JobsView(APIView):
             registry_secret = registry_secret,
             volumes = volumes
         )
+        user_client = notebook.utils.get_user_api_client(username)
         try:
-            ret = client.ExtensionsV1beta1Api().create_namespaced_replica_set(
+            ret = user_client.ExtensionsV1beta1Api().create_namespaced_replica_set(
                 namespace,
                 paddle_job.new_pserver_job(),
                 pretty=True)
@@ -112,7 +114,7 @@ class JobsView(APIView):
 
         #submit trainer job, it's Kubernetes Job
         try:
-            ret = client.BatchV1Api().create_namespaced_job(
+            ret = user_client.BatchV1Api().create_namespaced_job(
                 namespace,
                 paddle_job.new_trainer_job(),
                 pretty=True)
@@ -137,14 +139,14 @@ class JobsView(APIView):
         # delete job
         trainer_name = jobname + "-trainer"
         try:
-            u_status = client.BatchV1Api().delete_namespaced_job(trainer_name, namespace, {})
+            u_status = user_client.BatchV1Api().delete_namespaced_job(trainer_name, namespace, {})
         except ApiException, e:
             logging.error("error deleting job: %s, %s", jobname, str(e))
             delete_status.append(str(e))
 
         # delete job pods
         try:
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
+            job_pod_list = user_client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
         except ApiException, e:
@@ -154,7 +156,7 @@ class JobsView(APIView):
         # delete pserver rs
         pserver_name = jobname + "-pserver"
         try:
-            u_status = client.ExtensionsV1beta1Api().delete_namespaced_replica_set(pserver_name, namespace, {})
+            u_status = user_client.ExtensionsV1beta1Api().delete_namespaced_replica_set(pserver_name, namespace, {})
         except ApiException, e:
             logging.error("error deleting pserver: %s" % str(e))
             delete_status.append(str(e))
@@ -162,7 +164,7 @@ class JobsView(APIView):
         # delete pserver pods
         try:
             # pserver replica set has label with jobname
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%jobname)
+            job_pod_list = user_client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job-pserver=%s"%jobname)
             for i in job_pod_list.items:
                 u_status = client.CoreV1Api().delete_namespaced_pod(i.metadata.name, namespace, {})
         except ApiException, e:
@@ -184,25 +186,25 @@ class LogsView(APIView):
         """
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
-
+        user_client = notebook.utils.get_user_api_client(username)
         jobname = request.query_params.get("jobname")
         num_lines = request.query_params.get("n")
         worker = request.query_params.get("w")
-        job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
+        job_pod_list = user_client.CoreV1Api().list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
         total_job_log = ""
         if not worker:
             for i in job_pod_list.items:
                 total_job_log = "".join((total_job_log, "==========================%s==========================" % i.metadata.name))
                 if num_lines:
-                    pod_log = client.CoreV1Api().read_namespaced_pod_log(i.metadata.name, namespace, tail_lines=int(num_lines))
+                    pod_log = user_client.CoreV1Api().read_namespaced_pod_log(i.metadata.name, namespace, tail_lines=int(num_lines))
                 else:
-                    pod_log = client.CoreV1Api().read_namespaced_pod_log(i.metadata.name, namespace)
+                    pod_log = user_client.CoreV1Api().read_namespaced_pod_log(i.metadata.name, namespace)
                 total_job_log = "\n".join((total_job_log, pod_log))
         else:
             if num_lines:
-                pod_log = client.CoreV1Api().read_namespaced_pod_log(worker, namespace, tail_lines=int(num_lines))
+                pod_log = user_client.CoreV1Api().read_namespaced_pod_log(worker, namespace, tail_lines=int(num_lines))
             else:
-                pod_log = client.CoreV1Api().read_namespaced_pod_log(worker, namespace)
+                pod_log = user_client.CoreV1Api().read_namespaced_pod_log(worker, namespace)
             total_job_log = pod_log
         return utils.simple_response(200, total_job_log)
 
@@ -217,11 +219,12 @@ class WorkersView(APIView):
         namespace = notebook.utils.email_escape(username)
         jobname = request.query_params.get("jobname")
         job_pod_list = None
+        user_client = notebook.utils.get_user_api_client(username)
         if not jobname:
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace)
+            job_pod_list = user_client.CoreV1Api().list_namespaced_pod(namespace)
         else:
             selector = "paddle-job=%s"%jobname
-            job_pod_list = client.CoreV1Api().list_namespaced_pod(namespace, label_selector=selector)
+            job_pod_list = user_client.CoreV1Api().list_namespaced_pod(namespace, label_selector=selector)
         return Response(job_pod_list.to_dict())
 
 class QuotaView(APIView):
@@ -233,6 +236,6 @@ class QuotaView(APIView):
         """
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
-
-        quota_list = client.CoreV1Api().list_namespaced_resource_quota(namespace)
+        user_client = notebook.utils.get_user_api_client(username)
+        quota_list = user_client.CoreV1Api().list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
