@@ -58,7 +58,12 @@ func RemoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
 
 	log.V(3).Info(string(body[:]))
 
-	resp := pfsmod.RmResponse{}
+	type rmResponse struct {
+		Err     string            `json:"err"`
+		Results []pfsmod.RmResult `json:"path"`
+	}
+
+	resp := rmResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return resp.Results, err
 	}

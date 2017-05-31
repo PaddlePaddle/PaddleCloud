@@ -21,7 +21,12 @@ func RemoteChunkMeta(s *pfsSubmitter, path string, chunkSize int64) ([]pfsmod.Ch
 		return nil, err
 	}
 
-	resp := pfsmod.ChunkMetaResponse{}
+	type chunkMetaResponse struct {
+		Err     string             `json:"err"`
+		Results []pfsmod.ChunkMeta `json:"results"`
+	}
+
+	resp := chunkMetaResponse{}
 	if err := json.Unmarshal(ret, &resp); err != nil {
 		return nil, err
 	}

@@ -17,7 +17,12 @@ func RemoteStat(s *pfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) 
 		return nil, err
 	}
 
-	resp := pfsmod.StatResponse{}
+	type statResponse struct {
+		Err     string          `json:"err"`
+		Results pfsmod.LsResult `json:"results"`
+	}
+
+	resp := statResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, err
 	}
@@ -38,7 +43,12 @@ func RemoteTouch(s *pfsSubmitter, cmd *pfsmod.TouchCmd) error {
 		return err
 	}
 
-	resp := pfsmod.TouchResponse{}
+	type touchResponse struct {
+		Err     string             `json:"err"`
+		Results pfsmod.TouchResult `json:"results"`
+	}
+
+	resp := touchResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return err
 	}
@@ -48,6 +58,10 @@ func RemoteTouch(s *pfsSubmitter, cmd *pfsmod.TouchCmd) error {
 	}
 
 	return errors.New(resp.Err)
+}
+
+type uploadChunkResponse struct {
+	Err string `json:"err"`
 }
 
 func uploadChunks(s *pfsSubmitter,
@@ -67,7 +81,7 @@ func uploadChunks(s *pfsSubmitter,
 			return err
 		}
 
-		resp := pfsmod.UploadChunkResponse{}
+		resp := uploadChunkResponse{}
 		if err := json.Unmarshal(body, &resp); err != nil {
 			return err
 		}

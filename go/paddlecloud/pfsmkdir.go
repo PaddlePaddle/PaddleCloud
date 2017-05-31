@@ -50,7 +50,12 @@ func RemoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, e
 
 	log.V(3).Info(string(body[:]))
 
-	resp := pfsmod.MkdirResponse{}
+	type mkdirResponse struct {
+		Err     string               `json:"err"`
+		Results []pfsmod.MkdirResult `json:"results"`
+	}
+
+	resp := mkdirResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return resp.Results, err
 	}

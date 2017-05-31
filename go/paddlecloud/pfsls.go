@@ -71,7 +71,12 @@ func RemoteLs(s *pfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
 		return nil, err
 	}
 
-	resp := pfsmod.LsResponse{}
+	type lsResponse struct {
+		Err     string            `json:"err"`
+		Results []pfsmod.LsResult `json:"results"`
+	}
+
+	resp := lsResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return resp.Results, err
 	}
