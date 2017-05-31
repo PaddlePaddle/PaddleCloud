@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	log "github.com/golang/glog"
 )
 

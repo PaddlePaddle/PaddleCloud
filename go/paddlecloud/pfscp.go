@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	"github.com/google/subcommands"
 )
 

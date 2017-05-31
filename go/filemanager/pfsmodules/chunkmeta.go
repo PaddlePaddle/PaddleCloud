@@ -1,4 +1,4 @@
-package pfsmod
+package pfsmodules
 
 import (
 	"crypto/md5"

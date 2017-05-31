@@ -1,4 +1,4 @@
-package pfsmod
+package pfsmodules
 
 import (
 	"io"

@@ -1,4 +1,4 @@
-package pfsmod
+package pfsmodules
 
 //TODO=
 // need a custom error type?
