@@ -8,7 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	sjson "github.com/bitly/go-simplejson"
 	log "github.com/golang/glog"
 )
