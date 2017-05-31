@@ -14,22 +14,41 @@ import (
 // HTTPOK is ok status of http api call
 const HTTPOK = "200 OK"
 
-func getCall(targetURL string, query map[string]string, token string) ([]byte, error) {
-	req, err := http.NewRequest("GET", targetURL, nil)
+// makeRESTRequest returns a http request object to do paddlecloud rest requests
+func makeRESTRequest(uri string,
+	method string,
+	query map[string]string,
+	body io.Reader,
+	contentType string,
+	token string) (*http.Request, error) {
+
+	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	// set default content type
+	if len(contentType) == 0 {
+		contentType = "application/json"
+	}
+	req.Header.Set("Content-Type", contentType)
+	// add auth token to request headers
 	if len(token) > 0 {
 		req.Header.Set("Authorization", "Token "+token)
 	}
-
+	// add GET query params
 	q := req.URL.Query()
 	for k, v := range query {
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
+	return req, nil
+}
 
+func getCall(targetURL string, query map[string]string, token string) ([]byte, error) {
+	req, err := makeRESTRequest(targetURL, "GET", query, nil, "", token)
+	if err != nil {
+		return []byte{}, err
+	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -89,7 +108,7 @@ func deleteCall(jsonString []byte, targetURL string, token string) ([]byte, erro
 	return body, err
 }
 
-func postFile(filename string, targetURL string) error {
+func postFile(filename string, targetURL string, query map[string]string, token string) error {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
 
@@ -116,11 +135,31 @@ func postFile(filename string, targetURL string) error {
 	contentType := bodyWriter.FormDataContentType()
 	bodyWriter.Close()
 
-	resp, err := http.Post(targetURL, contentType, bodyBuf)
+	req, err := http.NewRequest("POST", targetURL, bodyBuf)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", contentType)
+	if len(token) > 0 {
+		req.Header.Set("Authorization", "Token "+token)
+	}
+
+	q := req.URL.Query()
+	for k, v := range query {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.Status != HTTPOK {
+		return errors.New("http server returned non-200 status: " + resp.Status)
+	}
+
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -129,3 +168,5 @@ func postFile(filename string, targetURL string) error {
 	fmt.Println(string(respBody))
 	return nil
 }
+
+func getFile()

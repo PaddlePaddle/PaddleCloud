@@ -12,6 +12,10 @@ def simple_response(code, msg):
         "msg": msg
     })
 
+def error_message_response(msg):
+    logging.error("error: %s", msg)
+    return Response({"msg": msg})
+
 def convert_camel2snake(data):
     s1 = first_cap_re.sub(r'\1_\2', name)
     return all_cap_re.sub(r'\1_\2', s1).lower()

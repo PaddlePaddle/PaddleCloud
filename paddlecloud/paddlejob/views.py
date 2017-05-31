@@ -257,3 +257,54 @@ class QuotaView(APIView):
         quota_list = api_client.CoreV1Api(api_cilent=api_client)\
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
+
+
+class SimpleFileView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def __validate_path(self, file_path):
+        """
+        returns error_msg. error_msg will be empty if there's no error
+        """
+        path_parts = file_path.split(os.path.sep)
+
+        assert(path_parts[1]=="pfs")
+        assert(path_parts[2] in settings.DATACENTERS.keys())
+        assert(path_parts[3] == "home")
+        assert(path_parts[4] == request.user.username)
+
+        server_file = os.path.join(settings.STORAGE_PATH, request.user.username, *path_parts[5:])
+        if os.path.exists(os.sep+write_file):
+            return "file already exist"
+        return server_file
+
+    def get(self, request, format=None):
+        """
+        Simple down file
+        """
+        file_path = request.query_params.get("path")
+        try:
+            write_file = self.__validate_path(file_path)
+        except Exception, e:
+            return utils.error_message_response("file path not valid: %s", e)
+        response = HttpResponse(FileWrapper(open(write_file)), content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(write_file)
+
+        return response
+
+    def post(self, request, format=None):
+        """
+        Simple up file
+        """
+        file_obj = request.FILES['file']
+        file_path = request.query_params.get("path")
+        if not file_path:
+            return utils.error_message_response("must specify path")
+        try:
+            write_file = self.__validate_path(file_path)
+        except Exception, e:
+            return utils.error_message_response("file path not valid: %s", e)
+        with open(os.sep+write_file, "w") as fn:
+            fn.write(file_obj.read())
+
+        return Response({"msg": "OK"})
