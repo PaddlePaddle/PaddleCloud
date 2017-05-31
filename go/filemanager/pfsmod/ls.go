@@ -3,19 +3,20 @@ package pfsmod
 import (
 	"errors"
 	"flag"
-	log "github.com/golang/glog"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	log "github.com/golang/glog"
 )
 
 const (
 	lsCmdName = "ls"
 )
 
-//LsResult is LsCmd's result
+// LsResult represents a LsCmd's result
 type LsResult struct {
 	Path    string `json:"Path"`
 	ModTime string `json:"ModTime"`
@@ -23,14 +24,14 @@ type LsResult struct {
 	IsDir   bool   `json:"IsDir"`
 }
 
-//LsCmd is LsCommand structure
+// LsCmd means LsCommand structure
 type LsCmd struct {
 	Method string
 	R      bool
 	Args   []string
 }
 
-//ToURLParam encoding LsCmd to URL Encoding string
+// ToURLParam encoding LsCmd to URL Encoding string
 func (p *LsCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
@@ -44,12 +45,12 @@ func (p *LsCmd) ToURLParam() string {
 
 }
 
-//ToJSON does't need to be implemented
+// ToJSON does't need to be implemented
 func (p *LsCmd) ToJSON() ([]byte, error) {
-	return nil, nil
+	panic("not implemented")
 }
 
-//NewLsCmdFromFlag returen a new LsCmd
+// NewLsCmdFromFlag returen a new LsCmd
 func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	cmd := LsCmd{}
 
@@ -74,7 +75,7 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	return &cmd, nil
 }
 
-//NewLsCmdFromURLParam returns a new LsCmd according path variable
+// NewLsCmdFromURLParam returns a new LsCmd according path variable
 func NewLsCmdFromURLParam(path string) (*LsCmd, error) {
 	cmd := LsCmd{}
 
@@ -102,7 +103,7 @@ func NewLsCmdFromURLParam(path string) (*LsCmd, error) {
 	return &cmd, nil
 }
 
-//NewLsCmd return a new LsCmd according r and path variable
+// NewLsCmd return a new LsCmd according r and path variable
 func NewLsCmd(r bool, path string) *LsCmd {
 	return &LsCmd{
 		Method: lsCmdName,
@@ -115,7 +116,6 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 	ret := make([]LsResult, 0, 100)
 
 	err := filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
-		//log.Println("path:\t" + path)
 
 		if err != nil {
 			return err
@@ -140,14 +140,13 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 			return filepath.SkipDir
 		}
 
-		//log.Println(len(metas))
 		return nil
 	})
 
 	return ret, err
 }
 
-//CloudCheck checks the conditions when running on cloud
+// CloudCheck checks the conditions when running on cloud
 func (p *LsCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -166,7 +165,7 @@ func (p *LsCmd) CloudCheck() error {
 	return nil
 }
 
-//LocalCheck checks the conditions when running local
+// LocalCheck checks the conditions when running local
 func (p *LsCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -174,7 +173,7 @@ func (p *LsCmd) LocalCheck() error {
 	return nil
 }
 
-//Run functions runs LsCmd and return LsResult and error if any happened
+// Run functions runs LsCmd and return LsResult and error if any happened
 func (p *LsCmd) Run() (interface{}, error) {
 	results := make([]LsResult, 0, 100)
 

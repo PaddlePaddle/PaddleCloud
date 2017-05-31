@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
+
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
 	log "github.com/golang/glog"
-	"path/filepath"
 )
 
-func RemoteStat(s *PfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
+// RemoteStat get StatCmd's result from server
+func RemoteStat(s *pfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	body, err := s.GetFiles(cmd)
 	if err != nil {
 		return nil, err
@@ -29,7 +31,8 @@ func RemoteStat(s *PfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) 
 	return &resp.Results, nil
 }
 
-func RemoteTouch(s *PfsSubmitter, cmd *pfsmod.TouchCmd) error {
+// RemoteTouch touch a file on cloud
+func RemoteTouch(s *pfsSubmitter, cmd *pfsmod.TouchCmd) error {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
 		return err
@@ -47,7 +50,7 @@ func RemoteTouch(s *PfsSubmitter, cmd *pfsmod.TouchCmd) error {
 	return errors.New(resp.Err)
 }
 
-func UploadChunks(s *PfsSubmitter,
+func uploadChunks(s *pfsSubmitter,
 	src string,
 	dst string,
 	diffMeta []pfsmod.ChunkMeta) error {
@@ -70,7 +73,7 @@ func UploadChunks(s *PfsSubmitter,
 		}
 
 		if len(resp.Err) == 0 {
-			return nil
+			continue
 		}
 
 		return errors.New(resp.Err)
@@ -79,7 +82,8 @@ func UploadChunks(s *PfsSubmitter,
 	return nil
 }
 
-func UploadFile(s *PfsSubmitter,
+// UploadFile uploads src to dst
+func UploadFile(s *pfsSubmitter,
 	src, dst string, srcFileSize int64) error {
 
 	log.V(1).Infof("touch %s size:%d\n", dst, srcFileSize)
@@ -87,13 +91,13 @@ func UploadFile(s *PfsSubmitter,
 		return err
 	}
 
-	dstMeta, err := RemoteChunkMeta(s, dst, pfsmod.DefaultChunkSize)
+	dstMeta, err := RemoteChunkMeta(s, dst, defaultChunkSize)
 	if err != nil {
 		return err
 	}
 	log.V(2).Infof("dst %s chunkMeta:%#v\n", dst, dstMeta)
 
-	srcMeta, err := pfsmod.GetChunkMeta(src, pfsmod.DefaultChunkSize)
+	srcMeta, err := pfsmod.GetChunkMeta(src, defaultChunkSize)
 	if err != nil {
 		return err
 	}
@@ -105,15 +109,13 @@ func UploadFile(s *PfsSubmitter,
 	}
 	log.V(2).Infof("diff chunkMeta:%#v\n", diffMeta)
 
-	err = UploadChunks(s, src, dst, diffMeta)
-	if err != nil {
-		return err
-	}
+	err = uploadChunks(s, src, dst, diffMeta)
 
-	return nil
+	return err
 }
 
-func Upload(s *PfsSubmitter, src, dst string) error {
+// Upload uploads src to dst
+func Upload(s *pfsSubmitter, src, dst string) error {
 	lsCmd := pfsmod.NewLsCmd(true, src)
 	srcRet, err := lsCmd.Run()
 	if err != nil {

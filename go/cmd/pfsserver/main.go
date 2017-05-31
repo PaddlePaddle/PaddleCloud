@@ -1,22 +1,22 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsserver"
 	"net/http"
 
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsserver"
 	log "github.com/golang/glog"
+	"github.com/namsral/flag"
 )
 
 func main() {
 
-	router := pfsserver.NewRouter()
-
-	portPtr := flag.Int("port", 8080, "listen port")
+	port := flag.Int("port", 8080, "port of server")
+	ip := flag.String("ip", "0.0.0.0", "ip of server")
 	flag.Parse()
 
-	addr := fmt.Sprintf("0.0.0.0:%d", *portPtr)
+	router := pfsserver.NewRouter()
+	addr := fmt.Sprintf("%s:%d", *ip, *port)
 
 	log.Infof("server on:%s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, router))

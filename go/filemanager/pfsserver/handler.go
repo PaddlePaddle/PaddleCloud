@@ -3,13 +3,14 @@ package pfsserver
 import (
 	"encoding/json"
 	"errors"
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	sjson "github.com/bitly/go-simplejson"
-	log "github.com/golang/glog"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	sjson "github.com/bitly/go-simplejson"
+	log "github.com/golang/glog"
 )
 
 func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command) {
@@ -84,6 +85,7 @@ func writeJSONResponse(w http.ResponseWriter,
 	}
 }
 
+// GetFilesHandler processes files's GET request
 func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 	method := r.URL.Query().Get("method")
 
@@ -91,7 +93,8 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 	case "ls":
 		lsHandler(w, r)
 	case "md5sum":
-		//err := md5Handler(w, r)
+		// TODO
+		// err := md5Handler(w, r)
 	case "stat":
 		statHandler(w, r)
 	default:
@@ -183,6 +186,7 @@ func getMethod(body []byte) (string, error) {
 	return method, nil
 }
 
+// PostFilesHandler processes files' POST request
 func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	//get body
@@ -229,6 +233,7 @@ func getChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("end proc getChunkMeta\n")
 }
 
+// GetChunkMetaHandler processes GET ChunkMeta  request
 func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	method := r.URL.Query().Get("method")
 
@@ -240,6 +245,7 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetChunkHandler processes GET Chunk  request
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
 
@@ -259,7 +265,7 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := cmd.LoadChunkData(part); err != nil {
+	if err = cmd.LoadChunkData(part); err != nil {
 		log.Error(err)
 		return
 	}
@@ -274,6 +280,7 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// PostChunkHandler processes POST Chunk request
 func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc PostChunksHandler\n")
 

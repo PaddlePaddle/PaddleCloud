@@ -4,26 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	log "github.com/golang/glog"
 	"os"
+
+	log "github.com/golang/glog"
 )
 
 const (
 	mkdirCmdName = "mkdir"
 )
 
-//MkdirResult means Mkdir command's result
+// MkdirResult means Mkdir command's result
 type MkdirResult struct {
 	Path string `json:"path"`
 }
 
-//MkdirCmd means Mkdir command
+// MkdirCmd means Mkdir command
 type MkdirCmd struct {
 	Method string   `json:"method"`
 	Args   []string `json:"path"`
 }
 
-//LocalCheck checks the conditions when running on local
+// LocalCheck checks the conditions when running on local
 func (p *MkdirCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -31,7 +32,7 @@ func (p *MkdirCmd) LocalCheck() error {
 	return nil
 }
 
-//CloudCheck checks the conditions when running on cloud
+// CloudCheck checks the conditions when running on cloud
 func (p *MkdirCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusText(StatusNotEnoughArgs))
@@ -51,17 +52,17 @@ func (p *MkdirCmd) CloudCheck() error {
 
 }
 
-//ToURLParam need not to be implemented
+// ToURLParam need not to be implemented
 func (p *MkdirCmd) ToURLParam() string {
-	return ""
+	panic("not implemented")
 }
 
-//ToJSON encodes MkdirCmd to JSON string
+// ToJSON encodes MkdirCmd to JSON string
 func (p *MkdirCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
-//NewMkdirCmd returns a new MkdirCmd
+// NewMkdirCmd returns a new MkdirCmd
 func NewMkdirCmd(path string) *MkdirCmd {
 	return &MkdirCmd{
 		Method: mkdirCmdName,
@@ -69,7 +70,7 @@ func NewMkdirCmd(path string) *MkdirCmd {
 	}
 }
 
-//NewMkdirCmdFromFlag returns a new MkdirCmd from parsed flags
+// NewMkdirCmdFromFlag returns a new MkdirCmd from parsed flags
 func NewMkdirCmdFromFlag(f *flag.FlagSet) (*MkdirCmd, error) {
 	cmd := MkdirCmd{}
 
@@ -84,7 +85,7 @@ func NewMkdirCmdFromFlag(f *flag.FlagSet) (*MkdirCmd, error) {
 	return &cmd, nil
 }
 
-//Run runs MkdirCmd
+// Run runs MkdirCmd
 func (p *MkdirCmd) Run() (interface{}, error) {
 	results := make([]MkdirResult, 0, 100)
 	for _, path := range p.Args {

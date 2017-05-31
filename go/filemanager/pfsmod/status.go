@@ -1,7 +1,7 @@
 package pfsmod
 
 //TODO:
-// need a custome error type?
+// need a custom error type?
 
 const (
 	StatusFileNotFound          = 520

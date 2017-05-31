@@ -11,13 +11,13 @@ const (
 	statCmdName = "stat"
 )
 
-//StatCmd means stat command
+// StatCmd means stat command
 type StatCmd struct {
 	Method string
 	Path   string
 }
 
-//ToURLParam encodes StatCmd to URL Encoding string
+// ToURLParam encodes StatCmd to URL Encoding string
 func (p *StatCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
@@ -27,12 +27,12 @@ func (p *StatCmd) ToURLParam() string {
 
 }
 
-//ToJSON here need not tobe implemented
+// ToJSON here need not tobe implemented
 func (p *StatCmd) ToJSON() ([]byte, error) {
 	return nil, nil
 }
 
-//NewStatCmdFromURLParam return a new StatCmd
+// NewStatCmdFromURLParam return a new StatCmd
 func NewStatCmdFromURLParam(path string) (*StatCmd, error) {
 	cmd := StatCmd{}
 
@@ -52,7 +52,7 @@ func NewStatCmdFromURLParam(path string) (*StatCmd, error) {
 	return &cmd, nil
 }
 
-//NewStatCmd return a new StatCmd
+// NewStatCmd return a new StatCmd
 func NewStatCmd(path string) *StatCmd {
 	return &StatCmd{
 		Method: statCmdName,
@@ -60,12 +60,12 @@ func NewStatCmd(path string) *StatCmd {
 	}
 }
 
-//LocalCheck check the condition when running local
+// LocalCheck checks the condition when running local
 func (p *StatCmd) LocalCheck() error {
 	return nil
 }
 
-//CloudCheck check the conditions when running on cloud
+// CloudCheck checks the conditions when running on cloud
 func (p *StatCmd) CloudCheck() error {
 	if !IsCloudPath(p.Path) {
 		return errors.New(StatusText(StatusShouldBePfsPath) + ":" + p.Path)
@@ -78,7 +78,7 @@ func (p *StatCmd) CloudCheck() error {
 	return nil
 }
 
-//Run runs the StatCmd
+// Run runs the StatCmd
 func (p *StatCmd) Run() (interface{}, error) {
 	fi, err := os.Stat(p.Path)
 	if err != nil {

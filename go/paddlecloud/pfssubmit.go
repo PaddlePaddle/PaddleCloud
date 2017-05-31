@@ -4,21 +4,24 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	log "github.com/golang/glog"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	log "github.com/golang/glog"
 )
 
-type PfsSubmitter struct {
+type pfsSubmitter struct {
 	config *submitConfig
 	client *http.Client
 	port   int32
 }
 
-func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
+// newPfsCmdSubmitter return a new pfsSubmitter
+func newPfsCmdSubmitter(configFile string) *pfsSubmitter {
+	// TODO
 	/*https
 	pair, e := tls.LoadX509KeyPair(config.ActiveConfig.Usercert,
 		config.ActiveConfig.Userkey)
@@ -39,14 +42,15 @@ func NewPfsCmdSubmitter(configFile string) *PfsSubmitter {
 	//http
 	client := &http.Client{}
 
-	return &PfsSubmitter{
+	return &pfsSubmitter{
 		config: config,
 		client: client,
 		port:   8080,
 	}
 }
 
-func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
+// PostFiles implements files' POST method
+func (s *pfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 	jsonString, err := cmd.ToJSON()
 	if err != nil {
 		return nil, err
@@ -67,7 +71,7 @@ func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer pfsmod.Close(resp.Body)
 
 	if resp.Status != HTTPOK {
 		return nil, errors.New("http server returned non-200 status: " + resp.Status)
@@ -81,7 +85,7 @@ func (s *PfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 	return body, nil
 }
 
-func (s *PfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
+func (s *pfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/%s?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
@@ -98,7 +102,7 @@ func (s *PfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer pfsmod.Close(resp.Body)
 
 	if resp.Status != HTTPOK {
 		return nil, errors.New("http server returned non-200 status: " + resp.Status)
@@ -112,14 +116,18 @@ func (s *PfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 	return body, nil
 }
 
-func (s *PfsSubmitter) GetFiles(cmd pfsmod.Command) ([]byte, error) {
+// GetFiles implements files's GET method
+func (s *pfsSubmitter) GetFiles(cmd pfsmod.Command) ([]byte, error) {
 	return s.get(cmd, "api/v1/files")
 }
-func (s *PfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
+
+// GetChunkMeta implements ChunkMeta's GET method
+func (s *pfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
 	return s.get(cmd, "api/v1/chunks")
 }
 
-func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
+// GetChunkData implements Chunks's GET method
+func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
 		s.port,
@@ -136,7 +144,7 @@ func (s *PfsSubmitter) GetChunkData(cmd *pfsmod.ChunkCmd, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer pfsmod.Close(resp.Body)
 
 	if resp.Status != HTTPOK {
 		return errors.New("http server returned non-200 status: " + resp.Status)
@@ -175,7 +183,9 @@ func getDstParam(src *pfsmod.ChunkCmd, dst string) string {
 func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, dst string, url string) (*http.Request, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
+	if err := writer.SetBoundary(pfsmod.DefaultMultiPartBoundary); err != nil {
+		return nil, err
+	}
 
 	fileName := getDstParam(cmd, dst)
 	part, err := writer.CreateFormFile("chunk", fileName)
@@ -201,7 +211,8 @@ func newPostChunkDataRequest(cmd *pfsmod.ChunkCmd, dst string, url string) (*htt
 	return req, nil
 }
 
-func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd, dst string) ([]byte, error) {
+// PostChunkData implements chunks's POST method
+func (s *pfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd, dst string) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
 		s.config.ActiveConfig.Endpoint, s.port)
 	log.V(1).Info("target url: " + url)
@@ -215,7 +226,7 @@ func (s *PfsSubmitter) PostChunkData(cmd *pfsmod.ChunkCmd, dst string) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer pfsmod.Close(resp.Body)
 
 	if resp.Status != HTTPOK {
 		return nil, errors.New("http server returned non-200 status: " + resp.Status)

@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// Route represents route struct
 type Route struct {
 	Name        string
 	Method      string

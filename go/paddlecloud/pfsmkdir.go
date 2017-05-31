@@ -6,36 +6,43 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
 
+// MkdirCommand represents mkdir command
 type MkdirCommand struct {
-	cmd pfsmod.MkdirCmd
+	//cmd pfsmod.MkdirCmd
 }
 
-func (*MkdirCommand) Name() string     { return "mkdir" }
+// Name returns name of MkdirComand
+func (*MkdirCommand) Name() string { return "mkdir" }
+
+// Synopsis returns synopsis of MkdirCommand
 func (*MkdirCommand) Synopsis() string { return "mkdir directoies on PaddlePaddle Cloud" }
+
+// Usage returns usage of MkdirCommand
 func (*MkdirCommand) Usage() string {
 	return `mkdir <pfspath>:
 	mkdir directories on PaddlePaddleCloud
 	Options:
 `
 }
+
+// SetFlags sets MkdirCommand's parameters
 func (p *MkdirCommand) SetFlags(f *flag.FlagSet) {
 }
 
 func formatMkdirPrint(results []pfsmod.MkdirResult, err error) {
-
 	if err != nil {
 		fmt.Println("\t" + err.Error())
 	}
-
-	return
 }
 
-func RemoteMkdir(s *PfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
+// RemoteMkdir creat a directory on cloud
+func RemoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
 		return nil, err
@@ -57,7 +64,7 @@ func RemoteMkdir(s *PfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, e
 	return resp.Results, errors.New(resp.Err)
 }
 
-func remoteMkdir(s *PfsSubmitter, cmd *pfsmod.MkdirCmd) error {
+func remoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) error {
 	for _, arg := range cmd.Args {
 		subcmd := pfsmod.NewMkdirCmd(arg)
 
@@ -69,6 +76,7 @@ func remoteMkdir(s *PfsSubmitter, cmd *pfsmod.MkdirCmd) error {
 
 }
 
+// Execute runs a MkdirCommand
 func (p *MkdirCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 {
 		f.Usage()
@@ -81,7 +89,7 @@ func (p *MkdirCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interfac
 	}
 	log.V(1).Infof("%#v\n", cmd)
 
-	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
+	s := newPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
 	if err := remoteMkdir(s, cmd); err != nil {
 		return subcommands.ExitFailure
 	}

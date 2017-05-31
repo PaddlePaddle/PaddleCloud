@@ -5,16 +5,27 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
 	"github.com/google/subcommands"
 )
 
+const (
+	defaultChunkSize = 2 * 1024 * 1024
+)
+
+// CpCommand represents a copy command
 type CpCommand struct {
 	cmd pfsmod.CpCmd
 }
 
-func (*CpCommand) Name() string     { return "cp" }
+// Name returns CpCommand's name
+func (*CpCommand) Name() string { return "cp" }
+
+// Synopsis returns synopsis of CpCommand
 func (*CpCommand) Synopsis() string { return "uoload or download files" }
+
+// Usage returns usage of CpCommand
 func (*CpCommand) Usage() string {
 	return `cp [-v] <src> <dst>
 	upload or downlod files, does't support directories this version
@@ -22,10 +33,12 @@ func (*CpCommand) Usage() string {
 	`
 }
 
+// SetFlags sets CpCommand's parameter
 func (p *CpCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.V, "v", false, "Cause cp to be verbose, showing files after they are copied.")
 }
 
+// Execute runs CpCommand
 func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 2 {
 		f.Usage()
@@ -34,7 +47,7 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 
 	cmd := pfsmod.NewCpCmdFromFlag(f)
 
-	s := NewPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
+	s := newPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
 
 	err := RunCp(s, cmd)
 	if err != nil {
@@ -44,13 +57,13 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	return subcommands.ExitSuccess
 }
 
-// Run cp command, return err when meet any error
-func RunCp(s *PfsSubmitter, cmd *pfsmod.CpCmd) error {
+// RunCp runs CpCommand
+func RunCp(s *pfsSubmitter, cmd *pfsmod.CpCmd) error {
 
 	var results []pfsmod.CpCmdResult
 
 	for _, arg := range cmd.Src {
-		fmt.Printf(cmd.PartToString(arg, cmd.Dst))
+		fmt.Println(cmd.PartToString(arg, cmd.Dst))
 
 		var ret []pfsmod.CpCmdResult
 		var err error

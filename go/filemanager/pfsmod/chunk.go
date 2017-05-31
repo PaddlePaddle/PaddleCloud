@@ -3,22 +3,22 @@ package pfsmod
 import (
 	"errors"
 	"fmt"
-	log "github.com/golang/glog"
 	"io"
 	"net/url"
 	"os"
 	"strconv"
+
+	log "github.com/golang/glog"
 )
 
-//ChunkCmd structure
+// ChunkCmd respresents
 type ChunkCmd struct {
 	Path      string
 	Offset    int64
 	ChunkSize int64
-	Data      []byte
 }
 
-//NewChunkCmd get a new ChunkCmd
+// NewChunkCmd get a new ChunkCmd
 func NewChunkCmd(path string, offset, chunkSize int64) *ChunkCmd {
 	return &ChunkCmd{
 		Path:      path,
@@ -27,7 +27,7 @@ func NewChunkCmd(path string, offset, chunkSize int64) *ChunkCmd {
 	}
 }
 
-//ToURLParam encodes variables to url encoding parameters
+// ToURLParam encodes variables to url encoding parameters
 func (p *ChunkCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("path", p.Path)
@@ -41,17 +41,17 @@ func (p *ChunkCmd) ToURLParam() string {
 	return parameters.Encode()
 }
 
-//ToJSON encodes chunkcmd to json string
+// ToJSON encodes ChunkCmd to JSON string
 func (p *ChunkCmd) ToJSON() ([]byte, error) {
-	return nil, nil
+	panic("not implemented")
 }
 
-//Run function runs a ChunkCmd
+// Run runs a ChunkCmd
 func (p *ChunkCmd) Run() (interface{}, error) {
-	return nil, nil
+	panic("not implemented")
 }
 
-//NewChunkCmdFromURLParam get a ChunkCmd structure
+// NewChunkCmdFromURLParam get a ChunkCmd structure
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
 func NewChunkCmdFromURLParam(path string) (*ChunkCmd, error) {
@@ -65,7 +65,6 @@ func NewChunkCmdFromURLParam(path string) (*ChunkCmd, error) {
 		return nil, errors.New(StatusText(StatusJSONErr))
 	}
 
-	//var err error
 	cmd.Path = m["path"][0]
 	cmd.Offset, err = strconv.ParseInt(m["offset"][0], 10, 64)
 	if err != nil {
@@ -81,7 +80,7 @@ func NewChunkCmdFromURLParam(path string) (*ChunkCmd, error) {
 	return &cmd, nil
 }
 
-//LoadChunkData loads a specified chunk to w
+// LoadChunkData loads a specified chunk to w
 func (p *ChunkCmd) LoadChunkData(w io.Writer) error {
 	f, err := os.Open(p.Path)
 	if err != nil {
@@ -99,7 +98,7 @@ func (p *ChunkCmd) LoadChunkData(w io.Writer) error {
 	return err
 }
 
-//SaveChunkData save data from r
+// SaveChunkData save data from r
 func (p *ChunkCmd) SaveChunkData(r io.Reader) error {
 	f, err := os.OpenFile(p.Path, os.O_WRONLY, 0600)
 	if err != nil {

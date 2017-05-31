@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
-	log "github.com/golang/glog"
 	"os"
 	"path/filepath"
+
+	"github.com/PaddlePaddle/cloud/go/filemanager/pfsmod"
+	log "github.com/golang/glog"
 )
 
-func RemoteChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.ChunkMeta, error) {
+// RemoteChunkMeta get ChunkMeta of path from cloud
+func RemoteChunkMeta(s *pfsSubmitter, path string, chunkSize int64) ([]pfsmod.ChunkMeta, error) {
 
 	cmd := pfsmod.NewChunkMetaCmd(path, chunkSize)
 
@@ -31,7 +33,7 @@ func RemoteChunkMeta(s *PfsSubmitter, path string, chunkSize int64) ([]pfsmod.Ch
 	return resp.Results, errors.New(resp.Err)
 }
 
-func DownloadChunks(s *PfsSubmitter, src string, dst string, diffMeta []pfsmod.ChunkMeta) error {
+func downloadChunks(s *pfsSubmitter, src string, dst string, diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
 		log.V(1).Infof("srcfile:%s and dstfile:%s are already same\n", src, dst)
 		fmt.Printf("download ok\n")
@@ -48,14 +50,15 @@ func DownloadChunks(s *PfsSubmitter, src string, dst string, diffMeta []pfsmod.C
 	return nil
 }
 
-func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) error {
-	srcMeta, err := RemoteChunkMeta(s, src, pfsmod.DefaultChunkSize)
+// DownloadFile downloads src to dst. If dst does not exists, create it with srcFileSize.
+func DownloadFile(s *pfsSubmitter, src string, srcFileSize int64, dst string) error {
+	srcMeta, err := RemoteChunkMeta(s, src, defaultChunkSize)
 	if err != nil {
 		return err
 	}
 	log.V(2).Infof("srcMeta:%#v\n", srcMeta)
 
-	dstMeta, err := pfsmod.GetChunkMeta(dst, pfsmod.DefaultChunkSize)
+	dstMeta, err := pfsmod.GetChunkMeta(dst, defaultChunkSize)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := pfsmod.CreateSizedFile(dst, srcFileSize); err != nil {
@@ -71,34 +74,38 @@ func DownloadFile(s *PfsSubmitter, src string, srcFileSize int64, dst string) er
 		return err
 	}
 
-	err = DownloadChunks(s, src, dst, diffMeta)
-	if err != nil {
-		return err
+	err = downloadChunks(s, src, dst, diffMeta)
+	return err
+}
+
+func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
+	var bDir bool
+	fi, err := os.Stat(dst)
+	if err == nil {
+		bDir = fi.IsDir()
+		if !fi.IsDir() && len(src) > 1 {
+			return bDir, errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
+		}
+	} else if err == os.ErrNotExist {
+		if err = os.MkdirAll(dst, 0700); err != nil {
+			bDir = true
+			return bDir, err
+		}
 	}
 
-	return nil
+	return bDir, err
 }
 
 // Download files to dst
-func Download(s *PfsSubmitter, src, dst string) error {
+func Download(s *pfsSubmitter, src, dst string) error {
 	lsRet, err := RemoteLs(s, pfsmod.NewLsCmd(true, src))
 	if err != nil {
 		return err
 	}
 
-	if len(lsRet) > 1 {
-		fi, err := os.Stat(dst)
-		if err != nil {
-			if err == os.ErrNotExist {
-				os.MkdirAll(dst, 0755)
-			} else {
-				return err
-			}
-		}
-
-		if !fi.IsDir() {
-			return errors.New(pfsmod.StatusText(pfsmod.StatusDestShouldBeDirectory))
-		}
+	bDir, err := checkBeforeDownLoad(lsRet, dst)
+	if err != nil {
+		return err
 	}
 
 	for _, attr := range lsRet {
@@ -107,14 +114,17 @@ func Download(s *PfsSubmitter, src, dst string) error {
 		}
 
 		realSrc := attr.Path
-		_, file := filepath.Split(attr.Path)
-		realDst := dst + "/" + file
+		realDst := dst
+
+		if bDir {
+			_, file := filepath.Split(attr.Path)
+			realDst = dst + "/" + file
+		}
 
 		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
 		if err := DownloadFile(s, realSrc, attr.Size, realDst); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
