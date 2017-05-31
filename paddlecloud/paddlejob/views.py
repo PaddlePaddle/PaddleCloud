@@ -140,7 +140,7 @@ class JobsView(APIView):
         # delete job
         trainer_name = jobname + "-trainer"
         try:
-            u_status = client.BatchV1Api(api_client=api_client)
+            u_status = client.BatchV1Api(api_client=api_client)\
                 .delete_namespaced_job(trainer_name, namespace, {})
         except ApiException, e:
             logging.error("error deleting job: %s, %s", jobname, str(e))
@@ -148,12 +148,12 @@ class JobsView(APIView):
 
         # delete job pods
         try:
-            job_pod_list = client.CoreV1Api(api_client=api_client)
+            job_pod_list = client.CoreV1Api(api_client=api_client)\
                 .list_namespaced_pod(namespace,
                                      label_selector="paddle-job=%s"%jobname)
             for i in job_pod_list.items:
-                u_status = client.CoreV1Api(api_client=api_client).delete_namespaced_pod(
-                    i.metadata.name, namespace, {})
+                u_status = client.CoreV1Api(api_client=api_client)\
+                    .delete_namespaced_pod(i.metadata.name, namespace, {})
         except ApiException, e:
             logging.error("error deleting job pod: %s", str(e))
             delete_status.append(str(e))
@@ -161,7 +161,7 @@ class JobsView(APIView):
         # delete pserver rs
         pserver_name = jobname + "-pserver"
         try:
-            u_status = client.ExtensionsV1beta1Api(api_client=api_client)
+            u_status = client.ExtensionsV1beta1Api(api_client=api_client)\
                 .delete_namespaced_replica_set(pserver_name, namespace, {})
         except ApiException, e:
             logging.error("error deleting pserver: %s" % str(e))
@@ -170,11 +170,11 @@ class JobsView(APIView):
         # delete pserver pods
         try:
             # pserver replica set has label with jobname
-            job_pod_list = client.CoreV1Api(api_client=api_client)
+            job_pod_list = client.CoreV1Api(api_client=api_client)\
                 .list_namespaced_pod(namespace,
                                      label_selector="paddle-job-pserver=%s"%jobname)
             for i in job_pod_list.items:
-                u_status = client.CoreV1Api(api_client=api_client)
+                u_status = client.CoreV1Api(api_client=api_client)\
                     .delete_namespaced_pod(i.metadata.name, namespace, {})
         except ApiException, e:
             logging.error("error deleting pserver pods: %s" % str(e))
@@ -199,26 +199,26 @@ class LogsView(APIView):
         jobname = request.query_params.get("jobname")
         num_lines = request.query_params.get("n")
         worker = request.query_params.get("w")
-        job_pod_list = client.CoreV1Api(api_client=api_client)
+        job_pod_list = client.CoreV1Api(api_client=api_client)\
             .list_namespaced_pod(namespace, label_selector="paddle-job=%s"%jobname)
         total_job_log = ""
         if not worker:
             for i in job_pod_list.items:
                 total_job_log = "".join((total_job_log, "==========================%s==========================" % i.metadata.name))
                 if num_lines:
-                    pod_log = client.CoreV1Api(api_client=api_client)
+                    pod_log = client.CoreV1Api(api_client=api_client)\
                         .read_namespaced_pod_log(
                             i.metadata.name, namespace, tail_lines=int(num_lines))
                 else:
-                    pod_log = client.CoreV1Api(api_client=api_client)
+                    pod_log = client.CoreV1Api(api_client=api_client)\
                         .read_namespaced_pod_log(i.metadata.name, namespace)
                 total_job_log = "\n".join((total_job_log, pod_log))
         else:
             if num_lines:
-                pod_log = client.CoreV1Api(api_client=api_client)
+                pod_log = client.CoreV1Api(api_client=api_client)\
                     .read_namespaced_pod_log(worker, namespace, tail_lines=int(num_lines))
             else:
-                pod_log = client.CoreV1Api(api_client=api_client)
+                pod_log = client.CoreV1Api(api_client=api_client)\
                     .read_namespaced_pod_log(worker, namespace)
             total_job_log = pod_log
         return utils.simple_response(200, total_job_log)
@@ -236,11 +236,11 @@ class WorkersView(APIView):
         job_pod_list = None
         api_client = notebook.utils.get_user_api_client(username)
         if not jobname:
-            job_pod_list = client.CoreV1Api(api_client=api_client)
+            job_pod_list = client.CoreV1Api(api_client=api_client)\
                 .list_namespaced_pod(namespace)
         else:
             selector = "paddle-job=%s"%jobname
-            job_pod_list = client.CoreV1Api(api_client=api_client)
+            job_pod_list = client.CoreV1Api(api_client=api_client)\
                 .list_namespaced_pod(namespace, label_selector=selector)
         return Response(job_pod_list.to_dict())
 
@@ -254,6 +254,6 @@ class QuotaView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
-        quota_list = api_client.CoreV1Api(api_cilent=api_client)
+        quota_list = api_client.CoreV1Api(api_cilent=api_client)\
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
