@@ -212,7 +212,4 @@ class PaddleJob(object):
         }
         if self._registry_secret:
             rs["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
-        # FIXME: pserver also need GPU to start! This can double the gpu resource
-        if self._gpu > 0:
-            rs["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["alpha.kubernetes.io/nvidia-gpu"] = str(self._gpu)
         return rs
