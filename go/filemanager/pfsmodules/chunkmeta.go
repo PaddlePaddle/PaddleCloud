@@ -19,24 +19,24 @@ const (
 	defaultMinChunkSize = 4 * 1024
 )
 const (
-	chunkMetaCmdName = "GetChunkMeta"
+	ChunkMetaCmdName = "GetChunkMeta"
 )
 
-// ChunkMeta holds the chunk meta's info
+// ChunkMeta holds the chunk meta's info.
 type ChunkMeta struct {
 	Offset   int64  `json:"offset"`
 	Checksum string `json:"checksum"`
 	Len      int64  `json:"len"`
 }
 
-// ChunkMetaCmd is a command
+// ChunkMetaCmd is a command.
 type ChunkMetaCmd struct {
 	Method    string `json:"method"`
 	FilePath  string `json:"path"`
 	ChunkSize int64  `json:"chunksize"`
 }
 
-// ToURLParam encodes ChunkMetaCmd to URL encoding string
+// ToURLParam encodes ChunkMetaCmd to URL encoding string.
 func (p *ChunkMetaCmd) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
@@ -48,12 +48,12 @@ func (p *ChunkMetaCmd) ToURLParam() string {
 	return parameters.Encode()
 }
 
-// ToJSON encodes ChunkMetaCmd to JSON string
+// ToJSON encodes ChunkMetaCmd to JSON string.
 func (p *ChunkMetaCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
-// Run is a functions which run ChunkMetaCmd
+// Run is a functions which run ChunkMetaCmd.
 func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	return GetChunkMeta(p.FilePath, p.ChunkSize)
 }
@@ -67,7 +67,7 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 	return nil
 }
 
-// CloudCheck checks the conditions when running on cloud
+// CloudCheck checks the conditions when running on cloud.
 func (p *ChunkMetaCmd) CloudCheck() error {
 	if !IsCloudPath(p.FilePath) {
 		return errors.New(StatusShouldBePfsPath + ": p.FilePath")
@@ -78,20 +78,20 @@ func (p *ChunkMetaCmd) CloudCheck() error {
 	return p.checkChunkSize()
 }
 
-// LocalCheck checks the conditions when running local
+// LocalCheck checks the conditions when running locally.
 func (p *ChunkMetaCmd) LocalCheck() error {
 	return p.checkChunkSize()
 }
 
-// NewChunkMetaCmdFromURLParam get a new ChunkMetaCmd
+// NewChunkMetaCmdFromURLParams get a new ChunkMetaCmd.
 func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
 	chunkStr := r.URL.Query().Get("chunksize")
 
 	if len(method) == 0 ||
-		method != chunkMetaCmdName ||
-		len(path) < 4 ||
+		method != ChunkMetaCmdName ||
+		len(path) == 0 ||
 		len(chunkStr) == 0 {
 		return nil, errors.New(http.StatusText(http.StatusBadRequest))
 	}
@@ -108,22 +108,13 @@ func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 	}, nil
 }
 
-// NewChunkMetaCmd get a new ChunkMetaCmd with path and chunksize
-func NewChunkMetaCmd(path string, chunkSize int64) *ChunkMetaCmd {
-	return &ChunkMetaCmd{
-		Method:    chunkMetaCmdName,
-		FilePath:  path,
-		ChunkSize: chunkSize,
-	}
-}
-
 type metaSlice []ChunkMeta
 
 func (a metaSlice) Len() int           { return len(a) }
 func (a metaSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a metaSlice) Less(i, j int) bool { return a[i].Offset < a[j].Offset }
 
-// GetDiffChunkMeta gets difference between srcMeta and dstMeta
+// GetDiffChunkMeta gets difference between srcMeta and dstMeta.
 func GetDiffChunkMeta(srcMeta []ChunkMeta, dstMeta []ChunkMeta) ([]ChunkMeta, error) {
 	if len(dstMeta) == 0 || len(srcMeta) == 0 {
 		return srcMeta, nil
@@ -172,7 +163,7 @@ func GetDiffChunkMeta(srcMeta []ChunkMeta, dstMeta []ChunkMeta) ([]ChunkMeta, er
 	return diff, nil
 }
 
-// GetChunkMeta gets chunk metas from path of file
+// GetChunkMeta gets chunk metas from path of file.
 func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -196,7 +187,7 @@ func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 	for {
 		n, err := f.Read(data)
 		if err != nil && err != io.EOF {
-			return metas, err
+			return nil, err
 		}
 
 		if err == io.EOF {

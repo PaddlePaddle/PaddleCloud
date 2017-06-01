@@ -12,18 +12,18 @@ import (
 	"github.com/google/subcommands"
 )
 
-// LsCommand represents ls command
+// LsCommand represents ls command.
 type LsCommand struct {
 	cmd pfsmod.LsCmd
 }
 
-// Name returns LsCommand's name
+// Name returns LsCommand's name.
 func (*LsCommand) Name() string { return "ls" }
 
-// Synopsis returns Synopsis of LsCommand
+// Synopsis returns Synopsis of LsCommand.
 func (*LsCommand) Synopsis() string { return "List files on PaddlePaddle Cloud" }
 
-// Usage returns usage of LsCommand
+// Usage returns usage of LsCommand.
 func (*LsCommand) Usage() string {
 	return `ls [-r] <pfspath>:
 	List files on PaddlePaddleCloud
@@ -31,12 +31,12 @@ func (*LsCommand) Usage() string {
 `
 }
 
-// SetFlags sets LsCommand's parameters
+// SetFlags sets LsCommand's parameters.
 func (p *LsCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.R, "r", false, "list files recursively")
 }
 
-// getFormatPrint get max width of filesize and return format string to print
+// getFormatPrint gets max width of filesize and return format string to print.
 func getFormatString(result []pfsmod.LsResult) string {
 	max := 0
 	for _, t := range result {
@@ -64,7 +64,7 @@ func formatPrint(result []pfsmod.LsResult) {
 	fmt.Printf("\n")
 }
 
-// RemoteLs get LsCmd result from cloud
+// RemoteLs gets LsCmd result from cloud.
 func RemoteLs(s *pfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
 	body, err := s.GetFiles(cmd)
 	if err != nil {
@@ -107,7 +107,7 @@ func remoteLs(s *pfsSubmitter, cmd *pfsmod.LsCmd) error {
 	return nil
 }
 
-// Execute runs a LsCommand
+// Execute runs a LsCommand.
 func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 {
 		f.Usage()

@@ -10,7 +10,7 @@ import (
 	log "github.com/golang/glog"
 )
 
-// RemoteStat get StatCmd's result from server
+// RemoteStat gets StatCmd's result from server.
 func RemoteStat(s *pfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	body, err := s.GetFiles(cmd)
 	if err != nil {
@@ -36,7 +36,7 @@ func RemoteStat(s *pfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) 
 	return &resp.Results, nil
 }
 
-// RemoteTouch touch a file on cloud
+// RemoteTouch touches a file on cloud.
 func RemoteTouch(s *pfsSubmitter, cmd *pfsmod.TouchCmd) error {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
@@ -76,7 +76,14 @@ func uploadChunks(s *pfsSubmitter,
 
 	for _, meta := range diffMeta {
 		log.V(1).Infof("diffMeta:%v\n", meta)
-		body, err := s.PostChunkData(pfsmod.NewChunk(src, meta.Offset, meta.Len), dst)
+
+		chunk := pfsmod.Chunk{
+			Path:   src,
+			Offset: meta.Offset,
+			Size:   meta.Len,
+		}
+
+		body, err := s.PostChunkData(&chunk, dst)
 		if err != nil {
 			return err
 		}
@@ -96,12 +103,19 @@ func uploadChunks(s *pfsSubmitter,
 	return nil
 }
 
-// UploadFile uploads src to dst
+// UploadFile uploads src file to dst.
 func UploadFile(s *pfsSubmitter,
 	src, dst string, srcFileSize int64) error {
 
 	log.V(1).Infof("touch %s size:%d\n", dst, srcFileSize)
-	if err := RemoteTouch(s, pfsmod.NewTouchCmd(dst, srcFileSize)); err != nil {
+
+	cmd := pfsmod.TouchCmd{
+		Method:   pfsmod.TouchCmdName,
+		Path:     dst,
+		FileSize: srcFileSize,
+	}
+
+	if err := RemoteTouch(s, &cmd); err != nil {
 		return err
 	}
 
@@ -128,7 +142,7 @@ func UploadFile(s *pfsSubmitter,
 	return err
 }
 
-// Upload uploads src to dst
+// Upload uploads src to dst.
 func Upload(s *pfsSubmitter, src, dst string) error {
 	lsCmd := pfsmod.NewLsCmd(true, src)
 	srcRet, err := lsCmd.Run()
@@ -137,7 +151,7 @@ func Upload(s *pfsSubmitter, src, dst string) error {
 	}
 	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
 
-	dstMeta, err := RemoteStat(s, pfsmod.NewStatCmd(dst))
+	dstMeta, err := RemoteStat(s, &pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
 	if err != nil {
 		return err
 	}

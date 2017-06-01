@@ -12,18 +12,18 @@ import (
 	"github.com/google/subcommands"
 )
 
-// MkdirCommand represents mkdir command
+// MkdirCommand represents mkdir command.
 type MkdirCommand struct {
 	//cmd pfsmod.MkdirCmd
 }
 
-// Name returns name of MkdirComand
+// Name returns name of MkdirComand.
 func (*MkdirCommand) Name() string { return "mkdir" }
 
-// Synopsis returns synopsis of MkdirCommand
+// Synopsis returns synopsis of MkdirCommand.
 func (*MkdirCommand) Synopsis() string { return "mkdir directoies on PaddlePaddle Cloud" }
 
-// Usage returns usage of MkdirCommand
+// Usage returns usage of MkdirCommand.
 func (*MkdirCommand) Usage() string {
 	return `mkdir <pfspath>:
 	mkdir directories on PaddlePaddleCloud
@@ -31,7 +31,7 @@ func (*MkdirCommand) Usage() string {
 `
 }
 
-// SetFlags sets MkdirCommand's parameters
+// SetFlags sets MkdirCommand's parameters.
 func (p *MkdirCommand) SetFlags(f *flag.FlagSet) {
 }
 
@@ -41,7 +41,7 @@ func formatMkdirPrint(results []pfsmod.MkdirResult, err error) {
 	}
 }
 
-// RemoteMkdir creat a directory on cloud
+// RemoteMkdir creat a directory on cloud.
 func RemoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
@@ -81,7 +81,7 @@ func remoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) error {
 
 }
 
-// Execute runs a MkdirCommand
+// Execute runs a MkdirCommand.
 func (p *MkdirCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 {
 		f.Usage()

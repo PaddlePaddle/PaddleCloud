@@ -15,19 +15,19 @@ const (
 	rmCmdName = "rm"
 )
 
-// RmResult means Rm-command's result
+// RmResult means Rm-command's result.
 type RmResult struct {
 	Path string `json:"path"`
 }
 
-// RmCmd means Rm command
+// RmCmd means Rm command.
 type RmCmd struct {
 	Method string   `json:"method"`
 	R      bool     `json:"r"`
 	Args   []string `json:"path"`
 }
 
-// LocalCheck checks the conditions when running local
+// LocalCheck checks the conditions when running local.
 func (p *RmCmd) LocalCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusInvalidArgs)
@@ -35,7 +35,7 @@ func (p *RmCmd) LocalCheck() error {
 	return nil
 }
 
-// CloudCheck checks the conditions when running on cloud
+// CloudCheck checks the conditions when running on cloud.
 func (p *RmCmd) CloudCheck() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusInvalidArgs)
@@ -54,17 +54,17 @@ func (p *RmCmd) CloudCheck() error {
 	return nil
 }
 
-// ToURLParam needs not to be implemented
+// ToURLParam needs not to be implemented.
 func (p *RmCmd) ToURLParam() string {
 	panic("not implemented")
 }
 
-// ToJSON encodes RmCmd to JSON string
+// ToJSON encodes RmCmd to JSON string.
 func (p *RmCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
-// NewRmCmd returns a new RmCmd
+// NewRmCmd returns a new RmCmd.
 func NewRmCmd(r bool, path string) *RmCmd {
 	return &RmCmd{
 		Method: rmCmdName,
@@ -73,7 +73,7 @@ func NewRmCmd(r bool, path string) *RmCmd {
 	}
 }
 
-// NewRmCmdFromFlag returns a new RmCmd from parsed flags
+// NewRmCmdFromFlag returns a new RmCmd from parsed flags.
 func NewRmCmdFromFlag(f *flag.FlagSet) (*RmCmd, error) {
 	cmd := RmCmd{}
 
@@ -98,9 +98,10 @@ func NewRmCmdFromFlag(f *flag.FlagSet) (*RmCmd, error) {
 	return &cmd, nil
 }
 
-// Run runs RmCmd
+// Run runs RmCmd.
 func (p *RmCmd) Run() (interface{}, error) {
-	result := make([]RmResult, 0, 100)
+	var result []RmResult
+
 	for _, path := range p.Args {
 		list, err := filepath.Glob(path)
 		if err != nil {

@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	port := flag.Int("port", 8080, "port of server")
 	ip := flag.String("ip", "0.0.0.0", "ip of server")
 	flag.Parse()

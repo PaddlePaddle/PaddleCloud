@@ -12,18 +12,18 @@ import (
 	"github.com/google/subcommands"
 )
 
-// RmCommand represents remove command
+// RmCommand represents remove command.
 type RmCommand struct {
 	cmd pfsmod.RmCmd
 }
 
-// Name returns RmCommand's name
+// Name returns RmCommand's name.
 func (*RmCommand) Name() string { return "rm" }
 
-// Synopsis returns synopsis of RmCommand
+// Synopsis returns synopsis of RmCommand.
 func (*RmCommand) Synopsis() string { return "rm files on PaddlePaddle Cloud" }
 
-// Usage returns usage of RmCommand
+// Usage returns usage of RmCommand.
 func (*RmCommand) Usage() string {
 	return `rm -r <pfspath>:
 	rm files on PaddlePaddleCloud
@@ -31,7 +31,7 @@ func (*RmCommand) Usage() string {
 `
 }
 
-// SetFlags sets RmCommand's parameters
+// SetFlags sets RmCommand's parameters.
 func (p *RmCommand) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.cmd.R, "r", false, "rm files recursively")
 }
@@ -48,7 +48,7 @@ func formatRmPrint(results []pfsmod.RmResult, err error) {
 	return
 }
 
-// RemoteRm gets RmCmd Result from cloud
+// RemoteRm gets RmCmd Result from cloud.
 func RemoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
 	body, err := s.PostFiles(cmd)
 	if err != nil {
@@ -92,7 +92,7 @@ func remoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) error {
 
 }
 
-// Execute runs a RmCommand
+// Execute runs a RmCommand.
 func (p *RmCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 {
 		f.Usage()

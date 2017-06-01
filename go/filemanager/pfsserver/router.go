@@ -24,7 +24,7 @@ func logger(inner http.Handler, name string) http.Handler {
 	})
 }
 
-// NewRouter returns a new Router struct
+// NewRouter returns a new Router struct.
 func NewRouter() *mux.Router {
 
 	router := mux.NewRouter().StrictSlash(true)

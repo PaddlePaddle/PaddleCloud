@@ -19,7 +19,7 @@ type pfsSubmitter struct {
 	port   int32
 }
 
-// newPfsCmdSubmitter return a new pfsSubmitter
+// newPfsCmdSubmitter returns a new pfsSubmitter.
 func newPfsCmdSubmitter(configFile string) *pfsSubmitter {
 	// TODO
 	/*https
@@ -49,7 +49,7 @@ func newPfsCmdSubmitter(configFile string) *pfsSubmitter {
 	}
 }
 
-// PostFiles implements files' POST method
+// PostFiles implements files' POST method.
 func (s *pfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 	jsonString, err := cmd.ToJSON()
 	if err != nil {
@@ -116,17 +116,17 @@ func (s *pfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
 	return body, nil
 }
 
-// GetFiles implements files's GET method
+// GetFiles implements files's GET method.
 func (s *pfsSubmitter) GetFiles(cmd pfsmod.Command) ([]byte, error) {
 	return s.get(cmd, "api/v1/files")
 }
 
-// GetChunkMeta implements ChunkMeta's GET method
+// GetChunkMeta implements ChunkMeta's GET method.
 func (s *pfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
 	return s.get(cmd, "api/v1/chunks")
 }
 
-// GetChunkData implements Chunks's GET method
+// GetChunkData implements Chunks's GET method.
 func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.Chunk, dst string) error {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
@@ -175,7 +175,11 @@ func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.Chunk, dst string) error {
 }
 
 func getDstParam(src *pfsmod.Chunk, dst string) string {
-	cmd := pfsmod.NewChunk(dst, src.Offset, src.Size)
+	cmd := pfsmod.Chunk{
+		Path:   dst,
+		Offset: src.Offset,
+		Size:   src.Size,
+	}
 
 	return cmd.ToURLParam()
 }
@@ -211,7 +215,7 @@ func newPostChunkDataRequest(cmd *pfsmod.Chunk, dst string, url string) (*http.R
 	return req, nil
 }
 
-// PostChunkData implements chunks's POST method
+// PostChunkData implements chunks's POST method.
 func (s *pfsSubmitter) PostChunkData(cmd *pfsmod.Chunk, dst string) ([]byte, error) {
 	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
 		s.config.ActiveConfig.Endpoint, s.port)

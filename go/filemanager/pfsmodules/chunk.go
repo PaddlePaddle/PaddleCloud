@@ -11,23 +11,14 @@ import (
 	log "github.com/golang/glog"
 )
 
-// Chunk respresents a chunk info
+// Chunk respresents a chunk info.
 type Chunk struct {
 	Path   string
 	Offset int64
 	Size   int64
 }
 
-// NewChunk get a new Chunk
-func NewChunk(path string, offset, chunkSize int64) *Chunk {
-	return &Chunk{
-		Path:   path,
-		Offset: offset,
-		Size:   chunkSize,
-	}
-}
-
-// ToURLParam encodes variables to url encoding parameters
+// ToURLParam encodes variables to url encoding parameters.
 func (p *Chunk) ToURLParam() string {
 	parameters := url.Values{}
 	parameters.Add("path", p.Path)
@@ -41,7 +32,7 @@ func (p *Chunk) ToURLParam() string {
 	return parameters.Encode()
 }
 
-// ParseChunk get a Chunk struct from path
+// ParseChunk get a Chunk struct from path.
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
 func ParseChunk(path string) (*Chunk, error) {
@@ -70,7 +61,7 @@ func ParseChunk(path string) (*Chunk, error) {
 	return &cmd, nil
 }
 
-// LoadChunkData loads a specified chunk to io.Writer
+// LoadChunkData loads a specified chunk to io.Writer.
 func (p *Chunk) LoadChunkData(w io.Writer) error {
 	f, err := os.Open(p.Path)
 	if err != nil {
@@ -83,12 +74,12 @@ func (p *Chunk) LoadChunkData(w io.Writer) error {
 		return err
 	}
 
-	writen, err := io.CopyN(w, f, p.Size)
-	log.V(2).Infof("writen:%d\n", writen)
+	loaded, err := io.CopyN(w, f, p.Size)
+	log.V(2).Infof("loaded:%d\n", loaded)
 	return err
 }
 
-// SaveChunkData save data from io.Reader
+// SaveChunkData save data from io.Reader.
 func (p *Chunk) SaveChunkData(r io.Reader) error {
 	f, err := os.OpenFile(p.Path, os.O_WRONLY, 0600)
 	if err != nil {

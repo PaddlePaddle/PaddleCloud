@@ -11,12 +11,17 @@ import (
 	log "github.com/golang/glog"
 )
 
-// RemoteChunkMeta get ChunkMeta of path from cloud
-func RemoteChunkMeta(s *pfsSubmitter, path string, chunkSize int64) ([]pfsmod.ChunkMeta, error) {
+// RemoteChunkMeta get ChunkMeta of path from cloud.
+func RemoteChunkMeta(s *pfsSubmitter,
+	path string,
+	chunkSize int64) ([]pfsmod.ChunkMeta, error) {
+	cmd := pfsmod.ChunkMetaCmd{
+		Method:    pfsmod.ChunkMetaCmdName,
+		FilePath:  path,
+		ChunkSize: chunkSize,
+	}
 
-	cmd := pfsmod.NewChunkMetaCmd(path, chunkSize)
-
-	ret, err := s.GetChunkMeta(cmd)
+	ret, err := s.GetChunkMeta(&cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +43,8 @@ func RemoteChunkMeta(s *pfsSubmitter, path string, chunkSize int64) ([]pfsmod.Ch
 	return resp.Results, errors.New(resp.Err)
 }
 
-func downloadChunks(s *pfsSubmitter, src string, dst string, diffMeta []pfsmod.ChunkMeta) error {
+func downloadChunks(s *pfsSubmitter,
+	src string, dst string, diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
 		log.V(1).Infof("srcfile:%s and dstfile:%s are already same\n", src, dst)
 		fmt.Printf("download ok\n")
@@ -46,7 +52,12 @@ func downloadChunks(s *pfsSubmitter, src string, dst string, diffMeta []pfsmod.C
 	}
 
 	for _, meta := range diffMeta {
-		err := s.GetChunkData(pfsmod.NewChunk(src, meta.Offset, meta.Len), dst)
+		chunk := pfsmod.Chunk{
+			Path:   src,
+			Offset: meta.Offset,
+			Size:   meta.Len,
+		}
+		err := s.GetChunkData(&chunk, dst)
 		if err != nil {
 			return err
 		}
@@ -101,7 +112,7 @@ func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
 	return bDir, err
 }
 
-// Download files to dst
+// Download function downloads src to dst.
 func Download(s *pfsSubmitter, src, dst string) error {
 	lsRet, err := RemoteLs(s, pfsmod.NewLsCmd(true, src))
 	if err != nil {
