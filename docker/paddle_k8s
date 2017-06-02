@@ -2,6 +2,7 @@
 set -e
 start_pserver() {
     paddle pserver \
+      --use_gpu=0 \
       --port=$PADDLE_INIT_PORT \
       --ports_num=$PADDLE_INIT_PORTS_NUM \
       --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
@@ -31,7 +32,7 @@ start_trainer() {
       "v1")
         paddle train \
           --port=$PADDLE_INIT_PORT \
-          --nics=$NICS \
+          --nics=eth0 \
           --ports_num=$PADDLE_INIT_PORTS_NUM \
           --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
           --num_passes=$PADDLE_INIT_NUM_PASSES \
@@ -39,6 +40,7 @@ start_trainer() {
           --saving_period=1 \
           --log_period=20 \
           --local=0 \
+          --rdma_tcp=tcp \
           --config=$TOPOLOGY \
           --use_gpu=$PADDLE_INIT_USE_GPU \
           --trainer_id=$PADDLE_INIT_TRAINER_ID \
@@ -47,7 +49,7 @@ start_trainer() {
           --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
         ;;
       "v2")
-        python ${TOPOLOGY}
+        ${ENTRY}
         ;;
       *)
         ;;

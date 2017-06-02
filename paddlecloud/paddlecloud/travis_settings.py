@@ -11,8 +11,6 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "paddlecloud",
-        'USER': 'root',
-        'PASSWORD': 'root',
         'HOST': '127.0.0.1',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
@@ -251,17 +249,22 @@ K8S_HOST = "https://%s:%s" % (os.getenv("KUBERNETES_SERVICE_HOST"),
 PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
 PADDLE_BOOK_PORT=8888
 
-# ============== Datacenter Storage Config Samples ==============
+if os.getenv("KUBERNETES_SERVICE_HOST", None):
+    # init kubernete client with service account
+    config.load_incluster_config()
+else:
+    # init kubernetes client with ~/.kube/config file
+    config.load_kube_config()
+
 #if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
 #the following is an example:
-
 #DATACENTERS = {
 #   "datacenter1":{
 #       "fstype": "cephfs",
 #       "monitors_addr": "172.19.32.166:6789",
 #       "secret": "ceph-secret",
 #       "user": "admin",
-#       "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
+#       "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
 #       "cephfs_path": "/%s" # cephfs_path % username
 #       "admin_key": "/certs/admin.secret"
 #   }
@@ -272,35 +275,25 @@ PADDLE_BOOK_PORT=8888
 #   "dc1":{
 #       "fstype": "hostpath",
 #       "host_path": "/mnt/hdfs/",
-#       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
+#       "mount_path" "/pfs/dc1/home/%s/" # mount_path % username
 #    }
 #}
 DATACENTERS = {
     "datacenter1":{
         "fstype": "cephfs",
-        "monitors_addr": ["172.19.32.166:6789"],  # must be a list
+        "monitors_addr": "172.19.32.166:6789",
         "secret": "ceph-secret",
         "user": "admin",
-        "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
+        "mount_path": "/pfs/datacenter1/home/%s/", # mount_path % username
         "cephfs_path": "/%s", # cephfs_path % username
         "admin_key": "/certs/admin.secret"
     }
 }
 
-# where cephfs root is mounted when using cephfs storage service
-STORAGE_PATH="/pfs"
-
-# ===================== Docker image registry =====================
 JOB_DOCKER_IMAGE = {
-    # These images are built by `docker/build_docker.sh` under this repo.
-    "image": "typhoon1986/paddlecloud-job",
-    "image_gpu": "typhoon1986/paddlecloud-job:gpu",
-    # docker registry credentials
-    "registry_secret": "job-registry-secret", # put this to None if not using registry login
+    "image": "yancey1989/paddlecloud-job",
+    "registry_secret": "job-registry-secret",
     "docker_config":{"auths":
                      {"registry.baidu.com":
                       {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
 }
-
-# Path store all cuda, nvidia driver libs
-NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"

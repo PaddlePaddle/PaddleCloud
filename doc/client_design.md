@@ -23,17 +23,16 @@ Client configurations stores in a file: `~/.paddle/config` in the below `yaml` f
 ```yaml
 datacenters:
 - name: datacenter1
-  active: true
   username: user1
   password: secret
   usercert: /path/to/user.pem
   userkey:  /path/to/user-key.pem
   endpoint: http://cloud.paddlepaddle.org
 - name: datacenter2
-  active: false
   username: user1
   password: secret
   endpoint: http://cloud2.paddlepaddle.org
+current-datacenter: datacenter1
 ```
 
 ***NOTICE:*** The ***first*** "active" configuration part will be used.

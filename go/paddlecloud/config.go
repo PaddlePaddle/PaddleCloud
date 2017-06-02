@@ -14,7 +14,6 @@ import (
 )
 
 type submitConfigDataCenter struct {
-	Active   bool   `yaml:"active"`
 	Name     string `yaml:"name"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
@@ -25,8 +24,9 @@ type submitConfigDataCenter struct {
 
 // Configuration load from user config yaml files
 type submitConfig struct {
-	DC           []submitConfigDataCenter `yaml:"datacenters"`
-	ActiveConfig *submitConfigDataCenter
+	DC                []submitConfigDataCenter `yaml:"datacenters"`
+	ActiveConfig      *submitConfigDataCenter
+	CurrentDatacenter string `yaml:"current-datacenter"`
 }
 
 // UserHomeDir get user home dierctory on different platforms
@@ -44,13 +44,13 @@ func UserHomeDir() string {
 func token() (string, error) {
 	tokenbytes, err := ioutil.ReadFile(filepath.Join(UserHomeDir(), ".paddle", "token_cache"))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "previous token not found, fetching a new one...")
+		fmt.Fprintf(os.Stderr, "previous token not found, fetching a new one...\n")
 		// Authenticate to the cloud endpoint
 		authJSON := map[string]string{}
 		authJSON["username"] = config.ActiveConfig.Username
 		authJSON["password"] = config.ActiveConfig.Password
 		authStr, _ := json.Marshal(authJSON)
-		body, err := postCall(authStr, config.ActiveConfig.Endpoint+"/api-token-auth/", "")
+		body, err := PostCall(config.ActiveConfig.Endpoint+"/api-token-auth/", authStr)
 		if err != nil {
 			return "", err
 		}
@@ -79,9 +79,11 @@ func parseConfig(configFile string) *submitConfig {
 			glog.Fatalf("load config %s error: %v", configFile, err)
 		}
 		// put active config
+		config.ActiveConfig = nil
 		for _, item := range config.DC {
-			if item.Active {
+			if item.Name == config.CurrentDatacenter {
 				config.ActiveConfig = &item
+				break
 			}
 		}
 		return &config

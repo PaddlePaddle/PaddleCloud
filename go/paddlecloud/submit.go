@@ -77,6 +77,7 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		fmt.Fprintf(os.Stderr, "error submiting job: %v\n", errS)
 		return subcommands.ExitFailure
 	}
+	fmt.Printf("%s submited.\n", p.Jobname)
 	return subcommands.ExitSuccess
 }
 
@@ -93,10 +94,6 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 
 // Submit current job
 func (s *Submitter) Submit(jobPackage string) error {
-	token, err := token()
-	if err != nil {
-		return err
-	}
 	// 1. upload user job package to pfs
 	filepath.Walk(jobPackage, func(path string, info os.FileInfo, err error) error {
 		glog.V(10).Infof("Uploading %s...\n", path)
@@ -109,8 +106,7 @@ func (s *Submitter) Submit(jobPackage string) error {
 		return err
 	}
 	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, config.ActiveConfig.Endpoint+"/api/v1/jobs")
-	respBody, err := postCall(jsonString, config.ActiveConfig.Endpoint+"/api/v1/jobs/",
-		token)
+	respBody, err := PostCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
 	glog.V(10).Infof("got return body size: %d", len(respBody))
 	return err
 }

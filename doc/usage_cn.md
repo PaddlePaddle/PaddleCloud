@@ -13,18 +13,18 @@
 ```yaml
 datacenters:
 - name: datacenter1
-  active: true
   username: [your user name]
   password: [secret]
   endpoint: http://cloud.paddlepaddle.org
+current-datacenter: datacenter1
 ```
 
 配置文件用于指定使用的PaddlePaddleCloud服务器集群的接入地址，并需要配置用户的登录信息：
 - name: 自定义的datacenter名称，可以是任意字符串
-- active: 为true说明使用这个datacenter作为当前操作的datacenter，配置文件中只能有一个datacenter的配置为true
 - username: PaddlePaddleCloud的用户名，账号在未开放注册前需要联系管理员分配，通常用户名为邮箱地址
 - password: 账号对应的密码
 - endpoint: PaddlePaddleCloud集群API地址，可以从集群管理员处获得
+- current-datacenter: 标明使用哪个datacenter作为当前操作的datacenter
 
 配置文件创建完成后，执行`paddlecloud`会显示该客户端的帮助信息：
 
@@ -40,7 +40,7 @@ Subcommands:
 	submit           Submit job to PaddlePaddle Cloud.
 
 
-Use "paddlecloud.darwin flags" for a list of top-level flags
+Use "paddlecloud flags" for a list of top-level flags
 ```
 
 ## 准备训练数据
@@ -120,8 +120,16 @@ scp -r my_training_package/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mypack
 
 执行下面的命令提交准备好的任务:
 
+- 提交基于V1 API的训练任务
+
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 100 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+```
+
+- 提交基于V2 API的训练任务
+
+```bash
+paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -entry "python trainer_config.py" /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 参数说明：
@@ -134,6 +142,7 @@ paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parall
 - `-pservers`：parameter server的节点个数
 - `-psmemory`：parameter server占用的内存资源，格式为“数字+单位”，单位可以是：Ki，Mi，Gi
 - `-topology`：指定PaddlePaddle v1训练的模型配置python文件
+- `-entry`: 指定PaddlePaddle v2训练程序的启动命令
 - `-passes`：执行训练的pass个数
 - `package`：HDFS 训练任务package的路径
 
@@ -162,11 +171,11 @@ paddle-cluster-job-trainer-6sc4q	Running	2017-05-24T07:53:03Z
 执行`paddlecloud logs paddle-cluster-job`显示当前任务的所有worker的日志：
 
 ```
-label selector: paddle-job-pserver=paddle-cluster-job, desired: 40
+label selector: paddle-job-pserver=paddle-cluster-job, desired: 3
 running pod list:  [('Running', '172.17.29.47'), ('Running', '172.17.37.46'), …, ('Running', '172.17.28.244')]
 sleep for 10 seconds...
 running pod list:  [('Running', '172.17.29.47'), ('Running', '172.17.37.46'), …, ('Running', '172.17.28.244')]
-label selector: paddle-job=paddle-job-yanxu, desired: 200
+label selector: paddle-job=paddle-job-yanxu, desired: 10
 running pod list:  [('Running', '172.17.31.182’),…(‘Running', '172.17.12.234'), ('Running', '172.17.22.238')]
 Starting training job:  /pfs/***/home/***/***/ctr_package_cloud, num_gradient_servers: 200, trainer_id:  102, version:  v1
 I0524 12:00:31.511015    43 Util.cpp:166] commandline: /usr/bin/../opt/paddle/bin/paddle_trainer --port=7164 --nics= --ports_num=1 --ports_num_for_sparse=1 --num_passes=1 --trainer_count=1 --saving_period=1 --log_period=20 --local=0 --config=trainer_config.py --use_gpu=0 --trainer_id=102 --save_dir= --pservers=172.17.29.47,,172.17.28.244 --num_gradient_servers=200
