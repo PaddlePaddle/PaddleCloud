@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -25,7 +26,7 @@ func NewRestClient() *RestClient {
 }
 
 func makeRequest(uri string, method string, body io.Reader,
-	contentType string, query map[string]string,
+	contentType string, query string,
 	authHeader map[string]string) (*http.Request, error) {
 	req, err := http.NewRequest(method, uri, nil)
 	if err != nil {
@@ -42,17 +43,13 @@ func makeRequest(uri string, method string, body io.Reader,
 		req.Header.Set(k, v)
 	}
 
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
-	}
-	req.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = query
 	return req, nil
 }
 
 // makeRequestToken use client token to make a authorized request
 func makeRequestToken(uri string, method string, body io.Reader,
-	contentType string, query map[string]string) (*http.Request, error) {
+	contentType string, query string) (*http.Request, error) {
 	// get client token
 	token, err := token()
 	if err != nil {
@@ -78,8 +75,8 @@ func (p *RestClient) getResponse(req *http.Request) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-// GetCall make a GET call to targetURL with k-v params of query
-func (p *RestClient) GetCall(targetURL string, query map[string]string) ([]byte, error) {
+// GetCall make a GET call to targetURL with query
+func (p *RestClient) GetCall(targetURL string, query string) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return []byte{}, err
@@ -89,7 +86,7 @@ func (p *RestClient) GetCall(targetURL string, query map[string]string) ([]byte,
 
 // PostCall make a POST call to targetURL with a json body
 func (p *RestClient) PostCall(targetURL string, jsonString []byte) ([]byte, error) {
-	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", nil)
+	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", "")
 	if err != nil {
 		return []byte{}, err
 	}
@@ -98,7 +95,7 @@ func (p *RestClient) PostCall(targetURL string, jsonString []byte) ([]byte, erro
 
 // DeleteCall make a DELETE call to targetURL with a json body
 func (p *RestClient) DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
-	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", nil)
+	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", "")
 	if err != nil {
 		return []byte{}, err
 	}
@@ -133,7 +130,7 @@ func (p *RestClient) PostFile(targetURL string, filename string) ([]byte, error)
 	contentType := bodyWriter.FormDataContentType()
 	bodyWriter.Close()
 
-	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, nil)
+	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, "")
 	if err != nil {
 		return []byte{}, err
 	}
@@ -162,7 +159,7 @@ func (p *RestClient) PostChunk(targetURL string,
 	contentType := writer.FormDataContentType()
 	writer.Close()
 
-	req, err := makeRequestToken(targetURL, "POST", body, contentType, nil)
+	req, err := makeRequestToken(targetURL, "POST", body, contentType, "")
 	if err != nil {
 		return []byte{}, err
 	}
@@ -172,7 +169,7 @@ func (p *RestClient) PostChunk(targetURL string,
 
 // GetChunkData makes a GET call to HTTP server to download chunk data
 func (p *RestClient) GetChunk(targetURL string,
-	query map[string]string) (*http.Response, error) {
+	query string) (*http.Response, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return nil, err
@@ -184,7 +181,13 @@ func (p *RestClient) GetChunk(targetURL string,
 // GetCall makes a GET call to targetURL with k-v params of query.
 func GetCall(targetURL string, query map[string]string) ([]byte, error) {
 	client := NewRestClient()
-	return client.GetCall(targetURL, query)
+
+	q := url.Values{}
+	for k, v := range query {
+		q.Add(k, v)
+	}
+
+	return client.GetCall(targetURL, q.Encode())
 }
 
 // PostCall makes a POST call to targetURL with a json body.
