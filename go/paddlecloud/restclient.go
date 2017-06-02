@@ -14,7 +14,15 @@ import (
 // HTTPOK is ok status of http api call
 const HTTPOK = "200 OK"
 
-var httpTransport = &http.Transport{}
+type RestClient struct {
+	client *http.Client
+}
+
+// NewRestClient returns a new RestClient struct.
+func NewRestClient() *RestClient {
+	client := http.Client{Transport: &http.Transport{}}
+	return &RestClient{client: &client}
+}
 
 func makeRequest(uri string, method string, body io.Reader,
 	contentType string, query map[string]string,
@@ -57,9 +65,8 @@ func makeRequestToken(uri string, method string, body io.Reader,
 
 // NOTE: add other request makers if we need other auth methods
 
-func getResponse(req *http.Request) ([]byte, error) {
-	client := &http.Client{Transport: httpTransport}
-	resp, err := client.Do(req)
+func (p *RestClient) getResponse(req *http.Request) ([]byte, error) {
+	resp, err := p.client.Do(req)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -72,34 +79,34 @@ func getResponse(req *http.Request) ([]byte, error) {
 }
 
 // GetCall make a GET call to targetURL with k-v params of query
-func GetCall(targetURL string, query map[string]string) ([]byte, error) {
+func (p *RestClient) GetCall(targetURL string, query map[string]string) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return p.getResponse(req)
 }
 
 // PostCall make a POST call to targetURL with a json body
-func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
+func (p *RestClient) PostCall(targetURL string, jsonString []byte) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return p.getResponse(req)
 }
 
 // DeleteCall make a DELETE call to targetURL with a json body
-func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
+func (p *RestClient) DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return p.getResponse(req)
 }
 
 // PostFile make a POST call to HTTP server to upload a file
-func PostFile(targetURL string, filename string) ([]byte, error) {
+func (p *RestClient) PostFile(targetURL string, filename string) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
 
@@ -130,5 +137,64 @@ func PostFile(targetURL string, filename string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return p.getResponse(req)
+}
+
+// PostChunkData makes a POST call to HTTP server to upload chunkdata
+func (p *RestClient) PostChunk(targetURL string,
+	chunkName string, reader io.Reader, len int64, boundary string) ([]byte, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	if err := writer.SetBoundary(boundary); err != nil {
+		return nil, err
+	}
+
+	part, err := writer.CreateFormFile("chunk", chunkName)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.CopyN(part, reader, len)
+	if err != nil {
+		return nil, err
+	}
+
+	contentType := writer.FormDataContentType()
+	writer.Close()
+
+	req, err := makeRequestToken(targetURL, "POST", body, contentType, nil)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return p.getResponse(req)
+}
+
+// GetChunkData makes a GET call to HTTP server to download chunk data
+func (p *RestClient) GetChunk(targetURL string,
+	query map[string]string) (*http.Response, error) {
+	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.client.Do(req)
+}
+
+// GetCall makes a GET call to targetURL with k-v params of query.
+func GetCall(targetURL string, query map[string]string) ([]byte, error) {
+	client := NewRestClient()
+	return client.GetCall(targetURL, query)
+}
+
+// PostCall makes a POST call to targetURL with a json body.
+func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
+	client := NewRestClient()
+	return client.PostCall(targetURL, jsonString)
+}
+
+// DeleteCall makes a DELETE call to targetURL with a json body.
+func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
+	client := NewRestClient()
+	return client.DeleteCall(targetURL, jsonString)
 }
