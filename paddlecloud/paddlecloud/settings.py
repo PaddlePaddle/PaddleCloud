@@ -275,18 +275,29 @@ PADDLE_BOOK_PORT=8888
 #       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
 #    }
 #}
+FSTYPE_CEPHFS = "fstype"
+FSTYPE_HOSTPATH = "hostpath"
 DATACENTERS = {
     "datacenter1":{
-        "fstype": "cephfs",
+        "fstype": FSTYPE_CEPHFS,
         "monitors_addr": ["172.19.32.166:6789"],  # must be a list
         "secret": "ceph-secret",
         "user": "admin",
         "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
         "cephfs_path": "/%s", # cephfs_path % username
-        "admin_key": "/certs/admin.secret"
+        "admin_key": "/certs/admin.secret",
+    },
+    "public": {
+        "fstype": FSTYPE_CEPHFS,
+        "monitors_addr": ["172.19.32.166:6789"],  # must be a list
+        "secret": "ceph-secret",
+        "user": "admin",
+        "mount_path": "/pfs/%s/public/", # mount_path % ( dc, username )
+        "cephfs_path": "/public", # cephfs_path % username
+        "admin_key": "/certs/admin.secret",
+        "read_only": True
     }
 }
-
 # where cephfs root is mounted when using cephfs storage service
 STORAGE_PATH="/pfs"
 
