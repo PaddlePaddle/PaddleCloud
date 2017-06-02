@@ -19,7 +19,7 @@ var httpTransport = &http.Transport{}
 func makeRequest(uri string, method string, body io.Reader,
 	contentType string, query map[string]string,
 	authHeader map[string]string) (*http.Request, error) {
-	req, err := http.NewRequest(method, uri, nil)
+	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		return nil, err
 	}
