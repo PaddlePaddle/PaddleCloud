@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"os"
 	"path/filepath"
 
@@ -140,6 +142,39 @@ func Download(s *pfsSubmitter, src, dst string) error {
 		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
 		if err := DownloadFile(s, realSrc, attr.Size, realDst); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func getChunkData(cmd *pfsmod.Chunk, dst string) error {
+	url := fmt.Sprintf("%s/api/v1/storage/chunks?%s",
+		s.config.ActiveConfig.Endpoint,
+		cmd.ToURLParam())
+
+	if resp.Status != HTTPOK {
+		return errors.New("http server returned non-200 status: " + resp.Status)
+	}
+
+	partReader := multipart.NewReader(resp.Body, pfsmod.DefaultMultiPartBoundary)
+	for {
+		part, error := partReader.NextPart()
+		if error == io.EOF {
+			break
+		}
+
+		if part.FormName() == "chunk" {
+			recvCmd, err := pfsmod.ParseChunk(part.FileName())
+			if err != nil {
+				return errors.New(err.Error())
+			}
+
+			recvCmd.Path = dst
+
+			if err := recvCmd.SaveChunkData(part); err != nil {
+				return err
+			}
 		}
 	}
 

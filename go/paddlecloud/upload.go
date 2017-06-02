@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
@@ -181,4 +182,45 @@ func Upload(s *pfsSubmitter, src, dst string) error {
 	}
 
 	return nil
+}
+
+func getDstParam(src *pfsmod.Chunk, dst string) string {
+	cmd := pfsmod.Chunk{
+		Path:   dst,
+		Offset: src.Offset,
+		Size:   src.Size,
+	}
+
+	return cmd.ToURLParam()
+}
+
+func postChunkData(cmd *pfsmod.Chunk, dst string) ([]byte, error) {
+	url := fmt.Sprintf("%s/api/v1/storage/chunks",
+		s.config.ActiveConfig.Endpoint)
+	log.V(1).Info("target url: " + url)
+
+	fileName := getDstParam(cmd, dst)
+
+	req, err := newPostChunkDataRequest(cmd, dst, url)
+	if err != nil {
+		return nil, nil
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer pfsmod.Close(resp.Body)
+
+	if resp.Status != HTTPOK {
+		return nil, errors.New("http server returned non-200 status: " + resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+
 }
