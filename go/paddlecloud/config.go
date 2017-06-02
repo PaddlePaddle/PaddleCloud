@@ -50,7 +50,7 @@ func token() (string, error) {
 		authJSON["username"] = config.ActiveConfig.Username
 		authJSON["password"] = config.ActiveConfig.Password
 		authStr, _ := json.Marshal(authJSON)
-		body, err := postCall(authStr, config.ActiveConfig.Endpoint+"/api-token-auth/", "")
+		body, err := PostCall(config.ActiveConfig.Endpoint+"/api-token-auth/", authStr)
 		if err != nil {
 			return "", err
 		}
