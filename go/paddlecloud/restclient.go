@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-// HTTPOK is ok status of http api call
+// HTTPOK is ok status of http api call.
 const HTTPOK = "200 OK"
 
 type RestClient struct {
@@ -32,7 +32,7 @@ func makeRequest(uri string, method string, body io.Reader,
 	if err != nil {
 		return nil, err
 	}
-	// default contentType is application/json
+	// default contentType is application/json.
 	if len(contentType) == 0 {
 		req.Header.Set("Content-Type", "application/json")
 	} else {
@@ -47,7 +47,7 @@ func makeRequest(uri string, method string, body io.Reader,
 	return req, nil
 }
 
-// makeRequestToken use client token to make a authorized request
+// makeRequestToken use client token to make a authorized request.
 func makeRequestToken(uri string, method string, body io.Reader,
 	contentType string, query string) (*http.Request, error) {
 	// get client token
@@ -60,7 +60,7 @@ func makeRequestToken(uri string, method string, body io.Reader,
 	return makeRequest(uri, method, body, contentType, query, authHeader)
 }
 
-// NOTE: add other request makers if we need other auth methods
+// NOTE: add other request makers if we need other auth methods.
 
 func (p *RestClient) getResponse(req *http.Request) ([]byte, error) {
 	resp, err := p.client.Do(req)
@@ -71,11 +71,11 @@ func (p *RestClient) getResponse(req *http.Request) ([]byte, error) {
 	if resp.Status != HTTPOK {
 		return []byte{}, errors.New("server error: " + resp.Status)
 	}
-	// FIXME: add more resp.Status checks
+	// FIXME: add more resp.Status checks.
 	return ioutil.ReadAll(resp.Body)
 }
 
-// GetCall make a GET call to targetURL with query
+// GetCall make a GET call to targetURL with query.
 func (p *RestClient) GetCall(targetURL string, query string) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
@@ -84,7 +84,7 @@ func (p *RestClient) GetCall(targetURL string, query string) ([]byte, error) {
 	return p.getResponse(req)
 }
 
-// PostCall make a POST call to targetURL with a json body
+// PostCall make a POST call to targetURL with a json body.
 func (p *RestClient) PostCall(targetURL string, jsonString []byte) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", "")
 	if err != nil {
@@ -93,7 +93,7 @@ func (p *RestClient) PostCall(targetURL string, jsonString []byte) ([]byte, erro
 	return p.getResponse(req)
 }
 
-// DeleteCall make a DELETE call to targetURL with a json body
+// DeleteCall make a DELETE call to targetURL with a json body.
 func (p *RestClient) DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", "")
 	if err != nil {
@@ -102,7 +102,7 @@ func (p *RestClient) DeleteCall(targetURL string, jsonString []byte) ([]byte, er
 	return p.getResponse(req)
 }
 
-// PostFile make a POST call to HTTP server to upload a file
+// PostFile make a POST call to HTTP server to upload a file.
 func (p *RestClient) PostFile(targetURL string, filename string) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
@@ -137,7 +137,7 @@ func (p *RestClient) PostFile(targetURL string, filename string) ([]byte, error)
 	return p.getResponse(req)
 }
 
-// PostChunkData makes a POST call to HTTP server to upload chunkdata
+// PostChunkData makes a POST call to HTTP server to upload chunkdata.
 func (p *RestClient) PostChunk(targetURL string,
 	chunkName string, reader io.Reader, len int64, boundary string) ([]byte, error) {
 	body := &bytes.Buffer{}
@@ -167,7 +167,7 @@ func (p *RestClient) PostChunk(targetURL string,
 	return p.getResponse(req)
 }
 
-// GetChunkData makes a GET call to HTTP server to download chunk data
+// GetChunkData makes a GET call to HTTP server to download chunk data.
 func (p *RestClient) GetChunk(targetURL string,
 	query string) (*http.Response, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
@@ -178,26 +178,24 @@ func (p *RestClient) GetChunk(targetURL string,
 	return p.client.Do(req)
 }
 
+var DefaultClient = NewRestClient()
+
 // GetCall makes a GET call to targetURL with k-v params of query.
 func GetCall(targetURL string, query map[string]string) ([]byte, error) {
-	client := NewRestClient()
-
 	q := url.Values{}
 	for k, v := range query {
 		q.Add(k, v)
 	}
 
-	return client.GetCall(targetURL, q.Encode())
+	return DefaultClient.GetCall(targetURL, q.Encode())
 }
 
 // PostCall makes a POST call to targetURL with a json body.
 func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
-	client := NewRestClient()
-	return client.PostCall(targetURL, jsonString)
+	return DefaultClient.PostCall(targetURL, jsonString)
 }
 
 // DeleteCall makes a DELETE call to targetURL with a json body.
 func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
-	client := NewRestClient()
-	return client.DeleteCall(targetURL, jsonString)
+	return DefaultClient.DeleteCall(targetURL, jsonString)
 }
