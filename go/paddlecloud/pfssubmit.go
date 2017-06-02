@@ -2,6 +2,7 @@ package paddlecloud
 
 import (
 	"bytes"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -16,18 +17,29 @@ import (
 type pfsSubmitter struct {
 	config *submitConfig
 	client *http.Client
-	port   int32
+}
+
+func loadCA(caFile string) *x509.CertPool {
+	pool := x509.NewCertPool()
+
+	if ca, e := ioutil.ReadFile(caFile); e != nil {
+		log.Fatal("ReadFile: ", e)
+	} else {
+		pool.AppendCertsFromPEM(ca)
+	}
+	return pool
 }
 
 // newPfsCmdSubmitter returns a new pfsSubmitter.
 func newPfsCmdSubmitter(configFile string) *pfsSubmitter {
 	// TODO
 	/*https
-	pair, e := tls.LoadX509KeyPair(config.ActiveConfig.Usercert,
+	pair, err := tls.LoadX509KeyPair(config.ActiveConfig.Usercert,
 		config.ActiveConfig.Userkey)
-	if e != nil {
-		log.Fatal("LoadX509KeyPair:", err)
+	if err != nil {
+		log.Fatalf("LoadX509KeyPair:%v", err)
 	}
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -35,17 +47,16 @@ func newPfsCmdSubmitter(configFile string) *pfsSubmitter {
 				Certificates: []tls.Certificate{pair},
 			},
 		}}
-	*/
 
 	log.V(1).Infof("%#v\n", config)
+	log.V(3).Infof("%#v\n", client)
+	*/
 
-	//http
 	client := &http.Client{}
 
 	return &pfsSubmitter{
 		config: config,
 		client: client,
-		port:   8080,
 	}
 }
 
@@ -56,7 +67,7 @@ func (s *pfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s:%d/api/v1/files", s.config.ActiveConfig.Endpoint, s.port)
+	url := fmt.Sprintf("%s/api/v1/files", s.config.ActiveConfig.Endpoint)
 	log.V(1).Info("target url: " + url)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonString))
@@ -86,9 +97,8 @@ func (s *pfsSubmitter) PostFiles(cmd pfsmod.Command) ([]byte, error) {
 }
 
 func (s *pfsSubmitter) get(cmd pfsmod.Command, path string) ([]byte, error) {
-	url := fmt.Sprintf("%s:%d/%s?%s",
+	url := fmt.Sprintf("%s/%s?%s",
 		s.config.ActiveConfig.Endpoint,
-		s.port,
 		path,
 		cmd.ToURLParam())
 	log.V(1).Info("target url: " + url)
@@ -128,9 +138,8 @@ func (s *pfsSubmitter) GetChunkMeta(cmd pfsmod.Command) ([]byte, error) {
 
 // GetChunkData implements Chunks's GET method.
 func (s *pfsSubmitter) GetChunkData(cmd *pfsmod.Chunk, dst string) error {
-	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks?%s",
+	url := fmt.Sprintf("%s/api/v1/storage/chunks?%s",
 		s.config.ActiveConfig.Endpoint,
-		s.port,
 		cmd.ToURLParam())
 
 	log.V(1).Info("target url: " + url)
@@ -217,8 +226,8 @@ func newPostChunkDataRequest(cmd *pfsmod.Chunk, dst string, url string) (*http.R
 
 // PostChunkData implements chunks's POST method.
 func (s *pfsSubmitter) PostChunkData(cmd *pfsmod.Chunk, dst string) ([]byte, error) {
-	url := fmt.Sprintf("%s:%d/api/v1/storage/chunks",
-		s.config.ActiveConfig.Endpoint, s.port)
+	url := fmt.Sprintf("%s/api/v1/storage/chunks",
+		s.config.ActiveConfig.Endpoint)
 	log.V(1).Info("target url: " + url)
 
 	req, err := newPostChunkDataRequest(cmd, dst, url)

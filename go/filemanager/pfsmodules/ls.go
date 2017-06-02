@@ -19,7 +19,7 @@ const (
 // LsResult represents a LsCmd's result.
 type LsResult struct {
 	Path    string `json:"Path"`
-	ModTime string `json:"ModTime"`
+	ModTime int64  `json:"ModTime"`
 	Size    int64  `json:"Size"`
 	IsDir   bool   `json:"IsDir"`
 }
@@ -100,8 +100,7 @@ func NewLsCmdFromURLParam(path string) (*LsCmd, error) {
 		return nil, errors.New(StatusInvalidArgs + ":r")
 	}
 
-	cmd.Args = make([]string, 0, len(m["arg"])+1)
-	cmd.Args = append(cmd.Args, m["arg"]...)
+	cmd.Args = m["arg"]
 
 	return &cmd, nil
 }
@@ -127,7 +126,7 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 		m := LsResult{}
 		m.Path = subpath
 		m.Size = info.Size()
-		m.ModTime = info.ModTime().Format("2006-01-02 15:04:05")
+		m.ModTime = info.ModTime().UnixNano()
 		m.IsDir = info.IsDir()
 
 		if subpath == path {

@@ -79,7 +79,7 @@ func (p *StatCmd) Run() (interface{}, error) {
 
 	return &LsResult{
 		Path:    p.Path,
-		ModTime: fi.ModTime().Format("2006-01-02 15:04:05"),
+		ModTime: fi.ModTime().UnixNano(),
 		IsDir:   fi.IsDir(),
 		Size:    fi.Size(),
 	}, nil

@@ -70,7 +70,7 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 // CloudCheck checks the conditions when running on cloud.
 func (p *ChunkMetaCmd) CloudCheck() error {
 	if !IsCloudPath(p.FilePath) {
-		return errors.New(StatusShouldBePfsPath + ": p.FilePath")
+		return errors.New(StatusShouldBePfsPath + ":" + p.FilePath)
 	}
 	if !CheckUser(p.FilePath) {
 		return errors.New(StatusUnAuthorized + ":" + p.FilePath)
@@ -175,12 +175,8 @@ func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 		return nil, errors.New(StatusBadChunkSize)
 	}
 
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
+	var metas []ChunkMeta
 
-	metas := make([]ChunkMeta, 0, fi.Size()/len+1)
 	data := make([]byte, len)
 	offset := int64(0)
 

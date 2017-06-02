@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"time"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	log "github.com/golang/glog"
@@ -54,10 +55,12 @@ func formatPrint(result []pfsmod.LsResult) {
 	formatStr := getFormatString(result)
 
 	for _, t := range result {
+		timeStr := time.Unix(0, t.ModTime).Format("2006-01-02 15:04:05")
+
 		if t.IsDir {
-			fmt.Printf(formatStr, t.ModTime, "d", t.Size, t.Path)
+			fmt.Printf(formatStr, timeStr, "d", t.Size, t.Path)
 		} else {
-			fmt.Printf(formatStr, t.ModTime, "f", t.Size, t.Path)
+			fmt.Printf(formatStr, timeStr, "f", t.Size, t.Path)
 		}
 	}
 
