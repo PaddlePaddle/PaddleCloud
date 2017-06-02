@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/golang/glog"
@@ -95,10 +96,10 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 // Submit current job
 func (s *Submitter) Submit(jobPackage string) error {
 	// 1. upload user job package to pfs
-	filepath.Walk(jobPackage, func(path string, info os.FileInfo, err error) error {
-		glog.V(10).Infof("Uploading %s...\n", path)
-		return nil
-		//return postFile(path, config.activeConfig.endpoint+"/api/v1/files")
+	filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
+		glog.V(10).Infof("Uploading %s...\n", filePath)
+		dest := path.Join("pfs", config.ActiveConfig.Name, "home", config.ActiveConfig.Username, filePath)
+		return putFile(filePath, dest)
 	})
 	// 2. call paddlecloud server to create kubernetes job
 	jsonString, err := json.Marshal(s.args)
