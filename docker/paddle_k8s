@@ -2,6 +2,7 @@
 set -e
 start_pserver() {
     paddle pserver \
+      --use_gpu=0 \
       --port=$PADDLE_INIT_PORT \
       --ports_num=$PADDLE_INIT_PORTS_NUM \
       --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \

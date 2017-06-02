@@ -8,11 +8,13 @@ from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
 import json
 import utils
 import notebook.utils
 import logging
 import volume
+import os
 
 class JobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -261,8 +263,9 @@ class QuotaView(APIView):
 
 class SimpleFileView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (FormParser, MultiPartParser,)
 
-    def __validate_path(self, file_path):
+    def __validate_path(self, request, file_path):
         """
         returns error_msg. error_msg will be empty if there's no error
         """
@@ -274,8 +277,7 @@ class SimpleFileView(APIView):
         assert(path_parts[4] == request.user.username)
 
         server_file = os.path.join(settings.STORAGE_PATH, request.user.username, *path_parts[5:])
-        if os.path.exists(os.sep+write_file):
-            return "file already exist"
+
         return server_file
 
     def get(self, request, format=None):
@@ -284,10 +286,14 @@ class SimpleFileView(APIView):
         """
         file_path = request.query_params.get("path")
         try:
-            write_file = self.__validate_path(file_path)
+            write_file = self.__validate_path(request, file_path)
         except Exception, e:
             return utils.error_message_response("file path not valid: %s", e)
-        response = HttpResponse(FileWrapper(open(write_file)), content_type='text/plain')
+
+        if not os.path.exists(os.sep+write_file):
+            return Response({"msg": "file not exist"})
+
+        response = HttpResponse(open(write_file), content_type='application/force-download')
         response['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(write_file)
 
         return response
@@ -296,15 +302,22 @@ class SimpleFileView(APIView):
         """
         Simple up file
         """
-        file_obj = request.FILES['file']
+        file_obj = request.data['file']
         file_path = request.query_params.get("path")
         if not file_path:
             return utils.error_message_response("must specify path")
         try:
-            write_file = self.__validate_path(file_path)
+            write_file = self.__validate_path(request, file_path)
         except Exception, e:
-            return utils.error_message_response("file path not valid: %s", e)
+            return utils.error_message_response("file path not valid: %s"%e)
+
+        if os.path.exists(os.sep+write_file):
+            return Response({"msg": "file already exist"})
+
         with open(os.sep+write_file, "w") as fn:
-            fn.write(file_obj.read())
+            for chunk in file_obj.read(4096):
+                if not chunk:
+                    break
+                fn.write(chunk)
 
         return Response({"msg": "OK"})

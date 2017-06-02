@@ -14,26 +14,24 @@ import (
 // HTTPOK is ok status of http api call
 const HTTPOK = "200 OK"
 
-// makeRESTRequest returns a http request object to do paddlecloud rest requests
-func makeRESTRequest(uri string,
-	method string,
-	query map[string]string,
-	body io.Reader,
-	contentType string,
-	token string) (*http.Request, error) {
+var httpTransport = &http.Transport{}
 
+func makeRequest(uri string, method string, body io.Reader,
+	contentType string, query map[string]string,
+	authHeader map[string]string) (*http.Request, error) {
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		return nil, err
 	}
-	// set default content type
+	// default contentType is application/json
 	if len(contentType) == 0 {
-		contentType = "application/json"
+		req.Header.Set("Content-Type", "application/json")
+	} else {
+		req.Header.Set("Content-Type", contentType)
 	}
-	req.Header.Set("Content-Type", contentType)
-	// add auth token to request headers
-	if len(token) > 0 {
-		req.Header.Set("Authorization", "Token "+token)
+
+	for k, v := range authHeader {
+		req.Header.Set(k, v)
 	}
 	// add GET query params
 	q := req.URL.Query()
@@ -44,129 +42,94 @@ func makeRESTRequest(uri string,
 	return req, nil
 }
 
-func getCall(targetURL string, query map[string]string, token string) ([]byte, error) {
-	req, err := makeRESTRequest(targetURL, "GET", query, nil, "", token)
+// makeRequestToken use client token to make a authorized request
+func makeRequestToken(uri string, method string, body io.Reader,
+	contentType string, query map[string]string) (*http.Request, error) {
+	// get client token
+	token, err := token()
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
-	client := &http.Client{}
+	authHeader := make(map[string]string)
+	authHeader["Authorization"] = "Token " + token
+	return makeRequest(uri, method, body, contentType, query, authHeader)
+}
+
+// NOTE: add other request makers if we need other auth methods
+
+func getResponse(req *http.Request) ([]byte, error) {
+	client := &http.Client{Transport: httpTransport}
 	resp, err := client.Do(req)
 	if err != nil {
 		return []byte{}, err
 	}
 	defer resp.Body.Close()
 	if resp.Status != HTTPOK {
-		return []byte{}, errors.New("http server returned non-200 status: " + resp.Status)
+		return []byte{}, errors.New("server error: " + resp.Status)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	return body, err
+	// FIXME: add more resp.Status checks
+	return ioutil.ReadAll(resp.Body)
 }
 
-func postCall(jsonString []byte, targetURL string, token string) ([]byte, error) {
-	req, err := http.NewRequest("POST", targetURL, bytes.NewBuffer(jsonString))
+// GetCall make a GET call to targetURL with k-v params of query
+func GetCall(targetURL string, query map[string]string) ([]byte, error) {
+	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return []byte{}, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	if len(token) > 0 {
-		req.Header.Set("Authorization", "Token "+token)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return []byte{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.Status != HTTPOK {
-		return []byte{}, errors.New("http server returned non-200 status: " + resp.Status)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	return body, err
+	return getResponse(req)
 }
 
-func deleteCall(jsonString []byte, targetURL string, token string) ([]byte, error) {
-	req, err := http.NewRequest("DELETE", targetURL, bytes.NewBuffer(jsonString))
+// PostCall make a POST call to targetURL with a json body
+func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
+	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
 		return []byte{}, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	if len(token) > 0 {
-		req.Header.Set("Authorization", "Token "+token)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return []byte{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.Status != HTTPOK {
-		return []byte{}, errors.New("http server returned non-200 status: " + resp.Status)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	return body, err
+	return getResponse(req)
 }
 
-func postFile(filename string, targetURL string, query map[string]string, token string) error {
+// DeleteCall make a DELETE call to targetURL with a json body
+func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
+	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", nil)
+	if err != nil {
+		return []byte{}, err
+	}
+	return getResponse(req)
+}
+
+// PostFile make a POST call to HTTP server to upload a file
+func PostFile(targetURL string, filename string, query map[string]string) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
 
 	// this step is very important
-	fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
+	fileWriter, err := bodyWriter.CreateFormFile("file", filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to buffer: %v\n", err)
-		return err
+		return []byte{}, err
 	}
 
 	// open file handle
 	fh, err := os.Open(filename)
+	defer fh.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error opening file: %v\n", err)
-		return err
+		return []byte{}, err
 	}
 
 	//iocopy
 	_, err = io.Copy(fileWriter, fh)
 	if err != nil {
-		return err
+		return []byte{}, err
 	}
 
 	contentType := bodyWriter.FormDataContentType()
 	bodyWriter.Close()
 
-	req, err := http.NewRequest("POST", targetURL, bodyBuf)
+	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, query)
 	if err != nil {
-		return err
+		return []byte{}, err
 	}
-	req.Header.Set("Content-Type", contentType)
-	if len(token) > 0 {
-		req.Header.Set("Authorization", "Token "+token)
-	}
-
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
-	}
-	req.URL.RawQuery = q.Encode()
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.Status != HTTPOK {
-		return errors.New("http server returned non-200 status: " + resp.Status)
-	}
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(resp.Status)
-	fmt.Println(string(respBody))
-	return nil
+	return getResponse(req)
 }
-
-func getFile()
