@@ -28,7 +28,7 @@ type RmCmd struct {
 }
 
 // LocalCheck checks the conditions when running local.
-func (p *RmCmd) LocalCheck() error {
+func (p *RmCmd) ValidateLocalArgs() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusInvalidArgs)
 	}
@@ -36,22 +36,8 @@ func (p *RmCmd) LocalCheck() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *RmCmd) CloudCheck() error {
-	if len(p.Args) == 0 {
-		return errors.New(StatusInvalidArgs)
-	}
-
-	for _, path := range p.Args {
-		if !IsCloudPath(path) {
-			return errors.New(StatusShouldBePfsPath + ":" + path)
-		}
-
-		if !CheckUser(path) {
-			return errors.New(StatusShouldBePfsPath + ":" + path)
-		}
-	}
-
-	return nil
+func (p *RmCmd) ValidateCloudArgs() error {
+	return ValidatePfsPath(p.Args)
 }
 
 // ToURLParam needs not to be implemented.

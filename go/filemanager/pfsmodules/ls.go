@@ -32,7 +32,7 @@ type LsCmd struct {
 }
 
 // ToURLParam encoding LsCmd to URL Encoding string.
-func (p *LsCmd) ToURLParam() string {
+func (p *LsCmd) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("r", strconv.FormatBool(p.R))
@@ -41,8 +41,7 @@ func (p *LsCmd) ToURLParam() string {
 		parameters.Add("arg", arg)
 	}
 
-	return parameters.Encode()
-
+	return parameters
 }
 
 // ToJSON does't need to be implemented.
@@ -149,26 +148,12 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *LsCmd) CloudCheck() error {
-	if len(p.Args) == 0 {
-		return errors.New(StatusNotEnoughArgs)
-	}
-
-	for _, arg := range p.Args {
-		if !IsCloudPath(arg) {
-			return errors.New(StatusShouldBePfsPath + ":" + arg)
-		}
-
-		if !CheckUser(arg) {
-			return errors.New(StatusShouldBePfsPath + ":" + arg)
-		}
-	}
-
-	return nil
+func (p *LsCmd) ValidateCloudArgs() error {
+	return ValidatePfsPath(p.Args)
 }
 
 // LocalCheck checks the conditions when running local.
-func (p *LsCmd) LocalCheck() error {
+func (p *LsCmd) ValidateLocalArgs() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusNotEnoughArgs)
 	}

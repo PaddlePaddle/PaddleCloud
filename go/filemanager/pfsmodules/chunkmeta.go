@@ -37,7 +37,7 @@ type ChunkMetaCmd struct {
 }
 
 // ToURLParam encodes ChunkMetaCmd to URL encoding string.
-func (p *ChunkMetaCmd) ToURLParam() string {
+func (p *ChunkMetaCmd) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("path", p.FilePath)
@@ -45,7 +45,7 @@ func (p *ChunkMetaCmd) ToURLParam() string {
 	str := fmt.Sprint(p.ChunkSize)
 	parameters.Add("chunksize", str)
 
-	return parameters.Encode()
+	return parameters
 }
 
 // ToJSON encodes ChunkMetaCmd to JSON string.
@@ -68,18 +68,16 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *ChunkMetaCmd) CloudCheck() error {
-	if !IsCloudPath(p.FilePath) {
-		return errors.New(StatusShouldBePfsPath + ":" + p.FilePath)
+func (p *ChunkMetaCmd) ValidateCloudArgs() error {
+	if err := ValidatePfsPath([]string{p.FilePath}); err != nil {
+		return err
 	}
-	if !CheckUser(p.FilePath) {
-		return errors.New(StatusUnAuthorized + ":" + p.FilePath)
-	}
+
 	return p.checkChunkSize()
 }
 
 // LocalCheck checks the conditions when running locally.
-func (p *ChunkMetaCmd) LocalCheck() error {
+func (p *ChunkMetaCmd) ValidateLocalArgs() error {
 	return p.checkChunkSize()
 }
 

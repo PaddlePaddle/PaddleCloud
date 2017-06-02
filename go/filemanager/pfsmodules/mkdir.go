@@ -25,7 +25,7 @@ type MkdirCmd struct {
 }
 
 // LocalCheck checks the conditions when running on local.
-func (p *MkdirCmd) LocalCheck() error {
+func (p *MkdirCmd) ValidateLocalArgs() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusNotEnoughArgs)
 	}
@@ -33,23 +33,8 @@ func (p *MkdirCmd) LocalCheck() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *MkdirCmd) CloudCheck() error {
-	if len(p.Args) == 0 {
-		return errors.New(StatusNotEnoughArgs)
-	}
-
-	for _, arg := range p.Args {
-		if !IsCloudPath(arg) {
-			return errors.New(StatusShouldBePfsPath + ":" + arg)
-		}
-
-		if !CheckUser(arg) {
-			return errors.New(StatusShouldBePfsPath + ":" + arg)
-		}
-	}
-
-	return nil
-
+func (p *MkdirCmd) ValidateCloudArgs() error {
+	return ValidatePfsPath(p.Args)
 }
 
 // ToURLParam need not to be implemented.

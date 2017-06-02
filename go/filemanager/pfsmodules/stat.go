@@ -53,21 +53,13 @@ func NewStatCmdFromURLParam(path string) (*StatCmd, error) {
 }
 
 // LocalCheck checks the condition when running local.
-func (p *StatCmd) LocalCheck() error {
-	return nil
+func (p *StatCmd) ValidateLocalArgs() error {
+	panic("not implement")
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *StatCmd) CloudCheck() error {
-	if !IsCloudPath(p.Path) {
-		return errors.New(StatusShouldBePfsPath + ":" + p.Path)
-	}
-
-	if !CheckUser(p.Path) {
-		return errors.New(StatusUnAuthorized + ":" + p.Path)
-	}
-
-	return nil
+func (p *StatCmd) ValidateCloudArgs() error {
+	return ValidatePfsPath([]string{p.Path})
 }
 
 // Run runs the StatCmd.

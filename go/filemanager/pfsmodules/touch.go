@@ -38,18 +38,14 @@ func (p *TouchCmd) checkFileSize() error {
 }
 
 // LocalCheck check the conditions when running local.
-func (p *TouchCmd) LocalCheck() error {
+func (p *TouchCmd) ValidateLocalArgs() error {
 	return p.checkFileSize()
 }
 
-// CloudCheck check the conditions when running on cloud.
-func (p *TouchCmd) CloudCheck() error {
-	if !IsCloudPath(p.Path) {
-		return errors.New(StatusShouldBePfsPath + ":" + p.Path)
-	}
-
-	if !CheckUser(p.Path) {
-		return errors.New(StatusShouldBePfsPath + ":" + p.Path)
+// CloudCheck checks the conditions when running on cloud.
+func (p *TouchCmd) ValidateCloudArgs() error {
+	if err := ValidatePfsPath([]string{p.Path}); err != nil {
+		return err
 	}
 
 	return p.checkFileSize()
@@ -95,9 +91,6 @@ func NewTouchCmdFromURLParam(path string) (*TouchCmd, int32) {
 	}
 
 	cmd.Path = m["path"][0]
-	if !IsCloudPath(cmd.Path) {
-		return nil, http.StatusBadRequest
-	}
 
 	return &cmd, http.StatusOK
 }
