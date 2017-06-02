@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -60,8 +61,8 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 }
 
 func workers(jobname string) error {
-	queryMap := make(map[string]string)
-	queryMap["jobname"] = jobname
+	var queryMap url.Values
+	queryMap.Add("jobname", jobname)
 	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting workers: %v\n", err)
