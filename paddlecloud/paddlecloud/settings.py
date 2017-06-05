@@ -275,7 +275,7 @@ PADDLE_BOOK_PORT=8888
 #       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
 #    }
 #}
-FSTYPE_CEPHFS = "fstype"
+FSTYPE_CEPHFS = "cephfs"
 FSTYPE_HOSTPATH = "hostpath"
 DATACENTERS = {
     "datacenter1":{

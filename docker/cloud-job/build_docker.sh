@@ -21,7 +21,7 @@ echo "pcloudjob_image": $pcloudjob_image
 #Build Docker Image
 cat > Dockerfile <<EOF
 FROM ${base_image}
-RUN pip install -U kubernetes && apt-get install iputils-ping
+RUN pip install -U kubernetes && apt-get install -y iputils-ping
 ADD ./paddle_k8s /usr/bin
 ADD ./k8s_tools.py /root/
 
