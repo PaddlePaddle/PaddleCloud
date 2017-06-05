@@ -39,12 +39,8 @@ func (p *KillCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		f.Usage()
 		return subcommands.ExitFailure
 	}
-	token, err := token()
-	if err != nil {
-		return subcommands.ExitFailure
-	}
 
-	body, err := deleteCall([]byte("{\"jobname\": \""+f.Arg(0)+"\"}"), config.ActiveConfig.Endpoint+"/api/v1/jobs/", token)
+	body, err := DeleteCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", []byte("{\"jobname\": \""+f.Arg(0)+"\"}"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error kill job: %v\n", err)
 		return subcommands.ExitFailure

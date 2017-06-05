@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -60,13 +61,9 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 }
 
 func workers(jobname string) error {
-	token, err := token()
-	if err != nil {
-		return err
-	}
-	queryMap := make(map[string]string)
-	queryMap["jobname"] = jobname
-	respBody, err := getCall(config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap, token)
+	var queryMap url.Values
+	queryMap.Add("jobname", jobname)
+	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting workers: %v\n", err)
 		return err
@@ -95,11 +92,7 @@ func workers(jobname string) error {
 }
 
 func jobs() error {
-	token, err := token()
-	if err != nil {
-		return err
-	}
-	respBody, err := getCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil, token)
+	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting jobs: %v\n", err)
 		return err
@@ -133,11 +126,7 @@ func jobs() error {
 }
 
 func quota() error {
-	token, err := token()
-	if err != nil {
-		return err
-	}
-	respBody, err := getCall(config.ActiveConfig.Endpoint+"/api/v1/quota/", nil, token)
+	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/quota/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting quota: %v\n", err)
 		return err
