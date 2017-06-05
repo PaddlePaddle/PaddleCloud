@@ -21,7 +21,7 @@ type response struct {
 func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command) {
 	resp := response{}
 
-	if err := cmd.CloudCheck(); err != nil {
+	if err := cmd.ValidateCloudArgs(); err != nil {
 		resp.Err = err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)
 		return
@@ -259,7 +259,7 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	writer := multipart.NewWriter(w)
 	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
 
-	fileName := cmd.ToURLParam()
+	fileName := cmd.ToURLParam().Encode()
 	part, err := writer.CreateFormFile("chunk", fileName)
 	if err != nil {
 		log.Error(err)

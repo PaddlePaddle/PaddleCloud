@@ -52,7 +52,7 @@ func (p *TouchCmd) ValidateCloudArgs() error {
 }
 
 // ToURLParam encodes a TouchCmd to a URL encoding string.
-func (p *TouchCmd) ToURLParam() string {
+func (p *TouchCmd) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("path", p.Path)
@@ -60,7 +60,7 @@ func (p *TouchCmd) ToURLParam() string {
 	str := fmt.Sprint(p.FileSize)
 	parameters.Add("path", str)
 
-	return parameters.Encode()
+	return parameters
 }
 
 // ToJSON encodes a TouchCmd to a JSON string.

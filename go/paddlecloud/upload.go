@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
@@ -12,8 +12,9 @@ import (
 )
 
 // RemoteStat gets StatCmd's result from server.
-func RemoteStat(s *pfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
-	body, err := s.GetFiles(cmd)
+func RemoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
+	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	body, err := GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +39,14 @@ func RemoteStat(s *pfsSubmitter, cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) 
 }
 
 // RemoteTouch touches a file on cloud.
-func RemoteTouch(s *pfsSubmitter, cmd *pfsmod.TouchCmd) error {
-	body, err := s.PostFiles(cmd)
+func RemoteTouch(cmd *pfsmod.TouchCmd) error {
+	j, err := cmd.ToJSON()
+	if err != nil {
+		return err
+	}
+
+	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	body, err := PostCall(t, j)
 	if err != nil {
 		return err
 	}
@@ -65,8 +72,45 @@ type uploadChunkResponse struct {
 	Err string `json:"err"`
 }
 
-func uploadChunks(s *pfsSubmitter,
-	src string,
+func getChunkReader(path string, offset int64) (*os.File, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = f.Seek(offset, 0)
+	if err != nil {
+		pfsmod.Close(f)
+		return nil, err
+	}
+
+	return f, nil
+}
+
+func getDstParam(src *pfsmod.Chunk, dst string) string {
+	cmd := pfsmod.Chunk{
+		Path:   dst,
+		Offset: src.Offset,
+		Size:   src.Size,
+	}
+
+	return cmd.ToURLParam().Encode()
+}
+
+func postChunk(src *pfsmod.Chunk, dst string) ([]byte, error) {
+	f, err := getChunkReader(src.Path, src.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer pfsmod.Close(f)
+
+	t := fmt.Sprintf("%s/api/v1/chunks", config.ActiveConfig.Endpoint)
+
+	return PostChunk(t, getDstParam(src, dst),
+		f, src.Size, pfsmod.DefaultMultiPartBoundary)
+}
+
+func uploadChunks(src string,
 	dst string,
 	diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
@@ -84,7 +128,7 @@ func uploadChunks(s *pfsSubmitter,
 			Size:   meta.Len,
 		}
 
-		body, err := s.PostChunkData(&chunk, dst)
+		body, err := postChunk(&chunk, dst)
 		if err != nil {
 			return err
 		}
@@ -105,8 +149,7 @@ func uploadChunks(s *pfsSubmitter,
 }
 
 // UploadFile uploads src file to dst.
-func UploadFile(s *pfsSubmitter,
-	src, dst string, srcFileSize int64) error {
+func UploadFile(src, dst string, srcFileSize int64) error {
 
 	log.V(1).Infof("touch %s size:%d\n", dst, srcFileSize)
 
@@ -116,11 +159,11 @@ func UploadFile(s *pfsSubmitter,
 		FileSize: srcFileSize,
 	}
 
-	if err := RemoteTouch(s, &cmd); err != nil {
+	if err := RemoteTouch(&cmd); err != nil {
 		return err
 	}
 
-	dstMeta, err := RemoteChunkMeta(s, dst, defaultChunkSize)
+	dstMeta, err := RemoteChunkMeta(dst, defaultChunkSize)
 	if err != nil {
 		return err
 	}
@@ -138,13 +181,13 @@ func UploadFile(s *pfsSubmitter,
 	}
 	log.V(2).Infof("diff chunkMeta:%#v\n", diffMeta)
 
-	err = uploadChunks(s, src, dst, diffMeta)
+	err = uploadChunks(src, dst, diffMeta)
 
 	return err
 }
 
 // Upload uploads src to dst.
-func Upload(s *pfsSubmitter, src, dst string) error {
+func Upload(src, dst string) error {
 	lsCmd := pfsmod.NewLsCmd(true, src)
 	srcRet, err := lsCmd.Run()
 	if err != nil {
@@ -152,7 +195,7 @@ func Upload(s *pfsSubmitter, src, dst string) error {
 	}
 	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
 
-	dstMeta, err := RemoteStat(s, &pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
+	dstMeta, err := RemoteStat(&pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
 	if err != nil {
 		return err
 	}
@@ -176,51 +219,10 @@ func Upload(s *pfsSubmitter, src, dst string) error {
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
 		fmt.Printf("uploading %s\n", realSrc)
-		if err := UploadFile(s, realSrc, realDst, srcMeta.Size); err != nil {
+		if err := UploadFile(realSrc, realDst, srcMeta.Size); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func getDstParam(src *pfsmod.Chunk, dst string) string {
-	cmd := pfsmod.Chunk{
-		Path:   dst,
-		Offset: src.Offset,
-		Size:   src.Size,
-	}
-
-	return cmd.ToURLParam()
-}
-
-func postChunkData(cmd *pfsmod.Chunk, dst string) ([]byte, error) {
-	url := fmt.Sprintf("%s/api/v1/storage/chunks",
-		s.config.ActiveConfig.Endpoint)
-	log.V(1).Info("target url: " + url)
-
-	fileName := getDstParam(cmd, dst)
-
-	req, err := newPostChunkDataRequest(cmd, dst, url)
-	if err != nil {
-		return nil, nil
-	}
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer pfsmod.Close(resp.Body)
-
-	if resp.Status != HTTPOK {
-		return nil, errors.New("http server returned non-200 status: " + resp.Status)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
-
 }

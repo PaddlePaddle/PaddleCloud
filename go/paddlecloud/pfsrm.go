@@ -49,11 +49,16 @@ func formatRmPrint(results []pfsmod.RmResult, err error) {
 }
 
 // RemoteRm gets RmCmd Result from cloud.
-func RemoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
-	body, err := s.PostFiles(cmd)
+func RemoteRm(cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
+	j, err := cmd.ToJSON()
 	if err != nil {
 		return nil, err
+	}
 
+	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	body, err := PostCall(t, j)
+	if err != nil {
+		return nil, err
 	}
 
 	log.V(3).Info(string(body[:]))
@@ -77,7 +82,7 @@ func RemoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
 	return resp.Results, errors.New(resp.Err)
 }
 
-func remoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) error {
+func remoteRm(cmd *pfsmod.RmCmd) error {
 	for _, arg := range cmd.Args {
 		subcmd := pfsmod.NewRmCmd(
 			cmd.R,
@@ -85,7 +90,7 @@ func remoteRm(s *pfsSubmitter, cmd *pfsmod.RmCmd) error {
 		)
 
 		fmt.Printf("rm %s\n", arg)
-		result, err := RemoteRm(s, subcmd)
+		result, err := RemoteRm(subcmd)
 		formatRmPrint(result, err)
 	}
 	return nil
@@ -105,8 +110,7 @@ func (p *RmCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 	log.V(1).Infof("%#v\n", cmd)
 
-	s := newPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
-	if err := remoteRm(s, cmd); err != nil {
+	if err := remoteRm(cmd); err != nil {
 		return subcommands.ExitFailure
 	}
 

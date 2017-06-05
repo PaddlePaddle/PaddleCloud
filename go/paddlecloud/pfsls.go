@@ -68,8 +68,9 @@ func formatPrint(result []pfsmod.LsResult) {
 }
 
 // RemoteLs gets LsCmd result from cloud.
-func RemoteLs(s *pfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
-	body, err := s.GetFiles(cmd)
+func RemoteLs(cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
+	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	body, err := GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
@@ -91,13 +92,13 @@ func RemoteLs(s *pfsSubmitter, cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
 	return resp.Results, errors.New(resp.Err)
 }
 
-func remoteLs(s *pfsSubmitter, cmd *pfsmod.LsCmd) error {
+func remoteLs(cmd *pfsmod.LsCmd) error {
 	for _, arg := range cmd.Args {
 		subcmd := pfsmod.NewLsCmd(
 			cmd.R,
 			arg,
 		)
-		result, err := RemoteLs(s, subcmd)
+		result, err := RemoteLs(subcmd)
 
 		fmt.Printf("%s :\n", arg)
 		if err != nil {
@@ -123,8 +124,7 @@ func (p *LsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	}
 	log.V(1).Infof("%#v\n", cmd)
 
-	s := newPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
-	if err := remoteLs(s, cmd); err != nil {
+	if err := remoteLs(cmd); err != nil {
 		return subcommands.ExitFailure
 	}
 	return subcommands.ExitSuccess

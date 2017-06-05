@@ -42,8 +42,14 @@ func formatMkdirPrint(results []pfsmod.MkdirResult, err error) {
 }
 
 // RemoteMkdir creat a directory on cloud.
-func RemoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
-	body, err := s.PostFiles(cmd)
+func RemoteMkdir(cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
+	j, err := cmd.ToJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	body, err := PostCall(t, j)
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +75,12 @@ func RemoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, e
 	return resp.Results, errors.New(resp.Err)
 }
 
-func remoteMkdir(s *pfsSubmitter, cmd *pfsmod.MkdirCmd) error {
+func remoteMkdir(cmd *pfsmod.MkdirCmd) error {
 	for _, arg := range cmd.Args {
 		subcmd := pfsmod.NewMkdirCmd(arg)
 
 		fmt.Printf("mkdir %s\n", arg)
-		results, err := RemoteMkdir(s, subcmd)
+		results, err := RemoteMkdir(subcmd)
 		formatMkdirPrint(results, err)
 	}
 	return nil
@@ -94,8 +100,7 @@ func (p *MkdirCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interfac
 	}
 	log.V(1).Infof("%#v\n", cmd)
 
-	s := newPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
-	if err := remoteMkdir(s, cmd); err != nil {
+	if err := remoteMkdir(cmd); err != nil {
 		return subcommands.ExitFailure
 	}
 

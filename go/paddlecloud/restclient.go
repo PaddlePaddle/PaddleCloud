@@ -131,7 +131,7 @@ func PostFile(targetURL string, filename string) ([]byte, error) {
 	return getResponse(req)
 }
 
-// PostChunkData makes a POST call to HTTP server to upload chunkdata.
+// PostChunk makes a POST call to HTTP server to upload chunkdata.
 func PostChunk(targetURL string,
 	chunkName string, reader io.Reader, len int64, boundary string) ([]byte, error) {
 	body := &bytes.Buffer{}
@@ -161,7 +161,7 @@ func PostChunk(targetURL string,
 	return getResponse(req)
 }
 
-// GetChunkData makes a GET call to HTTP server to download chunk data.
+// GetChunk makes a GET call to HTTP server to download chunk data.
 func GetChunk(targetURL string,
 	query url.Values) (*http.Response, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)

@@ -19,7 +19,7 @@ type Chunk struct {
 }
 
 // ToURLParam encodes variables to url encoding parameters.
-func (p *Chunk) ToURLParam() string {
+func (p *Chunk) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("path", p.Path)
 
@@ -29,7 +29,7 @@ func (p *Chunk) ToURLParam() string {
 	str = fmt.Sprint(p.Size)
 	parameters.Add("chunksize", str)
 
-	return parameters.Encode()
+	return parameters
 }
 
 // ParseChunk get a Chunk struct from path.

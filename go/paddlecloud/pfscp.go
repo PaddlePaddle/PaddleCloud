@@ -47,9 +47,7 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 
 	cmd := pfsmod.NewCpCmdFromFlag(f)
 
-	s := newPfsCmdSubmitter(UserHomeDir() + "/.paddle/config")
-
-	err := RunCp(s, cmd)
+	err := RunCp(cmd)
 	if err != nil {
 		return subcommands.ExitFailure
 	}
@@ -58,7 +56,7 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 }
 
 // RunCp runs CpCommand.
-func RunCp(s *pfsSubmitter, cmd *pfsmod.CpCmd) error {
+func RunCp(cmd *pfsmod.CpCmd) error {
 	var results []pfsmod.CpCmdResult
 
 	for _, arg := range cmd.Src {
@@ -71,11 +69,11 @@ func RunCp(s *pfsSubmitter, cmd *pfsmod.CpCmd) error {
 			if pfsmod.IsCloudPath(cmd.Dst) {
 				err = errors.New(pfsmod.StatusOnlySupportFiles)
 			} else {
-				err = Download(s, arg, cmd.Dst)
+				err = Download(arg, cmd.Dst)
 			}
 		} else {
 			if pfsmod.IsCloudPath(cmd.Dst) {
-				err = Upload(s, arg, cmd.Dst)
+				err = Upload(arg, cmd.Dst)
 			} else {
 				//can't do that
 				err = errors.New(pfsmod.StatusOnlySupportFiles)

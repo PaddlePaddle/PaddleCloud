@@ -56,6 +56,11 @@ func ValidatePfsPath(paths []string) error {
 	return nil
 }
 
+// IsCloudPath returns whether a path is a pfspath.
+func IsCloudPath(path string) bool {
+	return strings.HasPrefix(path, "/pfs/")
+}
+
 // Close closes c and log it.
 func Close(c io.Closer) {
 	err := c.Close()

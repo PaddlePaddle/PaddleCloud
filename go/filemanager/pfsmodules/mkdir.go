@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"net/url"
 	"os"
 
 	log "github.com/golang/glog"
@@ -38,7 +39,7 @@ func (p *MkdirCmd) ValidateCloudArgs() error {
 }
 
 // ToURLParam need not to be implemented.
-func (p *MkdirCmd) ToURLParam() string {
+func (p *MkdirCmd) ToURLParam() url.Values {
 	panic("not implemented")
 }
 

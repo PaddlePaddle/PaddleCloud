@@ -18,12 +18,12 @@ type StatCmd struct {
 }
 
 // ToURLParam encodes StatCmd to URL Encoding string.
-func (p *StatCmd) ToURLParam() string {
+func (p *StatCmd) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("method", p.Method)
 	parameters.Add("path", p.Path)
 
-	return parameters.Encode()
+	return parameters
 
 }
 

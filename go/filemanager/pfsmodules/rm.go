@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -41,7 +42,7 @@ func (p *RmCmd) ValidateCloudArgs() error {
 }
 
 // ToURLParam needs not to be implemented.
-func (p *RmCmd) ToURLParam() string {
+func (p *RmCmd) ToURLParam() url.Values {
 	panic("not implemented")
 }
 
