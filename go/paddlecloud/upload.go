@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	log "github.com/golang/glog"
@@ -14,6 +15,7 @@ import (
 // RemoteStat gets StatCmd's result from server.
 func RemoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	log.V(3).Infoln(t)
 	body, err := GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
@@ -104,7 +106,8 @@ func postChunk(src *pfsmod.Chunk, dst string) ([]byte, error) {
 	}
 	defer pfsmod.Close(f)
 
-	t := fmt.Sprintf("%s/api/v1/chunks", config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/storage/chunks", config.ActiveConfig.Endpoint)
+	log.V(4).Infoln(t)
 
 	return PostChunk(t, getDstParam(src, dst),
 		f, src.Size, pfsmod.DefaultMultiPartBoundary)
@@ -115,12 +118,11 @@ func uploadChunks(src string,
 	diffMeta []pfsmod.ChunkMeta) error {
 	if len(diffMeta) == 0 {
 		log.V(1).Infof("srcfile:%s and destfile:%s are same\n", src, dst)
-		fmt.Printf("upload ok!\n")
 		return nil
 	}
 
 	for _, meta := range diffMeta {
-		log.V(1).Infof("diffMeta:%v\n", meta)
+		log.V(3).Infof("diffMeta:%v\n", meta)
 
 		chunk := pfsmod.Chunk{
 			Path:   src,
@@ -181,9 +183,7 @@ func UploadFile(src, dst string, srcFileSize int64) error {
 	}
 	log.V(2).Infof("diff chunkMeta:%#v\n", diffMeta)
 
-	err = uploadChunks(src, dst, diffMeta)
-
-	return err
+	return uploadChunks(src, dst, diffMeta)
 }
 
 // Upload uploads src to dst.
@@ -196,7 +196,7 @@ func Upload(src, dst string) error {
 	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
 
 	dstMeta, err := RemoteStat(&pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), pfsmod.StatusFileNotFound) {
 		return err
 	}
 	log.V(1).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
@@ -218,10 +218,13 @@ func Upload(src, dst string) error {
 
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
-		fmt.Printf("uploading %s\n", realSrc)
+		fmt.Printf("uploading %s to %s", realSrc, realDst)
 		if err := UploadFile(realSrc, realDst, srcMeta.Size); err != nil {
+			fmt.Printf(" error %v\n", err)
 			return err
 		}
+
+		fmt.Printf(" ok!\n")
 	}
 
 	return nil

@@ -90,7 +90,7 @@ func downloadChunks(src string,
 		return nil
 	}
 
-	t := fmt.Sprintf("%s/api/v1/chunks", config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/storage/chunks", config.ActiveConfig.Endpoint)
 	for _, meta := range diffMeta {
 		chunk := pfsmod.Chunk{
 			Path:   src,
@@ -113,7 +113,7 @@ func DownloadFile(src string, srcFileSize int64, dst string) error {
 	if err != nil {
 		return err
 	}
-	log.V(2).Infof("srcMeta:%#v\n", srcMeta)
+	log.V(4).Infof("srcMeta:%#v\n\n", srcMeta)
 
 	dstMeta, err := pfsmod.GetChunkMeta(dst, defaultChunkSize)
 	if err != nil {
@@ -125,6 +125,7 @@ func DownloadFile(src string, srcFileSize int64, dst string) error {
 			return err
 		}
 	}
+	log.V(4).Infof("dstMeta:%#v\n", dstMeta)
 
 	diffMeta, err := pfsmod.GetDiffChunkMeta(srcMeta, dstMeta)
 	if err != nil {
@@ -143,11 +144,8 @@ func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
 		if !fi.IsDir() && len(src) > 1 {
 			return bDir, errors.New(pfsmod.StatusDestShouldBeDirectory)
 		}
-	} else if err == os.ErrNotExist {
-		if err = os.MkdirAll(dst, 0700); err != nil {
-			bDir = true
-			return bDir, err
-		}
+	} else if os.IsNotExist(err) {
+		return false, nil
 	}
 
 	return bDir, err
@@ -155,6 +153,7 @@ func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
 
 // Download function downloads src to dst.
 func Download(src, dst string) error {
+	log.V(1).Infof("download %s to %s\n", src, dst)
 	lsRet, err := RemoteLs(pfsmod.NewLsCmd(true, src))
 	if err != nil {
 		return err

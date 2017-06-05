@@ -3,6 +3,7 @@ package pfsserver
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -91,6 +92,7 @@ func writeJSONResponse(w http.ResponseWriter,
 // GetFilesHandler processes files's GET request.
 func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 	method := r.URL.Query().Get("method")
+	log.V(3).Infoln(r.URL.RawQuery)
 
 	switch method {
 	case "ls":
@@ -129,6 +131,7 @@ func mkdirHandler(w http.ResponseWriter, body []byte) {
 	cmd := pfsmod.MkdirCmd{}
 
 	resp := response{}
+	fmt.Println(body[:])
 	if err := json.Unmarshal(body, &cmd); err != nil {
 		writeJSONResponse(w, string(body[:]), http.StatusOK, resp)
 		return
@@ -191,8 +194,11 @@ func getMethod(body []byte) (string, error) {
 
 // PostFilesHandler processes files' POST request.
 func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin PostFilesHandler")
+
 	resp := response{}
 	body, err := getBody(r)
+	log.V(3).Infof(string(body[:]))
 	if err != nil {
 		resp.Err = err.Error()
 		writeJSONResponse(w, string(body[:]), http.StatusOK, resp)
@@ -217,6 +223,7 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 		resp := response{}
 		writeJSONResponse(w, string(body[:]), http.StatusMethodNotAllowed, resp)
 	}
+	log.V(1).Infof("end PostFilesHandler")
 }
 
 func getChunkMetaHandler(w http.ResponseWriter, r *http.Request) {

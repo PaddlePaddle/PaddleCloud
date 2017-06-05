@@ -49,6 +49,7 @@ func RemoteMkdir(cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
 	}
 
 	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	log.V(2).Infoln(t)
 	body, err := PostCall(t, j)
 	if err != nil {
 		return nil, err
