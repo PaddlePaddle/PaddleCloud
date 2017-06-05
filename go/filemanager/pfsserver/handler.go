@@ -55,7 +55,7 @@ func getResponse(req *http.Request) ([]byte, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error("httpClient do error %v\n", err)
+		log.Errorf("httpClient do error %v\n", err)
 		return []byte{}, err
 	}
 	defer resp.Body.Close()

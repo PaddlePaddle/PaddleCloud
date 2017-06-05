@@ -31,7 +31,7 @@ func RemoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 		return nil, err
 	}
 
-	log.V(1).Infof("stat %s result:%#v\n", resp)
+	log.V(1).Infof("result:%#v\n", resp)
 
 	if len(resp.Err) != 0 {
 		return nil, errors.New(resp.Err)
