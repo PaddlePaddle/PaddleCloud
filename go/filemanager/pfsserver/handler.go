@@ -216,7 +216,6 @@ func mkdirHandler(w http.ResponseWriter, body []byte, header http.Header) {
 	cmd := pfsmod.MkdirCmd{}
 
 	resp := response{}
-	fmt.Println(body[:])
 	if err := json.Unmarshal(body, &cmd); err != nil {
 		writeJSONResponse(w, string(body[:]), http.StatusOK, resp)
 		return
