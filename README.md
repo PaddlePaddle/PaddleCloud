@@ -60,6 +60,13 @@ To test or visit the website, find out the kubernetes [ingress](https://kubernet
 
 Then open your browser and visit http://cloud.paddlepaddle.org.
 
+- Prepare public dataset
+
+  You can create a Kubernetes Job for preparing the public dataset and cluster trainer files.
+  ```bash
+  kubectl create -f k8s/prepare_dataset.yaml
+  ```
+  
 ### Run locally
 Make sure you are using a virtual environment of some sort (e.g. `virtualenv` or
 `pyenv`).
