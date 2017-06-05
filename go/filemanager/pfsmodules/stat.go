@@ -58,8 +58,8 @@ func (p *StatCmd) ValidateLocalArgs() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *StatCmd) ValidateCloudArgs() error {
-	return ValidatePfsPath([]string{p.Path})
+func (p *StatCmd) ValidateCloudArgs(userName string) error {
+	return ValidatePfsPath([]string{p.Path}, userName)
 }
 
 // Run runs the StatCmd.

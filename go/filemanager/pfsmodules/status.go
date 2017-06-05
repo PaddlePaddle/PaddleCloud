@@ -19,4 +19,5 @@ const (
 	StatusJSONErr               = "parse json error"
 	StatusCannotDelDirectory    = "can't del directory"
 	StatusAlreadyExist          = "already exist"
+	StatusBadPath               = "the path should be in format eg:/pf/datacentername/"
 )

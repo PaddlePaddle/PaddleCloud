@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	sjson "github.com/bitly/go-simplejson"
@@ -19,10 +20,94 @@ type response struct {
 	Results interface{} `json:"results"`
 }
 
-func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command) {
+func makeRequest(uri string, method string, body io.Reader,
+	contentType string, query url.Values,
+	authHeader map[string]string) (*http.Request, error) {
+
+	if query != nil {
+		uri = fmt.Sprintf("%s?%s", uri, query.Encode())
+		log.V(4).Infoln(uri)
+	}
+
+	log.V(4).Infof("%s %s %T\n", method, uri, body)
+	req, err := http.NewRequest(method, uri, body)
+	if err != nil {
+		log.Errorf("new request %v\n", err)
+		return nil, err
+	}
+
+	// default contentType is application/json.
+	if len(contentType) == 0 {
+		req.Header.Set("Content-Type", "application/json")
+	} else {
+		req.Header.Set("Content-Type", contentType)
+	}
+
+	for k, v := range authHeader {
+		req.Header.Set(k, v)
+	}
+
+	return req, nil
+}
+
+func getResponse(req *http.Request) ([]byte, error) {
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error("httpClient do error %v\n", err)
+		return []byte{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return []byte{}, errors.New("server error: " + resp.Status)
+	}
+	// FIXME: add more resp.Status checks.
+	return ioutil.ReadAll(resp.Body)
+}
+
+var TokenUri = "http://cloud.paddlepaddle.org"
+
+func getUserName(uri string, token string) (string, error) {
+	authHeader := make(map[string]string)
+	authHeader["Authorization"] = "Token " + token
+	req, err := makeRequest(uri, "GET", nil, "", nil, authHeader)
+	if err != nil {
+		return "", err
+	}
+
+	log.V(4).Infoln("before getResponse")
+	body, err := getResponse(req)
+	if err != nil {
+		return "", err
+	}
+
+	log.V(4).Infoln("get token2user resp:" + string(body[:]))
+	var resp interface{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return "", err
+	}
+
+	user := resp.(map[string]interface{})["user"].(string)
+	if len(user) < 1 {
+		return "", errors.New("can't get username")
+	}
+
+	return user, nil
+}
+
+func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header http.Header) {
 	resp := response{}
 
-	if err := cmd.ValidateCloudArgs(); err != nil {
+	user, err := getUserName(TokenUri+"/api/v1/token2user/", header.Get("Authorization"))
+	if err != nil {
+		resp.Err = "get username error:" + err.Error()
+		writeJSONResponse(w, req, http.StatusOK, resp)
+		return
+	}
+
+	if err := cmd.ValidateCloudArgs(user); err != nil {
 		resp.Err = err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)
 		return
@@ -49,7 +134,7 @@ func lsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmdHandler(w, r.URL.RawQuery, cmd)
+	cmdHandler(w, r.URL.RawQuery, cmd, r.Header)
 }
 
 func statHandler(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +148,7 @@ func statHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmdHandler(w, r.URL.RawQuery, cmd)
+	cmdHandler(w, r.URL.RawQuery, cmd, r.Header)
 }
 
 func writeJSONResponse(w http.ResponseWriter,
@@ -109,7 +194,7 @@ func GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func rmHandler(w http.ResponseWriter, body []byte) {
+func rmHandler(w http.ResponseWriter, body []byte, header http.Header) {
 	log.V(1).Infof("begin proc rmHandler\n")
 	cmd := pfsmod.RmCmd{}
 
@@ -121,12 +206,12 @@ func rmHandler(w http.ResponseWriter, body []byte) {
 
 	log.V(1).Infof("request :%#v\n", cmd)
 
-	cmdHandler(w, string(body[:]), &cmd)
+	cmdHandler(w, string(body[:]), &cmd, header)
 	log.V(1).Infof("end proc handler\n")
 
 }
 
-func mkdirHandler(w http.ResponseWriter, body []byte) {
+func mkdirHandler(w http.ResponseWriter, body []byte, header http.Header) {
 	log.V(1).Infof("begin proc mkdir\n")
 	cmd := pfsmod.MkdirCmd{}
 
@@ -139,12 +224,12 @@ func mkdirHandler(w http.ResponseWriter, body []byte) {
 
 	log.V(1).Infof("request :%#v\n", cmd)
 
-	cmdHandler(w, string(body[:]), &cmd)
+	cmdHandler(w, string(body[:]), &cmd, header)
 	log.V(1).Infof("end proc mkdir\n")
 
 }
 
-func touchHandler(w http.ResponseWriter, body []byte) {
+func touchHandler(w http.ResponseWriter, body []byte, header http.Header) {
 	log.V(1).Infof("begin proc touch\n")
 	cmd := pfsmod.TouchCmd{}
 
@@ -156,7 +241,7 @@ func touchHandler(w http.ResponseWriter, body []byte) {
 
 	log.V(1).Infof("request :%#v\n", cmd)
 
-	cmdHandler(w, string(body[:]), &cmd)
+	cmdHandler(w, string(body[:]), &cmd, header)
 	log.V(1).Infof("end proc touch\n")
 }
 
@@ -214,11 +299,11 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch method {
 	case "rm":
-		rmHandler(w, body)
+		rmHandler(w, body, r.Header)
 	case "touch":
-		touchHandler(w, body)
+		touchHandler(w, body, r.Header)
 	case "mkdir":
-		mkdirHandler(w, body)
+		mkdirHandler(w, body, r.Header)
 	default:
 		resp := response{}
 		writeJSONResponse(w, string(body[:]), http.StatusMethodNotAllowed, resp)
@@ -237,7 +322,7 @@ func getChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmdHandler(w, r.URL.RawQuery, cmd)
+	cmdHandler(w, r.URL.RawQuery, cmd, r.Header)
 	log.V(1).Infof("end proc getChunkMeta\n")
 }
 

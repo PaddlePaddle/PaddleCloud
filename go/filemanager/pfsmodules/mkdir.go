@@ -34,8 +34,8 @@ func (p *MkdirCmd) ValidateLocalArgs() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *MkdirCmd) ValidateCloudArgs() error {
-	return ValidatePfsPath(p.Args)
+func (p *MkdirCmd) ValidateCloudArgs(userName string) error {
+	return ValidatePfsPath(p.Args, userName)
 }
 
 // ToURLParam need not to be implemented.

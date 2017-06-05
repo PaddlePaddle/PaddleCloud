@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+
+	log "github.com/golang/glog"
 )
 
 // HTTPOK is ok status of http api call.
@@ -20,10 +22,19 @@ var httpClient = &http.Client{Transport: &http.Transport{}}
 func makeRequest(uri string, method string, body io.Reader,
 	contentType string, query url.Values,
 	authHeader map[string]string) (*http.Request, error) {
-	req, err := http.NewRequest(method, uri, nil)
+
+	if query != nil {
+		uri = fmt.Sprintf("%s?%s", uri, query.Encode())
+		log.V(4).Infoln(uri)
+	}
+
+	log.V(4).Infof("%s %s %T\n", method, uri, body)
+	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
+		log.Errorf("new request %v\n", err)
 		return nil, err
 	}
+
 	// default contentType is application/json.
 	if len(contentType) == 0 {
 		req.Header.Set("Content-Type", "application/json")
@@ -35,9 +46,6 @@ func makeRequest(uri string, method string, body io.Reader,
 		req.Header.Set(k, v)
 	}
 
-	if query != nil {
-		req.URL.RawQuery = query.Encode()
-	}
 	return req, nil
 }
 
@@ -59,6 +67,7 @@ func makeRequestToken(uri string, method string, body io.Reader,
 func getResponse(req *http.Request) ([]byte, error) {
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		log.Error("httpClient do error %v\n", err)
 		return []byte{}, err
 	}
 	defer resp.Body.Close()
@@ -140,6 +149,7 @@ func PostChunk(targetURL string,
 		return nil, err
 	}
 
+	log.V(4).Infoln(chunkName)
 	part, err := writer.CreateFormFile("chunk", chunkName)
 	if err != nil {
 		return nil, err
@@ -150,14 +160,20 @@ func PostChunk(targetURL string,
 		return nil, err
 	}
 
-	contentType := writer.FormDataContentType()
-	writer.Close()
-
-	req, err := makeRequestToken(targetURL, "POST", body, contentType, nil)
+	err = writer.Close()
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
+	contentType := writer.FormDataContentType()
+
+	log.V(4).Infoln("before makeRequestToken")
+	req, err := makeRequestToken(targetURL, "POST", body, contentType, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	log.V(4).Infoln("before getResponse")
 	return getResponse(req)
 }
 

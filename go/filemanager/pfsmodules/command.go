@@ -23,7 +23,7 @@ type Command interface {
 	ToJSON() ([]byte, error)
 	Run() (interface{}, error)
 	ValidateLocalArgs() error
-	ValidateCloudArgs() error
+	ValidateCloudArgs(userName string) error
 }
 
 // getUserName gets user's name by token
@@ -33,13 +33,21 @@ func getUserName(url string, query url.Values, token string) (string, error) {
 }
 
 // CheckUser checks if a user has authority to access a path.
-func checkUser(path string) error {
+func checkUser(path string, user string) error {
 	// TODO
+	a := strings.Split(path, "/")
+	if len(a) < 3 {
+		return errors.New(StatusBadPath)
+	}
+
+	if a[3] != user {
+		return errors.New(StatusUnAuthorized)
+	}
 	return nil
 }
 
 // IsCloudPath returns whether a path is a pfspath.
-func ValidatePfsPath(paths []string) error {
+func ValidatePfsPath(paths []string, userName string) error {
 	if len(paths) == 0 {
 		return errors.New(StatusNotEnoughArgs)
 	}
@@ -49,7 +57,7 @@ func ValidatePfsPath(paths []string) error {
 			return errors.New(StatusShouldBePfsPath + ":" + path)
 		}
 
-		if err := checkUser(path); err != nil {
+		if err := checkUser(path, userName); err != nil {
 			return errors.New(StatusShouldBePfsPath + ":" + path)
 		}
 	}

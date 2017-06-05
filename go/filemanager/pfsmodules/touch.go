@@ -43,8 +43,8 @@ func (p *TouchCmd) ValidateLocalArgs() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *TouchCmd) ValidateCloudArgs() error {
-	if err := ValidatePfsPath([]string{p.Path}); err != nil {
+func (p *TouchCmd) ValidateCloudArgs(userName string) error {
+	if err := ValidatePfsPath([]string{p.Path}, userName); err != nil {
 		return err
 	}
 

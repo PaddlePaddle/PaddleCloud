@@ -68,8 +68,8 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *ChunkMetaCmd) ValidateCloudArgs() error {
-	if err := ValidatePfsPath([]string{p.FilePath}); err != nil {
+func (p *ChunkMetaCmd) ValidateCloudArgs(userName string) error {
+	if err := ValidatePfsPath([]string{p.FilePath}, userName); err != nil {
 		return err
 	}
 

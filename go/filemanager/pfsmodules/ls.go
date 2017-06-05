@@ -148,8 +148,8 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *LsCmd) ValidateCloudArgs() error {
-	return ValidatePfsPath(p.Args)
+func (p *LsCmd) ValidateCloudArgs(userName string) error {
+	return ValidatePfsPath(p.Args, userName)
 }
 
 // LocalCheck checks the conditions when running local.

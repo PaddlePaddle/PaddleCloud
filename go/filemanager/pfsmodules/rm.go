@@ -37,8 +37,8 @@ func (p *RmCmd) ValidateLocalArgs() error {
 }
 
 // CloudCheck checks the conditions when running on cloud.
-func (p *RmCmd) ValidateCloudArgs() error {
-	return ValidatePfsPath(p.Args)
+func (p *RmCmd) ValidateCloudArgs(userName string) error {
+	return ValidatePfsPath(p.Args, userName)
 }
 
 // ToURLParam needs not to be implemented.
