@@ -72,7 +72,7 @@ func NewRmCmdFromFlag(f *flag.FlagSet) (*RmCmd, error) {
 		if flag.Name == "r" {
 			cmd.R, err = strconv.ParseBool(flag.Value.String())
 			if err != nil {
-				log.Errorf("meets error when parsing argument r")
+				log.Errorln("meets error when parsing argument r")
 				return
 			}
 		}

@@ -38,7 +38,7 @@ func NewCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
 		if flag.Name == "v" {
 			cmd.V, err = strconv.ParseBool(flag.Value.String())
 			if err != nil {
-				log.Errorf("meets error when parsing argument v")
+				log.Errorln("meets error when parsing argument v")
 				return
 			}
 		}
