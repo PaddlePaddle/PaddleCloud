@@ -2,6 +2,7 @@ package paddlecloud
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -75,7 +76,15 @@ func putFile(src string, dest string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", respStr)
+	var respObj interface{}
+	if err = json.Unmarshal(respStr, &respObj); err != nil {
+		return err
+	}
+	// FIXME: Print an error if error message is not empty. Use response code instead
+	errMsg := respObj.(map[string]interface{})["msg"].(string)
+	if len(errMsg) > 0 {
+		fmt.Fprintf(os.Stderr, "upload file error: %s\n", errMsg)
+	}
 	return nil
 }
 

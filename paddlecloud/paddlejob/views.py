@@ -72,6 +72,23 @@ class JobsView(APIView):
         # get user specified image
         job_image = obj.get("image", None)
         gpu_count = obj.get("gpu", 0)
+        # jobPackage validation: startwith /pfs
+        # NOTE: always overwrite the job package when the directory exists
+        job_package =obj.get("jobPackage", "")
+        if not job_package.startswith("/pfs"):
+            # add /pfs... cloud path
+            if job_package.startswith("/"):
+                # use last dirname as package name
+                package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), os.path.basename(job_package))
+            else:
+                package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), job_package)
+        else:
+            package_in_pod = job_package
+        # package must be ready before submit a job
+        current_package_path = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
+        if not os.path.exists(current_package_path):
+            return utils.error_message_response("error: package not exist in cloud")
+
         # use default images
         if not job_image :
             if gpu_count > 0:
@@ -90,7 +107,7 @@ class JobsView(APIView):
 
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
-            job_package = obj.get("jobPackage", ""),
+            job_package = package_in_pod,
             parallelism = obj.get("parallelism", 1),
             cpu = obj.get("cpu", 1),
             memory = obj.get("memory", "1Gi"),
@@ -123,7 +140,7 @@ class JobsView(APIView):
         except ApiException, e:
             logging.error("error submitting trainer job: %s" % e)
             return utils.simple_response(500, str(e))
-        return utils.simple_response(200, "OK")
+        return utils.simple_response(200, "")
 
     def delete(self, request, format=None):
         """
@@ -288,7 +305,7 @@ class SimpleFileView(APIView):
         try:
             write_file = self.__validate_path(request, file_path)
         except Exception, e:
-            return utils.error_message_response("file path not valid: %s", e)
+            return utils.error_message_response("file path not valid: %s"%str(e))
 
         if not os.path.exists(os.sep+write_file):
             return Response({"msg": "file not exist"})
@@ -309,15 +326,20 @@ class SimpleFileView(APIView):
         try:
             write_file = self.__validate_path(request, file_path)
         except Exception, e:
-            return utils.error_message_response("file path not valid: %s"%e)
+            return utils.error_message_response("file path not valid: %s"%str(e))
 
-        if os.path.exists(os.sep+write_file):
-            return Response({"msg": "file already exist"})
-
-        with open(os.sep+write_file, "w") as fn:
-            for chunk in file_obj.read(4096):
-                if not chunk:
+        if not os.path.exists(os.path.dirname(write_file)):
+            try:
+                os.makedirs(os.path.dirname(write_file))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        # FIXME: always overwrite package files
+        with open(write_file, "w") as fn:
+            while True:
+                data = file_obj.read(4096)
+                if not data:
                     break
-                fn.write(chunk)
+                fn.write(data)
 
-        return Response({"msg": "OK"})
+        return Response({"msg": ""})

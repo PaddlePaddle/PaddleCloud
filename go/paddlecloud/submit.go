@@ -3,6 +3,7 @@ package paddlecloud
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -54,7 +55,7 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.Pservers, "pservers", 0, "Number of parameter servers. Defaults equal to -p")
 	f.IntVar(&p.PSCPU, "pscpu", 1, "Parameter server CPU resource. Defaults to 1.")
 	f.StringVar(&p.PSMemory, "psmemory", "1Gi", "Parameter server momory resource. Defaults to 1Gi.")
-	f.StringVar(&p.Entry, "entry", "paddle train", "Command of starting trainer process. Defaults to paddle train")
+	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
 }
@@ -96,11 +97,18 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 // Submit current job
 func (s *Submitter) Submit(jobPackage string) error {
 	// 1. upload user job package to pfs
-	filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
 		glog.V(10).Infof("Uploading %s...\n", filePath)
-		dest := path.Join("pfs", config.ActiveConfig.Name, "home", config.ActiveConfig.Username, filePath)
+		dest := "/" + path.Join("pfs", config.ActiveConfig.Name, "home", config.ActiveConfig.Username, filePath)
+		fmt.Printf("uploading: %s...\n", filePath)
 		return putFile(filePath, dest)
 	})
+	if err != nil {
+		return err
+	}
 	// 2. call paddlecloud server to create kubernetes job
 	jsonString, err := json.Marshal(s.args)
 	if err != nil {
@@ -108,6 +116,17 @@ func (s *Submitter) Submit(jobPackage string) error {
 	}
 	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, config.ActiveConfig.Endpoint+"/api/v1/jobs")
 	respBody, err := PostCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
-	glog.V(10).Infof("got return body size: %d", len(respBody))
-	return err
+	if err != nil {
+		return err
+	}
+	var respObj interface{}
+	if err = json.Unmarshal(respBody, &respObj); err != nil {
+		return err
+	}
+	// FIXME: Return an error if error message is not empty. Use response code instead
+	errMsg := respObj.(map[string]interface{})["msg"].(string)
+	if len(errMsg) > 0 {
+		return errors.New(errMsg)
+	}
+	return nil
 }
