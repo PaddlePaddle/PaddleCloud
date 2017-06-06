@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+
+	log "github.com/golang/glog"
 )
 
 const (
@@ -25,7 +27,7 @@ type CpCmd struct {
 }
 
 // NewCpCmdFromFlag returns a new CpCmd from parsed flags.
-func NewCpCmdFromFlag(f *flag.FlagSet) *CpCmd {
+func NewCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
 	cmd := CpCmd{}
 
 	cmd.Method = cpCmdName
@@ -36,10 +38,15 @@ func NewCpCmdFromFlag(f *flag.FlagSet) *CpCmd {
 		if flag.Name == "v" {
 			cmd.V, err = strconv.ParseBool(flag.Value.String())
 			if err != nil {
-				panic(err)
+				log.Errorf("meets error when parsing argument v")
+				return
 			}
 		}
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	for i, arg := range f.Args() {
 		if i >= len(f.Args())-1 {
@@ -50,7 +57,7 @@ func NewCpCmdFromFlag(f *flag.FlagSet) *CpCmd {
 
 	cmd.Dst = f.Args()[len(f.Args())-1]
 
-	return &cmd
+	return &cmd, nil
 }
 
 // PartToString prints command's info.

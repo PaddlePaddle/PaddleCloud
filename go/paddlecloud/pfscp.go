@@ -45,10 +45,12 @@ func (p *CpCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		return subcommands.ExitFailure
 	}
 
-	cmd := pfsmod.NewCpCmdFromFlag(f)
-
-	err := RunCp(cmd)
+	cmd, err := pfsmod.NewCpCmdFromFlag(f)
 	if err != nil {
+		return subcommands.ExitSuccess
+	}
+
+	if err := RunCp(cmd); err != nil {
 		return subcommands.ExitFailure
 	}
 

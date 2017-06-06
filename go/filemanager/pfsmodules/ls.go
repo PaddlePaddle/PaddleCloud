@@ -61,10 +61,15 @@ func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 		if flag.Name == "r" {
 			cmd.R, err = strconv.ParseBool(flag.Value.String())
 			if err != nil {
-				panic(err)
+				log.Errorf("meets error when parsing argument r")
+				return
 			}
 		}
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	for _, arg := range f.Args() {
 		log.V(2).Info(arg)
