@@ -7,7 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net/http"
+	"net/url"
 	"os"
 	"path"
 
@@ -62,7 +62,7 @@ func (p *SimpleFileCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interfa
 }
 
 func putFile(src string, dest string) error {
-	query := make(map[string]string)
+	query := url.Values{}
 	_, srcFile := path.Split(src)
 	destDir, destFile := path.Split(dest)
 	var destFullPath string
@@ -71,7 +71,7 @@ func putFile(src string, dest string) error {
 	} else {
 		destFullPath = dest
 	}
-	query["path"] = destFullPath
+	query.Set("path", destFullPath)
 	respStr, err := PostFile(config.ActiveConfig.Endpoint+"/api/v1/file/", src, query)
 	if err != nil {
 		return err
@@ -89,14 +89,13 @@ func putFile(src string, dest string) error {
 }
 
 func getFile(src string, dest string) error {
-	query := make(map[string]string)
-	query["path"] = src
+	query := url.Values{}
+	query.Set("path", src)
 	req, err := makeRequestToken(config.ActiveConfig.Endpoint+"/api/v1/file/", "GET", nil, "", query)
 	if err != nil {
 		return err
 	}
-	client := &http.Client{Transport: httpTransport}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

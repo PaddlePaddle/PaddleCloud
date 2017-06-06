@@ -44,29 +44,48 @@ class JobsView(APIView):
             return utils.simple_response(500, "no topology or entry specified")
         if not obj.get("datacenter"):
             return utils.simple_response(500, "no datacenter specified")
+        cfgs = {}
         dc = obj.get("datacenter")
+
         volumes = []
-        cfg = settings.DATACENTERS.get(dc, None)
-        if cfg and cfg["fstype"] == "hostpath":
-            volumes.append(volume.get_volume_config(
-                fstype = "hostpath",
-                name = dc.replace("_", "-"),
-                mount_path = cfg["mount_path"] % (dc, username),
-                host_path = cfg["host_path"]
-            ))
-        elif cfg and cfg["fstype"] == "cephfs":
-            volumes.append(volume.get_volume_config(
-                fstype = "cephfs",
-                name = dc.replace("_", "-"),
-                monitors_addr = cfg["monitors_addr"],
-                secret = cfg["secret"],
-                user = cfg["user"],
-                mount_path = cfg["mount_path"] % (dc, username),
-                cephfs_path = cfg["cephfs_path"] % username,
-                admin_key = cfg["admin_key"]
-            ))
-        else:
-            pass
+        for k, cfg in settings.DATACENTERS.items():
+            if k != dc and k != "public":
+                continue
+            fstype = cfg["fstype"]
+            if fstype == settings.FSTYPE_CEPHFS:
+                if k == "public":
+                    mount_path = cfg["mount_path"] % dc
+                    cephfs_path = cfg["cephfs_path"]
+                else:
+                    mount_path = cfg["mount_path"] % (dc, username)
+                    cephfs_path = cfg["cephfs_path"] % username
+                volumes.append(volume.get_volume_config(
+                    fstype = fstype,
+                    name = k.replace("_", "-"),
+                    monitors_addr = cfg["monitors_addr"],
+                    secret = cfg["secret"],
+                    user = cfg["user"],
+                    mount_path = mount_path,
+                    cephfs_path = cephfs_path,
+                    admin_key = cfg["admin_key"],
+                    read_only = cfg.get("read_only", False)
+                ))
+            elif fstype == settings.FSTYPE_HOSTPATH:
+                if k == "public":
+                    mount_path = cfg["mount_path"] % dc
+                    host_path = cfg["host_path"]
+                else:
+                    mount_path = cfg["mount_path"] % (dc, username)
+                    host_path = cfg["host_path"] % username
+
+                volumes.append(volume.get_volume_config(
+                    fstype = fstype,
+                    name = k.replace("_", "-"),
+                    mount_path = mount_path,
+                    host_path = host_path
+                ))
+            else:
+                pass
 
         registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         # get user specified image
@@ -99,7 +118,7 @@ class JobsView(APIView):
         # add Nvidia lib volume if training with GPU
         if gpu_count > 0:
             volumes.append(volume.get_volume_config(
-                fstype = "hostpath",
+                fstype = settings.FSTYPE_HOSTPATH,
                 name = "nvidia-libs",
                 mount_path = "/usr/local/nvidia/lib64",
                 host_path = settings.NVIDIA_LIB_PATH

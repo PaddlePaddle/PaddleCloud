@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -43,11 +44,12 @@ func (p *LogsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		f.Usage()
 		return subcommands.ExitFailure
 	}
-	queryMap := make(map[string]string)
 
-	queryMap["n"] = strconv.FormatInt(int64(p.n), 10)
-	queryMap["w"] = p.w
-	queryMap["jobname"] = f.Arg(0)
+	var queryMap url.Values
+	queryMap.Add("n", strconv.FormatInt(int64(p.n), 10))
+	queryMap.Add("w", p.w)
+	queryMap.Add("jobname", f.Arg(0))
+
 	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/logs", queryMap)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "call paddle cloud error %v", err)

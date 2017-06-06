@@ -8,22 +8,23 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 )
 
-// HTTPOK is ok status of http api call
+// HTTPOK is ok status of http api call.
 const HTTPOK = "200 OK"
 
-var httpTransport = &http.Transport{}
+var httpClient = &http.Client{Transport: &http.Transport{}}
 
 func makeRequest(uri string, method string, body io.Reader,
-	contentType string, query map[string]string,
+	contentType string, query url.Values,
 	authHeader map[string]string) (*http.Request, error) {
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		return nil, err
 	}
-	// default contentType is application/json
+	// default contentType is application/json.
 	if len(contentType) == 0 {
 		req.Header.Set("Content-Type", "application/json")
 	} else {
@@ -33,18 +34,15 @@ func makeRequest(uri string, method string, body io.Reader,
 	for k, v := range authHeader {
 		req.Header.Set(k, v)
 	}
-	// add GET query params
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
+	if query != nil {
+		req.URL.RawQuery = query.Encode()
 	}
-	req.URL.RawQuery = q.Encode()
 	return req, nil
 }
 
-// makeRequestToken use client token to make a authorized request
+// makeRequestToken use client token to make a authorized request.
 func makeRequestToken(uri string, method string, body io.Reader,
-	contentType string, query map[string]string) (*http.Request, error) {
+	contentType string, query url.Values) (*http.Request, error) {
 	// get client token
 	token, err := token()
 	if err != nil {
@@ -55,11 +53,10 @@ func makeRequestToken(uri string, method string, body io.Reader,
 	return makeRequest(uri, method, body, contentType, query, authHeader)
 }
 
-// NOTE: add other request makers if we need other auth methods
+// NOTE: add other request makers if we need other auth methods.
 
 func getResponse(req *http.Request) ([]byte, error) {
-	client := &http.Client{Transport: httpTransport}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -67,12 +64,12 @@ func getResponse(req *http.Request) ([]byte, error) {
 	if resp.Status != HTTPOK {
 		return []byte{}, errors.New("server error: " + resp.Status)
 	}
-	// FIXME: add more resp.Status checks
+	// FIXME: add more resp.Status checks.
 	return ioutil.ReadAll(resp.Body)
 }
 
-// GetCall make a GET call to targetURL with k-v params of query
-func GetCall(targetURL string, query map[string]string) ([]byte, error) {
+// GetCall make a GET call to targetURL with query.
+func GetCall(targetURL string, query url.Values) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return []byte{}, err
@@ -80,7 +77,7 @@ func GetCall(targetURL string, query map[string]string) ([]byte, error) {
 	return getResponse(req)
 }
 
-// PostCall make a POST call to targetURL with a json body
+// PostCall make a POST call to targetURL with a json body.
 func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
@@ -89,7 +86,7 @@ func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
 	return getResponse(req)
 }
 
-// DeleteCall make a DELETE call to targetURL with a json body
+// DeleteCall make a DELETE call to targetURL with a json body.
 func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
@@ -98,8 +95,8 @@ func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 	return getResponse(req)
 }
 
-// PostFile make a POST call to HTTP server to upload a file
-func PostFile(targetURL string, filename string, query map[string]string) ([]byte, error) {
+// PostFile make a POST call to HTTP server to upload a file.
+func PostFile(targetURL string, filename string, query url.Values) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
 
@@ -132,4 +129,45 @@ func PostFile(targetURL string, filename string, query map[string]string) ([]byt
 		return []byte{}, err
 	}
 	return getResponse(req)
+}
+
+// PostChunkData makes a POST call to HTTP server to upload chunkdata.
+func PostChunk(targetURL string,
+	chunkName string, reader io.Reader, len int64, boundary string) ([]byte, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	if err := writer.SetBoundary(boundary); err != nil {
+		return nil, err
+	}
+
+	part, err := writer.CreateFormFile("chunk", chunkName)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.CopyN(part, reader, len)
+	if err != nil {
+		return nil, err
+	}
+
+	contentType := writer.FormDataContentType()
+	writer.Close()
+
+	req, err := makeRequestToken(targetURL, "POST", body, contentType, nil)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return getResponse(req)
+}
+
+// GetChunkData makes a GET call to HTTP server to download chunk data.
+func GetChunk(targetURL string,
+	query url.Values) (*http.Response, error) {
+	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
+	if err != nil {
+		return nil, err
+	}
+
+	return httpClient.Do(req)
 }

@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paddle-prepare
+spec:
+  template:
+    metadata:
+      name: paddle-prepare
+    spec:
+      volumes:
+        - name: data-storage
+          cephfs:
+            monitors:
+              - 172.19.32.166:6789
+            path: "/public"
+            user: "admin"
+            secretRef:
+              name: ceph-secret
+      containers:
+      - name: prepare
+        image: yancey1989/paddlecloud-prepare
+        env:
+          - name: DATASET_HOME
+            value: "/pfs/public/dataset"
+        volumeMounts:
+        - name: data-storage
+          mountPath: /pfs/public
+      restartPolicy: Never

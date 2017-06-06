@@ -6,7 +6,8 @@ tmpl_volume = {
     "hostpath": "{\"name\": $NAME, \"hostPath\":{\"path\": $HOST_PATH}}",
     "cephfs":"{\"name\": $NAME,\"cephfs\":{\"name\": \"cephfs\", \
                \"monitors\": $MONITORS_ADDR,\"path\": $CEPHFS_PATH, \
-               \"user\": $USER, \"secretRef\": {\"name\": $SECRET}}}"
+               \"readOnly\": $READ_ONLY, \"user\": $USER, \
+               \"secretRef\": {\"name\": $SECRET}}}"
 }
 tmpl_volume_mount = {
     "hostpath": "{\"name\": $NAME, \"mountPath\":$MOUNT_PATH}",
@@ -19,7 +20,7 @@ def __render(tmpl, **kwargs):
         if tmpl.find(tmpl_k) != -1:
             if type(v) is str or type(v) is unicode:
                 tmpl = tmpl.replace(tmpl_k, "\"%s\"" % v)
-            elif type(v) is list:
+            elif type(v) is list or type(v) is bool:
                 tmpl = tmpl.replace(tmpl_k, json.dumps(v))
             else:
                 pass
