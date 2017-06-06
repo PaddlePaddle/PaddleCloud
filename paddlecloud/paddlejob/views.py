@@ -104,6 +104,8 @@ class JobsView(APIView):
                 mount_path = "/usr/local/nvidia/lib64",
                 host_path = settings.NVIDIA_LIB_PATH
             ))
+        envs = {}
+        envs.update({"CURRENT_DATACENTER": dc})
 
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),
@@ -120,7 +122,8 @@ class JobsView(APIView):
             image = job_image,
             passes = obj.get("passes", 1),
             registry_secret = registry_secret,
-            volumes = volumes
+            volumes = volumes,
+            envs = envs
         )
         try:
             ret = client.ExtensionsV1beta1Api(api_client=api_client).create_namespaced_replica_set(
