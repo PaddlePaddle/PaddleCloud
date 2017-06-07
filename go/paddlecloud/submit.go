@@ -74,7 +74,7 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	p.Datacenter = config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
-	errS := s.Submit(f.Arg(0))
+	errS := s.Submit(f.Arg(0), p.Jobname)
 	if errS != nil {
 		fmt.Fprintf(os.Stderr, "error submiting job: %v\n", errS)
 		return subcommands.ExitFailure
@@ -95,14 +95,14 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 }
 
 // Submit current job.
-func (s *Submitter) Submit(jobPackage string) error {
+func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	// 1. upload user job package to pfs
 	err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}
 		glog.V(10).Infof("Uploading %s...\n", filePath)
-		dest := "/" + path.Join("pfs", config.ActiveConfig.Name, "home", config.ActiveConfig.Username, filePath)
+		dest := path.Join("/pfs", config.ActiveConfig.Name, "home", config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
 		fmt.Printf("uploading: %s...\n", filePath)
 		return putFile(filePath, dest)
 	})

@@ -92,17 +92,10 @@ class JobsView(APIView):
         job_image = obj.get("image", None)
         gpu_count = obj.get("gpu", 0)
         # jobPackage validation: startwith /pfs
-        # NOTE: always overwrite the job package when the directory exists
-        job_package =obj.get("jobPackage", "")
-        if not job_package.startswith("/pfs"):
-            # add /pfs... cloud path
-            if job_package.startswith("/"):
-                # use last dirname as package name
-                package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), os.path.basename(job_package))
-            else:
-                package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), job_package)
-        else:
-            package_in_pod = job_package
+        # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
+        job_name = obj.get("name", "paddle-cluster-job")
+        package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+
         # package must be ready before submit a job
         current_package_path = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
         if not os.path.exists(current_package_path):
@@ -125,7 +118,7 @@ class JobsView(APIView):
             ))
 
         paddle_job = PaddleJob(
-            name = obj.get("name", "paddle-cluster-job"),
+            name = job_name,
             job_package = package_in_pod,
             parallelism = obj.get("parallelism", 1),
             cpu = obj.get("cpu", 1),
