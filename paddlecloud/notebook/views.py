@@ -151,7 +151,10 @@ def create_user_RBAC_permissions(username):
         "name": username
         }]
     }
-    rbacapi.create_namespaced_role_binding(namespace, body)
+    try:
+        rbacapi.create_namespaced_role_binding(namespace, body)
+    except Exception, e:
+        logging.error("%s", str(e))
     # create service account permissions
     body = {
     "apiVersion": "rbac.authorization.k8s.io/v1beta1",
@@ -171,7 +174,10 @@ def create_user_RBAC_permissions(username):
         "namespace": namespace
         }]
     }
-    rbacapi.create_namespaced_role_binding(namespace, body)
+    try:
+        rbacapi.create_namespaced_role_binding(namespace, body)
+    except Exception, e:
+        logging.error("%s", str(e))
 
 def create_user_namespace(username):
     v1api = kubernetes.client.CoreV1Api(utils.get_admin_api_client())
