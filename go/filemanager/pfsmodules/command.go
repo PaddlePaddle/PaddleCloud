@@ -19,10 +19,15 @@ const (
 
 // Command is a interface of all commands.
 type Command interface {
+	// ToURLParam generates url.Values of the command struct.
 	ToURLParam() url.Values
+	// ToJSON generates JSON string of the command struct.
 	ToJSON() ([]byte, error)
+	// Run runs a command.
 	Run() (interface{}, error)
+	// ValidateLocalArgs validates arguments when running locally.
 	ValidateLocalArgs() error
+	// ValidateCloudArgs validates arguments when running on cloud.
 	ValidateCloudArgs(userName string) error
 }
 
