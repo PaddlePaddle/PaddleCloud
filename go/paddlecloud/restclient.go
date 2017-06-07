@@ -29,6 +29,7 @@ func makeRequest(uri string, method string, body io.Reader,
 	}
 
 	log.V(4).Infof("%s %s %T\n", method, uri, body)
+
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		log.Errorf("new request %v\n", err)
