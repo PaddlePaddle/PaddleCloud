@@ -71,11 +71,11 @@ func RunCp(cmd *pfsmod.CpCmd) error {
 			if pfsmod.IsCloudPath(cmd.Dst) {
 				err = errors.New(pfsmod.StatusOnlySupportFiles)
 			} else {
-				err = Download(arg, cmd.Dst)
+				err = download(arg, cmd.Dst)
 			}
 		} else {
 			if pfsmod.IsCloudPath(cmd.Dst) {
-				err = Upload(arg, cmd.Dst)
+				err = upload(arg, cmd.Dst)
 			} else {
 				//can't do that
 				err = errors.New(pfsmod.StatusOnlySupportFiles)

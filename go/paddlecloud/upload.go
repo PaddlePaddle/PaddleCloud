@@ -12,8 +12,7 @@ import (
 	log "github.com/golang/glog"
 )
 
-// RemoteStat gets StatCmd's result from server.
-func RemoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
+func remoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
 	log.V(3).Infoln(t)
 	body, err := GetCall(t, cmd.ToURLParam())
@@ -40,8 +39,7 @@ func RemoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	return &resp.Results, nil
 }
 
-// RemoteTouch touches a file on cloud.
-func RemoteTouch(cmd *pfsmod.TouchCmd) error {
+func remoteTouch(cmd *pfsmod.TouchCmd) error {
 	j, err := cmd.ToJSON()
 	if err != nil {
 		return err
@@ -150,8 +148,7 @@ func uploadChunks(src string,
 	return nil
 }
 
-// UploadFile uploads src file to dst.
-func UploadFile(src, dst string, srcFileSize int64) error {
+func uploadFile(src, dst string, srcFileSize int64) error {
 
 	log.V(1).Infof("touch %s size:%d\n", dst, srcFileSize)
 
@@ -161,11 +158,11 @@ func UploadFile(src, dst string, srcFileSize int64) error {
 		FileSize: srcFileSize,
 	}
 
-	if err := RemoteTouch(&cmd); err != nil {
+	if err := remoteTouch(&cmd); err != nil {
 		return err
 	}
 
-	dstMeta, err := RemoteChunkMeta(dst, defaultChunkSize)
+	dstMeta, err := remoteChunkMeta(dst, defaultChunkSize)
 	if err != nil {
 		return err
 	}
@@ -186,8 +183,7 @@ func UploadFile(src, dst string, srcFileSize int64) error {
 	return uploadChunks(src, dst, diffMeta)
 }
 
-// Upload uploads src to dst.
-func Upload(src, dst string) error {
+func upload(src, dst string) error {
 	lsCmd := pfsmod.NewLsCmd(true, src)
 	srcRet, err := lsCmd.Run()
 	if err != nil {
@@ -195,7 +191,7 @@ func Upload(src, dst string) error {
 	}
 	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
 
-	dstMeta, err := RemoteStat(&pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
+	dstMeta, err := remoteStat(&pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
 	if err != nil && !strings.Contains(err.Error(), pfsmod.StatusFileNotFound) {
 		return err
 	}
@@ -219,7 +215,7 @@ func Upload(src, dst string) error {
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
 		fmt.Printf("uploading %s to %s", realSrc, realDst)
-		if err := UploadFile(realSrc, realDst, srcMeta.Size); err != nil {
+		if err := uploadFile(realSrc, realDst, srcMeta.Size); err != nil {
 			fmt.Printf(" error %v\n", err)
 			return err
 		}

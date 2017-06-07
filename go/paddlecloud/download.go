@@ -13,8 +13,7 @@ import (
 	log "github.com/golang/glog"
 )
 
-// RemoteChunkMeta get ChunkMeta of path from cloud.
-func RemoteChunkMeta(path string,
+func remoteChunkMeta(path string,
 	chunkSize int64) ([]pfsmod.ChunkMeta, error) {
 	cmd := pfsmod.ChunkMetaCmd{
 		Method:    pfsmod.ChunkMetaCmdName,
@@ -107,9 +106,8 @@ func downloadChunks(src string,
 	return nil
 }
 
-// DownloadFile downloads src to dst. If dst does not exists, create it with srcFileSize.
-func DownloadFile(src string, srcFileSize int64, dst string) error {
-	srcMeta, err := RemoteChunkMeta(src, defaultChunkSize)
+func downloadFile(src string, srcFileSize int64, dst string) error {
+	srcMeta, err := remoteChunkMeta(src, defaultChunkSize)
 	if err != nil {
 		return err
 	}
@@ -152,7 +150,7 @@ func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
 }
 
 // Download function downloads src to dst.
-func Download(src, dst string) error {
+func download(src, dst string) error {
 	log.V(1).Infof("download %s to %s\n", src, dst)
 	lsRet, err := RemoteLs(pfsmod.NewLsCmd(true, src))
 	if err != nil {
@@ -178,7 +176,7 @@ func Download(src, dst string) error {
 		}
 
 		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
-		if err := DownloadFile(realSrc, attr.Size, realDst); err != nil {
+		if err := downloadFile(realSrc, attr.Size, realDst); err != nil {
 			return err
 		}
 	}
