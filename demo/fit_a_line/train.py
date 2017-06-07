@@ -1,5 +1,5 @@
 import paddle.v2 as paddle
-import paddle.cloud.dataset.uci_housing as uci_housing
+import pcloud.dataset.uci_housing as uci_housing
 
 def main():
     # init

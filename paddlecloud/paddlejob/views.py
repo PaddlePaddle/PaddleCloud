@@ -105,7 +105,7 @@ class JobsView(APIView):
                 host_path = settings.NVIDIA_LIB_PATH
             ))
         envs = {}
-        envs.update({"CURRENT_DATACENTER": dc})
+        envs.update({"PADDLE_CLOUD_CURRENT_DATACENTER": dc})
 
         paddle_job = PaddleJob(
             name = obj.get("name", "paddle-cluster-job"),

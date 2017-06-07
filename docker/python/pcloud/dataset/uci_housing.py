@@ -4,9 +4,10 @@ import os
 
 __all__=["train", "test", "fetch"]
 
-CURRENT_DATACENTER = os.getenv("CURRENT_DATACENTER")
+dc = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 
-common.DATA_HOME = "/pfs/%s/public/dataset" % CURRENT_DATACENTER
+#The default public directory on PaddleCloud is /pfs/${DATACENTER}/public/
+common.DATA_HOME = "/pfs/%s/public/dataset" % dc
 
 TRAIN_FILES_PATTERN = os.path.join(common.DATA_HOME,
                                    "uci_housing/train-*.pickle")
@@ -17,7 +18,7 @@ TRAIN_FILES_SUFFIX = os.path.join(common.DATA_HOME,
 def train():
     return common.cluster_files_reader(
         TRAIN_FILES_PATTERN,
-        trainer_count = int(os.getenv("TRAINERS", "1")),
+        trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS", "1")),
         trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID", "0")))
 
 def test():

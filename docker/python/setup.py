@@ -1,9 +1,8 @@
 from setuptools import setup
 
 packages=[
-  'paddle',
-  'paddle.cloud',
-  'paddle.cloud.dataset']
+  'pcloud',
+  'pcloud.dataset']
 
 setup(name='pcloud',
       version='0.1.1',
