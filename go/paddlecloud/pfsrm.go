@@ -56,7 +56,7 @@ func RemoteRm(cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
 	}
 
 	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
-	body, err := PostCall(t, j)
+	body, err := DeleteCall(t, j)
 	if err != nil {
 		return nil, err
 	}

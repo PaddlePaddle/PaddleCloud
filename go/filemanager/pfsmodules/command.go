@@ -26,15 +26,8 @@ type Command interface {
 	ValidateCloudArgs(userName string) error
 }
 
-// getUserName gets user's name by token
-func getUserName(url string, query url.Values, token string) (string, error) {
-	// TODO
-	return "", nil
-}
-
 // CheckUser checks if a user has authority to access a path.
 func checkUser(path string, user string) error {
-	// TODO
 	a := strings.Split(path, "/")
 	if len(a) < 3 {
 		return errors.New(StatusBadPath)

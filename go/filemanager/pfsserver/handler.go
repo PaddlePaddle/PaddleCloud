@@ -77,7 +77,6 @@ func getUserName(uri string, token string) (string, error) {
 		return "", err
 	}
 
-	log.V(4).Infoln("before getResponse")
 	body, err := getResponse(req)
 	if err != nil {
 		return "", err
@@ -276,10 +275,7 @@ func getMethod(body []byte) (string, error) {
 	return method, nil
 }
 
-// PostFilesHandler processes files' POST request.
-func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
-	log.V(1).Infof("begin PostFilesHandler")
-
+func modifyFilesHandler(w http.ResponseWriter, r *http.Request) {
 	resp := response{}
 	body, err := getBody(r)
 	log.V(3).Infof(string(body[:]))
@@ -307,6 +303,23 @@ func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
 		resp := response{}
 		writeJSONResponse(w, string(body[:]), http.StatusMethodNotAllowed, resp)
 	}
+}
+
+// DeleteFilesHandler processes files' DELETE request.
+func DeleteFilesHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin DeleteFilesHandler")
+
+	modifyFilesHandler(w, r)
+
+	log.V(1).Infof("end DeleteFilesHandler")
+}
+
+// PostFilesHandler processes files' POST request.
+func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infof("begin PostFilesHandler")
+
+	modifyFilesHandler(w, r)
+
 	log.V(1).Infof("end PostFilesHandler")
 }
 
@@ -341,7 +354,7 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
 
-	cmd, err := pfsmod.ParseChunk(r.URL.RawQuery)
+	chunk, err := pfsmod.ParseChunk(r.URL.RawQuery)
 	if err != nil {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
 		return
@@ -350,14 +363,14 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	writer := multipart.NewWriter(w)
 	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
 
-	fileName := cmd.ToURLParam().Encode()
+	fileName := chunk.ToURLParam().Encode()
 	part, err := writer.CreateFormFile("chunk", fileName)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	if err = cmd.LoadChunkData(part); err != nil {
+	if err = chunk.LoadChunkData(part); err != nil {
 		log.Error(err)
 		return
 	}

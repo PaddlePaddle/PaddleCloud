@@ -27,6 +27,12 @@ var routes = Routes{
 		"/api/v1/files",
 		PostFilesHandler,
 	},
+	Route{
+		"DeleteFiles",
+		"DELETE",
+		"/api/v1/files",
+		DeleteFilesHandler,
+	},
 
 	Route{
 		"GetChunksMeta",
