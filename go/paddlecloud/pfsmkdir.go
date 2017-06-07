@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -48,9 +49,9 @@ func RemoteMkdir(cmd *pfsmod.MkdirCmd) ([]pfsmod.MkdirResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
 	log.V(2).Infoln(t)
-	body, err := PostCall(t, j)
+	body, err := utils.PostCall(t, j)
 	if err != nil {
 		return nil, err
 	}

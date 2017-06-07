@@ -9,13 +9,14 @@ import (
 	"strings"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
 )
 
 func remoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
 	log.V(3).Infoln(t)
-	body, err := GetCall(t, cmd.ToURLParam())
+	body, err := utils.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,8 @@ func remoteTouch(cmd *pfsmod.TouchCmd) error {
 		return err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
-	body, err := PostCall(t, j)
+	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
+	body, err := utils.PostCall(t, j)
 	if err != nil {
 		return err
 	}
@@ -104,10 +105,10 @@ func postChunk(src *pfsmod.Chunk, dst string) ([]byte, error) {
 	}
 	defer pfsmod.Close(f)
 
-	t := fmt.Sprintf("%s/api/v1/storage/chunks", config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/storage/chunks", utils.Config.ActiveConfig.Endpoint)
 	log.V(4).Infoln(t)
 
-	return PostChunk(t, getDstParam(src, dst),
+	return utils.PostChunk(t, getDstParam(src, dst),
 		f, src.Size, pfsmod.DefaultMultiPartBoundary)
 }
 

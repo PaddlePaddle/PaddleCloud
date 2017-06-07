@@ -1,4 +1,4 @@
-package paddlecloud
+package utils
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ import (
 // HTTPOK is ok status of http api call.
 const HTTPOK = "200 OK"
 
-var httpClient = &http.Client{Transport: &http.Transport{}}
+var HttpClient = &http.Client{Transport: &http.Transport{}}
 
 func makeRequest(uri string, method string, body io.Reader,
 	contentType string, query url.Values,
@@ -45,8 +45,8 @@ func makeRequest(uri string, method string, body io.Reader,
 	return req, nil
 }
 
-// makeRequestToken use client token to make a authorized request.
-func makeRequestToken(uri string, method string, body io.Reader,
+// MakeRequestToken use client token to make a authorized request.
+func MakeRequestToken(uri string, method string, body io.Reader,
 	contentType string, query url.Values) (*http.Request, error) {
 	// get client token
 	token, err := token()
@@ -61,9 +61,9 @@ func makeRequestToken(uri string, method string, body io.Reader,
 // NOTE: add other request makers if we need other auth methods.
 
 func getResponse(req *http.Request) ([]byte, error) {
-	resp, err := httpClient.Do(req)
+	resp, err := HttpClient.Do(req)
 	if err != nil {
-		log.Errorf("httpClient do error %v\n", err)
+		log.Errorf("HttpClient do error %v\n", err)
 		return []byte{}, err
 	}
 	defer resp.Body.Close()
@@ -76,7 +76,7 @@ func getResponse(req *http.Request) ([]byte, error) {
 
 // GetCall make a GET call to targetURL with query.
 func GetCall(targetURL string, query url.Values) ([]byte, error) {
-	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
+	req, err := MakeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -85,7 +85,7 @@ func GetCall(targetURL string, query url.Values) ([]byte, error) {
 
 // PostCall make a POST call to targetURL with a json body.
 func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
-	req, err := makeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", nil)
+	req, err := MakeRequestToken(targetURL, "POST", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -94,7 +94,7 @@ func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
 
 // DeleteCall make a DELETE call to targetURL with a json body.
 func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
-	req, err := makeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", nil)
+	req, err := MakeRequestToken(targetURL, "DELETE", bytes.NewBuffer(jsonString), "", nil)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -126,7 +126,7 @@ func PostFile(targetURL string, filename string, query url.Values) ([]byte, erro
 		return []byte{}, err
 	}
 
-	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, query)
+	req, err := MakeRequestToken(targetURL, "POST", bodyBuf, contentType, query)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -160,8 +160,8 @@ func PostChunk(targetURL string,
 
 	contentType := writer.FormDataContentType()
 
-	log.V(4).Infoln("before makeRequestToken")
-	req, err := makeRequestToken(targetURL, "POST", body, contentType, nil)
+	log.V(4).Infoln("before MakeRequestToken")
+	req, err := MakeRequestToken(targetURL, "POST", body, contentType, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -173,10 +173,10 @@ func PostChunk(targetURL string,
 // GetChunk makes a GET call to HTTP server to download chunk data.
 func GetChunk(targetURL string,
 	query url.Values) (*http.Response, error) {
-	req, err := makeRequestToken(targetURL, "GET", nil, "", query)
+	req, err := MakeRequestToken(targetURL, "GET", nil, "", query)
 	if err != nil {
 		return nil, err
 	}
 
-	return httpClient.Do(req)
+	return HttpClient.Do(req)
 }

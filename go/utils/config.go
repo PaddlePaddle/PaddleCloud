@@ -1,4 +1,4 @@
-package paddlecloud
+package utils
 
 import (
 	"encoding/json"
@@ -47,10 +47,10 @@ func token() (string, error) {
 		fmt.Fprintf(os.Stderr, "previous token not found, fetching a new one...\n")
 		// Authenticate to the cloud endpoint
 		authJSON := map[string]string{}
-		authJSON["username"] = config.ActiveConfig.Username
-		authJSON["password"] = config.ActiveConfig.Password
+		authJSON["username"] = Config.ActiveConfig.Username
+		authJSON["password"] = Config.ActiveConfig.Password
 		authStr, _ := json.Marshal(authJSON)
-		body, err := PostCall(config.ActiveConfig.Endpoint+"/api-token-auth/", authStr)
+		body, err := PostCall(Config.ActiveConfig.Endpoint+"/api-token-auth/", authStr)
 		if err != nil {
 			return "", err
 		}
@@ -92,4 +92,4 @@ func parseConfig(configFile string) *submitConfig {
 	return nil
 }
 
-var config = parseConfig(filepath.Join(UserHomeDir(), ".paddle", "config"))
+var Config = parseConfig(filepath.Join(UserHomeDir(), ".paddle", "config"))

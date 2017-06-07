@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
 )
 
@@ -21,8 +22,8 @@ func remoteChunkMeta(path string,
 		ChunkSize: chunkSize,
 	}
 
-	t := fmt.Sprintf("%s/api/v1/chunks", config.ActiveConfig.Endpoint)
-	ret, err := GetCall(t, cmd.ToURLParam())
+	t := fmt.Sprintf("%s/api/v1/chunks", utils.Config.ActiveConfig.Endpoint)
+	ret, err := utils.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
@@ -47,13 +48,13 @@ func remoteChunkMeta(path string,
 func getChunkData(target string, chunk pfsmod.Chunk, dst string) error {
 	log.V(1).Info("target url: " + target)
 
-	resp, err := GetChunk(target, chunk.ToURLParam())
+	resp, err := utils.GetChunk(target, chunk.ToURLParam())
 	if err != nil {
 		return err
 	}
 	defer pfsmod.Close(resp.Body)
 
-	if resp.Status != HTTPOK {
+	if resp.Status != utils.HTTPOK {
 		return errors.New("http server returned non-200 status: " + resp.Status)
 	}
 
@@ -89,7 +90,7 @@ func downloadChunks(src string,
 		return nil
 	}
 
-	t := fmt.Sprintf("%s/api/v1/storage/chunks", config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/storage/chunks", utils.Config.ActiveConfig.Endpoint)
 	for _, meta := range diffMeta {
 		chunk := pfsmod.Chunk{
 			Path:   src,

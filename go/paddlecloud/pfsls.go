@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -69,8 +70,8 @@ func formatPrint(result []pfsmod.LsResult) {
 
 // RemoteLs gets LsCmd result from cloud.
 func RemoteLs(cmd *pfsmod.LsCmd) ([]pfsmod.LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
-	body, err := GetCall(t, cmd.ToURLParam())
+	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
+	body, err := utils.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
