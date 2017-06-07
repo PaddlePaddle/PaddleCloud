@@ -22,14 +22,6 @@ var httpClient = &http.Client{Transport: &http.Transport{}}
 func makeRequest(uri string, method string, body io.Reader,
 	contentType string, query url.Values,
 	authHeader map[string]string) (*http.Request, error) {
-
-	if query != nil {
-		uri = fmt.Sprintf("%s?%s", uri, query.Encode())
-		log.V(4).Infoln(uri)
-	}
-
-	log.V(4).Infof("%s %s %T\n", method, uri, body)
-
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		log.Errorf("new request %v\n", err)
@@ -47,6 +39,9 @@ func makeRequest(uri string, method string, body io.Reader,
 		req.Header.Set(k, v)
 	}
 
+	if query != nil {
+		req.URL.RawQuery = query.Encode()
+	}
 	return req, nil
 }
 
@@ -107,34 +102,31 @@ func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 }
 
 // PostFile make a POST call to HTTP server to upload a file.
-func PostFile(targetURL string, filename string) ([]byte, error) {
+func PostFile(targetURL string, filename string, query url.Values) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
-
-	// this step is very important
-	fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
+	fileWriter, err := bodyWriter.CreateFormFile("file", filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to buffer: %v\n", err)
 		return []byte{}, err
 	}
-
-	// open file handle
 	fh, err := os.Open(filename)
+	defer fh.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error opening file: %v\n", err)
 		return []byte{}, err
 	}
-
-	//iocopy
 	_, err = io.Copy(fileWriter, fh)
 	if err != nil {
 		return []byte{}, err
 	}
 
 	contentType := bodyWriter.FormDataContentType()
-	bodyWriter.Close()
+	if err = bodyWriter.Close(); err != nil {
+		return []byte{}, err
+	}
 
-	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, nil)
+	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, query)
 	if err != nil {
 		return []byte{}, err
 	}

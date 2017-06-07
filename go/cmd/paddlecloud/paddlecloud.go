@@ -16,6 +16,7 @@ func main() {
 	subcommands.Register(&paddlecloud.LogsCommand{}, "")
 	subcommands.Register(&paddlecloud.GetCommand{}, "")
 	subcommands.Register(&paddlecloud.KillCommand{}, "")
+	subcommands.Register(&paddlecloud.SimpleFileCmd{}, "")
 	subcommands.Register(&paddlecloud.LsCommand{}, "")
 	subcommands.Register(&paddlecloud.CpCommand{}, "")
 	subcommands.Register(&paddlecloud.RmCommand{}, "")

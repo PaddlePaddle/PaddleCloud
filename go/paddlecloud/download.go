@@ -116,7 +116,7 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 	dstMeta, err := pfsmod.GetChunkMeta(dst, defaultChunkSize)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := pfsmod.CreateSizedFile(dst, srcFileSize); err != nil {
+			if err = pfsmod.CreateSizedFile(dst, srcFileSize); err != nil {
 				return err
 			}
 		} else {

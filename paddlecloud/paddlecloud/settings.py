@@ -278,7 +278,7 @@ PADDLE_BOOK_PORT=8888
 FSTYPE_CEPHFS = "cephfs"
 FSTYPE_HOSTPATH = "hostpath"
 DATACENTERS = {
-    "datacenter1":{
+    "meiyan":{
         "fstype": FSTYPE_CEPHFS,
         "monitors_addr": ["172.19.32.166:6789"],  # must be a list
         "secret": "ceph-secret",

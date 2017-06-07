@@ -8,11 +8,13 @@ from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
 import json
 import utils
 import notebook.utils
 import logging
 import volume
+import os
 
 class JobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -89,6 +91,16 @@ class JobsView(APIView):
         # get user specified image
         job_image = obj.get("image", None)
         gpu_count = obj.get("gpu", 0)
+        # jobPackage validation: startwith /pfs
+        # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
+        job_name = obj.get("name", "paddle-cluster-job")
+        package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+
+        # package must be ready before submit a job
+        current_package_path = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
+        if not os.path.exists(current_package_path):
+            return utils.error_message_response("error: package not exist in cloud")
+
         # use default images
         if not job_image :
             if gpu_count > 0:
@@ -106,8 +118,8 @@ class JobsView(APIView):
             ))
 
         paddle_job = PaddleJob(
-            name = obj.get("name", "paddle-cluster-job"),
-            job_package = obj.get("jobPackage", ""),
+            name = job_name,
+            job_package = package_in_pod,
             parallelism = obj.get("parallelism", 1),
             cpu = obj.get("cpu", 1),
             memory = obj.get("memory", "1Gi"),
@@ -140,7 +152,7 @@ class JobsView(APIView):
         except ApiException, e:
             logging.error("error submitting trainer job: %s" % e)
             return utils.simple_response(500, str(e))
-        return utils.simple_response(200, "OK")
+        return utils.simple_response(200, "")
 
     def delete(self, request, format=None):
         """
@@ -276,3 +288,70 @@ class QuotaView(APIView):
         quota_list = api_client.CoreV1Api(api_cilent=api_client)\
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
+
+
+class SimpleFileView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (FormParser, MultiPartParser,)
+
+    def __validate_path(self, request, file_path):
+        """
+        returns error_msg. error_msg will be empty if there's no error.
+        """
+        path_parts = file_path.split(os.path.sep)
+
+        assert(path_parts[1]=="pfs")
+        assert(path_parts[2] in settings.DATACENTERS.keys())
+        assert(path_parts[3] == "home")
+        assert(path_parts[4] == request.user.username)
+
+        server_file = os.path.join(settings.STORAGE_PATH, request.user.username, *path_parts[5:])
+
+        return server_file
+
+    def get(self, request, format=None):
+        """
+        Simple get file.
+        """
+        file_path = request.query_params.get("path")
+        try:
+            write_file = self.__validate_path(request, file_path)
+        except Exception, e:
+            return utils.error_message_response("file path not valid: %s"%str(e))
+
+        if not os.path.exists(os.sep+write_file):
+            return Response({"msg": "file not exist"})
+
+        response = HttpResponse(open(write_file), content_type='application/force-download')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(write_file)
+
+        return response
+
+    def post(self, request, format=None):
+        """
+        Simple put file.
+        """
+        file_obj = request.data['file']
+        file_path = request.query_params.get("path")
+        if not file_path:
+            return utils.error_message_response("must specify path")
+        try:
+            write_file = self.__validate_path(request, file_path)
+        except Exception, e:
+            return utils.error_message_response("file path not valid: %s"%str(e))
+
+        if not os.path.exists(os.path.dirname(write_file)):
+            try:
+                os.makedirs(os.path.dirname(write_file))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        # FIXME: always overwrite package files
+        with open(write_file, "w") as fn:
+            while True:
+                data = file_obj.read(4096)
+                if not data:
+                    break
+                fn.write(data)
+
+        return Response({"msg": ""})
