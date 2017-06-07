@@ -149,7 +149,6 @@ func checkBeforeDownLoad(src []pfsmod.LsResult, dst string) (bool, error) {
 	return bDir, err
 }
 
-// Download function downloads src to dst.
 func download(src, dst string) error {
 	log.V(1).Infof("download %s to %s\n", src, dst)
 	lsRet, err := RemoteLs(pfsmod.NewLsCmd(true, src))
