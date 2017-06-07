@@ -303,7 +303,7 @@ class SimpleFileView(APIView):
 
     def __validate_path(self, request, file_path):
         """
-        returns error_msg. error_msg will be empty if there's no error
+        returns error_msg. error_msg will be empty if there's no error.
         """
         path_parts = file_path.split(os.path.sep)
 
@@ -318,7 +318,7 @@ class SimpleFileView(APIView):
 
     def get(self, request, format=None):
         """
-        Simple down file
+        Simple get file.
         """
         file_path = request.query_params.get("path")
         try:
@@ -336,7 +336,7 @@ class SimpleFileView(APIView):
 
     def post(self, request, format=None):
         """
-        Simple up file
+        Simple put file.
         """
         file_obj = request.data['file']
         file_path = request.query_params.get("path")

@@ -14,28 +14,28 @@ import (
 	"github.com/google/subcommands"
 )
 
-// SimpleFileCmd define the subcommand of simple file operations
+// SimpleFileCmd define the subcommand of simple file operations.
 type SimpleFileCmd struct {
 }
 
-// Name is subcommands name
+// Name is subcommands name.
 func (*SimpleFileCmd) Name() string { return "file" }
 
-// Synopsis is subcommands synopsis
+// Synopsis is subcommands synopsis.
 func (*SimpleFileCmd) Synopsis() string { return "Simple file operations." }
 
-// Usage is subcommands Usage
+// Usage is subcommands Usage.
 func (*SimpleFileCmd) Usage() string {
 	return `file [put|get] <src> <dst>:
 	Options:
 `
 }
 
-// SetFlags registers subcommands flags
+// SetFlags registers subcommands flags.
 func (p *SimpleFileCmd) SetFlags(f *flag.FlagSet) {
 }
 
-// Execute file ops
+// Execute file ops.
 func (p *SimpleFileCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() < 1 || f.NArg() > 3 {
 		f.Usage()

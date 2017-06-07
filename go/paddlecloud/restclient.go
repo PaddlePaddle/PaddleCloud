@@ -99,30 +99,26 @@ func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 func PostFile(targetURL string, filename string, query url.Values) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
-
-	// this step is very important
 	fileWriter, err := bodyWriter.CreateFormFile("file", filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to buffer: %v\n", err)
 		return []byte{}, err
 	}
-
-	// open file handle
 	fh, err := os.Open(filename)
 	defer fh.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error opening file: %v\n", err)
 		return []byte{}, err
 	}
-
-	//iocopy
 	_, err = io.Copy(fileWriter, fh)
 	if err != nil {
 		return []byte{}, err
 	}
 
 	contentType := bodyWriter.FormDataContentType()
-	bodyWriter.Close()
+	if err = bodyWriter.Close(); err != nil {
+		return []byte{}, err
+	}
 
 	req, err := makeRequestToken(targetURL, "POST", bodyBuf, contentType, query)
 	if err != nil {
@@ -131,7 +127,7 @@ func PostFile(targetURL string, filename string, query url.Values) ([]byte, erro
 	return getResponse(req)
 }
 
-// PostChunkData makes a POST call to HTTP server to upload chunkdata.
+// PostChunk makes a POST call to HTTP server to upload chunkdata.
 func PostChunk(targetURL string,
 	chunkName string, reader io.Reader, len int64, boundary string) ([]byte, error) {
 	body := &bytes.Buffer{}
@@ -161,7 +157,7 @@ func PostChunk(targetURL string,
 	return getResponse(req)
 }
 
-// GetChunkData makes a GET call to HTTP server to download chunk data.
+// GetChunk makes a GET call to HTTP server to download chunk data.
 func GetChunk(targetURL string,
 	query url.Values) (*http.Response, error) {
 	req, err := makeRequestToken(targetURL, "GET", nil, "", query)

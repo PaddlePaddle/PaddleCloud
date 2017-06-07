@@ -14,7 +14,7 @@ import (
 	"github.com/google/subcommands"
 )
 
-// SubmitCmd define the subcommand of submitting paddle training jobs
+// SubmitCmd define the subcommand of submitting paddle training jobs.
 type SubmitCmd struct {
 	Jobname     string `json:"name"`
 	Jobpackage  string `json:"jobPackage"`
@@ -31,13 +31,13 @@ type SubmitCmd struct {
 	Passes      int    `json:"passes"`
 }
 
-// Name is subcommands name
+// Name is subcommands name.
 func (*SubmitCmd) Name() string { return "submit" }
 
-// Synopsis is subcommands synopsis
+// Synopsis is subcommands synopsis.
 func (*SubmitCmd) Synopsis() string { return "Submit job to PaddlePaddle Cloud." }
 
-// Usage is subcommands Usage
+// Usage is subcommands Usage.
 func (*SubmitCmd) Usage() string {
 	return `submit [options] <package path>:
 	Submit job to PaddlePaddle Cloud.
@@ -45,7 +45,7 @@ func (*SubmitCmd) Usage() string {
 `
 }
 
-// SetFlags registers subcommands flags
+// SetFlags registers subcommands flags.
 func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Jobname, "jobname", "paddle-cluster-job", "Cluster job name.")
 	f.IntVar(&p.Parallelism, "parallelism", 1, "Number of parrallel trainers. Defaults to 1.")
@@ -60,13 +60,13 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
 }
 
-// Execute submit command
+// Execute submit command.
 func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() != 1 {
 		f.Usage()
 		return subcommands.ExitFailure
 	}
-	// default pservers count equals to trainers count
+	// default pservers count equals to trainers count.
 	if p.Pservers == 0 {
 		p.Pservers = p.Parallelism
 	}
@@ -83,18 +83,18 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	return subcommands.ExitSuccess
 }
 
-// Submitter submit job to cloud
+// Submitter submit job to cloud.
 type Submitter struct {
 	args *SubmitCmd
 }
 
-// NewSubmitter returns a submitter object
+// NewSubmitter returns a submitter object.
 func NewSubmitter(cmd *SubmitCmd) *Submitter {
 	s := Submitter{cmd}
 	return &s
 }
 
-// Submit current job
+// Submit current job.
 func (s *Submitter) Submit(jobPackage string) error {
 	// 1. upload user job package to pfs
 	err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
