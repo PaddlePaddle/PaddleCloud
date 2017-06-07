@@ -1,11 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: dataset-prepare 
+  name: prepare-dataset
 spec:
   template:
     metadata:
-      name: dataset-prepare
+      name: prepare-dataset
     spec:
       volumes:
         - name: data-storage
