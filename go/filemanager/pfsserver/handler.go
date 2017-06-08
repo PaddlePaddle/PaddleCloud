@@ -3,14 +3,13 @@ package pfsserver
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/utils"
 	sjson "github.com/bitly/go-simplejson"
 	log "github.com/golang/glog"
 )
@@ -20,64 +19,17 @@ type response struct {
 	Results interface{} `json:"results"`
 }
 
-func makeRequest(uri string, method string, body io.Reader,
-	contentType string, query url.Values,
-	authHeader map[string]string) (*http.Request, error) {
-
-	if query != nil {
-		uri = fmt.Sprintf("%s?%s", uri, query.Encode())
-		log.V(4).Infoln(uri)
-	}
-
-	log.V(4).Infof("%s %s %T\n", method, uri, body)
-	req, err := http.NewRequest(method, uri, body)
-	if err != nil {
-		log.Errorf("new request %v\n", err)
-		return nil, err
-	}
-
-	// default contentType is application/json.
-	if len(contentType) == 0 {
-		req.Header.Set("Content-Type", "application/json")
-	} else {
-		req.Header.Set("Content-Type", contentType)
-	}
-
-	for k, v := range authHeader {
-		req.Header.Set(k, v)
-	}
-
-	return req, nil
-}
-
-func getResponse(req *http.Request) ([]byte, error) {
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Errorf("httpClient do error %v\n", err)
-		return []byte{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return []byte{}, errors.New("server error: " + resp.Status)
-	}
-	// FIXME: add more resp.Status checks.
-	return ioutil.ReadAll(resp.Body)
-}
-
 var TokenUri = "http://cloud.paddlepaddle.org"
 
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = "Token " + token
-	req, err := makeRequest(uri, "GET", nil, "", nil, authHeader)
+	req, err := utils.MakeRequest(uri, "GET", nil, "", nil, authHeader)
 	if err != nil {
 		return "", err
 	}
 
-	body, err := getResponse(req)
+	body, err := utils.GetResponse(req)
 	if err != nil {
 		return "", err
 	}

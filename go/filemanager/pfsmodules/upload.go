@@ -1,4 +1,4 @@
-package paddlecloud
+package pfsmodules
 
 import (
 	"encoding/json"
@@ -8,12 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
 )
 
-func remoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
+func remoteStat(cmd *StatCmd) (*LsResult, error) {
 	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
 	log.V(3).Infoln(t)
 	body, err := utils.GetCall(t, cmd.ToURLParam())
@@ -22,8 +21,8 @@ func remoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	}
 
 	type statResponse struct {
-		Err     string          `json:"err"`
-		Results pfsmod.LsResult `json:"results"`
+		Err     string   `json:"err"`
+		Results LsResult `json:"results"`
 	}
 
 	resp := statResponse{}
@@ -40,7 +39,7 @@ func remoteStat(cmd *pfsmod.StatCmd) (*pfsmod.LsResult, error) {
 	return &resp.Results, nil
 }
 
-func remoteTouch(cmd *pfsmod.TouchCmd) error {
+func remoteTouch(cmd *TouchCmd) error {
 	j, err := cmd.ToJSON()
 	if err != nil {
 		return err
@@ -53,8 +52,8 @@ func remoteTouch(cmd *pfsmod.TouchCmd) error {
 	}
 
 	type touchResponse struct {
-		Err     string             `json:"err"`
-		Results pfsmod.TouchResult `json:"results"`
+		Err     string      `json:"err"`
+		Results TouchResult `json:"results"`
 	}
 
 	resp := touchResponse{}
@@ -81,15 +80,15 @@ func getChunkReader(path string, offset int64) (*os.File, error) {
 
 	_, err = f.Seek(offset, 0)
 	if err != nil {
-		pfsmod.Close(f)
+		Close(f)
 		return nil, err
 	}
 
 	return f, nil
 }
 
-func getDstParam(src *pfsmod.Chunk, dst string) string {
-	cmd := pfsmod.Chunk{
+func getDstParam(src *Chunk, dst string) string {
+	cmd := Chunk{
 		Path:   dst,
 		Offset: src.Offset,
 		Size:   src.Size,
@@ -98,23 +97,23 @@ func getDstParam(src *pfsmod.Chunk, dst string) string {
 	return cmd.ToURLParam().Encode()
 }
 
-func postChunk(src *pfsmod.Chunk, dst string) ([]byte, error) {
+func postChunk(src *Chunk, dst string) ([]byte, error) {
 	f, err := getChunkReader(src.Path, src.Offset)
 	if err != nil {
 		return nil, err
 	}
-	defer pfsmod.Close(f)
+	defer Close(f)
 
 	t := fmt.Sprintf("%s/api/v1/storage/chunks", utils.Config.ActiveConfig.Endpoint)
 	log.V(4).Infoln(t)
 
 	return utils.PostChunk(t, getDstParam(src, dst),
-		f, src.Size, pfsmod.DefaultMultiPartBoundary)
+		f, src.Size, DefaultMultiPartBoundary)
 }
 
 func uploadChunks(src string,
 	dst string,
-	diffMeta []pfsmod.ChunkMeta) error {
+	diffMeta []ChunkMeta) error {
 	if len(diffMeta) == 0 {
 		log.V(1).Infof("srcfile:%s and destfile:%s are same\n", src, dst)
 		return nil
@@ -123,7 +122,7 @@ func uploadChunks(src string,
 	for _, meta := range diffMeta {
 		log.V(3).Infof("diffMeta:%v\n", meta)
 
-		chunk := pfsmod.Chunk{
+		chunk := Chunk{
 			Path:   src,
 			Offset: meta.Offset,
 			Size:   meta.Len,
@@ -153,8 +152,8 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 
 	log.V(1).Infof("touch %s size:%d\n", dst, srcFileSize)
 
-	cmd := pfsmod.TouchCmd{
-		Method:   pfsmod.TouchCmdName,
+	cmd := TouchCmd{
+		Method:   TouchCmdName,
 		Path:     dst,
 		FileSize: srcFileSize,
 	}
@@ -169,13 +168,13 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 	}
 	log.V(2).Infof("dst %s chunkMeta:%#v\n", dst, dstMeta)
 
-	srcMeta, err := pfsmod.GetChunkMeta(src, defaultChunkSize)
+	srcMeta, err := GetChunkMeta(src, defaultChunkSize)
 	if err != nil {
 		return err
 	}
 	log.V(2).Infof("src %s chunkMeta:%#v\n", src, srcMeta)
 
-	diffMeta, err := pfsmod.GetDiffChunkMeta(srcMeta, dstMeta)
+	diffMeta, err := GetDiffChunkMeta(srcMeta, dstMeta)
 	if err != nil {
 		return err
 	}
@@ -185,24 +184,24 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 }
 
 func upload(src, dst string) error {
-	lsCmd := pfsmod.NewLsCmd(true, src)
+	lsCmd := NewLsCmd(true, src)
 	srcRet, err := lsCmd.Run()
 	if err != nil {
 		return err
 	}
 	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
 
-	dstMeta, err := remoteStat(&pfsmod.StatCmd{Path: dst, Method: pfsmod.StatCmdName})
-	if err != nil && !strings.Contains(err.Error(), pfsmod.StatusFileNotFound) {
+	dstMeta, err := remoteStat(&StatCmd{Path: dst, Method: StatCmdName})
+	if err != nil && !strings.Contains(err.Error(), StatusFileNotFound) {
 		return err
 	}
 	log.V(1).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
 
-	srcMetas := srcRet.([]pfsmod.LsResult)
+	srcMetas := srcRet.([]LsResult)
 
 	for _, srcMeta := range srcMetas {
 		if srcMeta.IsDir {
-			return errors.New(pfsmod.StatusOnlySupportFiles)
+			return errors.New(StatusOnlySupportFiles)
 		}
 
 		realSrc := srcMeta.Path

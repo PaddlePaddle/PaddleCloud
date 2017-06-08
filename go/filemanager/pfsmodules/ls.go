@@ -1,15 +1,21 @@
 package pfsmodules
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
+	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
+	"github.com/google/subcommands"
 )
 
 const (
@@ -24,7 +30,7 @@ type LsResult struct {
 	IsDir   bool   `json:"IsDir"`
 }
 
-// LsCmd means LsCommand structure.
+// LsCmd means LsCmd structure.
 type LsCmd struct {
 	Method string
 	R      bool
@@ -49,8 +55,7 @@ func (p *LsCmd) ToJSON() ([]byte, error) {
 	panic("not implemented")
 }
 
-// NewLsCmdFromFlag returen a new LsCmd.
-func NewLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
+func newLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
 	cmd := LsCmd{}
 
 	cmd.Method = lsCmdName
@@ -191,4 +196,116 @@ func (p *LsCmd) Run() (interface{}, error) {
 	}
 
 	return results, nil
+}
+
+// Name returns LsCmd's name.
+func (*LsCmd) Name() string { return "ls" }
+
+// Synopsis returns Synopsis of LsCmd.
+func (*LsCmd) Synopsis() string { return "List files on PaddlePaddle Cloud" }
+
+// Usage returns usage of LsCmd.
+func (*LsCmd) Usage() string {
+	return `ls [-r] <pfspath>:
+	List files on PaddlePaddleCloud
+	Options:
+`
+}
+
+// SetFlags sets LsCmd's parameters.
+func (p *LsCmd) SetFlags(f *flag.FlagSet) {
+	f.BoolVar(&p.R, "r", false, "list files recursively")
+}
+
+// getFormatPrint gets max width of filesize and return format string to print.
+func getFormatString(result []LsResult) string {
+	max := 0
+	for _, t := range result {
+		str := fmt.Sprintf("%d", t.Size)
+
+		if len(str) > max {
+			max = len(str)
+		}
+	}
+
+	return fmt.Sprintf("%%s %%s %%%dd %%s\n", max)
+}
+
+func formatPrint(result []LsResult) {
+	formatStr := getFormatString(result)
+
+	for _, t := range result {
+		timeStr := time.Unix(0, t.ModTime).Format("2006-01-02 15:04:05")
+
+		if t.IsDir {
+			fmt.Printf(formatStr, timeStr, "d", t.Size, t.Path)
+		} else {
+			fmt.Printf(formatStr, timeStr, "f", t.Size, t.Path)
+		}
+	}
+
+	fmt.Printf("\n")
+}
+
+// RemoteLs gets LsCmd result from cloud.
+func RemoteLs(cmd *LsCmd) ([]LsResult, error) {
+	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
+	body, err := utils.GetCall(t, cmd.ToURLParam())
+	if err != nil {
+		return nil, err
+	}
+
+	type lsResponse struct {
+		Err     string     `json:"err"`
+		Results []LsResult `json:"results"`
+	}
+
+	resp := lsResponse{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return resp.Results, err
+	}
+
+	if len(resp.Err) == 0 {
+		return resp.Results, nil
+	}
+
+	return resp.Results, errors.New(resp.Err)
+}
+
+func remoteLs(cmd *LsCmd) error {
+	for _, arg := range cmd.Args {
+		subcmd := NewLsCmd(
+			cmd.R,
+			arg,
+		)
+		result, err := RemoteLs(subcmd)
+
+		fmt.Printf("%s :\n", arg)
+		if err != nil {
+			fmt.Printf("  error:%s\n\n", err.Error())
+			return err
+		}
+
+		formatPrint(result)
+	}
+	return nil
+}
+
+// Execute runs a LsCmd.
+func (p *LsCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+	if f.NArg() < 1 {
+		f.Usage()
+		return subcommands.ExitFailure
+	}
+
+	cmd, err := newLsCmdFromFlag(f)
+	if err != nil {
+		return subcommands.ExitFailure
+	}
+	log.V(1).Infof("%#v\n", cmd)
+
+	if err := remoteLs(cmd); err != nil {
+		return subcommands.ExitFailure
+	}
+	return subcommands.ExitSuccess
 }
