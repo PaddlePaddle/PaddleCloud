@@ -213,7 +213,7 @@ kill命令执行成功后，集群会在后台终止集群作业的workers进程
 由于分布式训练会同时启动多个trainer实例，为了保证每个trainer实例能够获取到同等规模的数据集，我们需要对单机dataset拆分为多个小文件, 每个trainer根据自己的运行时信息来决定读取哪些具体的文件。[这里](../demo/fit_a_line/train.py)是训练程序的样例，[这里](../docker/python/paddle/cloud/dataset/uci_housing.py)是dataset的样例。
 
 ### 预处理训练数据
-您可以使用PaddlePaddle提供的API[paddle.v2.dataset.common.split](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L81)，或者自定义一个预处理函数,例如：
+您可以使用PaddlePaddle提供的默认函数[paddle.v2.dataset.common.split](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L81)将reader的数据切分为多个小文件，当然您也可以自定义一个预处理函数来切分数据：
 
 ```python
 import paddle.v2.dataset.uci_housing as uci_housing
@@ -223,14 +223,32 @@ common.split(uci_housing.train(),   // Your reader instance
             suffix="./uci_housing/train-%05d.pickle")              // filename suffix for each file
 ```
 
-上述代码会将uci_housing的数据集切分成成多个pickle格式的小文件，你可以通过PaddlePaddle的生产环境镜像来运行这样一段代码，例如：
+`split`默认会使用[cPickle](https://docs.python.org/2/library/pickle.html#module-cPickle)函数将Python对象序列化到本地文件, 上述代码会将uci_housing的数据集切分成成多个cPickle格式的小文件，您可以使用PaddlePaddle的生产环境镜像在本地运行切分数据的代码：
 
 ```bash
 docker run --rm -it -v $PWD:/work paddlepaddle/paddle:latest python /work/run.py
 ```
+执行成功后可以通过公用的数据中转机将数据上传至集群。
+
+- 自定义序列化函数
+
+  您可以用过`dumper`参数来指定序列化的函数，dumper的接口格式为
+
+  ```python
+  dumper(obj=<data object>, file=<open file object>)
+  ```
+
+  上述样例代码将会变为
+
+  ```python
+  common.split(reader = uci_housing.train(),   // Your reader instance
+              line_count = 500,       // reader iterator count for each file
+              suffix="./uci_housing/train-%05d.pickle",              // filename suffix for each file
+              dumper=picle.dump)      // using pickle.dump instead of the default function: cPickle.dump  
+  ```
 
 ### 读取分布式文件的reader
-训练代码需要在运行时判断自己身份并决定读取哪些文件,PaddlePaddle同样提供了API[paddle.v2.dataset.common.cluster_files_reader](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L119)来读取这些文件，您也可以定义自己的函数来读取文件。通过以下环境变量可以获取到一些有用的运行时信息：
+训练代码需要在运行时判断自己身份并决定读取哪些文件,PaddlePaddle同样提供了默认函数[paddle.v2.dataset.common.cluster_files_reader](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L119)来读取这些文件，您也可以定义自己的函数来读取文件。通过以下环境变量可以获取到一些有用的运行时信息：
 - `PADDLE_INIT_NUM_GRADIENT_SERVERS`: trainer实例的数量
 - `PADDLE_INIT_TRAINER_ID`: 当前trainer的ID,从0开始到`$TRAINERS-1`
 - `PADDLE_CLOUD_CURRENT_DATACENTER`: 当前的datacenter
@@ -247,6 +265,12 @@ def train():
     trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS")),
     train_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
   )
+```
+
+同样您也可以通过`loader`参数来指定如何加载文件,`loader`的接口格式:
+
+```python
+d = loader(f = <open file object>)
 ```
 
 *注意*: `"/pfs/%s/public" % dc`是公用数据的默认访问路径，所有Job对此目录具有*只读*权限。
