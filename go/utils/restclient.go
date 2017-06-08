@@ -19,7 +19,7 @@ const HTTPOK = "200 OK"
 
 var HttpClient = &http.Client{Transport: &http.Transport{}}
 
-func makeRequest(uri string, method string, body io.Reader,
+func MakeRequest(uri string, method string, body io.Reader,
 	contentType string, query url.Values,
 	authHeader map[string]string) (*http.Request, error) {
 	req, err := http.NewRequest(method, uri, body)
@@ -55,12 +55,12 @@ func MakeRequestToken(uri string, method string, body io.Reader,
 	}
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = "Token " + token
-	return makeRequest(uri, method, body, contentType, query, authHeader)
+	return MakeRequest(uri, method, body, contentType, query, authHeader)
 }
 
 // NOTE: add other request makers if we need other auth methods.
 
-func getResponse(req *http.Request) ([]byte, error) {
+func GetResponse(req *http.Request) ([]byte, error) {
 	resp, err := HttpClient.Do(req)
 	if err != nil {
 		log.Errorf("HttpClient do error %v\n", err)
@@ -80,7 +80,7 @@ func GetCall(targetURL string, query url.Values) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return GetResponse(req)
 }
 
 // PostCall make a POST call to targetURL with a json body.
@@ -89,7 +89,7 @@ func PostCall(targetURL string, jsonString []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return GetResponse(req)
 }
 
 // DeleteCall make a DELETE call to targetURL with a json body.
@@ -98,7 +98,7 @@ func DeleteCall(targetURL string, jsonString []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return GetResponse(req)
 }
 
 // PostFile make a POST call to HTTP server to upload a file.
@@ -130,7 +130,7 @@ func PostFile(targetURL string, filename string, query url.Values) ([]byte, erro
 	if err != nil {
 		return []byte{}, err
 	}
-	return getResponse(req)
+	return GetResponse(req)
 }
 
 // PostChunk makes a POST call to HTTP server to upload chunkdata.
@@ -160,14 +160,12 @@ func PostChunk(targetURL string,
 
 	contentType := writer.FormDataContentType()
 
-	log.V(4).Infoln("before MakeRequestToken")
 	req, err := MakeRequestToken(targetURL, "POST", body, contentType, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	log.V(4).Infoln("before getResponse")
-	return getResponse(req)
+	return GetResponse(req)
 }
 
 // GetChunk makes a GET call to HTTP server to download chunk data.
