@@ -23,7 +23,8 @@ class PaddleJob(object):
                  passes,
                  gpu=0,
                  volumes=[],
-                 registry_secret=None):
+                 registry_secret=None,
+                 envs = {}):
 
         self._ports_num=1
         self._ports_num_for_sparse=1
@@ -44,6 +45,7 @@ class PaddleJob(object):
         self._volumes = volumes
         self._registry_secret = registry_secret
         self._passes = passes
+        self._usr_envs = envs
 
     @property
     def pservers(self):
@@ -86,6 +88,9 @@ class PaddleJob(object):
             envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("0")})
         envs.append({"name":"NAMESPACE", "valueFrom":{
             "fieldRef":{"fieldPath":"metadata.namespace"}}})
+        if self._usr_envs:
+            for k, v in self._usr_envs.items():
+                envs.append({"name": k, "value": v})
         return envs
 
     def _get_pserver_container_ports(self):
