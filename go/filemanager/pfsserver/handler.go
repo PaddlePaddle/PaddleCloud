@@ -19,7 +19,7 @@ type response struct {
 	Results interface{} `json:"results"`
 }
 
-var TokenUri = "http://cloud.paddlepaddle.org"
+var TokenUri = ""
 
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
