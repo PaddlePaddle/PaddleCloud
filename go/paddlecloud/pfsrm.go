@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
+	"github.com/PaddlePaddle/cloud/go/utils"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -55,8 +56,8 @@ func RemoteRm(cmd *pfsmod.RmCmd) ([]pfsmod.RmResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", config.ActiveConfig.Endpoint)
-	body, err := DeleteCall(t, j)
+	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
+	body, err := utils.DeleteCall(t, j)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/PaddlePaddle/cloud/go/utils"
 	"github.com/google/subcommands"
 )
 
@@ -72,7 +73,7 @@ func putFile(src string, dest string) error {
 		destFullPath = dest
 	}
 	query.Set("path", destFullPath)
-	respStr, err := PostFile(config.ActiveConfig.Endpoint+"/api/v1/file/", src, query)
+	respStr, err := utils.PostFile(utils.Config.ActiveConfig.Endpoint+"/api/v1/file/", src, query)
 	if err != nil {
 		return err
 	}
@@ -91,16 +92,16 @@ func putFile(src string, dest string) error {
 func getFile(src string, dest string) error {
 	query := url.Values{}
 	query.Set("path", src)
-	req, err := makeRequestToken(config.ActiveConfig.Endpoint+"/api/v1/file/", "GET", nil, "", query)
+	req, err := utils.MakeRequestToken(utils.Config.ActiveConfig.Endpoint+"/api/v1/file/", "GET", nil, "", query)
 	if err != nil {
 		return err
 	}
-	resp, err := httpClient.Do(req)
+	resp, err := utils.HttpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.Status != HTTPOK {
+	if resp.Status != utils.HTTPOK {
 		return errors.New("server error: " + resp.Status)
 	}
 	_, srcFile := path.Split(src)

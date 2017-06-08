@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/PaddlePaddle/cloud/go/utils"
 	"github.com/google/subcommands"
 )
 
@@ -63,7 +64,7 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 func workers(jobname string) error {
 	var queryMap url.Values
 	queryMap.Add("jobname", jobname)
-	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap)
+	respBody, err := utils.GetCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting workers: %v\n", err)
 		return err
@@ -92,7 +93,7 @@ func workers(jobname string) error {
 }
 
 func jobs() error {
-	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil)
+	respBody, err := utils.GetCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting jobs: %v\n", err)
 		return err
@@ -126,7 +127,7 @@ func jobs() error {
 }
 
 func quota() error {
-	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/quota/", nil)
+	respBody, err := utils.GetCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/quota/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting quota: %v\n", err)
 		return err

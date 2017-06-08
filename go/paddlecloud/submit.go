@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/PaddlePaddle/cloud/go/utils"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -71,7 +72,7 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		p.Pservers = p.Parallelism
 	}
 	p.Jobpackage = f.Arg(0)
-	p.Datacenter = config.ActiveConfig.Name
+	p.Datacenter = utils.Config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
 	errS := s.Submit(f.Arg(0), p.Jobname)
@@ -102,7 +103,7 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 			return nil
 		}
 		glog.V(10).Infof("Uploading %s...\n", filePath)
-		dest := path.Join("/pfs", config.ActiveConfig.Name, "home", config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
+		dest := path.Join("/pfs", utils.Config.ActiveConfig.Name, "home", utils.Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
 		fmt.Printf("uploading: %s...\n", filePath)
 		return putFile(filePath, dest)
 	})
@@ -114,8 +115,8 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	if err != nil {
 		return err
 	}
-	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, config.ActiveConfig.Endpoint+"/api/v1/jobs")
-	respBody, err := PostCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
+	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs")
+	respBody, err := utils.PostCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
 	if err != nil {
 		return err
 	}

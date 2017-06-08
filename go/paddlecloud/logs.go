@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/PaddlePaddle/cloud/go/utils"
 	"github.com/google/subcommands"
 )
 
@@ -50,7 +51,7 @@ func (p *LogsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 	queryMap.Add("w", p.w)
 	queryMap.Add("jobname", f.Arg(0))
 
-	respBody, err := GetCall(config.ActiveConfig.Endpoint+"/api/v1/logs", queryMap)
+	respBody, err := utils.GetCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/logs", queryMap)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "call paddle cloud error %v", err)
 	}

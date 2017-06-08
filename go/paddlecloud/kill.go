@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/PaddlePaddle/cloud/go/utils"
 	"github.com/google/subcommands"
 )
 
@@ -40,7 +41,7 @@ func (p *KillCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		return subcommands.ExitFailure
 	}
 
-	body, err := DeleteCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", []byte("{\"jobname\": \""+f.Arg(0)+"\"}"))
+	body, err := utils.DeleteCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs/", []byte("{\"jobname\": \""+f.Arg(0)+"\"}"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error kill job: %v\n", err)
 		return subcommands.ExitFailure
