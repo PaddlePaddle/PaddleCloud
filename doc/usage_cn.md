@@ -248,3 +248,5 @@ def train():
     train_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
   )
 ```
+
+*注意*: `"/pfs/%s/public" % dc`是公用数据的默认访问路径，所有Job对此目录具有*只读*权限。
