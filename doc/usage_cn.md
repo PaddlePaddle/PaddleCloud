@@ -231,20 +231,20 @@ docker run --rm -it -v $PWD:/work paddlepaddle/paddle:latest python /work/run.py
 
 ### 读取分布式文件的reader
 训练代码需要在运行时判断自己身份并决定读取哪些文件,PaddlePaddle同样提供了API[paddle.v2.dataset.common.cluster_files_reader](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L119)来读取这些文件，您也可以定义自己的函数来读取文件。通过以下环境变量可以获取到一些有用的运行时信息：
-- `TRAINERS`: trainer实例的数量
+- `PADDLE_INIT_NUM_GRADIENT_SERVERS`: trainer实例的数量
 - `PADDLE_INIT_TRAINER_ID`: 当前trainer的ID,从0开始到`$TRAINERS-1`
-- `CURRENT_DATACENTER`: 当前的datacenter
+- `PADDLE_CLOUD_CURRENT_DATACENTER`: 当前的datacenter
 
 样例代码：
 ```python
 import paddle.v2.dataset.common as common
 
-dc = os.getenv("CURRENT_DATACENTER")
+dc = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 
 def train():
   return common.cluster_files_reader(
     "/pfs/%s/public/dataset/uci_housing/train-*.pickle" % dc,
-    trainer_count = int(os.getenv("TRAINERS")),
+    trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS")),
     train_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
   )
 ```
