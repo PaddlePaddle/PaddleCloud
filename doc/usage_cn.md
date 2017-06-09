@@ -134,6 +134,7 @@ paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parall
 
 参数说明：
 - `jobname`：提交任务的名称，paddlecloud使用`jobname`唯一标识一个任务
+    - ***注意：*** jobname必须由字母、数字、“-”和“.”组成，并且以字母数字组合结尾，***不能*** 包含下划线“_”
 - `-cpu`：每个trainer进程使用的CPU资源，单位是“核”
 - `-gpu`：每个trainer进程使用的GPU资源，单位是“卡”
 - `-memory`：每个trainer进程使用的内存资源，格式为“数字+单位”，单位可以是：Ki，Mi，Gi
