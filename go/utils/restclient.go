@@ -51,7 +51,7 @@ func MakeRequestToken(uri string, method string, body io.Reader,
 	// get client token
 	token, err := token()
 	if err != nil {
-		return nil, err
+		return nil, errors.New("get token error:" + err.Error())
 	}
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = "Token " + token

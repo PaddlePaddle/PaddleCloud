@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -41,6 +42,14 @@ func UserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
+func getToken(uri string, body []byte) ([]byte, error) {
+	req, err := MakeRequest(uri, "POST", bytes.NewBuffer(body), "", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return GetResponse(req)
+}
+
 func token() (string, error) {
 	tokenbytes, err := ioutil.ReadFile(filepath.Join(UserHomeDir(), ".paddle", "token_cache"))
 	if err != nil {
@@ -50,7 +59,7 @@ func token() (string, error) {
 		authJSON["username"] = Config.ActiveConfig.Username
 		authJSON["password"] = Config.ActiveConfig.Password
 		authStr, _ := json.Marshal(authJSON)
-		body, err := PostCall(Config.ActiveConfig.Endpoint+"/api-token-auth/", authStr)
+		body, err := getToken(Config.ActiveConfig.Endpoint+"/api-token-auth/", authStr)
 		if err != nil {
 			return "", err
 		}
