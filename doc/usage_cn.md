@@ -218,9 +218,9 @@ kill命令执行成功后，集群会在后台终止集群作业的workers进程
 ```python
 import paddle.v2.dataset.uci_housing as uci_housing
 import paddle.v2.dataset.common as common
-common.split(uci_housing.train(),   // Your reader instance
+common.split(reader = uci_housing.train(),   // Your reader instance
             line_count = 500,       // line count for each file
-            suffix="./uci_housing/train-%05d.pickle")              // filename suffix for each file
+            suffix = "./uci_housing/train-%05d.pickle")              // filename suffix for each file, must contain %05d
 ```
 
 `split`默认会使用[cPickle](https://docs.python.org/2/library/pickle.html#module-cPickle)函数将Python对象序列化到本地文件, 上述代码会将uci_housing的数据集切分成成多个cPickle格式的小文件，您可以使用PaddlePaddle的生产环境镜像在本地运行切分数据的代码：
@@ -238,13 +238,13 @@ docker run --rm -it -v $PWD:/work paddlepaddle/paddle:latest python /work/run.py
   dumper(obj=<data object>, file=<open file object>)
   ```
 
-  上述样例代码将会变为
+  例如，使用[marshal.dump](https://docs.python.org/2.7/library/marshal.html#marshal.dump)替换默认的`cPickle.dump`
 
   ```python
   common.split(reader = uci_housing.train(),   // Your reader instance
               line_count = 500,       // reader iterator count for each file
               suffix="./uci_housing/train-%05d.pickle",              // filename suffix for each file
-              dumper=picle.dump)      // using pickle.dump instead of the default function: cPickle.dump  
+              dumper=marshal.dump)      // using pickle.dump instead of the default function: cPickle.dump  
   ```
 
 ### 读取分布式文件的reader
@@ -267,10 +267,23 @@ def train():
   )
 ```
 
-同样您也可以通过`loader`参数来指定如何加载文件,`loader`的接口格式:
+- 自定义文件加载函数
+  同样您也可以通过`loader`参数来指定如何加载文件,`loader`的接口格式:
 
-```python
-d = loader(f = <open file object>)
-```
+  ```python
+  d = loader(f = <open file object>)
+  ```
+
+  例如,使用[marshal.load](https://docs.python.org/2.7/library/marshal.html#marshal.load)替换默认的`cPickle.load`:
+
+  ```python
+  def train():
+    return common.cluster_files_reader(
+      "/pfs/%s/public/dataset/uci_housing/train-*.pickle" % dc,
+      trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS")),
+      train_id = int(os.getenv("PADDLE_INIT_TRAINER_ID")),
+      loader = marshal.load
+    )
+  ```
 
 *注意*: `"/pfs/%s/public" % dc`是公用数据的默认访问路径，所有Job对此目录具有*只读*权限。
