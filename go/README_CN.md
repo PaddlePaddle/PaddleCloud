@@ -9,6 +9,7 @@
   - 编译pfsserver
  
   ```
+  cd ..
   docker run  --rm -v  $(pwd):/root/gopath/src/github.com/PaddlePaddle/cloud/go  pfsserver:dev
   ```
   
