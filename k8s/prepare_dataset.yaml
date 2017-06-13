@@ -22,7 +22,7 @@ spec:
         env:
           - name: CURRENT_DATACENTER
             value: "meiyan"
-        command: ["python", "-c", "\"import paddle.cloud.dataset.common as common; common.fetch_all()\""]
+        command: ["python", "-c", "\"import pcloud.dataset.common as common; common.fetch_all()\""]
         volumeMounts:
         - name: data-storage
           mountPath: /pfs/meiyan/public
