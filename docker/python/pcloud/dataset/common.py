@@ -1,9 +1,9 @@
 import uci_housing
-import paddle
+import pcloud
 import importlib
 def fetch_all():
     for module_name in filter(lambda x: not x.startswith("__"),
-                              dir(paddle.cloud.dataset)):
+                              dir(pcloud.dataset)):
         if "fetch" in dir(
                 importlib.import_module("pcloud.dataset.%s" % module_name)):
             getattr(
