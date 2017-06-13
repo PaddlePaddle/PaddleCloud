@@ -13,7 +13,7 @@
   ```
   
   - 创建pfsserver的DockerImage
-  - 
+  
   ```
   docker build . -t pfsserver:latest
   ```
