@@ -14,8 +14,12 @@ endpoint:
 http://nmg01-jpaas-paddle00-wrk99.nmg01.baidu.com:8448
 中转机：
 nmg01-jpaas-paddle00-wrk99.nmg01.baidu.com
+
 HDFS目录：
-/mnt/hdfs_mulan
+只读权限：/mnt/hdfs_mulan
+写权限：/mnt/hdfs_mulan/idl/idl-dl/pcloud
+/mnt/hdfs_mulan/ 对应云端路径 /home/dc_mulan/home/${your email}/
+
 中转机账号/密码： paddlecloud/paddlecloud
 
 如遇到问题欢迎在Hi群中反馈：1561086
