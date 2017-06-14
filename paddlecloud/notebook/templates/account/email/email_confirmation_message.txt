@@ -1,0 +1,27 @@
+{% load i18n account_tags %}{% blocktrans with site_name=current_site.name %}欢迎关注PaddlePaddleCloud
+
+以下是您的账号信息：
+
+用户名：
+{{ user }}
+请点击下面的链接完成激活：
+{{ activate_url }}
+
+完成账号激活后，请按这篇文档配置客户端：https://github.com/PaddlePaddle/cloud/blob/develop/doc/usage_cn.md
+
+可能需要的配置项：
+endpoint:
+http://nmg01-jpaas-paddle00-wrk99.nmg01.baidu.com:8448
+中转机：
+nmg01-jpaas-paddle00-wrk99.nmg01.baidu.com
+HDFS目录：
+/mnt/hdfs_mulan
+中转机账号/密码： paddlecloud/paddlecloud
+
+如遇到问题欢迎在Hi群中反馈：1561086
+
+如果您并未申请此账号请忽略此消息
+
+---
+PaddlePaddle team
+{% endblocktrans %}
