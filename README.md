@@ -91,3 +91,15 @@ If you are starting the server for the second time, just run:
 ```
 ./manage.py runserver
 ```
+
+### Configure Email Sending
+If you want to use `mail` command to send confirmation emails, change the below settings:
+
+```
+EMAIL_BACKEND = 'django_sendmail_backend.backends.EmailBackend'
+```
+
+You may need to use `hostNetwork` for your pod when using mail command.
+
+Or you can use django smtp bindings just refer to https://docs.djangoproject.com/en/1.11/topics/email/
+
