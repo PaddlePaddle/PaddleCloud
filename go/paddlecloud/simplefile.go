@@ -96,7 +96,7 @@ func getFile(src string, dest string) error {
 	if err != nil {
 		return err
 	}
-	resp, err := utils.HttpClient.Do(req)
+	resp, err := utils.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}

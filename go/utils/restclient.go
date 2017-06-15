@@ -17,8 +17,10 @@ import (
 // HTTPOK is ok status of http api call.
 const HTTPOK = "200 OK"
 
-var HttpClient = &http.Client{Transport: &http.Transport{}}
+// HTTPClient is a global Http client obj conains one persist connection.
+var HTTPClient = &http.Client{Transport: &http.Transport{}}
 
+// MakeRequest returns a general HTTP request object.
 func MakeRequest(uri string, method string, body io.Reader,
 	contentType string, query url.Values,
 	authHeader map[string]string) (*http.Request, error) {
@@ -60,10 +62,11 @@ func MakeRequestToken(uri string, method string, body io.Reader,
 
 // NOTE: add other request makers if we need other auth methods.
 
+// GetResponse will do the request and get response from server.
 func GetResponse(req *http.Request) ([]byte, error) {
-	resp, err := HttpClient.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
-		log.Errorf("HttpClient do error %v\n", err)
+		log.Errorf("HTTPClient do error %v\n", err)
 		return []byte{}, err
 	}
 	defer resp.Body.Close()
@@ -176,5 +179,5 @@ func GetChunk(targetURL string,
 		return nil, err
 	}
 
-	return HttpClient.Do(req)
+	return HTTPClient.Do(req)
 }
