@@ -18,7 +18,7 @@ def main():
     optimizer = paddle.optimizer.Momentum(momentum=0)
 
     trainer = paddle.trainer.SGD(
-        cost=cost, parameters=parameters, update_equation=optimizer)
+        cost=cost, parameters=parameters, update_equation=optimizer, is_local=False)
 
     feeding = {'x': 0, 'y': 1}
 
