@@ -1,36 +1,49 @@
 package utils
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 )
 
-func fakeServer() *http.Server {
+func fakeServer() (*http.Server, int) {
 	http.HandleFunc("/api-token-auth/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{\"token\": \"testtokenvalue\"}"))
 	})
 	http.HandleFunc("/fake-api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("fakeresult"))
 	})
-	srv := &http.Server{Addr: ":8980"}
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Using port:", listener.Addr().(*net.TCPAddr).Port)
+
+	srv := &http.Server{Addr: listener.Addr().String()}
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
+		if err := srv.Serve(listener); err != nil {
 			return
 		}
 	}()
-	return srv
+	return srv, listener.Addr().(*net.TCPAddr).Port
 }
 
 func TestConfigParse(t *testing.T) {
+	srv, port := fakeServer()
+	defer srv.Shutdown(nil)
+
 	sampleConfig := `current-datacenter: dc1
 datacenters:
 - name: dc1
   username: testuser
   password: 123123
-  endpoint: http://127.0.0.1:8980
+  endpoint: http://127.0.0.1:` + strconv.Itoa(port) + `
 - name: dc2
   username: testuser2
   password: 123123
@@ -48,13 +61,12 @@ datacenters:
 		t.Fatal(err)
 	}
 	tempconfig := parseConfig(tmpfile.Name())
-	if tempconfig.ActiveConfig.Endpoint != "http://127.0.0.1:8980" {
+	if tempconfig.ActiveConfig.Endpoint != "http://127.0.0.1:"+strconv.Itoa(port) {
 		t.Error("config parse error")
 	}
 
 	// test token fetching
-	srv := fakeServer()
-	defer srv.Shutdown(nil)
+
 	Config = tempconfig
 	os.Remove(filepath.Join(UserHomeDir(), ".paddle", "token_cache"))
 	token, err := token()
