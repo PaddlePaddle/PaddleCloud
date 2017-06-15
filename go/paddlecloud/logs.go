@@ -53,7 +53,8 @@ func (p *LogsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 
 	respBody, err := utils.GetCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/logs", queryMap)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "call paddle cloud error %v", err)
+		fmt.Fprintf(os.Stderr, "call paddle cloud error %v, %v", err, respBody)
+		return subcommands.ExitFailure
 	}
 	var respObj interface{}
 	errJSON := json.Unmarshal(respBody, &respObj)
