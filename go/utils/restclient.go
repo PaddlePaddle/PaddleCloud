@@ -18,7 +18,7 @@ import (
 const HTTPOK = "200 OK"
 
 // HTTPClient is a global Http client obj conains one persist connection.
-var HTTPClient = &http.Client{Transport: &http.Transport{}}
+var HTTPClient = http.DefaultClient
 
 // MakeRequest returns a general HTTP request object.
 func MakeRequest(uri string, method string, body io.Reader,
