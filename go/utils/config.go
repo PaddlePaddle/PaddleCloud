@@ -85,7 +85,8 @@ func parseConfig(configFile string) *submitConfig {
 	if err == nil {
 		yamlErr := yaml.Unmarshal(buf, &config)
 		if yamlErr != nil {
-			glog.Fatalf("load config %s error: %v", configFile, err)
+			glog.Errorf("load config %s error: %v\n", configFile, yamlErr)
+			return nil
 		}
 		// put active config
 		config.ActiveConfig = nil
@@ -97,8 +98,9 @@ func parseConfig(configFile string) *submitConfig {
 		}
 		return &config
 	}
-	glog.Fatalf("config %s error: %v", configFile, err)
+	glog.Errorf("config %s error: %v\n", configFile, err)
 	return nil
 }
 
+// Config is a global varible to store current parsed config object.
 var Config = parseConfig(filepath.Join(UserHomeDir(), ".paddle", "config"))
