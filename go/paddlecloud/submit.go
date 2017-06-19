@@ -30,6 +30,8 @@ type SubmitCmd struct {
 	Topology    string `json:"topology"`
 	Datacenter  string `json:"datacenter"`
 	Passes      int    `json:"passes"`
+	Image       string `json:"image"`
+	Registry    string `json:"registry"`
 }
 
 // Name is subcommands name.
@@ -59,6 +61,8 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
+	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
+	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
 }
 
 // Execute submit command.

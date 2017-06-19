@@ -288,7 +288,7 @@ class QuotaView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
-        quota_list = api_client.CoreV1Api(api_cilent=api_client)\
+        quota_list = client.CoreV1Api(api_client=api_client)\
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
 
