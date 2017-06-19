@@ -86,8 +86,9 @@ class JobsView(APIView):
                 ))
             else:
                 pass
-
-        registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
+        registry_secret = obj.get("registry", None)
+        if not registry_secret:
+            registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         # get user specified image
         job_image = obj.get("image", None)
         gpu_count = obj.get("gpu", 0)
