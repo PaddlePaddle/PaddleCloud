@@ -1,26 +1,29 @@
-1. 如何构建PFSserver的DockerImage
-  - 构建PFSserver的编译环境
+1. 如何构建PFSServer的DockerImage
+  - 构建PFSServer的编译环境
 
   ```
   cd docker
   bash build.sh
   ```
 
-  - 编译PFSserver
+  - 编译PFSServer
  
   ```
-  cd ..
-  docker run  --rm -v  $(pwd):/root/gopath/src/github.com/PaddlePaddle/cloud  PFSserver:dev
+  docker run  --rm -v  $(pwd):/root/gopath/src/github.com/PaddlePaddle/cloud/go pfsserver:dev
   ```
   
-  - 创建PFSserver的DockerImage
+  - 构建PFSServer的DockerImage
   
   ```
   docker build . -t pfsserver:latest
   ```
+  - PFSServer启动命令
+  ```
+  docker run pfsserver:latest /pfsserver/pfsserver -tokenuri http://cloud.paddlepaddle.org -logtostderr=false -log_dir=./log -v=3
+  ```
 
-2. 如何部署PFSserver
-3. 如何使用PFSclient
+2. 如何部署PFSServer
+3. 如何使用PFSClient
 	- cp
 	- ls
 	- rm
