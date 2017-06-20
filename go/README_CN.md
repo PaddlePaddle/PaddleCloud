@@ -18,13 +18,43 @@
   docker build . -t pfsserver:latest
   ```
   - PFSServer启动命令
+  
   ```
   docker run pfsserver:latest /pfsserver/pfsserver -tokenuri http://cloud.paddlepaddle.org -logtostderr=false -log_dir=./log -v=3
   ```
 
 2. 如何部署PFSServer
+
+	```
+	cd ../k8s
+	kuberctl create -f cloud_pfsserver.yaml
+	```
+	 
 3. 如何使用PFSClient
 	- cp
+	
+	```
+	upload:
+		paddlecloud cp ./file /pfs/$DATACENTER/home/$USER/file
+		
+	download:
+		paddlecloud cp /pfs/$DATACENTER/home/$USER/file ./file
+	```
 	- ls
+	
+	```
+	paddlecloud ls  /pfs/$DATACENTER/home/$USER/folder
+	```
+	
 	- rm
+	
+	```
+	paddlecloud rm /pfs/$DATACENTER/home/$USER/file
+	paddlecloud rm -r /pfs/$DATACENTER/home/$USER/folder
+	```
+	
 	- mkdir
+	
+	```
+	paddlecloud mkdir  /pfs/$DATACENTER/home/$USER/folder
+	```

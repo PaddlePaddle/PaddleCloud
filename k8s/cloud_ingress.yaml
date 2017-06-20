@@ -7,10 +7,22 @@ spec:
   - host: cloud.paddlepaddle.org
     http:
       paths:
-      - path: /storage
+      - path: /api/v1/files
         backend:
           serviceName: pfsserver-service
-          servicePort: 8080
+          servicePort: 8000
+      - path: /api/v1/chunks
+        backend:
+          serviceName: pfsserver-service
+          servicePort: 8000
+      - path: /api/v1/storage/files
+        backend:
+          serviceName: pfsserver-service
+          servicePort: 8000
+      - path: /api/v1/storage/chunks
+        backend:
+          serviceName: pfsserver-service
+          servicePort: 8000
       - path: /
         backend:
           serviceName: paddle-cloud-service
