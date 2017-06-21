@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: pfs-ingress
+  namespace: pfs
+spec:
+  tls:
+  - hosts:
+    - pfs.paddlpaddle.org
+    secretName: pfs-secret
+  rules:
+  - host: pfs.paddlepaddle.org
+    http:
+      paths:
+      - backend:
+          serviceName: pfs-service
+          servicePort: 8080
+        path: /
+

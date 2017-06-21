@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pfsserver
+  namespace: pfs
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pfsserver
+    spec:
+      containers:
+      - name: pfs
+        imagePullPolicy: Always
+        image: gongweibao/pfsserver:latest
+        ports:
+        - containerPort: 8080
