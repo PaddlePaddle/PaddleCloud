@@ -17,7 +17,8 @@ import (
 const (
 	// RegistryCmdName is subcommand name
 	RegistryCmdName = "registry"
-	RegistryPrefix  = "pcloud-registry"
+	// RegistryPrefix is the prefix for Kubernetes secret name
+	RegistryPrefix = "pcloud-registry"
 )
 
 // RegistryCmd is Docker registry secret information

@@ -11,7 +11,6 @@ import (
 
 // DeleteCommand do job killings
 type DeleteCommand struct {
-	rm bool
 }
 
 // Name is subcommands name
