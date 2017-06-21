@@ -16,3 +16,4 @@ spec:
         image: gongweibao/pfsserver:latest
         ports:
         - containerPort: 8080
+        command: ["/pfsserver/pfsserver", "-tokenuri", "http://10.100.0.137", "-alsologtostderr=true", "-log_dir=./log", "-v=3"]
