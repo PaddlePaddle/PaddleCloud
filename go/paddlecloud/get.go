@@ -94,7 +94,7 @@ func workers(jobname string) error {
 	return nil
 }
 func registry() error {
-	respBody, err := utils.GetCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/registry/", nil)
+	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/registry/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "err getting registry secret: %v\n", err)
 		return err

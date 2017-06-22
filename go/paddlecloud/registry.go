@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -53,8 +53,8 @@ func (r *RegistryCmd) addRegistrySecret() error {
 	if err != nil {
 		return err
 	}
-	glog.V(10).Infof("Add registry secret: %s to %s\n", jsonString, utils.Config.ActiveConfig.Endpoint+"/api/v1/registry/")
-	respBody, err := utils.PostCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/registry/", jsonString)
+	glog.V(10).Infof("Add registry secret: %s to %s\n", jsonString, Config.ActiveConfig.Endpoint+"/api/v1/registry/")
+	respBody, err := restclient.PostCall(Config.ActiveConfig.Endpoint+"/api/v1/registry/", jsonString)
 	if err != nil {
 		return err
 	}
@@ -76,8 +76,8 @@ func (r *RegistryCmd) Delete() error {
 	if err != nil {
 		return err
 	}
-	glog.V(10).Infof("Delete registry secret: %s to %s\n", jsonString, utils.Config.ActiveConfig.Endpoint+"/api/v1/registry/")
-	respBody, err := utils.DeleteCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/registry/", jsonString)
+	glog.V(10).Infof("Delete registry secret: %s to %s\n", jsonString, Config.ActiveConfig.Endpoint+"/api/v1/registry/")
+	respBody, err := restclient.DeleteCall(Config.ActiveConfig.Endpoint+"/api/v1/registry/", jsonString)
 	if err != nil {
 		return err
 	}
