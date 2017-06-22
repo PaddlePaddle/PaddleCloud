@@ -59,7 +59,7 @@ func TestTokenParse(t *testing.T) {
 	// FIXME: separate these tests
 	// test token request
 	uri := fmt.Sprintf("http://127.0.0.1:%d/fake-api/", port)
-	req, err := MakeRequestToken(uri, "GET", nil, "", nil)
+	req, err := MakeRequest(uri, "GET", nil, "", nil, nil)
 	if err != nil {
 		t.Errorf("make request error %v", err)
 	}
@@ -71,12 +71,4 @@ func TestTokenParse(t *testing.T) {
 		t.Error("error result fetched")
 	}
 
-	// test GetCall
-	resp, err = GetCall(uri, nil)
-	if err != nil {
-		t.Errorf("GetCall error : %v", err)
-	}
-	if string(resp) != "fakeresult" {
-		t.Error("GetCall result error")
-	}
 }
