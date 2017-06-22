@@ -33,12 +33,20 @@ Usage: paddlecloud <flags> <subcommand> <subcommand args>
 
 Subcommands:
 	commands         list all command names
+	delete           Delete the specify resource.
+	file             Simple file operations.
 	get              Print resources
 	help             describe subcommands and their syntax
 	kill             Stop the job. -rm will remove the job from history.
 	logs             Print logs of the job.
-  submit           Submit job to PaddlePaddle Cloud.
-  delete           Delete the specify resource.
+	registry         Add registry secret on paddlecloud.
+	submit           Submit job to PaddlePaddle Cloud.
+
+Subcommands for PFS:
+	cp               uoload or download files
+	ls               List files on PaddlePaddle Cloud
+	mkdir            mkdir directoies on PaddlePaddle Cloud
+	rm               rm files on PaddlePaddle Cloud
 
 
 Use "paddlecloud flags" for a list of top-level flags
