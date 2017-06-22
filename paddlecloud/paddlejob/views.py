@@ -76,7 +76,7 @@ class JobsView(APIView):
                     host_path = cfg["host_path"]
                 else:
                     mount_path = cfg["mount_path"] % (dc, username)
-                    host_path = cfg["host_path"] % username
+                    host_path = cfg["host_path"]
 
                 volumes.append(volume.get_volume_config(
                     fstype = fstype,
@@ -94,12 +94,19 @@ class JobsView(APIView):
         # jobPackage validation: startwith /pfs
         # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
         job_name = obj.get("name", "paddle-cluster-job")
-        package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+        if settings.STORAGE_MODE == "CEPHFS":
+            package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+        elif settings.STORAGE_MODE == "HDFS":
+            package_in_pod = obj.get("jobPackage")
 
+        logging.info("current package: %s", package_in_pod)
         # package must be ready before submit a job
         current_package_path = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
         if not os.path.exists(current_package_path):
-            return utils.error_message_response("error: package not exist in cloud")
+            current_package_path = package_in_pod.replace("/pfs/%s/home/%s"%(dc, username), settings.STORAGE_PATH)
+            if not os.path.exists(current_package_path):
+                return utils.error_message_response("package not exist in cloud: %s"%current_package_path)
+        logging.info("current package in pod: %s", current_package_path)
 
         # use default images
         if not job_image :
