@@ -10,10 +10,23 @@ spec:
       labels:
         app: pfsserver
     spec:
+      volumes:
+      - name: data-storage
+        cephfs:
+          name: cephfs
+          monitors: ["172.19.32.166:6789"]
+          path: "/"
+          user: "admin"
+          secretRef:
+            name: ceph-secret
       containers:
       - name: pfs
         imagePullPolicy: Always
         image: gongweibao/pfsserver:latest
+        volumeMounts:
+        - name: data-storage
+          mountPath: /pfs/datacenter1/home/
         ports:
         - containerPort: 8080
         command: ["/pfsserver/pfsserver", "-tokenuri", "http://paddle-cloud-service", "-alsologtostderr=true", "-log_dir=./log", "-v=3"]
+     
