@@ -8,14 +8,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/config"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	log "github.com/golang/glog"
 )
 
+// Config is global config object for pfs commandline
+var Config = config.ParseDefaultConfig()
+
 func remoteStat(cmd *StatCmd) (*LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
 	log.V(3).Infoln(t)
-	body, err := utils.GetCall(t, cmd.ToURLParam())
+	body, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +49,8 @@ func remoteTouch(cmd *TouchCmd) error {
 		return err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
-	body, err := utils.PostCall(t, j)
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	body, err := restclient.PostCall(t, j)
 	if err != nil {
 		return err
 	}
@@ -104,10 +108,10 @@ func postChunk(src *Chunk, dst string) ([]byte, error) {
 	}
 	defer Close(f)
 
-	t := fmt.Sprintf("%s/api/v1/storage/chunks", utils.Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/storage/chunks", Config.ActiveConfig.Endpoint)
 	log.V(4).Infoln(t)
 
-	return utils.PostChunk(t, getDstParam(src, dst),
+	return restclient.PostChunk(t, getDstParam(src, dst),
 		f, src.Size, DefaultMultiPartBoundary)
 }
 

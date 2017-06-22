@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -32,7 +32,7 @@ type RmCmd struct {
 	Args   []string `json:"path"`
 }
 
-// LocalCheck checks the conditions when running local.
+// ValidateLocalArgs checks the conditions when running local.
 func (p *RmCmd) ValidateLocalArgs() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusInvalidArgs)
@@ -40,7 +40,7 @@ func (p *RmCmd) ValidateLocalArgs() error {
 	return nil
 }
 
-// CloudCheck checks the conditions when running on cloud.
+// ValidateCloudArgs checks the conditions when running on cloud.
 func (p *RmCmd) ValidateCloudArgs(userName string) error {
 	return ValidatePfsPath(p.Args, userName)
 }
@@ -162,8 +162,8 @@ func RemoteRm(cmd *RmCmd) ([]RmResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
-	body, err := utils.DeleteCall(t, j)
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	body, err := restclient.DeleteCall(t, j)
 	if err != nil {
 		return nil, err
 	}
