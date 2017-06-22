@@ -86,8 +86,9 @@ class JobsView(APIView):
                 ))
             else:
                 pass
-
-        registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
+        registry_secret = obj.get("registry", None)
+        if not registry_secret:
+            registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         # get user specified image
         job_image = obj.get("image", None)
         gpu_count = obj.get("gpu", 0)
@@ -288,7 +289,7 @@ class QuotaView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
-        quota_list = api_client.CoreV1Api(api_cilent=api_client)\
+        quota_list = client.CoreV1Api(api_client=api_client)\
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
 
