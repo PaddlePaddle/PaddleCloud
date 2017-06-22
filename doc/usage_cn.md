@@ -37,7 +37,7 @@ Subcommands:
 	help             describe subcommands and their syntax
 	kill             Stop the job. -rm will remove the job from history.
 	logs             Print logs of the job.
-	submit           Submit job to PaddlePaddle Cloud.
+  submit           Submit job to PaddlePaddle Cloud.
   delete           Delete the specify resource.
 
 
