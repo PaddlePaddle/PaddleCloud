@@ -44,15 +44,6 @@ class SampleView(APIView):
         }
         return Response(content)
 
-class GetUserView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get(self, request, format=None):
-        content = {
-            'user': unicode(request.user.username),  # `django.contrib.auth.User` instance.
-        }
-        return Response(content)
-
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
