@@ -44,7 +44,7 @@ func checkUser(path string, user string) error {
 	return nil
 }
 
-// IsCloudPath returns whether a path is a pfspath.
+// ValidatePfsPath returns whether a path is a pfspath.
 func ValidatePfsPath(paths []string, userName string) error {
 	if len(paths) == 0 {
 		return errors.New(StatusNotEnoughArgs)

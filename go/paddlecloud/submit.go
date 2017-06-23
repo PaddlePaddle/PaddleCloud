@@ -10,10 +10,14 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/config"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 )
+
+// Config is global config object for paddlecloud commandline
+var Config = config.ParseDefaultConfig()
 
 // SubmitCmd define the subcommand of submitting paddle training jobs.
 type SubmitCmd struct {
@@ -76,7 +80,7 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		p.Pservers = p.Parallelism
 	}
 	p.Jobpackage = f.Arg(0)
-	p.Datacenter = utils.Config.ActiveConfig.Name
+	p.Datacenter = Config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
 	errS := s.Submit(f.Arg(0), p.Jobname)
@@ -107,7 +111,7 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 			return nil
 		}
 		glog.V(10).Infof("Uploading %s...\n", filePath)
-		dest := path.Join("/pfs", utils.Config.ActiveConfig.Name, "home", utils.Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
+		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
 		fmt.Printf("uploading: %s...\n", filePath)
 		return putFile(filePath, dest)
 	})
@@ -119,8 +123,8 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	if err != nil {
 		return err
 	}
-	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs")
-	respBody, err := utils.PostCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
+	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, Config.ActiveConfig.Endpoint+"/api/v1/jobs")
+	respBody, err := restclient.PostCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
 	if err != nil {
 		return err
 	}

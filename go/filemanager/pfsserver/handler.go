@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	sjson "github.com/bitly/go-simplejson"
 	log "github.com/golang/glog"
 )
@@ -24,12 +24,12 @@ var TokenUri = ""
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = "Token " + token
-	req, err := utils.MakeRequest(uri, "GET", nil, "", nil, authHeader)
+	req, err := restclient.MakeRequest(uri, "GET", nil, "", nil, authHeader)
 	if err != nil {
 		return "", err
 	}
 
-	body, err := utils.GetResponse(req)
+	body, err := restclient.GetResponse(req)
 	if err != nil {
 		return "", err
 	}
