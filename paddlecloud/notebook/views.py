@@ -195,10 +195,11 @@ def create_user_namespace(username):
             "metadata": {
                 "name": user_namespace
             }})
-    #create DataCenter sercret if not exists
-    secrets = v1api.list_namespaced_secret(user_namespace)
-    secret_names = [item.metadata.name for item in secrets.items]
     for dc, cfg in settings.DATACENTERS.items():
+        #create DataCenter sercret if not exists
+        secrets = v1api.list_namespaced_secret(user_namespace)
+        secret_names = [item.metadata.name for item in secrets.items]
+
         # create Kubernetes Secret for ceph admin key
         if cfg["fstype"] == "cephfs" and cfg["secret"] not in secret_names:
             with open(cfg["admin_key"], "r") as f:
