@@ -359,3 +359,36 @@ class SimpleFileView(APIView):
                 fn.write(data)
 
         return Response({"msg": ""})
+
+
+class SimpleFileList(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (FormParser, MultiPartParser,)
+
+    def get(self, request, format=None):
+        """
+        Simple list files.
+        """
+        file_path = request.query_params.get("path")
+        dc = request.query_params.get("dc")
+        # validate list path must be under user's dir
+        path_parts = file_path.split(os.path.sep)
+        msg = ""
+        if len(path_parts) <= 1:
+            msg = "path must start with /pfs"
+        if len(path_parts) >= 2 and path_parts[1] != "pfs":
+            msg = "path must start with /pfs"
+        if len(path_parts) >= 3 and path_parts[2] not in settings.DATACENTERS.keys():
+            msg = "no datacenter "+path_parts[2]
+        if len(path_parts) >= 4 and path_parts[3] != "home":
+            msg = "path must like /pfs/[dc]/home/[user]"
+        if len(path_parts) >= 5 and path_parts[4] != request.user.username:
+            msg = "path must like /pfs/[dc]/home/[user]"
+        if msg:
+            return Response({"msg": msg})
+
+        real_path = file_path.replace("/pfs/%s/home/%s"%(dc, request.user.username), "/pfs/%s"%request.user.username)
+        if not os.path.exists(real_path):
+            return Response({"msg": "dir not exist"})
+
+        return Response({"msg": "", "items": os.listdir(real_path)})
