@@ -2,7 +2,7 @@ matrix:
   include:
     - language: go
       go: 1.8.x
-      script: cd go && go test ./...
+      script: bash .tools/gen_config.sh && cd go && go test ./...
     - language: python
       python: 2.7
       sudo: required
