@@ -105,18 +105,24 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 
 // Submit current job.
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
-	// 1. upload user job package to pfs
-	err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
+	// if jobPackage is not a local dir, skip uploading package.
+	_, pkgerr := os.Stat(jobPackage)
+	if pkgerr == nil {
+		// 1. upload user job package to pfs.
+		err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			glog.V(10).Infof("Uploading %s...\n", filePath)
+			dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
+			fmt.Printf("uploading: %s...\n", filePath)
+			return putFile(filePath, dest)
+		})
+		if err != nil {
+			return err
 		}
-		glog.V(10).Infof("Uploading %s...\n", filePath)
-		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
-		fmt.Printf("uploading: %s...\n", filePath)
-		return putFile(filePath, dest)
-	})
-	if err != nil {
-		return err
+	} else if os.IsNotExist(pkgerr) {
+		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
 	// 2. call paddlecloud server to create kubernetes job
 	jsonString, err := json.Marshal(s.args)
