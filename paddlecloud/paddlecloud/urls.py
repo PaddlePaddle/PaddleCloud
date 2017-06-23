@@ -32,6 +32,7 @@ urlpatterns = [
     url(r"^api/v1/workers/", paddlejob.views.WorkersView.as_view()),
     url(r"^api/v1/quota/", paddlejob.views.QuotaView.as_view()),
     url(r"^api/v1/file/", paddlejob.views.SimpleFileView.as_view()),
+    url(r"^api/v1/filelist/", paddlejob.views.SimpleFileList.as_view()),
     url(r"^api/v1/registry/", paddlejob.registry.RegistryView.as_view()),
 ]
 
