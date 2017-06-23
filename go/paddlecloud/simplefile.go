@@ -27,7 +27,8 @@ func (*SimpleFileCmd) Synopsis() string { return "Simple file operations." }
 
 // Usage is subcommands Usage.
 func (*SimpleFileCmd) Usage() string {
-	return `file [put|get] <src> <dst>:
+	return `file [put|get] <src> <dst> or file ls <dst>:
+	dst must be like /pfs/[datacenter]/home/[username]
 	Options:
 `
 }
@@ -55,11 +56,41 @@ func (p *SimpleFileCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interfa
 			fmt.Fprintf(os.Stderr, "get file error: %s\n", err)
 			return subcommands.ExitFailure
 		}
+	case "ls":
+		err := lsFile(f.Arg(1))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ls file error: %s\n", err)
+			return subcommands.ExitFailure
+		}
 	default:
 		f.Usage()
 		return subcommands.ExitFailure
 	}
 	return subcommands.ExitSuccess
+}
+
+func lsFile(dst string) error {
+	query := url.Values{}
+	query.Set("path", dst)
+	query.Set("dc", Config.ActiveConfig.Name)
+	respStr, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/filelist/", query)
+	if err != nil {
+		return err
+	}
+	var respObj interface{}
+	if err = json.Unmarshal(respStr, &respObj); err != nil {
+		return err
+	}
+	// FIXME: Print an error if error message is not empty. Use response code instead
+	errMsg := respObj.(map[string]interface{})["msg"].(string)
+	if len(errMsg) > 0 {
+		return errors.New("list file error: " + errMsg)
+	}
+	items := respObj.(map[string]interface{})["items"].([]interface{})
+	for _, i := range items {
+		fmt.Println(i.(string))
+	}
+	return nil
 }
 
 func putFile(src string, dest string) error {
