@@ -2,67 +2,81 @@
 
 {% load i18n %}
 
-{% block head_title %}dashboard{% endblock %}
+{% block head_title %}PaddlePaddle{% endblock %}
 
 {% block body_class %}home{% endblock %}
 
 {% block body_base %}
-    <section class="jumbotron" style="background-image: url(http://www.paddlepaddle.org/img/header.jpg);">
+    <section class="jumbotron" style="background-image: url(http://www.paddlepaddle.org/images/banner.jpg);">
         <div class="container" style="color: #FFFFFF;">
             {% include "_messages.html" %}
-            <h1>{% blocktrans %}Welcome to<br>PaddlePaddle Cloud{% endblocktrans %}</h1>
+            <h1>欢迎关注<br>PaddlePaddle Cloud</h1>
             <p>
                 {% blocktrans %}
-                Open and Easy-to-Use Deep Learning Cloud Platform for Enterprise and Research.<br>
+                PaddlePaddle是开源、易用的深度学习平台，为深度学习技术及应用国家工程实验室提供深度学习提供开放的资源<br>
                 <ul>
-                  <li>Take advantage of the large scale cloud computing resource.</li>
-                  <li>Free Nvidia GPU resources</li>
-                  <li>Serverless Deep Learning training jobs.</li>
+                  <li>便捷、高效的弹性计算资源：为深度学习研究者和从业者提供强大的、先进的弹性GPU资源，免去使用者承担昂贵的专业级GPU硬件设备成本和维护成本；</li>
+                  <li>ServerLess：使用者几乎不用考虑如何编写执行分布式程序，直接提交训练程序，训练任务便可以扩展到多台服务器的多个GPU上分布式的执行；</li>
+                  <li>即写即运行：每个使用者都拥有自己独立的Jupiter Notebook环境并可以在Notebook中进行可视化的程序编写和运行即时查看运行效果；</li>
+                  <li>公开数据集：PaddlePaddle Cloud被授权提供多个公开数据集为研究者和从业人员使用，使用者可以使用这些公开数据快速构建深度学习模型并验证效果；</li>
+                  <li>先进的集群调度系统：PaddlePaddle Cloud使用Kubernetes作为集群任务的编排和调度器，可以将硬件资源利用率提升到80%，并且支持大量的使用者任务同时运行；</li>
                 </ul>
                 {% endblocktrans %}
             </p>
-            {% if not user.is_authenticated %}
-            {% url "account_login" as login_url %}
-            {% url "account_signup" as signup_url %}
-            <p>{% blocktrans %}You can <a href="{{ login_url }}" class="btn btn-default">Log In</a> or <a href="{{ signup_url }}" class="btn btn-primary">Sign Up</a> to try out the site.{% endblocktrans %}</p>
-            {% endif %}
+            <p>
+              <a href="http://wenjuan.baidu.com/?code=yxaune" class="btn btn-lg btn-warning">马上申请</a>
+            </p>
         </div>
     </section>
     <section>
         <div class="container">
-            <h2 class="text-center">{% blocktrans %}What is PaddlePaddle Cloud?{% endblocktrans %}</h2>
-            <p class="lead">
-                {% blocktrans %}
-                <b>PaddlePaddle Cloud</b> is an open-source platform based on Django and
-                intended to provide a starting point for websites. It takes
-                care of the things that many sites have in common, so you can
-                focus on what makes your site different.
-                {% endblocktrans %}
+            <h2 class="text-center">PaddlePaddleCloud&国家工程实验室简介</h2>
+            <p class="small">
+              为了解决我国人工智能基础支撑能力不足等问题，由国家发展和改革委员会批复，
+              百度牵头筹建“深度学习技术及应用国家工程实验室”，并于3月2日正式揭牌启动。<br>
+
+              实验室由百度深度学习实验室主任林元庆、百度深度学习实验室杰出科学家徐伟、
+              清华大学张钹院士和北京航空航天大学李未院士组成的团队牵头。与清华大学，
+              北京航空航天大学，中国信息通信研究院，中国电子技术标准化研究院等共建单位一起，
+              推动我国深度学习技术及应用领域的产学研标用的全面发展。<br />
+              “深度学习技术及应用国家工程实验室”将着重发力于深度学习技术、计算机视觉感知技术、
+              计算机听觉技术、生物特征识别技术、新型人机交互技术、标准化服务、深度学习知识产
+              权七大方向，建设“国内领先、世界一流”的深度学习技术及应用研究机构，从研究突破、
+              产业合作、技术成果转让、人才培养等方面提升我国人工智能领域整体竞争力。<br />
+
+              同时，百度将向实验室开放其处于全球领先水平的深度学习必需三大资源——计算资源、
+              算法资源和大数据资源，以及产业最前沿的深度学习课题，吸引深度学习顶尖人才来参与
+              共同研究，并将借助实验室的人才培养机制和博士后站点等，为国家吸引和培养更多深度
+              学习人才。<br />
+
+              在“深度学习技术及应用国家工程实验室”的运行发展过程中，百度将支持深度学习技术工
+              程平台建设，从软件、设备和人才等方面推动建立大规模深度学习工程平台。该平台基于
+              PaddlePaddle构建，同时引入了世界先进的多机分布式并行计算系统PaddlePaddleCloud，
+              为深度学习研究者和从业者提供强大的、先进的弹性计算资源。<br />
             </p>
             <div class="feature-columns">
                 <div>
                     <i class="fa fa-cubes fa-3x"></i><br>
-                    {% blocktrans %}
-                    <b>Starter projects</b> provide project layout,
-                    scaffolding, already integrated components and
-                    ready-to-go code.
-                    <a class="btn btn-primary" href="/notedash/">Launch Paddle notebook</a>
-                    {% endblocktrans %}
+                    便捷、高效的弹性计算资源：为深度学习研究者和从业者提供强大的、先进的弹性
+                    GPU资源，免去使用者承担昂贵的专业级GPU硬件设备成本和维护成本；<br />
+
+                    ServerLess：使用者几乎不用考虑如何编写执行分布式程序，直接提交训练程序，
+                    训练任务便可以扩展到多台服务器的多个GPU上分布式的执行；<br />
                 </div>
                 <div>
                     <i class="fa fa-puzzle-piece fa-3x"></i><br>
-                    {% blocktrans %}
-                    <b>Reusable apps</b> provide common
-                    infrastructure, back-end functionality,
-                    and user-facing components.
-                    {% endblocktrans %}
+                    公开数据集：PaddlePaddle Cloud被授权提供多个公开数据集为研究者和从业
+                    人员使用，使用者可以使用这些公开数据快速构建深度学习模型并验证效果；<br />
                 </div>
                 <div>
                     <i class="fa fa-tint fa-3x"></i><br>
-                    {% blocktrans %}
-                    <b>Themes</b> provide default templates and
-                    stylesheets for quick prototyping and easy customization.
-                    {% endblocktrans %}
+                    先进的集群调度系统：PaddlePaddle Cloud使用Kubernetes作为集群任务的
+                    编排和调度器，可以将硬件资源利用率提升到80%，并且支持大量的使用者任务
+                    同时运行；<br />
+
+                    开源和企业应用：PaddlePaddle 和 PaddlePaddle Cloud同样适用
+                    Apache License  2.0作为开源软件协议，不论企业还是个人都可以免费获得
+                    这些软件，并在企业自己的硬件之上构建深度学习平台。<br />
                 </div>
             </div>
         </div>
@@ -71,8 +85,8 @@
         <div class="container">
             <p class="lead text-center">
                 {% blocktrans %}
-                See <a href="http://www.paddlepaddle.org/">paddlepaddle.org</a>
-                for more information.
+                在 <a href="http://www.paddlepaddle.org/">paddlepaddle.org</a>
+                获得更多信息
                 {% endblocktrans %}
             </p>
         </div>

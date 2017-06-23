@@ -1,0 +1,80 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}dashboard{% endblock %}
+
+{% block body_class %}home{% endblock %}
+
+{% block body_base %}
+    <section class="jumbotron" style="background-image: url(http://www.paddlepaddle.org/images/banner.jpg);">
+        <div class="container" style="color: #FFFFFF;">
+            {% include "_messages.html" %}
+            <h1>{% blocktrans %}Welcome to<br>PaddlePaddle Cloud{% endblocktrans %}</h1>
+            <p>
+                {% blocktrans %}
+                Open and Easy-to-Use Deep Learning Cloud Platform for Enterprise and Research.<br>
+                <ul>
+                  <li>Take advantage of the large scale cloud computing resource.</li>
+                  <li>Free Nvidia GPU resources</li>
+                  <li>Serverless Deep Learning training jobs.</li>
+                </ul>
+                {% endblocktrans %}
+            </p>
+            {% if not user.is_authenticated %}
+            {% url "account_login" as login_url %}
+            {% url "account_signup" as signup_url %}
+            <p>{% blocktrans %}You can <a href="{{ login_url }}" class="btn btn-default">Log In</a> or <a href="{{ signup_url }}" class="btn btn-primary">Sign Up</a> to try out the site.{% endblocktrans %}</p>
+            {% endif %}
+        </div>
+    </section>
+    <section>
+        <div class="container">
+            <h2 class="text-center">{% blocktrans %}What is PaddlePaddle Cloud?{% endblocktrans %}</h2>
+            <p class="lead">
+                {% blocktrans %}
+                <b>PaddlePaddle Cloud</b> is an open-source platform based on Django and
+                intended to provide a starting point for websites. It takes
+                care of the things that many sites have in common, so you can
+                focus on what makes your site different.
+                {% endblocktrans %}
+            </p>
+            <div class="feature-columns">
+                <div>
+                    <i class="fa fa-cubes fa-3x"></i><br>
+                    {% blocktrans %}
+                    <b>Starter projects</b> provide project layout,
+                    scaffolding, already integrated components and
+                    ready-to-go code.
+                    <a class="btn btn-primary" href="/notedash/">Launch Paddle notebook</a>
+                    {% endblocktrans %}
+                </div>
+                <div>
+                    <i class="fa fa-puzzle-piece fa-3x"></i><br>
+                    {% blocktrans %}
+                    <b>Reusable apps</b> provide common
+                    infrastructure, back-end functionality,
+                    and user-facing components.
+                    {% endblocktrans %}
+                </div>
+                <div>
+                    <i class="fa fa-tint fa-3x"></i><br>
+                    {% blocktrans %}
+                    <b>Themes</b> provide default templates and
+                    stylesheets for quick prototyping and easy customization.
+                    {% endblocktrans %}
+                </div>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div class="container">
+            <p class="lead text-center">
+                {% blocktrans %}
+                See <a href="http://www.paddlepaddle.org/">paddlepaddle.org</a>
+                for more information.
+                {% endblocktrans %}
+            </p>
+        </div>
+    </section>
+{% endblock %}
