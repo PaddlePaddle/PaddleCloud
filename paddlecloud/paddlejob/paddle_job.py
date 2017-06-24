@@ -23,7 +23,8 @@ class PaddleJob(object):
                  passes,
                  gpu=0,
                  volumes=[],
-                 registry_secret=None):
+                 registry_secret=None,
+                 envs = {}):
 
         self._ports_num=1
         self._ports_num_for_sparse=1
@@ -44,6 +45,7 @@ class PaddleJob(object):
         self._volumes = volumes
         self._registry_secret = registry_secret
         self._passes = passes
+        self._usr_envs = envs
 
     @property
     def pservers(self):
@@ -77,12 +79,18 @@ class PaddleJob(object):
         envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self._ports_num_for_sparse)})
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
         envs.append({"name":"PADDLE_INIT_NUM_PASSES",           "value":str(self._passes)})
+
         if self._gpu:
             envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("1")})
+            # HACK: add nvidia lib LD_LIBRARY_PATH for all pods
+            envs.append({"name":"LD_LIBRARY_PATH",                  "value":"/usr/local/nvidia/lib64"})
         else:
             envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("0")})
         envs.append({"name":"NAMESPACE", "valueFrom":{
             "fieldRef":{"fieldPath":"metadata.namespace"}}})
+        if self._usr_envs:
+            for k, v in self._usr_envs.items():
+                envs.append({"name": k, "value": v})
         return envs
 
     def _get_pserver_container_ports(self):
@@ -99,7 +107,7 @@ class PaddleJob(object):
     def _get_pserver_entrypoint(self):
         return ["paddle_k8s", "start_pserver"]
 
-    def _get_trainer_entrypoint(sefl):
+    def _get_trainer_entrypoint(self):
         if self._entry:
             return ["paddle_k8s", "start_trainer", "v2"]
         return ["paddle_k8s", "start_trainer", "v1"]
@@ -164,6 +172,8 @@ class PaddleJob(object):
         }
         if self._registry_secret:
             job["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": self._registry_secret}]})
+        if self._gpu > 0:
+            job["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["alpha.kubernetes.io/nvidia-gpu"] = str(self._gpu)
         return job
     def new_pserver_job(self):
         """
@@ -182,11 +192,13 @@ class PaddleJob(object):
                         "labels": self._get_pserver_labels()
                     },
                     "spec": {
+                        "volumes": self._get_trainer_volumes(),
                         "containers":[{
                             "name": self._name,
                             "image": self._image,
                             "ports": self._get_pserver_container_ports(),
                             "env": self.get_env(),
+                            "volumeMounts": self._get_trainer_volume_mounts(),
                             "command": self._get_pserver_entrypoint(),
                             "resources": {
                                 "requests": {

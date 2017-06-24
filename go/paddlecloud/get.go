@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/google/subcommands"
 )
 
@@ -25,7 +27,7 @@ func (*GetCommand) Synopsis() string { return "Print resources" }
 
 // Usage is subcommands usage
 func (*GetCommand) Usage() string {
-	return `get [jobs|workers [jobname]|quota]:
+	return `get [jobs|workers|registry [jobname]|quota]:
 	Print resources.
 `
 }
@@ -45,6 +47,8 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		jobs()
 	} else if f.Arg(0) == "quota" {
 		quota()
+	} else if f.Arg(0) == "registry" {
+		registry()
 	} else if f.Arg(0) == "workers" {
 		if f.NArg() != 2 {
 			f.Usage()
@@ -60,13 +64,9 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 }
 
 func workers(jobname string) error {
-	token, err := token()
-	if err != nil {
-		return err
-	}
-	queryMap := make(map[string]string)
-	queryMap["jobname"] = jobname
-	respBody, err := getCall(config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap, token)
+	var queryMap url.Values
+	queryMap.Add("jobname", jobname)
+	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting workers: %v\n", err)
 		return err
@@ -93,13 +93,37 @@ func workers(jobname string) error {
 	w.Flush()
 	return nil
 }
-
-func jobs() error {
-	token, err := token()
+func registry() error {
+	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/registry/", nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "err getting registry secret: %v\n", err)
+		return err
+	}
+	var respObj interface{}
+	err = json.Unmarshal(respBody, &respObj)
 	if err != nil {
 		return err
 	}
-	respBody, err := getCall(config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil, token)
+	items := respObj.(map[string]interface{})["msg"].(map[string]interface{})["items"].([]interface{})
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	if len(items) >= 0 {
+		fmt.Fprintf(w, "ID\tNAME\tDATA\n")
+	}
+	idx := 0
+	for _, r := range items {
+		metadata := r.(map[string]interface{})["metadata"].(map[string]interface{})
+		name := RegistryName(metadata["name"].(string))
+		if len(name) != 0 {
+			cTime := metadata["creation_timestamp"].(string)
+			fmt.Fprintf(w, "%d\t%s\t%s\n", idx, name, cTime)
+			idx++
+		}
+	}
+	w.Flush()
+	return err
+}
+func jobs() error {
+	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting jobs: %v\n", err)
 		return err
@@ -133,11 +157,7 @@ func jobs() error {
 }
 
 func quota() error {
-	token, err := token()
-	if err != nil {
-		return err
-	}
-	respBody, err := getCall(config.ActiveConfig.Endpoint+"/api/v1/quota/", nil, token)
+	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/quota/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting quota: %v\n", err)
 		return err

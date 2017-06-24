@@ -3,16 +3,23 @@ package paddlecloud
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
+	"github.com/PaddlePaddle/cloud/go/utils/config"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 )
 
-// SubmitCmd define the subcommand of submitting paddle training jobs
+// Config is global config object for paddlecloud commandline
+var Config = config.ParseDefaultConfig()
+
+// SubmitCmd define the subcommand of submitting paddle training jobs.
 type SubmitCmd struct {
 	Jobname     string `json:"name"`
 	Jobpackage  string `json:"jobPackage"`
@@ -27,15 +34,17 @@ type SubmitCmd struct {
 	Topology    string `json:"topology"`
 	Datacenter  string `json:"datacenter"`
 	Passes      int    `json:"passes"`
+	Image       string `json:"image"`
+	Registry    string `json:"registry"`
 }
 
-// Name is subcommands name
+// Name is subcommands name.
 func (*SubmitCmd) Name() string { return "submit" }
 
-// Synopsis is subcommands synopsis
+// Synopsis is subcommands synopsis.
 func (*SubmitCmd) Synopsis() string { return "Submit job to PaddlePaddle Cloud." }
 
-// Usage is subcommands Usage
+// Usage is subcommands Usage.
 func (*SubmitCmd) Usage() string {
 	return `submit [options] <package path>:
 	Submit job to PaddlePaddle Cloud.
@@ -43,7 +52,7 @@ func (*SubmitCmd) Usage() string {
 `
 }
 
-// SetFlags registers subcommands flags
+// SetFlags registers subcommands flags.
 func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Jobname, "jobname", "paddle-cluster-job", "Cluster job name.")
 	f.IntVar(&p.Parallelism, "parallelism", 1, "Number of parrallel trainers. Defaults to 1.")
@@ -53,26 +62,28 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.Pservers, "pservers", 0, "Number of parameter servers. Defaults equal to -p")
 	f.IntVar(&p.PSCPU, "pscpu", 1, "Parameter server CPU resource. Defaults to 1.")
 	f.StringVar(&p.PSMemory, "psmemory", "1Gi", "Parameter server momory resource. Defaults to 1Gi.")
-	f.StringVar(&p.Entry, "entry", "paddle train", "Command of starting trainer process. Defaults to paddle train")
+	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
+	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
+	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
 }
 
-// Execute submit command
+// Execute submit command.
 func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if f.NArg() != 1 {
 		f.Usage()
 		return subcommands.ExitFailure
 	}
-	// default pservers count equals to trainers count
+	// default pservers count equals to trainers count.
 	if p.Pservers == 0 {
 		p.Pservers = p.Parallelism
 	}
 	p.Jobpackage = f.Arg(0)
-	p.Datacenter = config.ActiveConfig.Name
+	p.Datacenter = Config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
-	errS := s.Submit(f.Arg(0))
+	errS := s.Submit(f.Arg(0), p.Jobname)
 	if errS != nil {
 		fmt.Fprintf(os.Stderr, "error submiting job: %v\n", errS)
 		return subcommands.ExitFailure
@@ -81,37 +92,56 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	return subcommands.ExitSuccess
 }
 
-// Submitter submit job to cloud
+// Submitter submit job to cloud.
 type Submitter struct {
 	args *SubmitCmd
 }
 
-// NewSubmitter returns a submitter object
+// NewSubmitter returns a submitter object.
 func NewSubmitter(cmd *SubmitCmd) *Submitter {
 	s := Submitter{cmd}
 	return &s
 }
 
-// Submit current job
-func (s *Submitter) Submit(jobPackage string) error {
-	token, err := token()
-	if err != nil {
-		return err
+// Submit current job.
+func (s *Submitter) Submit(jobPackage string, jobName string) error {
+	// if jobPackage is not a local dir, skip uploading package.
+	_, pkgerr := os.Stat(jobPackage)
+	if pkgerr == nil {
+		// 1. upload user job package to pfs.
+		err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			glog.V(10).Infof("Uploading %s...\n", filePath)
+			dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
+			fmt.Printf("uploading: %s...\n", filePath)
+			return putFile(filePath, dest)
+		})
+		if err != nil {
+			return err
+		}
+	} else if os.IsNotExist(pkgerr) {
+		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
-	// 1. upload user job package to pfs
-	filepath.Walk(jobPackage, func(path string, info os.FileInfo, err error) error {
-		glog.V(10).Infof("Uploading %s...\n", path)
-		return nil
-		//return postFile(path, config.activeConfig.endpoint+"/api/v1/files")
-	})
 	// 2. call paddlecloud server to create kubernetes job
 	jsonString, err := json.Marshal(s.args)
 	if err != nil {
 		return err
 	}
-	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, config.ActiveConfig.Endpoint+"/api/v1/jobs")
-	respBody, err := postCall(jsonString, config.ActiveConfig.Endpoint+"/api/v1/jobs/",
-		token)
-	glog.V(10).Infof("got return body size: %d", len(respBody))
-	return err
+	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, Config.ActiveConfig.Endpoint+"/api/v1/jobs")
+	respBody, err := restclient.PostCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
+	if err != nil {
+		return err
+	}
+	var respObj interface{}
+	if err = json.Unmarshal(respBody, &respObj); err != nil {
+		return err
+	}
+	// FIXME: Return an error if error message is not empty. Use response code instead
+	errMsg := respObj.(map[string]interface{})["msg"].(string)
+	if len(errMsg) > 0 {
+		return errors.New(errMsg)
+	}
+	return nil
 }

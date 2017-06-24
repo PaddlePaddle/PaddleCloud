@@ -1,5 +1,5 @@
 FROM python:2.7.13-alpine
-RUN apk add --update nodejs openssl gcc mysql-dev musl-dev linux-headers
+RUN apk add --update nodejs openssl gcc mysql-dev musl-dev linux-headers mailx
 
 ADD ./ /pcloud
 RUN cd /pcloud && \

@@ -60,6 +60,13 @@ To test or visit the website, find out the kubernetes [ingress](https://kubernet
 
 Then open your browser and visit http://cloud.paddlepaddle.org.
 
+- Prepare public dataset
+
+  You can create a Kubernetes Job for preparing the public dataset and cluster trainer files.
+  ```bash
+  kubectl create -f k8s/prepare_dataset.yaml
+  ```
+  
 ### Run locally
 Make sure you are using a virtual environment of some sort (e.g. `virtualenv` or
 `pyenv`).
@@ -84,3 +91,15 @@ If you are starting the server for the second time, just run:
 ```
 ./manage.py runserver
 ```
+
+### Configure Email Sending
+If you want to use `mail` command to send confirmation emails, change the below settings:
+
+```
+EMAIL_BACKEND = 'django_sendmail_backend.backends.EmailBackend'
+```
+
+You may need to use `hostNetwork` for your pod when using mail command.
+
+Or you can use django smtp bindings just refer to https://docs.djangoproject.com/en/1.11/topics/email/
+

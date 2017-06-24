@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktrans with site_name=current_site.name %}欢迎试用PaddlePaddleCloud{% endblocktrans %}

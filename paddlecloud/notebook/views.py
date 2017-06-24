@@ -151,7 +151,10 @@ def create_user_RBAC_permissions(username):
         "name": username
         }]
     }
-    rbacapi.create_namespaced_role_binding(namespace, body)
+    try:
+        rbacapi.create_namespaced_role_binding(namespace, body)
+    except Exception, e:
+        logging.error("%s", str(e))
     # create service account permissions
     body = {
     "apiVersion": "rbac.authorization.k8s.io/v1beta1",
@@ -171,7 +174,10 @@ def create_user_RBAC_permissions(username):
         "namespace": namespace
         }]
     }
-    rbacapi.create_namespaced_role_binding(namespace, body)
+    try:
+        rbacapi.create_namespaced_role_binding(namespace, body)
+    except Exception, e:
+        logging.error("%s", str(e))
 
 def create_user_namespace(username):
     v1api = kubernetes.client.CoreV1Api(utils.get_admin_api_client())
@@ -189,10 +195,11 @@ def create_user_namespace(username):
             "metadata": {
                 "name": user_namespace
             }})
-    #create DataCenter sercret if not exists
-    secrets = v1api.list_namespaced_secret(user_namespace)
-    secret_names = [item.metadata.name for item in secrets.items]
     for dc, cfg in settings.DATACENTERS.items():
+        #create DataCenter sercret if not exists
+        secrets = v1api.list_namespaced_secret(user_namespace)
+        secret_names = [item.metadata.name for item in secrets.items]
+
         # create Kubernetes Secret for ceph admin key
         if cfg["fstype"] == "cephfs" and cfg["secret"] not in secret_names:
             with open(cfg["admin_key"], "r") as f:
