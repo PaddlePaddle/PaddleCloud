@@ -56,7 +56,7 @@ Use "paddlecloud flags" for a list of top-level flags
 
 不同的PaddlePaddleCloud集群环境会提供不同的分布式存储服务。目前PaddlePaddleCloud支持HDFS和CephFS。
 
-### 手动上传训练数据到HDFS
+### HDFS环境下训练数据准备
 
 使用`ssh`登录到集群中的公用数据中转服务器上，进行数据上传，下载，更新等操作。您可以在中转服务器的`/mnt`路径下找到集群HDFS的目录，并可以访问当前有权限的目录。上传数据则可以使用管理普通Linux文件的方式，将数据`scp`到中转服务器`/mnt`下的用户数据目录。比如：
 
@@ -68,6 +68,29 @@ scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir
 
 在训练任务提交后，每个训练节点会把HDFS挂载在`/pfs/[datacenter_name]/home/[username]/`目录下这样训练程序即可使用这个路径读取训练数据并开始训练。
 
+### 使用paddlecloud上传训练数据
+
+paddlecloud命令集成了上传数据的功能，目前仅针对存储系统是CephFS的环境。如果希望上传，执行：
+
+```bash
+paddlecloud file put /path/to/dir
+```
+
+### 使用公共数据集
+
+不论是在HDFS环境还是CephFS环境，用户提交的任务中都可以访问目录`/pfs/public`获得公开数据集的访问。
+在分布式环境中，每个trainer希望访问一部分数据，则可以编写如下的reader代码访问已经拆分好的数据集：
+
+```python
+TRAIN_FILES_PATTERN = os.path.join(common.DATA_HOME,
+                                   "uci_housing/train-*.pickle")
+def train():
+    return common.cluster_files_reader(
+        TRAIN_FILES_PATTERN,
+        trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS", "1")),
+        trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID", "0")))
+
+```
 
 ## 训练程序包
 
@@ -112,7 +135,7 @@ def gen_train_list(data_dir):
 
 这段代码会根据指定的HDFS中的训练数据路径，将文件顺序的分配给每个节点，并生成两个文件`/train.list`和`/test.list`保存分配给当前节点的训练数据文件的路径。在调用`define_py_data_sources2`定义训练数据时，传入这两个文件路径即可。
 
-### 上传训练程序包到HDFS
+### 上传训练程序包到HDFS（仅HDFS存储下需要）
 
 上传训练程序包到HDFS的方式和上传训练数据方式相同。使用公用数据中转服务器，将训练程序包上传到HDFS。比如：
 
@@ -132,30 +155,13 @@ scp -r my_training_package/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mypack
 - 提交基于V1 API的训练任务
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job \
-  -cpu 1 \
-  -gpu 0 \
-  -memory 1Gi \
-  -parallelism 10 \
-  -pscpu 1 \
-  -pservers 3 \
-  -psmemory 1Gi \
-  -passes 1 \
-  -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 - 提交基于V2 API的训练任务
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job \
-  -cpu 1 \
-  -gpu 0 \
-  -memory 1Gi \
-  -parallelism 10 \
-  -pscpu 1 \
-  -pservers 3 \
-  -psmemory 1Gi \
-  -entry "python trainer_config.py" /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -entry "python trainer_config.py" /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 参数说明：
@@ -172,43 +178,6 @@ paddlecloud submit -jobname my-paddlecloud-job \
 - `-entry`: 指定PaddlePaddle v2训练程序的启动命令
 - `-passes`：执行训练的pass个数
 - `package`：HDFS 训练任务package的路径
-
-### 使用自定义的Runtime Docker Image
-runtime Docker Image是实际被Kubernetes调度的Docker Image，如果在某些情况下需要自定义属于某个任务的Docker Image可以通过以下方式
-- 自定义Runtime Docker Image
-  ```bash
-  git clone https://github.com/PaddlePaddle/cloud.git && cd cloud/docker
-  ./build_docker.sh {PaddlePaddle production image} {runtime Docker image}
-  docker push {runtime Docker image}
-  ```
-- 使用自定义的runtime Docker Image来运行Job
-  ```bash
-  paddlecloud submit -image {runtime Docker image} -jobname ...
-  ```
-
-- 使用私有registry的runtime Docker image
-  - 在PaddleCloud上添加registry认证信息
-    ```bash
-    paddlecloud registry \
-      -username {your username}
-      -password {your password}
-      -server {your registry server}
-      -name {your registry name}
-    ```
-  - 使用私有registry提交任务
-    ```bash
-    paddlecloud submit \
-      -image {runtime Docker image} \
-      -registry {your registry name}
-    ```
-  - 查看所有的registry
-    ```bash
-    paddlecloud get registry
-    ```
-  - 删除指定的registry
-    ```bash
-    paddlecloud delete registry
-    ```
 
 ## 查看任务状态
 
@@ -308,7 +277,7 @@ docker run --rm -it -v $PWD:/work paddlepaddle/paddle:latest python /work/run.py
   common.split(reader = uci_housing.train(),   // Your reader instance
               line_count = 500,       // reader iterator count for each file
               suffix="./uci_housing/train-%05d.pickle",              // filename suffix for each file
-              dumper=marshal.dump)      // using pickle.dump instead of the default function: cPickle.dump  
+              dumper=marshal.dump)      // using pickle.dump instead of the default function: cPickle.dump
   ```
 
 ### 读取分布式文件的reader
