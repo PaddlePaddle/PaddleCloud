@@ -33,6 +33,8 @@ urlpatterns = [
     url(r"^api/v1/quota/", paddlejob.views.QuotaView.as_view()),
     url(r"^api/v1/file/", paddlejob.views.SimpleFileView.as_view()),
     url(r"^api/v1/token2user/", paddlejob.views.GetUserView.as_view()),
+    url(r"^api/v1/filelist/", paddlejob.views.SimpleFileList.as_view()),
+    url(r"^api/v1/registry/", paddlejob.registry.RegistryView.as_view()),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

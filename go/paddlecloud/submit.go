@@ -10,10 +10,14 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/config"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 )
+
+// Config is global config object for paddlecloud commandline
+var Config = config.ParseDefaultConfig()
 
 // SubmitCmd define the subcommand of submitting paddle training jobs.
 type SubmitCmd struct {
@@ -30,6 +34,8 @@ type SubmitCmd struct {
 	Topology    string `json:"topology"`
 	Datacenter  string `json:"datacenter"`
 	Passes      int    `json:"passes"`
+	Image       string `json:"image"`
+	Registry    string `json:"registry"`
 }
 
 // Name is subcommands name.
@@ -59,6 +65,8 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
+	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
+	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
 }
 
 // Execute submit command.
@@ -72,7 +80,7 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		p.Pservers = p.Parallelism
 	}
 	p.Jobpackage = f.Arg(0)
-	p.Datacenter = utils.Config.ActiveConfig.Name
+	p.Datacenter = Config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
 	errS := s.Submit(f.Arg(0), p.Jobname)
@@ -97,26 +105,32 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 
 // Submit current job.
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
-	// 1. upload user job package to pfs
-	err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
+	// if jobPackage is not a local dir, skip uploading package.
+	_, pkgerr := os.Stat(jobPackage)
+	if pkgerr == nil {
+		// 1. upload user job package to pfs.
+		err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			glog.V(10).Infof("Uploading %s...\n", filePath)
+			dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
+			fmt.Printf("uploading: %s...\n", filePath)
+			return putFile(filePath, dest)
+		})
+		if err != nil {
+			return err
 		}
-		glog.V(10).Infof("Uploading %s...\n", filePath)
-		dest := path.Join("/pfs", utils.Config.ActiveConfig.Name, "home", utils.Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
-		fmt.Printf("uploading: %s...\n", filePath)
-		return putFile(filePath, dest)
-	})
-	if err != nil {
-		return err
+	} else if os.IsNotExist(pkgerr) {
+		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
 	// 2. call paddlecloud server to create kubernetes job
 	jsonString, err := json.Marshal(s.args)
 	if err != nil {
 		return err
 	}
-	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs")
-	respBody, err := utils.PostCall(utils.Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
+	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, Config.ActiveConfig.Endpoint+"/api/v1/jobs")
+	respBody, err := restclient.PostCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
 	if err != nil {
 		return err
 	}

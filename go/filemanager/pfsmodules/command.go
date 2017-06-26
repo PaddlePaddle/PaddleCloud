@@ -32,6 +32,7 @@ type Command interface {
 }
 
 // CheckUser checks if a user has authority to access a path.
+// path example:/pfs/$datacenter/home/$user
 func checkUser(path string, user string) error {
 	a := strings.Split(path, "/")
 	if len(a) < 3 {
@@ -44,7 +45,7 @@ func checkUser(path string, user string) error {
 	return nil
 }
 
-// IsCloudPath returns whether a path is a pfspath.
+// ValidatePfsPath returns whether a path is a pfspath.
 func ValidatePfsPath(paths []string, userName string) error {
 	if len(paths) == 0 {
 		return errors.New(StatusNotEnoughArgs)
