@@ -31,7 +31,9 @@ ADD ./k8s_tools.py /root/
 ADD ./python/dist/pcloud-0.1.1-py2-none-any.whl /tmp/
 #RUN pip install /tmp/pcloud-0.1.1-py2-none-any.whl && \
 #  rm /tmp/pcloud-0.1.1-py2-none-any.whl
-RUN pip install /tmp/pcloud-0.1.1-py2-none-any.whl 
+RUN pip install /tmp/pcloud-0.1.1-py2-none-any.whl && \
+  pip install opencv-python && \
+  apt-get install -y libgtk2.0-dev
 
 CMD ["paddle_k8s"]
 EOF
