@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: convertdataset
+  namespace: paddlecloud
 spec:
   template:
     metadata:
