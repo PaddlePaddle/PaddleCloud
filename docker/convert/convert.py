@@ -7,7 +7,31 @@ import paddle.v2.dataset as ds
 import logging
 import logging.config
 
-logging.config.fileConfig('logging.conf')
+dict_config={ 
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': { 
+        'standard': { 
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
+    'handlers': { 
+        'default': { 
+            'level': 'INFO',
+            'formatter': 'standard',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': { 
+        '': { 
+            'handlers': ['default'],
+            'level': 'INFO',
+            'propagate': True
+        },
+    } 
+}
+
+logging.config.dictConfig(dict_config)
 logger = logging.getLogger('convert')
 
 def mkdir_p(path):
