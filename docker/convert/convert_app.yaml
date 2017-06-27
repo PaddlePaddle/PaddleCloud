@@ -1,17 +1,17 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job 
 metadata:
   name: convertdataset
   namespace: pfs
 spec:
-  replicas: 1
   template:
     metadata:
-      labels:
-        app: convertdataset
+      app: convertdataset
     spec:
       containers:
-      - name: pfs
-        imagePullPolicy: Always
-        image: gongweibao/convertdataset
-        command: ["python", "/convert/convert.py", "/pfs/datacenter/common"]
+      - name: convertdataset
+        image: paddlepaddle/convertdataset
+        command: 
+        - cd /convert/
+        - python /convert/convert.py /pfs/datacenter/common
+      restartPolicy: Never
