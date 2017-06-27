@@ -1,5 +1,8 @@
 import paddle.v2 as paddle
 import pcloud.dataset.uci_housing as uci_housing
+import os
+import gzip
+trianer_id = os.getenv("PADDLE_INIT_TRAINER_ID")
 
 def main():
     # init
@@ -34,7 +37,10 @@ def main():
                 reader=paddle.batch(uci_housing.test(), batch_size=2),
                 feeding=feeding)
             print "Test %d, Cost %f" % (event.pass_id, result.cost)
-
+            if trainer_id == "0":
+                with gzip.open("fit-a-line_pass_%05d.tar.gz" % event.pass_id,
+                               "w") as f:
+                    parameters.to_tar(f)
     # training
     trainer.train(
         reader=paddle.batch(
