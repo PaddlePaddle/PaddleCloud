@@ -23,7 +23,7 @@ def convert(output_path, name):
     logger.info("proc " + name)
     mod = __import__("paddle.v2.dataset." + name, fromlist=[''])
 
-    path = output_path + "/" + name
+    path = os.path.join(output_path, name)
     mkdir_p(path)
 
     mod.convert(path)
