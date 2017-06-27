@@ -1,4 +1,3 @@
 FROM paddlepaddle/paddle
-ADD ./convert.py /convert/
-ADD ./logging.conf /convert/
+ADD ./convert.py ./logging.conf ./run.sh /convert/
 ADD .cache/paddle/dataset /root/.cache/paddle/dataset
