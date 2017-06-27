@@ -4,6 +4,12 @@ import errno
 import recordio
 import paddle.v2.dataset as ds
 
+import logging
+import logging.config
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger('convert')
+
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -14,7 +20,7 @@ def mkdir_p(path):
             raise
 
 def convert(output_path, name):
-    print "proc " + name
+    logger.info("proc " + name)
     mod = __import__("paddle.v2.dataset." + name, fromlist=[''])
 
     path = output_path + "/" + name
@@ -24,10 +30,11 @@ def convert(output_path, name):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.exit("input format:python convert.py output_path")
+        logger.error("input format:python convert.py output_path")
+        sys.exit(1)
 
     output_path=sys.argv[1]
-    print "output path:" + output_path 
+    logger.info("output path:" + output_path)
 
     a = ['cifar', 'conll05', 'imdb', 'imikolov', 'mnist', 'movielens', 'sentiment', 'uci_housing', 'wmt14']
     for m in a:
