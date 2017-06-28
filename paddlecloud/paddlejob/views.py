@@ -76,7 +76,7 @@ class JobsView(APIView):
                     host_path = cfg["host_path"]
                 else:
                     mount_path = cfg["mount_path"] % (dc, username)
-                    host_path = cfg["host_path"] % username
+                    host_path = cfg["host_path"]
 
                 volumes.append(volume.get_volume_config(
                     fstype = fstype,
@@ -95,12 +95,20 @@ class JobsView(APIView):
         # jobPackage validation: startwith /pfs
         # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
         job_name = obj.get("name", "paddle-cluster-job")
-        package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+        if settings.STORAGE_MODE == "CEPHFS":
+            package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+        elif settings.STORAGE_MODE == "HDFS":
+            package_in_pod = obj.get("jobPackage")
 
+        logging.info("current package: %s", package_in_pod)
         # package must be ready before submit a job
         current_package_path = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
         if not os.path.exists(current_package_path):
-            return utils.error_message_response("error: package not exist in cloud")
+            current_package_path = package_in_pod.replace("/pfs/%s/home/%s"%(dc, username), settings.STORAGE_PATH)
+            if not os.path.exists(current_package_path):
+                return utils.error_message_response("package not exist in cloud: %s"%current_package_path)
+        logging.info("current package in pod: %s", current_package_path)
+
 
         # use default images
         if not job_image :
@@ -228,6 +236,19 @@ class LogsView(APIView):
         """
         Get logs for jobs
         """
+        def _get_pod_log(api_client, namespace, pod_name, num_lines):
+            try:
+                if num_lines:
+                    pod_log = client.CoreV1Api(api_client=api_client)\
+                        .read_namespaced_pod_log(
+                            pod_name, namespace, tail_lines=int(num_lines))
+                else:
+                    pod_log = client.CoreV1Api(api_client=api_client)\
+                        .read_namespaced_pod_log(i.metadata.name, namespace)
+                return pod_log
+            except ApiException, e:
+                return str(e)
+
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
@@ -240,22 +261,10 @@ class LogsView(APIView):
         if not worker:
             for i in job_pod_list.items:
                 total_job_log = "".join((total_job_log, "==========================%s==========================" % i.metadata.name))
-                if num_lines:
-                    pod_log = client.CoreV1Api(api_client=api_client)\
-                        .read_namespaced_pod_log(
-                            i.metadata.name, namespace, tail_lines=int(num_lines))
-                else:
-                    pod_log = client.CoreV1Api(api_client=api_client)\
-                        .read_namespaced_pod_log(i.metadata.name, namespace)
+                pod_log = _get_pod_log(api_client, namespace, i.metadata.name, num_lines)
                 total_job_log = "\n".join((total_job_log, pod_log))
         else:
-            if num_lines:
-                pod_log = client.CoreV1Api(api_client=api_client)\
-                    .read_namespaced_pod_log(worker, namespace, tail_lines=int(num_lines))
-            else:
-                pod_log = client.CoreV1Api(api_client=api_client)\
-                    .read_namespaced_pod_log(worker, namespace)
-            total_job_log = pod_log
+            total_job_log = _get_pod_log(api_client, namespace, worker, num_lines)
         return utils.simple_response(200, total_job_log)
 
 class WorkersView(APIView):
@@ -374,16 +383,17 @@ class SimpleFileList(APIView):
         # validate list path must be under user's dir
         path_parts = file_path.split(os.path.sep)
         msg = ""
-        if len(path_parts) <= 1:
-            msg = "path must start with /pfs"
-        if len(path_parts) >= 2 and path_parts[1] != "pfs":
-            msg = "path must start with /pfs"
-        if len(path_parts) >= 3 and path_parts[2] not in settings.DATACENTERS.keys():
-            msg = "no datacenter "+path_parts[2]
-        if len(path_parts) >= 4 and path_parts[3] != "home":
+        if len(path_parts) < 5:
             msg = "path must like /pfs/[dc]/home/[user]"
-        if len(path_parts) >= 5 and path_parts[4] != request.user.username:
-            msg = "path must like /pfs/[dc]/home/[user]"
+        else:
+            if path_parts[1] != "pfs":
+                msg = "path must start with /pfs"
+            if path_parts[2] not in settings.DATACENTERS.keys():
+                msg = "no datacenter "+path_parts[2]
+            if path_parts[3] != "home":
+                msg = "path must like /pfs/[dc]/home/[user]"
+            if path_parts[4] != request.user.username:
+                msg = "not a valid user: " + path_parts[4]
         if msg:
             return Response({"msg": msg})
 

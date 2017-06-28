@@ -300,6 +300,8 @@ DATACENTERS = {
 }
 # where cephfs root is mounted when using cephfs storage service
 STORAGE_PATH="/pfs"
+# HACK: define use HDFS or CEPHFS, in cephfs mode jobpath will be /pfs/jobs/[jobname]
+STORAGE_MODE="HDFS"
 
 # ===================== Docker image registry =====================
 JOB_DOCKER_IMAGE = {
