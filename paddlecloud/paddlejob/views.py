@@ -104,11 +104,10 @@ class JobsView(APIView):
         # package must be ready before submit a job
         current_package_path = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
         if not os.path.exists(current_package_path):
-            current_package_path = package_in_pod.replace("/pfs/%s/home/%s"%(dc, username), settings.STORAGE_PATH)
+            current_package_path = package_in_pod
             if not os.path.exists(current_package_path):
                 return utils.error_message_response("package not exist in cloud: %s"%current_package_path)
         logging.info("current package in pod: %s", current_package_path)
-
 
         # use default images
         if not job_image :
