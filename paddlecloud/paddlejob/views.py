@@ -109,6 +109,7 @@ class JobsView(APIView):
                 return utils.error_message_response("package not exist in cloud: %s"%current_package_path)
         logging.info("current package in pod: %s", current_package_path)
 
+
         # use default images
         if not job_image :
             if gpu_count > 0:
@@ -235,6 +236,19 @@ class LogsView(APIView):
         """
         Get logs for jobs
         """
+        def _get_pod_log(api_client, namespace, pod_name, num_lines):
+            try:
+                if num_lines:
+                    pod_log = client.CoreV1Api(api_client=api_client)\
+                        .read_namespaced_pod_log(
+                            pod_name, namespace, tail_lines=int(num_lines))
+                else:
+                    pod_log = client.CoreV1Api(api_client=api_client)\
+                        .read_namespaced_pod_log(i.metadata.name, namespace)
+                return pod_log
+            except ApiException, e:
+                return str(e)
+
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
@@ -247,22 +261,10 @@ class LogsView(APIView):
         if not worker:
             for i in job_pod_list.items:
                 total_job_log = "".join((total_job_log, "==========================%s==========================" % i.metadata.name))
-                if num_lines:
-                    pod_log = client.CoreV1Api(api_client=api_client)\
-                        .read_namespaced_pod_log(
-                            i.metadata.name, namespace, tail_lines=int(num_lines))
-                else:
-                    pod_log = client.CoreV1Api(api_client=api_client)\
-                        .read_namespaced_pod_log(i.metadata.name, namespace)
+                pod_log = _get_pod_log(api_client, namespace, i.metadata.name, num_lines)
                 total_job_log = "\n".join((total_job_log, pod_log))
         else:
-            if num_lines:
-                pod_log = client.CoreV1Api(api_client=api_client)\
-                    .read_namespaced_pod_log(worker, namespace, tail_lines=int(num_lines))
-            else:
-                pod_log = client.CoreV1Api(api_client=api_client)\
-                    .read_namespaced_pod_log(worker, namespace)
-            total_job_log = pod_log
+            total_job_log = _get_pod_log(api_client, namespace, worker, num_lines)
         return utils.simple_response(200, total_job_log)
 
 class WorkersView(APIView):
