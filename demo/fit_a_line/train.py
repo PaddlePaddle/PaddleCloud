@@ -2,7 +2,7 @@ import paddle.v2 as paddle
 import pcloud.dataset.uci_housing as uci_housing
 import os
 import gzip
-trianer_id = os.getenv("PADDLE_INIT_TRAINER_ID")
+trainer_id = os.getenv("PADDLE_INIT_TRAINER_ID")
 
 def main():
     # init
