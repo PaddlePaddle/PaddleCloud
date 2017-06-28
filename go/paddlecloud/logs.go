@@ -46,7 +46,7 @@ func (p *LogsCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		return subcommands.ExitFailure
 	}
 
-	queryMap := make(url.Values)
+	queryMap := url.Values{}
 	queryMap.Add("n", strconv.FormatInt(int64(p.n), 10))
 	queryMap.Add("w", p.w)
 	queryMap.Add("jobname", f.Arg(0))

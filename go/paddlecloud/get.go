@@ -64,7 +64,7 @@ func (p *GetCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 }
 
 func workers(jobname string) error {
-	var queryMap url.Values
+	queryMap := url.Values{}
 	queryMap.Add("jobname", jobname)
 	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/workers/", queryMap)
 	if err != nil {
