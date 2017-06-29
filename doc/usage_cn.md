@@ -155,13 +155,31 @@ scp -r my_training_package/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mypack
 - 提交基于V1 API的训练任务
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -topology trainer_config.py /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+paddlecloud submit -jobname my-paddlecloud-job \
+  -cpu 1 \
+  -gpu 0 \
+  -memory 1Gi \
+  -parallelism 10 \
+  -pscpu 1 \
+  -pservers 3 \
+  -psmemory 1Gi \
+  -entry "python trainer_config.py" /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 - 提交基于V2 API的训练任务
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parallelism 10 -pscpu 1 -pservers 3 -psmemory 1Gi -passes 1 -entry "python trainer_config.py" /pfs/[datacenter_name]/home/[username]/ctr_demo_package
+paddlecloud submit -jobname my-paddlecloud-job \
+  -cpu 1 \
+  -gpu 0 \
+  -memory 1Gi \
+  -parallelism 10 \
+  -pscpu 1 \
+  -pservers 3 \
+  -psmemory 1Gi \
+  -passes 1 \
+  -entry "python trainer_config.py" \
+  /pfs/[datacenter_name]/home/[username]/ctr_demo_package
 ```
 
 参数说明：
@@ -178,6 +196,44 @@ paddlecloud submit -jobname my-paddlecloud-job -cpu 1 -gpu 0 -memory 1Gi -parall
 - `-entry`: 指定PaddlePaddle v2训练程序的启动命令
 - `-passes`：执行训练的pass个数
 - `package`：HDFS 训练任务package的路径
+
+### 使用自定义的Runtime Docker Image
+runtime Docker Image是实际被Kubernetes调度的Docker Image，如果在某些情况下需要自定义属于某个任务的Docker Image可以通过以下方式
+- 自定义Runtime Docker Image
+  ```bash
+  git clone https://github.com/PaddlePaddle/cloud.git && cd cloud/docker
+  ./build_docker.sh {PaddlePaddle production image} {runtime Docker image}
+  docker push {runtime Docker image}
+  ```
+- 使用自定义的runtime Docker Image来运行Job
+  ```bash
+  paddlecloud submit -image {runtime Docker image} -jobname ...
+  ```
+
+- 使用私有registry的runtime Docker image
+  - 在PaddleCloud上添加registry认证信息
+    ```bash
+    paddlecloud registry \
+      -username {your username}
+      -password {your password}
+      -server {your registry server}
+      -name {your registry name}
+    ```
+  - 使用私有registry提交任务
+    ```bash
+    paddlecloud submit \
+      -image {runtime Docker image} \
+      -registry {your registry name}
+    ```
+  - 查看所有的registry
+    ```bash
+    paddlecloud get registry
+    ```
+  - 删除指定的registry
+    ```bash
+    paddlecloud delete registry
+    ```
+
 
 ## 查看任务状态
 

@@ -72,9 +72,9 @@ paddlecloud submit -jobname fit_a_line -cpu 1 -gpu 1 -parallelism 1 -entry "pyth
 使用的GPU资源`-gpu 1`、并行度`-parallelism 1`(训练节点个数)，启动命令`-entry "python train.py"`
 和任务程序目录`fit_a_line/`。
 
-***说明：*** 如果希望查看完整的任务提交参数说明，可以执行`paddlecloud submit -h`。
+***说明1：*** 如果希望查看完整的任务提交参数说明，可以执行`paddlecloud submit -h`。
 
-***说明：*** 每个任务推荐使用不同的jobname提交，这样之前的任务的代码和执行结果都会保存在云端。
+***说明2：*** 每个任务推荐使用不同的jobname提交，这样之前的任务的代码和执行结果都会保存在云端。
 
 ## 查看任务运行状态和日志
 
@@ -128,7 +128,7 @@ output
 paddlecloud file ls /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/
 pass-0001.tar
 ...
-paddlecloud file get /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/pass-0001.tar
+paddlecloud file get /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/pass-0001.tar ./
 ```
 
 模型下载之后，就可以把模型应用在预测服务等环境了。
