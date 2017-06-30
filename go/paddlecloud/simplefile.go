@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -45,7 +46,7 @@ func (p *SimpleFileCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interfa
 	}
 	switch f.Arg(0) {
 	case "put":
-		err := putFile(f.Arg(1), f.Arg(2))
+		err := putFiles(f.Arg(1), f.Arg(2))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "put file error: %s\n", err)
 			return subcommands.ExitFailure
@@ -87,8 +88,30 @@ func lsFile(dst string) error {
 		return errors.New("list file error: " + errMsg)
 	}
 	items := respObj.(map[string]interface{})["items"].([]interface{})
-	for _, i := range items {
-		fmt.Println(i.(string))
+	for _, fn := range items {
+		fmt.Println(fn.(string))
+	}
+	return nil
+}
+
+func putFiles(src string, dest string) error {
+	f, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	switch mode := f.Mode(); {
+	case mode.IsDir():
+		files, err := ioutil.ReadDir(src)
+		if err != nil {
+			return err
+		}
+		for _, file := range files {
+			_, fn := path.Split(file.Name())
+			putFiles(path.Join(src, fn), path.Join(dest, fn))
+		}
+	case mode.IsRegular():
+		fmt.Printf("Uploading ... %s %s\n", src, dest)
+		return putFile(src, dest)
 	}
 	return nil
 }
