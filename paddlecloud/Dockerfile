@@ -9,4 +9,4 @@ npm run copy:fonts && npm run copy:images && npm run copy:fonts && npm run copy:
 npm run optimize
 WORKDIR /pcloud
 
-CMD ["sh", "-c", "./manage.py migrate; ./manage.py loaddata sites; ./manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "./manage.py migrate; ./manage.py loaddata sites; ./manage.py runserver 0.0.0.0:$PORT"]
