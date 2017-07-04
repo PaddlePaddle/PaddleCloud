@@ -228,6 +228,19 @@ class JobsView(APIView):
             retcode = 200
         return utils.simple_response(retcode, "\n".join(delete_status))
 
+class PserversView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None):
+        """
+        List all pservers
+        """
+        username = request.user.username
+        namespace = notebook.utils.email_escape(username)
+        api_instance = client.ExtensionsV1beta1Api(api_client=notebook.utils.get_user_api_client(username))
+        pserver_rs_list = api_instance.list_namespaced_replica_set(namespace)
+        return Response(pserver_rs_list.to_dict())
+
 
 class LogsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)

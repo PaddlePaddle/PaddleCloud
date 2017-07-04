@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^api/sample/$', notebook.views.SampleView.as_view()),
 
     url(r"^api/v1/jobs/", paddlejob.views.JobsView.as_view()),
+    url(r"^api/v1/pservers/", paddlejob.views.PserversView.as_view()),
     url(r"^api/v1/logs/", paddlejob.views.LogsView.as_view()),
     url(r"^api/v1/workers/", paddlejob.views.WorkersView.as_view()),
     url(r"^api/v1/quota/", paddlejob.views.QuotaView.as_view()),

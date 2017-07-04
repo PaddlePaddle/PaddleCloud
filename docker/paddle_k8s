@@ -11,6 +11,23 @@ start_pserver() {
       --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
 }
 
+check_trainer_ret() {
+  ret=$1
+  echo "job returned $ret...setting pod return message..."
+  echo "==============================="
+  if [ $ret -eq 136 ] ; then
+    echo "Error Arithmetic Operation(Floating Point Exception)" > /dev/termination-log
+  elif [ $ret -eq 139 ] ; then
+    echo "Segmentation Fault" > /dev/termination-log
+  elif [ $ret -eq 1 ] ; then
+    echo "General Error" > /dev/termination-log
+  elif [ $ret -eq 134 ] ; then
+    echo "Program Abort" > /dev/termination-log
+  fi
+  echo "termination log wroted..."
+  exit $ret
+}
+
 start_trainer() {
     python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
     python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
@@ -47,9 +64,11 @@ start_trainer() {
           --save_dir=$OUTPUT \
           --pservers=$PADDLE_INIT_PSERVERS \
           --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
+        check_trainer_ret $?
         ;;
       "v2")
-        ${ENTRY}
+        sh -c "${ENTRY}"
+        check_trainer_ret $?
         ;;
       *)
         ;;

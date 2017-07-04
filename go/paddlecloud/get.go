@@ -77,18 +77,28 @@ func workers(jobname string) error {
 		fmt.Fprintf(os.Stderr, "bad server return: %s", respBody)
 		return err
 	}
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
-	fmt.Fprintln(w, "NAME\tSTATUS\tSTART\t")
+	fmt.Fprintln(w, "NAME\tSTATUS\tSTART\tEXIT_CODE\tMSG\t")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error parsing: %s", err)
 		return err
 	}
 	for _, item := range respObj.(map[string]interface{})["items"].([]interface{}) {
-		fmt.Fprintf(w, "%s\t%s\t%v\t\n",
+		var exitCode, msg interface{}
+		terminateState := item.(map[string]interface{})["status"].(map[string]interface{})["container_statuses"].([]interface{})[0].(map[string]interface{})["state"].(map[string]interface{})["terminated"]
+
+		if terminateState != nil {
+			exitCode = terminateState.(map[string]interface{})["exit_code"]
+			msg = terminateState.(map[string]interface{})["message"]
+		}
+
+		fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%v\t\n",
 			item.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string),
 			item.(map[string]interface{})["status"].(map[string]interface{})["phase"].(string),
-			item.(map[string]interface{})["status"].(map[string]interface{})["start_time"])
+			item.(map[string]interface{})["status"].(map[string]interface{})["start_time"],
+			exitCode, msg)
 	}
 	w.Flush()
 	return nil
@@ -122,34 +132,71 @@ func registry() error {
 	w.Flush()
 	return err
 }
+
 func jobs() error {
-	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil)
+	// NOTE: a job include pserver replicaset and a trainers job, display them
+	// get pserver replicaset
+	//          "status": {
+	//              "available_replicas": 1,
+	//              "conditions": null,
+	//              "fully_labeled_replicas": 1,
+	//              "observed_generation": 1,
+	//              "ready_replicas": 1,
+	//              "replicas": 1
+	var respObj interface{}
+
+	respBody, err := restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/pservers/", nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error getting pservers: %v\n", err)
+		return err
+	}
+	err = json.Unmarshal(respBody, &respObj)
+	if err != nil {
+		return err
+	}
+	pserverItems := respObj.(map[string]interface{})["items"].([]interface{})
+
+	// get kubernetes jobs info
+	respBody, err = restclient.GetCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting jobs: %v\n", err)
 		return err
 	}
-	var respObj interface{}
+
 	err = json.Unmarshal(respBody, &respObj)
 	if err != nil {
 		return err
 	}
 	items := respObj.(map[string]interface{})["items"].([]interface{})
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	if len(items) >= 0 {
-		fmt.Fprintf(w, "NUM\tNAME\tSUCC\tFAIL\tSTART\tCOMP\tACTIVE\t\n")
+		fmt.Fprintf(w, "NAME\tACTIVE\tSUCC\tFAIL\tSTART\tCOMP\tPS_NAME\tPS_READY\tPS_TOTAL\t\n")
 	}
-	for idx, j := range items {
+	for _, j := range items {
 		jobnameTrainer := j.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string)
 		jobnameParts := strings.Split(jobnameTrainer, "-")
 		jobname := strings.Join(jobnameParts[0:len(jobnameParts)-1], "-")
+		// get info for job pservers
+		var psrsname string
+		var readyReplicas, replicas interface{}
+		for _, psrs := range pserverItems {
+			psrsname = psrs.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string)
+			if psrsname == jobname+"-pserver" {
+				readyReplicas = psrs.(map[string]interface{})["status"].(map[string]interface{})["ready_replicas"]
+				replicas = psrs.(map[string]interface{})["status"].(map[string]interface{})["replicas"]
+				break
+			}
+		}
 
-		fmt.Fprintf(w, "%d\t%s\t%v\t%v\t%v\t%v\t%v\t\n", idx,
+		fmt.Fprintf(w, "%s\t%v\t%v\t%v\t%v\t%v\t%s\t%v\t%v\t\n",
 			jobname,
+			j.(map[string]interface{})["status"].(map[string]interface{})["active"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["succeeded"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["failed"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["start_time"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["completion_time"],
-			j.(map[string]interface{})["status"].(map[string]interface{})["active"])
+			psrsname, readyReplicas, replicas)
 	}
 	w.Flush()
 
