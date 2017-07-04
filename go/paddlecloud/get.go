@@ -171,7 +171,7 @@ func jobs() error {
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	if len(items) >= 0 {
-		fmt.Fprintf(w, "NAME\tACTIVE\tSUCC\tFAIL\tSTART\tCOMP\tPS_NAME\tPS_READY\tPS_TOTAL\t\n")
+		fmt.Fprintf(w, "NAME\tACTIVE\tSUCC\tFAIL\tSTART\tCOMP\tPS_READY\tPS_TOTAL\t\n")
 	}
 	for _, j := range items {
 		jobnameTrainer := j.(map[string]interface{})["metadata"].(map[string]interface{})["name"].(string)
@@ -189,14 +189,14 @@ func jobs() error {
 			}
 		}
 
-		fmt.Fprintf(w, "%s\t%v\t%v\t%v\t%v\t%v\t%s\t%v\t%v\t\n",
+		fmt.Fprintf(w, "%s\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t\n",
 			jobname,
 			j.(map[string]interface{})["status"].(map[string]interface{})["active"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["succeeded"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["failed"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["start_time"],
 			j.(map[string]interface{})["status"].(map[string]interface{})["completion_time"],
-			psrsname, readyReplicas, replicas)
+			readyReplicas, replicas)
 	}
 	w.Flush()
 
