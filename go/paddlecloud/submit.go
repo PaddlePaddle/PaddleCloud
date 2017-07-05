@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
@@ -108,19 +107,8 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	// if jobPackage is not a local dir, skip uploading package.
 	_, pkgerr := os.Stat(jobPackage)
 	if pkgerr == nil {
-		// 1. upload user job package to pfs.
-		err := filepath.Walk(jobPackage, func(filePath string, info os.FileInfo, err error) error {
-			if info.IsDir() {
-				return nil
-			}
-			glog.V(10).Infof("Uploading %s...\n", filePath)
-			dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName, filepath.Base(filePath))
-			fmt.Printf("uploading: %s...\n", filePath)
-			return putFile(filePath, dest)
-		})
-		if err != nil {
-			return err
-		}
+		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
+		return putFiles(jobPackage, dest)
 	} else if os.IsNotExist(pkgerr) {
 		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
