@@ -7,10 +7,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/google/subcommands"
@@ -101,22 +102,26 @@ func putFiles(src string, dest string) error {
 	}
 	switch mode := f.Mode(); {
 	case mode.IsDir():
-		files, err := ioutil.ReadDir(src)
-		if err != nil {
+		if err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+			if info.Mode().IsRegular() {
+				srcs := strings.Split(filepath.Clean(src), string(os.PathSeparator))
+				paths := strings.Split(path, string(os.PathSeparator))
+				destFile := filepath.Join(dest, strings.Join(paths[len(srcs)-1:len(paths)], string(os.PathSeparator)))
+				putFile(path, destFile)
+			}
+			return nil
+		}); err != nil {
 			return err
 		}
-		for _, file := range files {
-			_, fn := path.Split(file.Name())
-			putFiles(path.Join(src, fn), path.Join(dest, fn))
-		}
+
 	case mode.IsRegular():
-		fmt.Printf("Uploading ... %s %s\n", src, dest)
 		return putFile(src, dest)
 	}
 	return nil
 }
 
 func putFile(src string, dest string) error {
+	fmt.Printf("Uploading ... %s %s\n", src, dest)
 	query := url.Values{}
 	_, srcFile := path.Split(src)
 	destDir, destFile := path.Split(dest)
