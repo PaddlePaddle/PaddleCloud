@@ -12,7 +12,6 @@ from rest_framework.authtoken import views
 from rest_framework import routers
 
 urlpatterns = [
-    #url(r"^$", TemplateView.as_view(template_name="homepage.html"), name="home"),
     url(r"^$", TemplateView.as_view(template_name="homepage.html"), name="home"),
     url(r"^healthz/", notebook.views.healthz),
     url(r"^admin/", include(admin.site.urls)),
