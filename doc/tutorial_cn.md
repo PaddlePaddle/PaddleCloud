@@ -6,7 +6,15 @@
 
 `paddlecloud`是提交PaddlePaddleCloud分布式训练任务的命令行工具。
 
-步骤1: 访问链接 https://github.com/PaddlePaddle/cloud/releases 下载最新的`paddlecloud`二进制客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：`chmod +x /usr/local/bin/paddlecloud`
+步骤1: 访问链接 https://github.com/PaddlePaddle/cloud/releases 根据操作系统下载最新的`paddlecloud`
+二进制客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：
+`chmod +x /usr/local/bin/paddlecloud`
+
+|操作系统|二进制版本|
+-- | --
+Mac OSX| paddlecloud.dawin
+Windows| paddlecloud.exe
+Linux | paddlecloud.x86_64
 
 步骤2: 创建`~/.paddle/config`文件(windows系统创建当前用户目录下的`.paddle\config`文件)，并写入下面内容，
 
@@ -63,12 +71,12 @@ Use "paddlecloud flags" for a list of top-level flags
 ```bash
 mkdir fit_a_line
 cd fit_a_line
-wget https://github.com/PaddlePaddle/cloud/blob/develop/demo/fit_a_line/train.py
+wget https://raw.githubusercontent.com/PaddlePaddle/cloud/develop/demo/fit_a_line/train.py
 cd ..
-paddlecloud submit -jobname fit_a_line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
+paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
 ```
 
-可以看到在提交任务的时候，我们指定了任务的名称`-jobname fit_a_line`、使用的CPU资源`-cpu 1`、
+可以看到在提交任务的时候，我们指定了任务的名称`-jobname fit-a-line`、使用的CPU资源`-cpu 1`、
 使用的GPU资源`-gpu 1`、并行度`-parallelism 1`(训练节点个数)，启动命令`-entry "python train.py"`
 和任务程序目录`fit_a_line/`。
 
@@ -82,7 +90,7 @@ paddlecloud submit -jobname fit_a_line -cpu 1 -gpu 1 -parallelism 1 -entry "pyth
 ```bash
 paddlecloud get jobs
 NUM   NAME         SUCC    FAIL    START                  COMP                   ACTIVE
-0     fit_a_line   <nil>   <nil>   2017-06-26T08:41:01Z   <nil>                  1
+0     fit-a-line   <nil>   <nil>   2017-06-26T08:41:01Z   <nil>                  1
 ```
 
 其中， “ACTIVE”表示正在运行的节点个数，“SUCC”表示运行成功的节点个数，“FAIL”表示运行失败的节点个数。
@@ -90,7 +98,7 @@ NUM   NAME         SUCC    FAIL    START                  COMP                  
 然后，使用下面的命令可以查看正在运行或完成运行任务的日志：
 
 ```bash
- paddlecloud logs fit_a_line
+ paddlecloud logs fit-a-line
 Test 28, Cost 13.184950
 append file: /pfs/dlnel/public/dataset/uci_housing/train-00000.pickle
 append file: /pfs/dlnel/public/dataset/uci_housing/train-00001.pickle
@@ -104,7 +112,7 @@ Test 28, Cost 13.184950
 ...
 # logs命令默认返回10条末尾的日志，如果需要查看更多的日志，
 # 也可以使用-n参数指定日志的条数
-paddlecloud logs -n 100 fit_a_line
+paddlecloud logs -n 100 fit-a-line
 ...
 ```
 
@@ -113,7 +121,7 @@ paddlecloud logs -n 100 fit_a_line
 ```bash
 paddlecloud get jobs
 NUM   NAME         SUCC   FAIL    START                  COMP                   ACTIVE
-0     fit_a_line   1      <nil>   2017-06-26T08:41:01Z   2017-06-26T08:41:29Z   <nil>
+0     fit-a-line   1      <nil>   2017-06-26T08:41:01Z   2017-06-26T08:41:29Z   <nil>
 ```
 
 ## 下载任务的模型输出
@@ -138,5 +146,5 @@ paddlecloud file get /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/pas
 使用下面命令可以完全清除集群上的训练任务，清理之后，任务的历史日志将无法查看，但仍然可以在任务名的目录下找到之前的输出。
 
 ```back
-paddlecloud kill fit_a_line
+paddlecloud kill fit-a-line
 ```
