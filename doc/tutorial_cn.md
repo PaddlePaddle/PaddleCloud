@@ -71,7 +71,7 @@ Use "paddlecloud flags" for a list of top-level flags
 ```bash
 mkdir fit_a_line
 cd fit_a_line
-wget https://github.com/PaddlePaddle/cloud/blob/develop/demo/fit_a_line/train.py
+wget https://raw.githubusercontent.com/PaddlePaddle/cloud/develop/demo/fit_a_line/train.py
 cd ..
 paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
 ```
