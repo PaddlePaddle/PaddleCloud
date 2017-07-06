@@ -75,7 +75,7 @@ mkdir fit_a_line
 cd fit_a_line
 wget https://github.com/PaddlePaddle/cloud/blob/develop/demo/fit_a_line/train.py
 cd ..
-paddlecloud submit -jobname fit_a_line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
+paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
 ```
 
 可以看到在提交任务的时候，我们指定了任务的名称`-jobname fit_a_line`、使用的CPU资源`-cpu 1`、
