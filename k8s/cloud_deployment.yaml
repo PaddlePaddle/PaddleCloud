@@ -60,6 +60,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: PORT
+          value: 8000
 #        livenessProbe:
 #         httpGet:
 #           path: /healthz/
