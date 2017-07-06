@@ -16,8 +16,6 @@ Mac OSX| paddlecloud.dawin
 Windows| paddlecloud.exe
 Linux | paddlecloud.x86_64
 
-步骤1: 访问链接 https://github.com/PaddlePaddle/cloud/releases 下载最新的`paddlecloud`二进制客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：`chmod +x /usr/local/bin/paddlecloud`
-
 步骤2: 创建`~/.paddle/config`文件(windows系统创建当前用户目录下的`.paddle\config`文件)，并写入下面内容，
 
 ```yaml
