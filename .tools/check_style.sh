@@ -13,7 +13,7 @@ export PATH=/usr/bin:$PATH
 pre-commit install
 pre-commit  --version
 
-if ! pre-commit run -a ; then
+if ! pre-commit ; then
   git diff  --exit-code
 fi
 
