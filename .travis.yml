@@ -5,10 +5,12 @@ matrix:
       sudo: required
       before_script:
         - sudo pip install pre-commit
-        - go get -u github.com/golang/lint/golint
+        - curl https://glide.sh/get | bash
       script: 
-        - bash .tools/check_style.sh
-        - bash .tools/gen_config.sh && cd go && go test ./...
+        - | 
+          bash .tools/check_style.sh
+          RESULT=$?; if [ $RESULT -eq 0 ] then true; else false; fi;
+        - bash .tools/gen_config.sh && cd go && glide install && go test $(glide novendor)
     - language: python
       python: 2.7
       sudo: required
