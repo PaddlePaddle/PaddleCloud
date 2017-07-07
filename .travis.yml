@@ -4,7 +4,7 @@ matrix:
       go: 1.8.x
       sudo: required
       before_script:
-        - pip install pre-commit
+        - sudo pip install pre-commit
         - go get -u github.com/golang/lint/golint
       script: 
         - bash .tools/check_style.sh
