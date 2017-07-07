@@ -3,6 +3,7 @@ matrix:
     - language: go
       go: 1.8.x
       before_script:
+        - pip install -y pre-commit
         - go get -u github.com/golang/lint/golint
       script: 
         - bash .tools/check_style.sh
