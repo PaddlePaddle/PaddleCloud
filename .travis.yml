@@ -2,7 +2,11 @@ matrix:
   include:
     - language: go
       go: 1.8.x
-      script: bash .tools/gen_config.sh && cd go && go test ./...
+      before_script:
+        - go get -u github.com/golang/lint/golint
+      script: 
+        - bash .tools/check_style.sh
+        - bash .tools/gen_config.sh && cd go && go test ./...
     - language: python
       python: 2.7
       sudo: required
