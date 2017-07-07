@@ -25,6 +25,10 @@ check_trainer_ret() {
     echo "Program Abort" > /dev/termination-log
   fi
   echo "termination log wroted..."
+  FAILED_COUNT=$(python /root/k8s_tools.py fetch_pserver_ips)
+  if [ $FAILED_COUNT -ge $PADDLE_INIT_NUM_GRADIENT_SERVERS ]; then
+    exit 0
+  fi
   exit $ret
 }
 
