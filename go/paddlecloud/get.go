@@ -219,9 +219,9 @@ func quota() error {
 	for _, item := range respObj.(map[string]interface{})["items"].([]interface{}) {
 		fmt.Fprintf(w, "-----\t-----\t\n")
 		hardLimits := item.(map[string]interface{})["status"].(map[string]interface{})["hard"].(map[string]interface{})
-		for k, v := range hardLimits {
-			fmt.Fprintf(w, "%s\t%s\t\n", k, v.(string))
-		}
+		fmt.Fprintf(w, "Memory\t%s\t\n", hardLimits["requests.memory"])
+		fmt.Fprintf(w, "CPU\t%s\t\n", hardLimits["requests.cpu"])
+		fmt.Fprintf(w, "GPU\t%s\t\n", hardLimits["alpha.kubernetes.io/nvidia-gpu"])
 	}
 	w.Flush()
 	return nil
