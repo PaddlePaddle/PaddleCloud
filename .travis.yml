@@ -2,6 +2,7 @@ matrix:
   include:
     - language: go
       go: 1.8.x
+      sudo: required
       before_script:
         - pip install pre-commit
         - go get -u github.com/golang/lint/golint
