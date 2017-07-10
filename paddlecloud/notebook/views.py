@@ -3,12 +3,13 @@ from __future__ import unicode_literals
 
 from django.shortcuts import render
 from django.dispatch import receiver
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.http import *
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 # local imports
 from notebook.models import PaddleUser
 import notebook.forms
@@ -24,11 +25,17 @@ import kubernetes
 import zipfile
 import cStringIO as StringIO
 import base64
+import urllib2
+from urllib import urlencode
 from wsgiref.util import FileWrapper
 from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+HOP_BY_HOP_HEADERS = (
+    'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
+    'te', 'trailers', 'transfer-encoding', 'upgrade')
 
 def healthz(request):
     return HttpResponse("OK")
@@ -247,11 +254,75 @@ def notebook_view(request):
     user_namespace = create_user_namespace(username)
 
     ub = utils.UserNotebook()
+
+    # try starting all notebook components
     ub.start_all(username, user_namespace)
 
     return render(request, "notebook.html",
         context={"notebook_id": ub.get_notebook_id(username),
                  "notebook_status": ub.status(username, user_namespace)})
+
+@login_required
+@csrf_exempt
+def notebook_view_inner(request, noteid):
+    '''
+        notebook_view_inner simply proxies backend jupiter notebook
+        notebook is started by kubernetes and expose a internal service port
+    '''
+    # notebook view inner only support get method
+    username = request.user.username
+    # the notebook id for current user
+    ub = utils.UserNotebook()
+    user_notebook_id = ub.get_notebook_id(username)
+    user_namespace = utils.email_escape(username)
+    # noteid in the url must match the current user
+    if user_notebook_id != noteid:
+        return HttpResponseForbidden()
+
+    # add headers of the incoming request
+    # see https://docs.djangoproject.com/en/1.7/ref/request-response/#django.http.HttpRequest.META for details about the request.META dict
+    def convert(s):
+        s = s.replace('HTTP_','',1)
+        s = s.replace('_','-')
+        return s
+
+    service_name_cross_namespace = "cloud-notebook-service.%s.svc.cluster.local" % user_namespace
+
+    if request.path != "/":
+        if request.path.endswith("/"):
+            note_book_path = request.path[:-1]
+        else:
+            note_book_path = request.path
+    else:
+        note_book_path = "/tree"
+    url = "http://%s:8888%s" % (service_name_cross_namespace, note_book_path)
+    url += '?' + urlencode(request.GET)
+    request_headers = dict((convert(k),v) for k,v in request.META.iteritems() if k.startswith('HTTP_'))
+
+    logging.info("proxy notebook request: %s, headers: %s", url, request_headers)
+    # allow GET or POST request forwarding
+    if request.method == "GET":
+        data = None
+    else:
+        data = request.body
+    downstream_request = urllib2.Request(url, data, headers=request_headers)
+    try:
+        page = urllib2.urlopen(downstream_request)
+    except Exception, e:
+        if e.code == 404:
+            return HttpResponseNotFound("<h1>Page not found</h1>")
+        elif e.code == 304:
+            return HttpResponseNotModified()
+    else:
+        if page.getcode() == 302:
+            return HttpResponseRedirect(page.geturl())
+
+    response = HttpResponse(page)
+    for k in page.info():
+        logging.warning("response header: %s, %s", k, page.info()[k])
+        if k not in HOP_BY_HOP_HEADERS:
+            response[k] = page.info()[k]
+    return response
 
 @login_required
 def stop_notebook_backend(request):

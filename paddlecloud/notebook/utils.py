@@ -97,10 +97,12 @@ class UserNotebook():
             "selector": {
                 "app": "cloud-notebook"
             },
+            "type": "NodePort",
             "ports": [{
                 "protocol": "TCP",
                 "port": 8888,
-                "targetPort": 8888
+                "targetPort": 8888,
+                "nodePort": 8888,
             }]
         }
     }
@@ -177,13 +179,13 @@ class UserNotebook():
         """
         self.__create_deployment(username, namespace)
         self.__create_service(username, namespace)
-        self.__create_ingress(username, namespace)
+        #self.__create_ingress(username, namespace)
 
     def stop_all(self, username, namespace):
         v1beta1api = kubernetes.client.ExtensionsV1beta1Api(api_client=get_user_api_client(username))
         v1api = kubernetes.client.CoreV1Api(api_client=get_user_api_client(username))
         v1beta1api.delete_namespaced_deployment("cloud-notebook-deployment", namespace)
-        v1beta1api.delete_namespaced_ingress("cloud-notebook-ingress", namespace)
+        #v1beta1api.delete_namespaced_ingress("cloud-notebook-ingress", namespace)
         v1api.delete_namespaced_service("cloud-notebook-service", namespace)
 
     def status(self, username, namespace):
@@ -213,16 +215,16 @@ class UserNotebook():
             if not self.__find_item(endpoints_list, "cloud-notebook-service"):
                 s = False
         # -------------------- ingress status --------------------
-        ing_list = v1beta1api.list_namespaced_ingress(namespace)
-        if not self.__find_item(ing_list, "cloud-notebook-ingress"):
-            i = False
-        else:
-            # ingress is ready when the remote ip is assigned
-            for i in ing_list.items:
-                if i:
-                    for ing in i.status.load_balancer.ingress:
-                        if not ing.ip:
-                            i = False
+        # ing_list = v1beta1api.list_namespaced_ingress(namespace)
+        # if not self.__find_item(ing_list, "cloud-notebook-ingress"):
+        #     i = False
+        # else:
+        #     # ingress is ready when the remote ip is assigned
+        #     for i in ing_list.items:
+        #         if i:
+        #             for ing in i.status.load_balancer.ingress:
+        #                 if not ing.ip:
+        #                     i = False
 
         if d and s and i:
             return "running"

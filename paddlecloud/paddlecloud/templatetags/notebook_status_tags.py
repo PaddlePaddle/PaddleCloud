@@ -4,6 +4,7 @@ from django.contrib.messages.utils import get_level_tags
 from django.utils.encoding import force_text
 from notebook.utils import email_escape, UserNotebook, user_certs_exist
 import kubernetes
+import logging
 
 LEVEL_TAGS = get_level_tags()
 
@@ -24,7 +25,11 @@ def get_user_notebook_status(user):
     username = user.username
     if user_certs_exist(username):
         namespace = email_escape(user.email)
-        ub = UserNotebook()
-        return ub.status(username, namespace)
+        try:
+            ub = UserNotebook()
+            return ub.status(username, namespace)
+        except Exception, e:
+            logging.error("error get notebook status: %s", str(e))
+            return "unknown"
     else:
         return "unknown"
