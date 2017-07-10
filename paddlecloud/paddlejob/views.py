@@ -297,7 +297,7 @@ class GetUserView(APIView):
 
     def get(self, request, format=None):
         content = {
-            'user': unicode(request.user.username),  # `django.contrib.auth.User` instance.
+            'user': request.user.username,  # `django.contrib.auth.User` instance.
         }
         return Response(content)
 
