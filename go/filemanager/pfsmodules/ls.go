@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -157,12 +157,12 @@ func lsPath(path string, r bool) ([]LsResult, error) {
 	return ret, err
 }
 
-// CloudCheck checks the conditions when running on cloud.
+// ValidateCloudArgs checks the conditions when running on cloud.
 func (p *LsCmd) ValidateCloudArgs(userName string) error {
 	return ValidatePfsPath(p.Args, userName)
 }
 
-// LocalCheck checks the conditions when running local.
+// ValidateLocalArgs checks the conditions when running local.
 func (p *LsCmd) ValidateLocalArgs() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusNotEnoughArgs)
@@ -249,8 +249,8 @@ func formatPrint(result []LsResult) {
 
 // RemoteLs gets LsCmd result from cloud.
 func RemoteLs(cmd *LsCmd) ([]LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
-	body, err := utils.GetCall(t, cmd.ToURLParam())
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	body, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}

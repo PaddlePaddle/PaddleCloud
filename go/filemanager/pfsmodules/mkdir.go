@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	log "github.com/golang/glog"
 	"github.com/google/subcommands"
 )
@@ -29,7 +29,7 @@ type MkdirCmd struct {
 	Args   []string `json:"path"`
 }
 
-// LocalCheck checks the conditions when running on local.
+// ValidateLocalArgs checks the conditions when running on local.
 func (p *MkdirCmd) ValidateLocalArgs() error {
 	if len(p.Args) == 0 {
 		return errors.New(StatusNotEnoughArgs)
@@ -37,7 +37,7 @@ func (p *MkdirCmd) ValidateLocalArgs() error {
 	return nil
 }
 
-// CloudCheck checks the conditions when running on cloud.
+// ValidateCloudArgs checks the conditions when running on cloud.
 func (p *MkdirCmd) ValidateCloudArgs(userName string) error {
 	return ValidatePfsPath(p.Args, userName)
 }
@@ -126,9 +126,9 @@ func RemoteMkdir(cmd *MkdirCmd) ([]MkdirResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", utils.Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
 	log.V(2).Infoln(t)
-	body, err := utils.PostCall(t, j)
+	body, err := restclient.PostCall(t, j)
 	if err != nil {
 		return nil, err
 	}

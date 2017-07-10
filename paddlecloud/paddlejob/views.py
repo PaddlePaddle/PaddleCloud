@@ -86,8 +86,9 @@ class JobsView(APIView):
                 ))
             else:
                 pass
-
-        registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
+        registry_secret = obj.get("registry", None)
+        if not registry_secret:
+            registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
         # get user specified image
         job_image = obj.get("image", None)
         gpu_count = obj.get("gpu", 0)
@@ -288,7 +289,7 @@ class QuotaView(APIView):
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
-        quota_list = api_client.CoreV1Api(api_cilent=api_client)\
+        quota_list = client.CoreV1Api(api_client=api_client)\
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
 
@@ -368,3 +369,36 @@ class SimpleFileView(APIView):
                 fn.write(data)
 
         return Response({"msg": ""})
+
+
+class SimpleFileList(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (FormParser, MultiPartParser,)
+
+    def get(self, request, format=None):
+        """
+        Simple list files.
+        """
+        file_path = request.query_params.get("path")
+        dc = request.query_params.get("dc")
+        # validate list path must be under user's dir
+        path_parts = file_path.split(os.path.sep)
+        msg = ""
+        if len(path_parts) <= 1:
+            msg = "path must start with /pfs"
+        if len(path_parts) >= 2 and path_parts[1] != "pfs":
+            msg = "path must start with /pfs"
+        if len(path_parts) >= 3 and path_parts[2] not in settings.DATACENTERS.keys():
+            msg = "no datacenter "+path_parts[2]
+        if len(path_parts) >= 4 and path_parts[3] != "home":
+            msg = "path must like /pfs/[dc]/home/[user]"
+        if len(path_parts) >= 5 and path_parts[4] != request.user.username:
+            msg = "path must like /pfs/[dc]/home/[user]"
+        if msg:
+            return Response({"msg": msg})
+
+        real_path = file_path.replace("/pfs/%s/home/%s"%(dc, request.user.username), "/pfs/%s"%request.user.username)
+        if not os.path.exists(real_path):
+            return Response({"msg": "dir not exist"})
+
+        return Response({"msg": "", "items": os.listdir(real_path)})

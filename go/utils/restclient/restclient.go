@@ -1,4 +1,4 @@
-package utils
+package restclient
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/PaddlePaddle/cloud/go/utils/config"
 	log "github.com/golang/glog"
 )
 
@@ -51,7 +52,8 @@ func MakeRequest(uri string, method string, body io.Reader,
 func MakeRequestToken(uri string, method string, body io.Reader,
 	contentType string, query url.Values) (*http.Request, error) {
 	// get client token
-	token, err := token()
+	c := config.ParseDefaultConfig()
+	token, err := Token(c)
 	if err != nil {
 		return nil, errors.New("get token error:" + err.Error())
 	}
