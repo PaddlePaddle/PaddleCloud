@@ -12,13 +12,13 @@ import (
 func main() {
 	port := flag.Int("port", 8080, "port of server")
 	ip := flag.String("ip", "0.0.0.0", "ip of server")
-	tokenUri := flag.String("tokenuri", "http://cloud.paddlepaddle.org", "uri of token server")
+	tokenURI := flag.String("tokenuri", "http://cloud.paddlepaddle.org", "uri of token server")
 	flag.Parse()
 
 	router := pfsserver.NewRouter()
 	addr := fmt.Sprintf("%s:%d", *ip, *port)
-	pfsserver.TokenUri = *tokenUri
+	pfsserver.TokenURI = *tokenURI
 
-	log.Infof("server on:%s and tokenuri:%s\n", addr, *tokenUri)
+	log.Infof("server on:%s and tokenuri:%s\n", addr, *tokenURI)
 	log.Fatal(http.ListenAndServe(addr, router))
 }

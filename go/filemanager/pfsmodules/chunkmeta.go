@@ -19,6 +19,7 @@ const (
 	defaultMinChunkSize = 4 * 1024
 )
 const (
+	// ChunkMetaCmdName is the name of GetChunkMeta command.
 	ChunkMetaCmdName = "GetChunkMeta"
 )
 
