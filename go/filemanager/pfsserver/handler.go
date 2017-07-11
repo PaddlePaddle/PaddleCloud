@@ -19,7 +19,7 @@ type response struct {
 	Results interface{} `json:"results"`
 }
 
-// TokenURI is the address of token server
+// is the address of token server
 var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
