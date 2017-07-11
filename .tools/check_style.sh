@@ -1,6 +1,6 @@
 #!/bin/bash
 function abort(){
-    echo "Your change doesn't follow PaddlePaddle's code style." 1>&2
+    echo "Your change doesn't follow PaddleCloud's code style." 1>&2
     echo "Please use pre-commit to reformat your code and git push again." 1>&2
     exit 1
 }
