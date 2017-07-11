@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	// StatCmdName means stat command name.
 	StatCmdName = "stat"
 )
 
