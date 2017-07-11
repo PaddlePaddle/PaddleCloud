@@ -222,6 +222,7 @@ func quota() error {
 		fmt.Fprintf(w, "Memory\t%s\t\n", hardLimits["requests.memory"])
 		fmt.Fprintf(w, "CPU\t%s\t\n", hardLimits["requests.cpu"])
 		fmt.Fprintf(w, "GPU\t%s\t\n", hardLimits["alpha.kubernetes.io/nvidia-gpu"])
+		fmt.Fprintf(w, "MaxParallism\t%s\t\n", hardLimits["pods"])
 	}
 	w.Flush()
 	return nil
