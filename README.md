@@ -33,10 +33,10 @@
   mkdir -p /home/pcloud/data/mysql
   mkdir -p /home/pcloud/data/certs
   ```
-  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `pcloud_data/certs` folder
-  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `pcloud_data/certs` folder
-  - Copy CephFS Key file(admin.secret) to `pcloud_data/certs` folder
-  - Copy `/paddlecloud/settings.py` file to `pcloud_data` folder
+  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `pcloud/data/certs` folder
+  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `pcloud/data/certs` folder
+  - Copy CephFS Key file(admin.secret) to `pcloud/data/certs` folder
+  - Copy `/paddlecloud/settings.py` file to `pcloud/data` folder
 
 - Configure `cloud_deployment.yaml`
   - `spec.template.spec.containers[0].volumes` change the `hostPath` which match your data folder.
@@ -70,6 +70,7 @@ Then open your browser and visit http://cloud.paddlepaddle.org.
 ### Run locally
 Make sure you are using a virtual environment of some sort (e.g. `virtualenv` or
 `pyenv`).
+
 ```
 virtualenv paddlecloudenv
 # enable the virtualenv
@@ -77,12 +78,20 @@ source paddlecloudenv/bin/activate
 ```
 
 To run for the first time, you need to:
+
 ```
+cd paddlecloud
 npm install
 pip install -r requirements.txt
 ./manage.py migrate
 ./manage.py loaddata sites
 npm run dev
+```
+
+If `npm` haven't been installed, you need to 
+
+```
+sudo apt-get install npm nodejs-legacy
 ```
 
 Browse to http://localhost:8000/
