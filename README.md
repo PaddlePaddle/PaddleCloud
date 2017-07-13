@@ -3,7 +3,7 @@
 PaddlePaddle Cloud is a Distributed Deep-Learning Cloud Platform for both cloud
 providers and enterprises.
 
-PaddlePaddle Cloud use [kubernetes](https://kubernetes.io) as it's backend job
+PaddlePaddle Cloud use [Kubernetes](https://kubernetes.io) as it's backend job
 dispatching and cluster resource management center. And use [PaddlePaddle](https://github.com/PaddlePaddle/Paddle.git)
 as the deep-learning frame work. Users can use web pages or command-line tools
 to submit their deep-learning training jobs remotely to make use of power of
@@ -46,7 +46,7 @@ English tutorials(comming soon...)
   ```
   - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `/home/pcloud/data/certs` folder
   - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `/home/pcloud/data/certs` folder
-  - Copy CephFS Key file(admin.secret) to `/home/pcloud/data/certs` folder
+  - Optianal: copy CephFS Key file(admin.secret) to `/home/pcloud/data/certs` folder
   - Copy `paddlecloud/settings.py` file to `/home/pcloud/data` folder
 
 - Configure `cloud_deployment.yaml`
@@ -56,7 +56,7 @@ English tutorials(comming soon...)
   - Add your domain name to `ALLOWED_HOSTS`.
   - Configure `DATACENTERS` to your backend storage, supports CephFS and HostPath currently.
     You can use HostPath mode to make use of shared file-systems like "NFS".
-- Configure `cloud_ingress.yaml` is your kubernetes cluster is using "ingress"
+- Configure `cloud_ingress.yaml` is your kubernetes cluster is using [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)
   to proxy HTTP traffics, or you can configure `cloud_service.yaml` to use [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport)
   - if using ingress, configure `spec.rules[0].host` to your domain name
 - Deploy cloud on Kubernetes
@@ -65,7 +65,7 @@ English tutorials(comming soon...)
   - `kubectl create -f k8s/cloud_ingress.yaml`(optianal)
 
 
-To test or visit the website, find out the kubernetes [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) IP
+To test or visit the website, find out the kubernetes ingress IP
 addresses, or the NodePort.
 
 Then open your browser and visit http://<ingress-ip-address>, or
