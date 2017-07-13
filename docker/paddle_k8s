@@ -11,6 +11,21 @@ start_pserver() {
       --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
 }
 
+start_new_pserver() {
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
+  /usr/bin/pserver \
+    -port=$PADDLE_INIT_PORT \
+    -num-pservers=$PSERVERS \
+    -log-level=debug \
+    -etcd-endpoint=http://$PADDLE_INIT_MASTER_IP:2379
+}
+
+start_master() {
+  /usr/bin/master \
+  -port=8080 \
+  -endpoints=http://127.0.0.1:2379
+}
+
 check_trainer_ret() {
   ret=$1
   echo "job returned $ret...setting pod return message..."
@@ -87,6 +102,12 @@ case "$1" in
         ;;
     start_trainer)
         start_trainer $2
+        ;;
+    start_new_pserver)
+        start_new_pserver
+        ;;
+    start_master)
+        start_master
         ;;
     --help)
         usage
