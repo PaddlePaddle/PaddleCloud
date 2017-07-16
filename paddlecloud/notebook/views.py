@@ -277,6 +277,7 @@ def notebook_view_inner(request, noteid):
     user_namespace = utils.email_escape(username)
     # noteid in the url must match the current user
     if user_notebook_id != noteid:
+        logging.warning("forbidden: %s, %s", user_notebook_id, noteid)
         return HttpResponseForbidden()
 
     # add headers of the incoming request

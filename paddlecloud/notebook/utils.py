@@ -130,10 +130,11 @@ class UserNotebook():
     }
     def get_notebook_id(self, username):
         # notebook id is md5(username)
-        m = hashlib.md5()
-        m.update(username)
-
-        return m.hexdigest()[:8]
+        # m = hashlib.md5()
+        # m.update(username)
+        #
+        # return m.hexdigest()[:8]
+        return email_escape(username)
 
     def __wait_api_response(self, resp):
         print resp.status
