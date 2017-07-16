@@ -9,3 +9,5 @@ kubernetes
 MySQL-python
 djangorestframework
 django_sendmail_backend
+uwsgi
+websocket-client
