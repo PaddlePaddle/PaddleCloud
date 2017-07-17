@@ -227,12 +227,16 @@ class UserNotebook():
         if not self.__find_item(ing_list, "cloud-notebook-ingress"):
             i = False
         else:
-            # ingress is ready when the remote ip is assigned
-            for i in ing_list.items:
-                if i:
-                    for ing in i.status.load_balancer.ingress:
-                        if not ing.ip:
-                            i = False
+            i = False
+            try:
+                # ingress is ready when the remote ip is assigned
+                for i in ing_list.items:
+                    if i:
+                        for ing in i.status.load_balancer.ingress:
+                            if not ing.ip:
+                                i = False
+            except:
+                pass
 
         if d and s and i:
             return "running"

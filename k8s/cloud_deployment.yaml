@@ -71,13 +71,5 @@ spec:
 #             value: kubernetes-health-check
 #         initialDelaySeconds: 3
 #         periodSeconds: 5
-      - name: mysql
-        image: mysql:5.7
-        volumeMounts:
-        - name: mysql-data
-          mountPath: /var/lib/mysql
-        env:
-          - name: MYSQL_ROOT_PASSWORD
-            value: root
       nodeSelector:
-        kubernetes.io/hostname: k8s-node1
+        kubernetes.io/hostname: your-host-name
