@@ -7,9 +7,9 @@
 
 {% block nav %}
   {% get_user_notebook_status request.user as status %}
+    {% if request.user.is_authenticated %}
         <ul class="nav navbar-nav">
-            <li><a href="/notedash">MyNoteBook
-              {% if request.user.is_authenticated %}
+            <li><a href="/notedash">我的NoteBook
                 {% if status == "running" %}
                 <span class="label label-success">{{ status }}</span>
                 {% elif status == "starting" %}
@@ -19,12 +19,9 @@
                 {% elif status == "unknown" %}
                 <span class="label label-default">{{ status }}</span>
                 {% endif %}
-              {% endif %}
             </a></li>
-            <li>
-
-            </li>
         </ul>
+      {% endif %}
 {% endblock %}
 
 {% block styles %}
