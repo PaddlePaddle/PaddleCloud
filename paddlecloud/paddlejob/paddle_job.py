@@ -3,6 +3,7 @@ from kubernetes import client, config
 import os
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164
+DEFAULT_MASTER_PORT=8080
 
 class PaddleJob(object):
     """
@@ -24,7 +25,8 @@ class PaddleJob(object):
                  gpu=0,
                  volumes=[],
                  registry_secret=None,
-                 envs = {}):
+                 envs = {},
+                 new_pserver=True):
 
         self._ports_num=1
         self._ports_num_for_sparse=1
@@ -46,6 +48,11 @@ class PaddleJob(object):
         self._registry_secret = registry_secret
         self._passes = passes
         self._usr_envs = envs
+        # master resources are static
+        self._mastercpu = 1
+        self._mastermemory = "300Mi"
+        # use new pserver for tolerant
+        self._new_pserver = new_pserver
 
     @property
     def pservers(self):
@@ -58,6 +65,9 @@ class PaddleJob(object):
     @property
     def runtime_image(self):
         return self._image
+
+    def _get_master_name(self):
+        return "%s-master" % self._name
 
     def _get_pserver_name(self):
         return "%s-pserver" % self._name
@@ -101,11 +111,28 @@ class PaddleJob(object):
             port += 1
         return ports
 
+    def _get_master_container_ports(self):
+        ports = []
+        port = DEFAULT_MASTER_PORT
+        for i in xrange(self._ports_num + self._ports_num_for_sparse):
+            ports.append({"containerPort":port, "name":"jobport-%d" % i})
+            port += 1
+        return ports
+
+    def _get_master_labels(self):
+        return {"paddle-job-master": self._name}
+
     def _get_pserver_labels(self):
         return {"paddle-job-pserver": self._name}
 
+    def _get_master_entrypoint(self):
+        return ["paddle_k8s", "start_master"]
+
     def _get_pserver_entrypoint(self):
-        return ["paddle_k8s", "start_pserver"]
+        if self._new_pserver:
+            return ["paddle_k8s", "start_pserver"]
+        else:
+            return ["paddle_k8s", "start_new_pserver"]
 
     def _get_trainer_entrypoint(self):
         if self._entry:
@@ -127,6 +154,49 @@ class PaddleJob(object):
         for item in self._volumes:
             volume_mounts.append(item["volume_mount"])
         return volume_mounts
+
+    def new_master_job(self):
+        """
+        return: Master ReplicaSet
+        """
+        rs = {
+            "apiVersion": "extensions/v1beta1",
+            "kind": "ReplicaSet",
+            "metadata":{
+                "name": self._get_master_name(),
+            },
+            "spec":{
+                "replicas": 1, # NOTE: always 1 replica of master
+                "template": {
+                    "metadata": {
+                        "labels": self._get_master_labels()
+                    },
+                    "spec": {
+                        # mount trainer volumes to dispatch datasets
+                        "volumes": self._get_trainer_volumes(),
+                        "containers":[{
+                            "name": self._name,
+                            "image": self._image,
+                            "ports": self._get_master_container_ports(),
+                            "env": self.get_env(),
+                            "volumeMounts": self._get_trainer_volume_mounts(),
+                            "command": self._get_master_entrypoint(),
+                            "resources": {
+                                "requests": {
+                                    "memory": str(self._mastermemory),
+                                    "cpu": str(self._mastercpu)
+                                },
+                                "limits": {
+                                    "memory": str(self._mastermemory),
+                                    "cpu": str(self._mastercpu)
+                                }
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+        return rs
 
     def new_trainer_job(self):
         """
