@@ -12,13 +12,13 @@ spec:
       volumes:
       - name: cert-volume
         hostPath:
-          path: /home/pcloud/data/certs
+          path: /home/pcloud_gongwb/data/certs
       - name: mysql-data
         hostPath:
-          path: /home/pcloud/data/mysql
+          path: /home/pcloud_gongwb/data/mysql
       - name: settings
         hostPath:
-          path: /home/pcloud/data/settings.py
+          path: /home/pcloud_gongwb/data/settings.py
       #- name: email-tmp-msg:
       #  hostPath:
       #    path: /home/pcloud/templates/email_confirmation_message.txt
@@ -39,7 +39,7 @@ spec:
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
-        image: typhoon1986/paddlecloud
+        image: gongweibao/pcloud
         volumeMounts:
         - name: cert-volume
           mountPath: /certs
@@ -61,7 +61,7 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         - name: PORT
-          value: 8000
+          value: "8000"
 #        livenessProbe:
 #         httpGet:
 #           path: /healthz/
@@ -79,5 +79,7 @@ spec:
         env:
           - name: MYSQL_ROOT_PASSWORD
             value: root
+          - name: MYSQL_DATABASE
+            value: paddlecloud
       nodeSelector:
         kubernetes.io/hostname: k8s-node1
