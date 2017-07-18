@@ -45,10 +45,10 @@ English tutorials(comming soon...)
   mkdir -p /home/pcloud/data/mysql
   mkdir -p /home/pcloud/data/certs
   ```
-  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `pcloud/data/certs` folder
-  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `pcloud/data/certs` folder
-  - Copy CephFS Key file(admin.secret) to `pcloud/data/certs` folder
-  - Copy `/paddlecloud/settings.py` file to `pcloud/data` folder
+  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `/home/pcloud/data/certs` folder
+  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `/home/pcloud/data/certs` folder
+  - Optianal: copy CephFS Key file(admin.secret) to `/home/pcloud/data/certs` folder
+  - Copy `paddlecloud/settings.py` file to `/home/pcloud/data` folder
 
 - Configure `cloud_deployment.yaml`
   - `spec.template.spec.containers[0].volumes` change the `hostPath` which match your data folder.
