@@ -9,3 +9,4 @@ kubernetes
 MySQL-python
 djangorestframework
 django_sendmail_backend
+nodejs
