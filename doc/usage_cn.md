@@ -73,8 +73,14 @@ scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir
 paddlecloud命令集成了上传数据的功能，目前仅针对存储系统是CephFS的环境。如果希望上传，执行：
 
 ```bash
-paddlecloud file put /path/to/dir
+paddlecloud file src dest
 ```
+- `src` 必须是当前目录的子目录，`../`是不允许的。
+- `src` 如果以'/'结尾，则表示上传`src`目录下的文件，不会在`dest`下创建新的目录。
+- `src` 如果没有以`/`结尾，则表示上传`src`目录，会在`dest`下创建一个新的目录。
+- `dest` 必须包含`/pfs/{datacenter}/user/{username}`目录。
+
+
 
 ### 使用公共数据集
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
@@ -113,7 +114,13 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	_, pkgerr := os.Stat(jobPackage)
 	if pkgerr == nil {
 		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
-		return putFiles(jobPackage, dest)
+		if !strings.HasSuffix(jobPackage, "/") {
+			jobPackage = jobPackage + "/"
+		}
+		err := putFiles(jobPackage, dest)
+		if err != nil {
+			return err
+		}
 	} else if os.IsNotExist(pkgerr) {
 		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
