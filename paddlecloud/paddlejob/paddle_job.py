@@ -131,7 +131,7 @@ class PaddleJob(object):
         return ["paddle_k8s", "start_master"]
 
     def _get_pserver_entrypoint(self):
-        if self._new_pserver:
+        if not self._new_pserver:
             return ["paddle_k8s", "start_pserver"]
         else:
             return ["paddle_k8s", "start_new_pserver"]
@@ -196,7 +196,7 @@ class PaddleJob(object):
                         }, {
                             "name": self._name + "-etcd",
                             "image": self._etcd_image,
-                            "command": ["etcd", "-name", "etcd0", "-advertise-client-urls", "http://$(POD_IP):2379,http://$(POD_IP):4001", "-listen-client-urls", "http://0.0.0.0:2379,http://0.0.0.0:4001", "-init    ial-advertise-peer-urls", "http://$(POD_IP):2380", "-listen-peer-urls", "http://0.0.0.0:2380", "-initial-cluster", "etcd0=http://$(POD_IP):2380", "-initial-cluster-state", "new"],
+                            "command": ["etcd", "-name", "etcd0", "-advertise-client-urls", "http://$(POD_IP):2379,http://$(POD_IP):4001", "-listen-client-urls", "http://0.0.0.0:2379,http://0.0.0.0:4001", "-initial-advertise-peer-urls", "http://$(POD_IP):2380", "-listen-peer-urls", "http://0.0.0.0:2380", "-initial-cluster", "etcd0=http://$(POD_IP):2380", "-initial-cluster-state", "new"],
                             "env": [{
                                 "name": "POD_IP",
                                 "valueFrom": {"fieldRef": {"fieldPath": "status.podIP"}}
