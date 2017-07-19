@@ -8,11 +8,16 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
+)
+
+const (
+	invalidJobName = "jobname can not contain '.' or '_'"
 )
 
 // Config is global config object for paddlecloud commandline
@@ -104,6 +109,9 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 
 // Submit current job.
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
+	if err := checkJobName(jobName); err != nil {
+		return err
+	}
 	// if jobPackage is not a local dir, skip uploading package.
 	_, pkgerr := os.Stat(jobPackage)
 	if pkgerr == nil {
@@ -130,6 +138,12 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	errMsg := respObj.(map[string]interface{})["msg"].(string)
 	if len(errMsg) > 0 {
 		return errors.New(errMsg)
+	}
+	return nil
+}
+func checkJobName(jobName string) error {
+	if strings.Contains(jobName, "_") || strings.Contains(jobName, ".") {
+		return errors.New(invalidJobName)
 	}
 	return nil
 }
