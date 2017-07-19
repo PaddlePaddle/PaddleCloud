@@ -317,3 +317,5 @@ JOB_DOCKER_IMAGE = {
 
 # Path store all cuda, nvidia driver libs
 NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
+# etcd image for fault-tolerant jobs
+ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"

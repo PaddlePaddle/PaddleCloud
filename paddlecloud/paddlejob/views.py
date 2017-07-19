@@ -39,6 +39,7 @@ class JobsView(APIView):
         obj = json.loads(request.body)
         topology = obj.get("topology", "")
         entry = obj.get("entry", "")
+        fault_tolerant = obj.get("faulttolerant", False)
         api_client = notebook.utils.get_user_api_client(username)
         if not topology and not entry:
             return utils.simple_response(500, "no topology or entry specified")
@@ -127,7 +128,7 @@ class JobsView(APIView):
             ))
         envs = {}
         envs.update({"PADDLE_CLOUD_CURRENT_DATACENTER": dc})
-
+        # ===================== create PaddleJob instance ======================
         paddle_job = PaddleJob(
             name = job_name,
             job_package = package_in_pod,
@@ -145,25 +146,38 @@ class JobsView(APIView):
             registry_secret = registry_secret,
             volumes = volumes,
             envs = envs
+            new_pserver=
+            etcd_image=settings.ETCD_IMAGE
         )
+        # ========== submit master ReplicaSet if using fault_tolerant feature ==
+        # FIXME: alpha features in separate module
+        if fault_tolerant:
+            try:
+                ret = client.ExtensionsV1beta1Api(api_client=api_client).create_namespaced_replica_set(
+                    namespace,
+                    paddle_job.new_master_job())
+            except ApiException, e:
+                logging.error("error submitting master job: %s", e)
+                return utils.simple_response(500, str(e))
+        # ========================= submit pserver job =========================
         try:
             ret = client.ExtensionsV1beta1Api(api_client=api_client).create_namespaced_replica_set(
                 namespace,
-                paddle_job.new_pserver_job(),
-                pretty=True)
+                paddle_job.new_pserver_job())
         except ApiException, e:
-            logging.error("error submitting pserver job: %s " % e)
+            logging.error("error submitting pserver job: %s ", e)
             return utils.simple_response(500, str(e))
-
-        #submit trainer job, it's Kubernetes Job
+        # ========================= submit trainer job =========================
         try:
             ret = client.BatchV1Api(api_client=api_client).create_namespaced_job(
                 namespace,
-                paddle_job.new_trainer_job(),
-                pretty=True)
+                paddle_job.new_trainer_job())
         except ApiException, e:
             logging.error("error submitting trainer job: %s" % e)
             return utils.simple_response(500, str(e))
+
+        # TODO(typhoonzero): stop master and pservers when job finish or fails
+
         return utils.simple_response(200, "")
 
     def delete(self, request, format=None):

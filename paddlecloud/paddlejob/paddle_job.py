@@ -26,7 +26,8 @@ class PaddleJob(object):
                  volumes=[],
                  registry_secret=None,
                  envs = {},
-                 new_pserver=True):
+                 new_pserver=True,
+                 etcd_image="quay.io/coreos/etcd:v3.2.1"):
 
         self._ports_num=1
         self._ports_num_for_sparse=1
@@ -53,6 +54,7 @@ class PaddleJob(object):
         self._mastermemory = "300Mi"
         # use new pserver for tolerant
         self._new_pserver = new_pserver
+        self._etcd_image = etcd_image
 
     @property
     def pservers(self):
@@ -191,6 +193,15 @@ class PaddleJob(object):
                                     "cpu": str(self._mastercpu)
                                 }
                             }
+                        }, {
+                            "name": self._name + "-etcd",
+                            "image": self._etcd_image,
+                            "command": ["etcd", "-name", "etcd0", "-advertise-client-urls", "http://$(POD_IP):2379,http://$(POD_IP):4001", "-listen-client-urls", "http://0.0.0.0:2379,http://0.0.0.0:4001", "-init    ial-advertise-peer-urls", "http://$(POD_IP):2380", "-listen-peer-urls", "http://0.0.0.0:2380", "-initial-cluster", "etcd0=http://$(POD_IP):2380", "-initial-cluster-state", "new"],
+                            "env": [{
+                                "name": "POD_IP",
+                                "valueFrom": {"fieldRef": {"fieldPath": "status.podIP"}}
+                            }]
+
                         }]
                     }
                 }

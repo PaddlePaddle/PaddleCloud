@@ -33,8 +33,12 @@ type SubmitCmd struct {
 	Topology    string `json:"topology"`
 	Datacenter  string `json:"datacenter"`
 	Passes      int    `json:"passes"`
-	Image       string `json:"image"`
-	Registry    string `json:"registry"`
+	// docker image to run jobs
+	Image    string `json:"image"`
+	Registry string `json:"registry"`
+	// Alpha features:
+	// TODO: separate API versions
+	FaultTolerant bool `json:"faulttolerant"`
 }
 
 // Name is subcommands name.
@@ -66,6 +70,7 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
 	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
 	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
+	f.BoolVar(&p.FaultTolerant, "faulttolerant", false, "if true, use new fault-tolerant pservers")
 }
 
 // Execute submit command.
