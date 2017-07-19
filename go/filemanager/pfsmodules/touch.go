@@ -15,6 +15,7 @@ const (
 )
 
 const (
+	// TouchCmdName is the name of touch command.
 	TouchCmdName = "touch"
 )
 

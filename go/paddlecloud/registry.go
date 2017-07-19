@@ -93,6 +93,8 @@ func (r *RegistryCmd) Delete() error {
 	}
 	return nil
 }
+
+// Execute runs RegistryCmd command.
 func (r *RegistryCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if r.SecretName == "" || r.Username == "" || r.Password == "" || r.Server == "" {
 		f.Usage()

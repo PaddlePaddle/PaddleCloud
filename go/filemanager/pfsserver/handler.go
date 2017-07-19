@@ -19,7 +19,8 @@ type response struct {
 	Results interface{} `json:"results"`
 }
 
-var TokenUri = ""
+// TokenURI is the address of token server
+var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
@@ -51,7 +52,7 @@ func getUserName(uri string, token string) (string, error) {
 func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header http.Header) {
 	resp := response{}
 
-	user, err := getUserName(TokenUri+"/api/v1/token2user/", header.Get("Authorization"))
+	user, err := getUserName(TokenURI+"/api/v1/token2user/", header.Get("Authorization"))
 	if err != nil {
 		resp.Err = "get username error:" + err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)

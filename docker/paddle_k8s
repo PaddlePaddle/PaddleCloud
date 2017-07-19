@@ -60,6 +60,10 @@ start_trainer() {
     $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
     "version: " $1
 
+    # FIXME: If we use the new PServer by Golang, add Kubernetes healthz
+    # to wait PServer process get ready.Now only sleep 20 seconds.
+    sleep 20
+    
     case "$1" in
       "v1")
         paddle train \
