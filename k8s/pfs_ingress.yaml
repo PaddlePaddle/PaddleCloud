@@ -2,7 +2,6 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: pfs-ingress
-  namespace: pfs
 spec:
   tls:
   - hosts:

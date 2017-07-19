@@ -2,7 +2,6 @@ kind: Service
 apiVersion: v1
 metadata:
   name: pfs-service
-  namespace: pfs
 spec:
   selector:
     app: pfsserver 

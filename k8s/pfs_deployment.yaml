@@ -2,7 +2,6 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: pfsserver
-  namespace: pfs
 spec:
   replicas: 1
   template:
@@ -11,10 +10,13 @@ spec:
         app: pfsserver
     spec:
       volumes:
+      - name: cert-volume
+        hostPath:
+          path: /home/pcloud_gongwb/data/certs
       - name: data-storage
         cephfs:
-          name: cephfs
-          monitors: ["172.19.32.166:6789"]
+          monitors: 
+            - 172.19.32.166:6789
           path: "/"
           user: "admin"
           secretRef:
@@ -24,9 +26,13 @@ spec:
         imagePullPolicy: Always
         image: gongweibao/pfsserver:latest
         volumeMounts:
+        - name: cert-volume
+          mountPath: /certs
         - name: data-storage
           mountPath: /pfs/datacenter1/home/
         ports:
         - containerPort: 8080
-        command: ["/pfsserver/pfsserver", "-tokenuri", "http://paddle-cloud-service", "-alsologtostderr=true", "-log_dir=./log", "-v=3"]
+        command: ["/pfsserver/pfsserver", "-tokenuri", "http://cloud1.paddlepaddle.org", "-logtostderr=true", "-log_dir=./log", "-v=3"]
+      nodeSelector:
+        kubernetes.io/hostname: k8s-node1
      
