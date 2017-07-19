@@ -72,10 +72,20 @@ class UserNotebook():
                         "name": "cloud-notebook",
                         "image": settings.PADDLE_BOOK_IMAGE,
                         "command": ["sh", "-c",
-                         "mkdir -p /root/.jupyter; echo \"c.NotebookApp.base_url = '/notebook/%s'\" > /root/.jupyter/jupyter_notebook_config.py; jupyter notebook --debug --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.disable_check_xsrf=True /book/"],
+                         "mkdir -p /root/.jupyter; echo \"c.NotebookApp.base_url = '/notebook/%s'\" > /root/.jupyter/jupyter_notebook_config.py; echo \"c.NotebookApp.allow_origin = '*'\" >> /root/.jupyter/jupyter_notebook_config.py; jupyter notebook --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.disable_check_xsrf=True /book/"],
                         "ports": [{
                             "containerPort": settings.PADDLE_BOOK_PORT
                         }],
+                        "resources": {
+                            "requests": {
+                                "memory": "4Gi",
+                                "cpu": "1",
+                            },
+                            "limits": {
+                                "memory": "4Gi",
+                                "cpu": "1",
+                            }
+                        },
                         "env" : [
                             {"name": "USER_NAMESPACE", "valueFrom": {"fieldRef": {"fieldPath": "metadata.namespace"}}},
                             {"name": "USER_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}},

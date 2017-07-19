@@ -12,6 +12,7 @@ type Route struct {
 	HandlerFunc http.HandlerFunc
 }
 
+// Routes is the a Route array
 type Routes []Route
 
 var routes = Routes{

@@ -1,5 +1,5 @@
 FROM python:2.7.13-alpine
-RUN apk add --update nodejs openssl gcc mysql-dev musl-dev linux-headers
+RUN apk add --update nodejs openssl gcc mysql-dev musl-dev linux-headers mailx
 
 ADD ./ /pcloud
 RUN cd /pcloud && \
@@ -9,4 +9,5 @@ npm run copy:fonts && npm run copy:images && npm run copy:fonts && npm run copy:
 npm run optimize
 WORKDIR /pcloud
 
-CMD ["sh", "-c", "./manage.py migrate; ./manage.py loaddata sites; ./manage.py runserver 0.0.0.0:8000"]
+# TODO
+CMD ["sh", "-c", "sleep 60 ; ./manage.py migrate; ./manage.py loaddata sites; ./manage.py runserver 0.0.0.0:$PORT"]

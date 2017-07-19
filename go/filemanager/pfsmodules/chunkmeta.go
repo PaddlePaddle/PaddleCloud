@@ -19,6 +19,7 @@ const (
 	defaultMinChunkSize = 4 * 1024
 )
 const (
+	// ChunkMetaCmdName is the name of GetChunkMeta command.
 	ChunkMetaCmdName = "GetChunkMeta"
 )
 
@@ -67,7 +68,7 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 	return nil
 }
 
-// CloudCheck checks the conditions when running on cloud.
+// ValidateCloudArgs checks the conditions when running on cloud.
 func (p *ChunkMetaCmd) ValidateCloudArgs(userName string) error {
 	if err := ValidatePfsPath([]string{p.FilePath}, userName); err != nil {
 		return err
@@ -76,12 +77,12 @@ func (p *ChunkMetaCmd) ValidateCloudArgs(userName string) error {
 	return p.checkChunkSize()
 }
 
-// LocalCheck checks the conditions when running locally.
+// ValidateLocalArgs checks the conditions when running locally.
 func (p *ChunkMetaCmd) ValidateLocalArgs() error {
 	return p.checkChunkSize()
 }
 
-// NewChunkMetaCmdFromURLParams get a new ChunkMetaCmd.
+// NewChunkMetaCmdFromURLParam get a new ChunkMetaCmd.
 func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")

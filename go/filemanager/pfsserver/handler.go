@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
-	"github.com/PaddlePaddle/cloud/go/utils"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	sjson "github.com/bitly/go-simplejson"
 	log "github.com/golang/glog"
 )
@@ -19,17 +19,18 @@ type response struct {
 	Results interface{} `json:"results"`
 }
 
-var TokenUri = ""
+// TokenURI is the address of token server
+var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = "Token " + token
-	req, err := utils.MakeRequest(uri, "GET", nil, "", nil, authHeader)
+	req, err := restclient.MakeRequest(uri, "GET", nil, "", nil, authHeader)
 	if err != nil {
 		return "", err
 	}
 
-	body, err := utils.GetResponse(req)
+	body, err := restclient.GetResponse(req)
 	if err != nil {
 		return "", err
 	}
@@ -51,7 +52,7 @@ func getUserName(uri string, token string) (string, error) {
 func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header http.Header) {
 	resp := response{}
 
-	user, err := getUserName(TokenUri+"/api/v1/token2user/", header.Get("Authorization"))
+	user, err := getUserName(TokenURI+"/api/v1/token2user/", header.Get("Authorization"))
 	if err != nil {
 		resp.Err = "get username error:" + err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)

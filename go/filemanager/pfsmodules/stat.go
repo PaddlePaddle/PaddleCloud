@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	// StatCmdName means stat command name.
 	StatCmdName = "stat"
 )
 
@@ -52,12 +53,12 @@ func NewStatCmdFromURLParam(path string) (*StatCmd, error) {
 	return &cmd, nil
 }
 
-// LocalCheck checks the condition when running local.
+// ValidateLocalArgs checks the condition when running local.
 func (p *StatCmd) ValidateLocalArgs() error {
 	panic("not implement")
 }
 
-// CloudCheck checks the conditions when running on cloud.
+// ValidateCloudArgs checks the conditions when running on cloud.
 func (p *StatCmd) ValidateCloudArgs(userName string) error {
 	return ValidatePfsPath([]string{p.Path}, userName)
 }

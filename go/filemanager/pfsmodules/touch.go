@@ -15,6 +15,7 @@ const (
 )
 
 const (
+	// TouchCmdName is the name of touch command.
 	TouchCmdName = "touch"
 )
 
@@ -37,12 +38,12 @@ func (p *TouchCmd) checkFileSize() error {
 	return nil
 }
 
-// LocalCheck check the conditions when running local.
+// ValidateLocalArgs check the conditions when running local.
 func (p *TouchCmd) ValidateLocalArgs() error {
 	return p.checkFileSize()
 }
 
-// CloudCheck checks the conditions when running on cloud.
+// ValidateCloudArgs checks the conditions when running on cloud.
 func (p *TouchCmd) ValidateCloudArgs(userName string) error {
 	if err := ValidatePfsPath([]string{p.Path}, userName); err != nil {
 		return err

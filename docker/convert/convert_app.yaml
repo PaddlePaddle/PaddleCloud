@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: convertdataset
+  namespace: paddlecloud
+spec:
+  template:
+    metadata:
+      name: convertdataset
+    spec:
+      volumes:
+        - name: data-storage
+          cephfs:
+            monitors:
+              - 172.19.32.166:6789
+            path: "/public"
+            user: "admin"
+            secretRef:
+              name: ceph-secret
+      containers:
+      - name: convertdataset
+        image: paddlepaddle/recordiodataset
+        env:
+          - name: CURRENT_DATACENTER
+            value: "meiyan"
+        command: ["/convert/run.sh", "/pfs/meiyan/public/dataset"]
+        volumeMounts:
+        - name: data-storage
+          mountPath: /pfs/meiyan/public
+      restartPolicy: Never

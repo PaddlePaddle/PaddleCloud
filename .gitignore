@@ -1,2 +1,4 @@
 .Python
 *.crt
+.cache
+vendor
