@@ -4,6 +4,7 @@ import os
 __all__ = ["PaddleJob"]
 DEFAULT_PADDLE_PORT=7164
 DEFAULT_MASTER_PORT=8080
+DEFAULT_ETCD_PORT=2379
 
 class PaddleJob(object):
     """
@@ -116,9 +117,8 @@ class PaddleJob(object):
     def _get_master_container_ports(self):
         ports = []
         port = DEFAULT_MASTER_PORT
-        for i in xrange(self._ports_num + self._ports_num_for_sparse):
-            ports.append({"containerPort":port, "name":"jobport-%d" % i})
-            port += 1
+        ports.append({"containerPort": DEFAULT_MASTER_PORT, "name":"master-port"})
+        ports.append({"containerPort": DEFAULT_ETCD_PORT, "name":"etcd-port"})
         return ports
 
     def _get_master_labels(self):

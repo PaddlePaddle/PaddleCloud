@@ -112,7 +112,6 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	// if jobPackage is not a local dir, skip uploading package.
 	_, pkgerr := os.Stat(jobPackage)
-	fmt.Println("1")
 	if pkgerr == nil {
 		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
 		if !strings.HasSuffix(jobPackage, "/") {
@@ -125,24 +124,20 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	} else if os.IsNotExist(pkgerr) {
 		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
-	fmt.Println("2")
 	// 2. call paddlecloud server to create kubernetes job
 	jsonString, err := json.Marshal(s.args)
 	if err != nil {
 		return err
 	}
-	fmt.Println("3")
 	glog.V(10).Infof("Submitting job: %s to %s\n", jsonString, Config.ActiveConfig.Endpoint+"/api/v1/jobs")
 	respBody, err := restclient.PostCall(Config.ActiveConfig.Endpoint+"/api/v1/jobs/", jsonString)
 	if err != nil {
 		return err
 	}
-	fmt.Println("4")
 	var respObj interface{}
 	if err = json.Unmarshal(respBody, &respObj); err != nil {
 		return err
 	}
-	fmt.Println("5")
 	// FIXME: Return an error if error message is not empty. Use response code instead
 	errMsg := respObj.(map[string]interface{})["msg"].(string)
 	if len(errMsg) > 0 {
