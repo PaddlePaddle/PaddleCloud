@@ -12,12 +12,13 @@ import (
 
 // SubmitConfigDataCenter is inner conf for paddlecloud
 type SubmitConfigDataCenter struct {
-	Name     string `yaml:"name"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Usercert string `yaml:"usercert"`
-	Userkey  string `yaml:"userkey"`
-	Endpoint string `yaml:"endpoint"`
+	Name        string `yaml:"name"`
+	Username    string `yaml:"username"`
+	Password    string `yaml:"password"`
+	Usercert    string `yaml:"usercert"`
+	Userkey     string `yaml:"userkey"`
+	Endpoint    string `yaml:"endpoint"`
+	PfsEndpoint string `yaml:"pfsendpoint"`
 }
 
 // SubmitConfig is configuration load from user config yaml files

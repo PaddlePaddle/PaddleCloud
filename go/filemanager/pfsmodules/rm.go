@@ -162,7 +162,7 @@ func RemoteRm(cmd *RmCmd) ([]RmResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.PfsEndpoint)
 	body, err := restclient.DeleteCall(t, j)
 	if err != nil {
 		return nil, err

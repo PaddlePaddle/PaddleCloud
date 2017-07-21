@@ -25,7 +25,7 @@ var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
-	authHeader["Authorization"] = "Token " + token
+	authHeader["Authorization"] = token
 
 	str := fmt.Sprintf("get uri with token error uri:%s token:%s\n", uri, token)
 

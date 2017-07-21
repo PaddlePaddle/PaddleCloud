@@ -126,7 +126,7 @@ func RemoteMkdir(cmd *MkdirCmd) ([]MkdirResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.PfsEndpoint)
 	log.V(2).Infoln(t)
 	body, err := restclient.PostCall(t, j)
 	if err != nil {
