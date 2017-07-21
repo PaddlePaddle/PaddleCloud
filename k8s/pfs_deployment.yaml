@@ -10,29 +10,22 @@ spec:
         app: pfsserver
     spec:
       volumes:
-      - name: cert-volume
-        hostPath:
-          path: /home/pcloud_gongwb/data/certs
       - name: data-storage
-        cephfs:
-          monitors: 
-            - 172.19.32.166:6789
-          path: "/"
-          user: "admin"
-          secretRef:
-            name: ceph-secret
+        hostPath:
+          path: /home/gongwb/ceph
       containers:
       - name: pfs
         imagePullPolicy: Always
         image: gongweibao/pfsserver:latest
+        env:
+          - name: CURRENT_DATACENTER
+            value: "meiyan"
+        command: ["/pfsserver/pfsserver", "-tokenuri", "http://paddle-cloud-service:8000", "-logtostderr=true", "-log_dir=./log", "-v=4"]
         volumeMounts:
-        - name: cert-volume
-          mountPath: /certs
         - name: data-storage
           mountPath: /pfs/datacenter1/home/
         ports:
         - containerPort: 8080
-        command: ["/pfsserver/pfsserver", "-tokenuri", "http://cloud1.paddlepaddle.org", "-logtostderr=true", "-log_dir=./log", "-v=3"]
       nodeSelector:
         kubernetes.io/hostname: k8s-node1
      
