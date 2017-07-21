@@ -15,3 +15,5 @@ CMD ["sh", "-c", "cd /root/gopath/src/github.com/PaddlePaddle/cloud/go/cmd/pfsse
 EOF
 
 docker build .  -t  pfsserver:dev
+
+rm -f Dockerfile
