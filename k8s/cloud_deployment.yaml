@@ -12,13 +12,13 @@ spec:
       volumes:
       - name: cert-volume
         hostPath:
-          path: /home/pcloud_gongwb/data/certs
+          path: /home/pcloud/data/certs
       - name: mysql-data
         hostPath:
-          path: /home/pcloud_gongwb/data/mysql
+          path: /home/pcloud/data/mysql
       - name: settings
         hostPath:
-          path: /home/pcloud_gongwb/data/settings.py
+          path: /home/pcloud/data/settings.py
       #- name: email-tmp-msg:
       #  hostPath:
       #    path: /home/pcloud/templates/email_confirmation_message.txt
