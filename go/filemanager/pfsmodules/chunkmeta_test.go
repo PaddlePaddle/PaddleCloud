@@ -26,7 +26,7 @@ func TestGetDiffMeta(t *testing.T) {
 		t.Error(len(diff))
 	}
 
-	for i, _ := range diff {
+	for i := range diff {
 		if diff[i] != src[i] {
 			t.Error(i)
 		}

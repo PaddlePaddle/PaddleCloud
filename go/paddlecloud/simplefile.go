@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/google/subcommands"
@@ -45,7 +47,7 @@ func (p *SimpleFileCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interfa
 	}
 	switch f.Arg(0) {
 	case "put":
-		err := putFile(f.Arg(1), f.Arg(2))
+		err := putFiles(f.Arg(1), f.Arg(2))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "put file error: %s\n", err)
 			return subcommands.ExitFailure
@@ -87,13 +89,48 @@ func lsFile(dst string) error {
 		return errors.New("list file error: " + errMsg)
 	}
 	items := respObj.(map[string]interface{})["items"].([]interface{})
-	for _, i := range items {
-		fmt.Println(i.(string))
+	for _, fn := range items {
+		fmt.Println(fn.(string))
+	}
+	return nil
+}
+
+func putFiles(src string, dest string) error {
+	f, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if strings.HasPrefix(src, "..") {
+		return errors.New("src path should be inside your submiting path")
+	}
+	switch mode := f.Mode(); {
+	case mode.IsDir():
+		if err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+			if info.Mode().IsRegular() {
+				srcs := strings.Split(filepath.Clean(src), string(os.PathSeparator))
+				paths := strings.Split(path, string(os.PathSeparator))
+				var destFile string
+				if strings.HasSuffix(src, "/") {
+					destFile = filepath.Join(dest, strings.Join(paths[len(srcs):len(paths)], string(os.PathSeparator)))
+				} else {
+					destFile = filepath.Join(dest, strings.Join(paths[len(srcs)-1:len(paths)], string(os.PathSeparator)))
+				}
+				putFile(path, destFile)
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+
+	case mode.IsRegular():
+		_, f := filepath.Split(src)
+		return putFile(src, filepath.Join(dest, f))
 	}
 	return nil
 }
 
 func putFile(src string, dest string) error {
+	fmt.Printf("Uploading ... %s %s\n", src, dest)
 	query := url.Values{}
 	_, srcFile := path.Split(src)
 	destDir, destFile := path.Split(dest)
