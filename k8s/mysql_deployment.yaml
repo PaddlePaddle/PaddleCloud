@@ -22,5 +22,7 @@ spec:
         env:
           - name: MYSQL_ROOT_PASSWORD
             value: root
+          - name: MYSQL_DATABASE
+            value: paddlecloud
       nodeSelector:
         kubernetes.io/hostname: your-host-name
