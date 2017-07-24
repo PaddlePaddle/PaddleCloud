@@ -72,14 +72,12 @@ spec:
 #         initialDelaySeconds: 3
 #         periodSeconds: 5
       - name: mysql
-        image: mysql:5.7
+        image: gongweibao/pcloud-mysql
         volumeMounts:
         - name: mysql-data
           mountPath: /var/lib/mysql
         env:
           - name: MYSQL_ROOT_PASSWORD
             value: root
-          - name: MYSQL_DATABASE
-            value: paddlecloud
       nodeSelector:
         kubernetes.io/hostname: k8s-node1
