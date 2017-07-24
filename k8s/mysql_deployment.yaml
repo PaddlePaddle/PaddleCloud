@@ -24,6 +24,6 @@ spec:
             value: root
           - name: MYSQL_DATABASE
             value: paddlecloud
-       args: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+        args: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
       nodeSelector:
         kubernetes.io/hostname: your-host-name
