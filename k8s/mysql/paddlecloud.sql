@@ -1,1 +1,3 @@
-CREATE DATABASE IF NOT EXISTS paddlecloud  charset utf8 COLLATE utf8_general_ci; 
+CREATE DATABASE paddlecloud
+  DEFAULT CHARACTER SET utf8
+  DEFAULT COLLATE utf8_general_ci;
