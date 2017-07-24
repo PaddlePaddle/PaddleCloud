@@ -298,3 +298,6 @@ JOB_DOCKER_IMAGE = {
                      {"registry.baidu.com":
                       {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
 }
+
+# domains that allow notebook to enter
+NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]
