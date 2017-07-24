@@ -224,6 +224,8 @@ FIXTURE_DIRS = [
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+LOGIN_URL="/account/login"
+
 ACCOUNT_OPEN_SIGNUP = True
 ACCOUNT_EMAIL_UNIQUE = True
 ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
@@ -317,3 +319,5 @@ JOB_DOCKER_IMAGE = {
 
 # Path store all cuda, nvidia driver libs
 NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
+# etcd image for fault-tolerant jobs
+ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"

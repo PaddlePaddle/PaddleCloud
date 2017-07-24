@@ -100,13 +100,21 @@ func putFiles(src string, dest string) error {
 	if err != nil {
 		return err
 	}
+	if strings.HasPrefix(src, "..") {
+		return errors.New("src path should be inside your submiting path")
+	}
 	switch mode := f.Mode(); {
 	case mode.IsDir():
 		if err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 			if info.Mode().IsRegular() {
 				srcs := strings.Split(filepath.Clean(src), string(os.PathSeparator))
 				paths := strings.Split(path, string(os.PathSeparator))
-				destFile := filepath.Join(dest, strings.Join(paths[len(srcs)-1:len(paths)], string(os.PathSeparator)))
+				var destFile string
+				if strings.HasSuffix(src, "/") {
+					destFile = filepath.Join(dest, strings.Join(paths[len(srcs):len(paths)], string(os.PathSeparator)))
+				} else {
+					destFile = filepath.Join(dest, strings.Join(paths[len(srcs)-1:len(paths)], string(os.PathSeparator)))
+				}
 				putFile(path, destFile)
 			}
 			return nil
@@ -115,7 +123,8 @@ func putFiles(src string, dest string) error {
 		}
 
 	case mode.IsRegular():
-		return putFile(src, dest)
+		_, f := filepath.Split(src)
+		return putFile(src, filepath.Join(dest, f))
 	}
 	return nil
 }

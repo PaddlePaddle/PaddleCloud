@@ -8,11 +8,16 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
+)
+
+const (
+	invalidJobName = "jobname can not contain '.' or '_'"
 )
 
 // Config is global config object for paddlecloud commandline
@@ -33,8 +38,12 @@ type SubmitCmd struct {
 	Topology    string `json:"topology"`
 	Datacenter  string `json:"datacenter"`
 	Passes      int    `json:"passes"`
-	Image       string `json:"image"`
-	Registry    string `json:"registry"`
+	// docker image to run jobs
+	Image    string `json:"image"`
+	Registry string `json:"registry"`
+	// Alpha features:
+	// TODO: separate API versions
+	FaultTolerant bool `json:"faulttolerant"`
 }
 
 // Name is subcommands name.
@@ -66,6 +75,7 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
 	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
 	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
+	f.BoolVar(&p.FaultTolerant, "faulttolerant", false, "if true, use new fault-tolerant pservers")
 }
 
 // Execute submit command.
@@ -104,11 +114,20 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 
 // Submit current job.
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
+	if err := checkJobName(jobName); err != nil {
+		return err
+	}
 	// if jobPackage is not a local dir, skip uploading package.
 	_, pkgerr := os.Stat(jobPackage)
 	if pkgerr == nil {
 		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
-		return putFiles(jobPackage, dest)
+		if !strings.HasSuffix(jobPackage, "/") {
+			jobPackage = jobPackage + "/"
+		}
+		err := putFiles(jobPackage, dest)
+		if err != nil {
+			return err
+		}
 	} else if os.IsNotExist(pkgerr) {
 		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
@@ -130,6 +149,12 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	errMsg := respObj.(map[string]interface{})["msg"].(string)
 	if len(errMsg) > 0 {
 		return errors.New(errMsg)
+	}
+	return nil
+}
+func checkJobName(jobName string) error {
+	if strings.Contains(jobName, "_") || strings.Contains(jobName, ".") {
+		return errors.New(invalidJobName)
 	}
 	return nil
 }
