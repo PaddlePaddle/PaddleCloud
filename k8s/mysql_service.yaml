@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: paddle-cloud-mysql-service
+spec:
+  selector:
+    app: paddle-cloud-mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
