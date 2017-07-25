@@ -12,7 +12,7 @@ matrix:
         - | 
           bash .tools/check_style.sh
           RESULT=$?; if [ $RESULT -eq 0 ]; then true; else false; fi;
-        - bash .tools/gen_config.sh && cd go && glide install && go test $(glide novendor)
+        - cd go && bash .tools/gen_config.sh && glide install && go test $(glide novendor)
     - language: python
       python: 2.7
       sudo: required
