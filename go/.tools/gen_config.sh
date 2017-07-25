@@ -6,6 +6,5 @@ datacenters:
   username: your-user-name
   password: your-secret
   endpoint: http://127.0.0.1:8080
-  pfsendpoint: http://127.0.0.1:8080
 current-datacenter: datacenter1
 EOF

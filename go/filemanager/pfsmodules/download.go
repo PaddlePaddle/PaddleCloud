@@ -21,7 +21,7 @@ func remoteChunkMeta(path string,
 		ChunkSize: chunkSize,
 	}
 
-	t := fmt.Sprintf("%s/api/v1/chunks", Config.ActiveConfig.PfsEndpoint)
+	t := fmt.Sprintf("%s/api/v1/pfs/chunks", Config.ActiveConfig.Endpoint)
 	ret, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func downloadChunks(src string,
 		return nil
 	}
 
-	t := fmt.Sprintf("%s/api/v1/storage/chunks", Config.ActiveConfig.PfsEndpoint)
+	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
 	for _, meta := range diffMeta {
 		chunk := Chunk{
 			Path:   src,

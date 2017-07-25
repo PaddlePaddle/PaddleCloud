@@ -19,39 +19,39 @@ var routes = Routes{
 	Route{
 		"GetFiles",
 		"GET",
-		"/api/v1/files",
+		"/api/v1/pfs/files",
 		GetFilesHandler,
 	},
 	Route{
 		"PostFiles",
 		"POST",
-		"/api/v1/files",
+		"/api/v1/pfs/files",
 		PostFilesHandler,
 	},
 	Route{
 		"DeleteFiles",
 		"DELETE",
-		"/api/v1/files",
+		"/api/v1/pfs/files",
 		DeleteFilesHandler,
 	},
 
 	Route{
 		"GetChunksMeta",
 		"GET",
-		"/api/v1/chunks",
+		"/api/v1/pfs/chunks",
 		GetChunkMetaHandler,
 	},
 	Route{
 		"GetChunksData",
 		"GET",
-		"/api/v1/storage/chunks",
+		"/api/v1/pfs/storage/chunks",
 		GetChunkHandler,
 	},
 
 	Route{
 		"PostChunksData",
 		"POST",
-		"/api/v1/storage/chunks",
+		"/api/v1/pfs/storage/chunks",
 		PostChunkHandler,
 	},
 }

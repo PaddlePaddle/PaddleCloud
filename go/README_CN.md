@@ -2,7 +2,7 @@
   - 构建PFSServer的编译环境
 
   ```
-  cd cloud/go/docker
+  cd cloud/docker/pfs
   bash build.sh
   ```
 
@@ -16,6 +16,7 @@
   - 构建PFSServer的DockerImage
   
   ```
+  cd cloud/go
   docker build . -t pfsserver:latest
   ```
   - PFSServer启动命令
