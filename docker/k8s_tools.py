@@ -31,8 +31,8 @@ def wait_pods_running(label_selector, desired):
         print "running pod list: ", running_pod_list
         if len(running_pod_list) == int(desired):
             return [item[1] for item in running_pod_list]
-        print "sleep for 10 seconds..."
-        time.sleep(10)
+        print "sleep for 5 seconds..."
+        time.sleep(5)
 
 
 def fetch_pserver_ips():
@@ -42,12 +42,15 @@ def fetch_pserver_ips():
     return ",".join(pserver_ips)
 
 def fetch_master_ip():
-    label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
-    pod_list = fetch_pods_info(label_selector)
-    master_ip = ""
-    if len(pod_list) >=1:
-        master_ip = pod_list[0][1]
-    return master_ip
+    while True:
+        label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
+        pod_list = fetch_pods_info(label_selector)
+        master_ip = ""
+        if len(pod_list) >=1:
+            master_ip = pod_list[0][1]
+        if master_ip:
+            return master_ip
+        time.sleep(5)
 
 def fetch_trainer_id():
     label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
