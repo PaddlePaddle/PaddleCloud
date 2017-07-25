@@ -39,7 +39,7 @@ spec:
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
-        image: gongweibao/pcloud
+        image: paddlepaddle/pcloud
         volumeMounts:
         - name: cert-volume
           mountPath: /certs

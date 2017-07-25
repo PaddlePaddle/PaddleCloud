@@ -16,7 +16,7 @@ spec:
       containers:
       - name: pfs
         imagePullPolicy: Always
-        image: gongweibao/pfsserver:latest
+        image: paddlepaddle/pfsserver:latest
         env:
           - name: CURRENT_DATACENTER
             value: "meiyan"
