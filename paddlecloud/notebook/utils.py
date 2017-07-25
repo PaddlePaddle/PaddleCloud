@@ -122,7 +122,7 @@ class UserNotebook():
         },
         "spec": {
             "rules": [{
-                "host": "cloud.paddlepaddle.org",
+                "host": d,
                 "http": {
                     "paths": [{
                         "path": "/",
@@ -133,7 +133,7 @@ class UserNotebook():
                     },
                     ]
                 }
-            }]
+            } for d in settings.NOTEBOOK_DOMAINS]
         }
     }
     def get_notebook_id(self, username):
