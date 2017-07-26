@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/url"
+	"path"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -33,13 +34,16 @@ type Command interface {
 
 // CheckUser checks if a user has authority to access a path.
 // path example:/pfs/$datacenter/home/$user
-func checkUser(path string, user string) error {
-	a := strings.Split(path, "/")
-	if len(a) < 3 {
+func checkUser(pathStr string, user string) error {
+	pathStr = path.Clean(strings.TrimSpace(pathStr))
+	a := strings.Split(pathStr, "/")
+	// the first / is convert to " "
+	if len(a) < 5 {
 		return errors.New(StatusBadPath)
 	}
 
-	if a[3] != user {
+	if a[4] != user {
+		log.V(4).Infof("request path:%s user:%s split_path:%s\n", pathStr, user, a[4])
 		return errors.New(StatusUnAuthorized)
 	}
 	return nil
@@ -57,7 +61,7 @@ func ValidatePfsPath(paths []string, userName string) error {
 		}
 
 		if err := checkUser(path, userName); err != nil {
-			return errors.New(StatusShouldBePfsPath + ":" + path)
+			return err
 		}
 	}
 	return nil
