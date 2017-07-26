@@ -148,3 +148,6 @@ paddlecloud file get /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/pas
 ```back
 paddlecloud kill fit-a-line
 ```
+
+---
+详细使用文档见：[中文使用文档](./usage_cn.md)
