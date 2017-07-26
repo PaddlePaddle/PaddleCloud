@@ -64,7 +64,11 @@ Use "paddlecloud flags" for a list of top-level flags
 scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir/
 ```
 
-***说明：您可能需要联系集群管理员以获得数据中转服务器的登录地址和权限。***
+**说明：**
+
+- **您可能需要联系集群管理员以获得数据中转服务器的登录地址和权限。** 
+- **国家工程实验室的同学只能使用上传数据的方式(见下)上传自己的训练数据**
+
 
 在训练任务提交后，每个训练节点会把HDFS挂载在`/pfs/[datacenter_name]/home/[username]/`目录下这样训练程序即可使用这个路径读取训练数据并开始训练。
 
@@ -73,13 +77,11 @@ scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir
 paddlecloud命令集成了上传数据的功能，目前仅针对存储系统是CephFS的环境。如果希望上传，执行：
 
 ```bash
-paddlecloud file src dest
+paddlecloud cp src/*.dat dest
 ```
-- `src` 必须是当前目录的子目录，`../`是不允许的。
-- `src` 如果以'/'结尾，则表示上传`src`目录下的文件，不会在`dest`下创建新的目录。
-- `src` 如果没有以`/`结尾，则表示上传`src`目录，会在`dest`下创建一个新的目录。
-- `dest` 必须包含`/pfs/{datacenter}/user/{username}`目录。
 
+- `src` 支持通配符，但是还不支持上传目录
+- `dest` 必须包含`/pfs/{datacenter}/user/{username}`目录。
 
 
 ### 使用公共数据集

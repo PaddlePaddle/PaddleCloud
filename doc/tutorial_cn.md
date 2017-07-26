@@ -129,14 +129,14 @@ NUM   NAME         SUCC   FAIL    START                  COMP                   
 任务成功执行后，训练程序一般会将模型输出保存在云端文件系统中，可以用下面的命令查看，并下载模型的输出：
 
 ```
-paddlecloud file ls /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/
+paddlecloud ls /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/
 train.py
 image
 output
-paddlecloud file ls /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/
+paddlecloud ls /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/
 pass-0001.tar
 ...
-paddlecloud file get /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/pass-0001.tar ./
+paddlecloud cp /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/* ./
 ```
 
 模型下载之后，就可以把模型应用在预测服务等环境了。
