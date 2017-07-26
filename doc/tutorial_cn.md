@@ -76,9 +76,12 @@ cd ..
 paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
 ```
 
-可以看到在提交任务的时候，我们指定了任务的名称`-jobname fit-a-line`、使用的CPU资源`-cpu 1`、
-使用的GPU资源`-gpu 1`、并行度`-parallelism 1`(训练节点个数)，启动命令`-entry "python train.py"`
-和任务程序目录`fit_a_line/`。
+可以看到在提交任务的时候，我们指定了以下参数:
+- `-jobname fit-a-line`, 任务名称
+- `-cpu 1`, 使用的CPU资源
+- `-parallelism 1`, 并行度(训练节点个数)
+- `-entry "python train.py"`, 启动命令
+- `fit_a_line` 任务程序目录
 
 ***说明1：*** 如果希望查看完整的任务提交参数说明，可以执行`paddlecloud submit -h`。
 
