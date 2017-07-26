@@ -78,10 +78,21 @@ dataset.convert(output_path = "./dataset",
                 num_shards = 10,
                 name_prefix = "uci_housing_train")
 ```
-    - `output_path` 输出路径
-    - `reader` 用户自定义的reader
-    - `num_shards` 生成的文件数量
-    - `num_prefix` 生成的文件名前缀
+  - `output_path` 输出路径
+  - `reader` 用户自定义的reader
+  - `num_shards` 生成的文件数量
+  - `num_prefix` 生成的文件名前缀
+
+执行成功后会在本地生成如下文件：
+```bash
+.
+./dataset
+./dataset/uci_houseing_train-00000-of-00009
+./dataset/uci_houseing_train-00001-of-00009
+./dataset/uci_houseing_train-00002-of-00009
+./dataset/uci_houseing_train-00003-of-00009
+...
+```
 
 - 编写reader来读取RecordIO格式的文件
 ```python
