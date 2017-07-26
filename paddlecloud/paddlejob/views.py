@@ -244,7 +244,9 @@ class JobsView(APIView):
                 .delete_namespaced_replica_set(master_name, namespace, {})
         except ApiException, e:
             logging.error("error deleting master: %s" % str(e))
-            delete_status.append(str(e))
+            # just ignore deleting master failed, we do not set up master process
+            # without fault tolerant mode
+            #delete_status.append(str(e))
 
         # delete master pods
         try:
@@ -257,7 +259,9 @@ class JobsView(APIView):
                     .delete_namespaced_pod(i.metadata.name, namespace, {})
         except ApiException, e:
             logging.error("error deleting master pods: %s" % str(e))
-            delete_status.append(str(e))
+            # just ignore deleting master failed, we do not set up master process
+            # without fault tolerant mode
+            #delete_status.append(str(e))
 
         if len(delete_status) > 0:
             retcode = 500
