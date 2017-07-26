@@ -17,7 +17,7 @@ import (
 var Config = config.ParseDefaultConfig()
 
 func remoteStat(cmd *StatCmd) (*LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
 	log.V(3).Infoln(t)
 	body, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {
@@ -49,7 +49,7 @@ func remoteTouch(cmd *TouchCmd) error {
 		return err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
 	body, err := restclient.PostCall(t, j)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func postChunk(src *Chunk, dst string) ([]byte, error) {
 	}
 	defer Close(f)
 
-	t := fmt.Sprintf("%s/api/v1/storage/chunks", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
 	log.V(4).Infoln(t)
 
 	return restclient.PostChunk(t, getDstParam(src, dst),

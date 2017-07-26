@@ -3,6 +3,7 @@ package pfsserver
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -24,25 +25,32 @@ var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
 	authHeader := make(map[string]string)
-	authHeader["Authorization"] = "Token " + token
+	authHeader["Authorization"] = token
+
+	str := fmt.Sprintf("get uri with token error uri:%s token:%s\n", uri, token)
+
 	req, err := restclient.MakeRequest(uri, "GET", nil, "", nil, authHeader)
 	if err != nil {
+		log.Errorln(str)
 		return "", err
 	}
 
 	body, err := restclient.GetResponse(req)
 	if err != nil {
+		log.Errorln(str)
 		return "", err
 	}
 
 	log.V(4).Infoln("get token2user resp:" + string(body[:]))
 	var resp interface{}
 	if err := json.Unmarshal(body, &resp); err != nil {
+		log.Errorln(string(body[:]))
 		return "", err
 	}
 
 	user := resp.(map[string]interface{})["user"].(string)
 	if len(user) < 1 {
+		log.Errorln(resp)
 		return "", errors.New("can't get username")
 	}
 

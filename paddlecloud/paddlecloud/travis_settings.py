@@ -14,6 +14,7 @@ DATABASES = {
         "USER": "root",
         'HOST': '127.0.0.1',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
+        'USER': 'root',
     }
 }
 
@@ -298,3 +299,6 @@ JOB_DOCKER_IMAGE = {
                      {"registry.baidu.com":
                       {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
 }
+
+# domains that allow notebook to enter
+NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]

@@ -68,6 +68,62 @@ scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir
 
 在训练任务提交后，每个训练节点会把HDFS挂载在`/pfs/[datacenter_name]/home/[username]/`目录下这样训练程序即可使用这个路径读取训练数据并开始训练。
 
+### 使用[RecordIO](https://github.com/PaddlePaddle/recordio)对训练数据进行预处理
+用户需要在本地将数据预先处理为RecordIO的格式，再上传至集群进行训练。
+- 使用RecordIO库进行数据预处理
+```python
+import paddle.v2.dataset as dataset
+dataset.convert(output_path = "./dataset",
+                reader = dataset.uci_housing.train(),
+                num_shards = 10,
+                name_prefix = "uci_housing_train")
+```
+  - `output_path` 输出路径
+  - `reader` 用户自定义的[reader](https://github.com/PaddlePaddle/Paddle/tree/develop/doc/design/reader),实现方法可以参考[paddle.v2.dataset.uci_housing.train()](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/uci_housing.py#L74)
+  - `num_shards` 生成的文件数量
+  - `num_prefix` 生成的文件名前缀
+
+执行成功后会在本地生成如下文件：
+```bash
+.
+./dataset
+./dataset/uci_houseing_train-00000-of-00009
+./dataset/uci_houseing_train-00001-of-00009
+./dataset/uci_houseing_train-00002-of-00009
+./dataset/uci_houseing_train-00003-of-00009
+...
+```
+
+- 编写reader来读取RecordIO格式的文件
+```python
+import cPickle as pickle
+import recordio
+import glob
+import sys
+def recordio_reader(filepath, parallelism, trainer_id):
+    # sample filepath as "/pfs/dlnel/home/yanxu05@baidu.com/dataset/uci_housing/uci_housing_train*"
+    def reader():
+        if trainer_id >= parallelism:
+            sys.stdout.write("invalied trainer_id: %d\n" % trainer_id)
+            return
+        files = glob.glob(filepath)
+        files.sort()
+        my_file_list = []
+        for idx, f in enumerate(files):
+            if idx % parallelism == trainer_id:
+                my_file_list.append(f)
+
+        for fn in my_file_list:
+            r = recordio.reader(fn)
+            while True:
+                d = r.read()
+                if not d:
+                    break
+                yield pickle.loads(d)
+
+    return reader
+```
+
 ### 使用paddlecloud上传训练数据
 
 paddlecloud命令集成了上传数据的功能，目前仅针对存储系统是CephFS的环境。如果希望上传，执行：

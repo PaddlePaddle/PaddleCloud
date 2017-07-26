@@ -352,6 +352,17 @@ class QuotaView(APIView):
             .list_namespaced_resource_quota(namespace)
         return Response(quota_list.to_dict())
 
+class GetUserView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None):
+        """
+        Get user name
+        """
+        content = {
+            'user': request.user.username,  # `django.contrib.auth.User` instance.
+        }
+        return Response(content)
 
 class SimpleFileView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
