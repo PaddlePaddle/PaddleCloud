@@ -9,14 +9,11 @@ RUN apt-get update && \
     rm go.tgz
 
 ENV GOROOT=/usr/local/go GOPATH=/root/gopath 
-EOF
+ENV PATH=\${PATH}:\${GOROOT}/bin
 
-echo 'ENV PATH=${PATH}:${GOROOT}/bin' >> ./Dockerfile
-
-cat >> ./Dockerfile << EOF
 CMD ["sh", "-c", "cd /root/gopath/src/github.com/PaddlePaddle/cloud/go/cmd/pfsserver && go get ./... && go build"]
 EOF
 
 docker build .  -t  pfsserver:dev
 
-#rm -f Dockerfile
+rm -f Dockerfile
