@@ -79,7 +79,7 @@ dataset.convert(output_path = "./dataset",
                 name_prefix = "uci_housing_train")
 ```
   - `output_path` 输出路径
-  - `reader` 用户自定义的[reader](https://github.com/PaddlePaddle/Paddle/tree/develop/doc/design/reader)
+  - `reader` 用户自定义的[reader](https://github.com/PaddlePaddle/Paddle/tree/develop/doc/design/reader),实现方法可以参考[paddle.v2.dataset.uci_housing.train()](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/uci_housing.py#L74)
   - `num_shards` 生成的文件数量
   - `num_prefix` 生成的文件名前缀
 
