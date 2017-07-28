@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 start_pserver() {
-    paddle pserver \
+    stdbuf -oL paddle pserver \
       --use_gpu=0 \
       --port=$PADDLE_INIT_PORT \
       --ports_num=$PADDLE_INIT_PORTS_NUM \
@@ -13,7 +13,7 @@ start_pserver() {
 
 start_new_pserver() {
   export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
-  /usr/bin/pserver \
+  stdbuf -oL /usr/bin/pserver \
     -port=$PADDLE_INIT_PORT \
     -num-pservers=$PSERVERS \
     -log-level=debug \
@@ -21,7 +21,7 @@ start_new_pserver() {
 }
 
 start_master() {
-  /usr/bin/master \
+  stdbuf -oL /usr/bin/master \
   -port=8080 \
   -endpoints=http://127.0.0.1:2379
 }
@@ -44,29 +44,29 @@ check_trainer_ret() {
 }
 
 start_trainer() {
-    python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
-    python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
+    stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
+    stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
     export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
     export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
-    echo $PADDLE_INIT_TRAINER_ID > /trainer_id
+    stdbuf -oL echo $PADDLE_INIT_TRAINER_ID > /trainer_id
     # FIXME: /trainer_count = PADDLE_INIT_NUM_GRADIENT_SERVERS
-    echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count
+    stdbuf -oL echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count
 
     # NOTE: $TRAINER_PACKAGE may be large, do not copy
     export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
     cd $TRAINER_PACKAGE
 
-    echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
+    stdbuf -oL echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
     $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
     "version: " $1
 
     # FIXME: If we use the new PServer by Golang, add Kubernetes healthz
     # to wait PServer process get ready.Now only sleep 20 seconds.
     sleep 20
-    
+
     case "$1" in
       "v1")
-        paddle train \
+        stdbuf -oL  paddle train \
           --port=$PADDLE_INIT_PORT \
           --nics=eth0 \
           --ports_num=$PADDLE_INIT_PORTS_NUM \
@@ -86,7 +86,7 @@ start_trainer() {
         check_trainer_ret $?
         ;;
       "v2")
-        sh -c "${ENTRY}"
+        stdbuf -oL sh -c "${ENTRY}"
         check_trainer_ret $?
         ;;
       *)
