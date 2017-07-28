@@ -9,7 +9,7 @@ RUN apt-get update && \
     rm go.tgz
 
 ENV GOROOT=/usr/local/go GOPATH=/root/gopath 
-ENV PATH=${PATH}:${GOROOT}/bin
+ENV PATH=\${PATH}:\${GOROOT}/bin
 
 CMD ["sh", "-c", "cd /root/gopath/src/github.com/PaddlePaddle/cloud/go/cmd/pfsserver && go get ./... && go build"]
 EOF
