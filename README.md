@@ -68,12 +68,14 @@ English tutorials(comming soon...)
 To test or visit the website, find out the kubernetes ingress IP
 addresses, or the NodePort.
 
-Then open your browser and visit http://<ingress-ip-address>, or
-http://<any-node-ip-address>:<NodePort>
+Then open your browser and visit `http://<ingress-ip-address>`, or
+`http://<any-node-ip-address>:<NodePort>`
 
 - Prepare public dataset
 
-  You can create a Kubernetes Job for preparing the public dataset and cluster trainer files.
+  You can create a Kubernetes Job for preparing the public cloud dataset with RecordIO files. You should modify the YAML file as your environment:
+  - `<DATACENTER>`, Your cluster datacenter 
+  - `<MONITOR_ADDR>`, Ceph monitor address
   ```bash
   kubectl create -f k8s/prepare_dataset.yaml
   ```
