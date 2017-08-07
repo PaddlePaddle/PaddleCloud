@@ -18,7 +18,7 @@ spec:
               name: ceph-secret
       containers:
       - name: prepare
-        image: bootstrapper:5000/yancey1989/paddlecloud-job
+        image: yancey1989/paddlecloud-job
         command: ["sh", "-c", "python -c \"import paddle.v2.dataset as dataset; dataset.common.convert('/pfs/dlnel/public/dataset')\""]
         volumeMounts:
         - name: data-storage
