@@ -1,29 +1,26 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: prepare-dataset
+  name: prepare-cloud-dataset
 spec:
   template:
     metadata:
-      name: prepare-dataset
+      name: prepare-cloud-dataset
     spec:
       volumes:
         - name: data-storage
           cephfs:
             monitors:
-              - 172.19.32.166:6789
+              - 192.168.16.23:6789
             path: "/public"
             user: "admin"
             secretRef:
               name: ceph-secret
       containers:
       - name: prepare
-        image: yancey1989/paddlecloud-job
-        env:
-          - name: CURRENT_DATACENTER
-            value: "meiyan"
-        command: ["python", "-c", "\"import pcloud.dataset.common as common; common.fetch_all()\""]
+        image: bootstrapper:5000/yancey1989/paddlecloud-job
+        command: ["sh", "-c", "python -c \"import paddle.v2.dataset as dataset; dataset.common.convert('/pfs/dlnel/public/dataset')\""]
         volumeMounts:
         - name: data-storage
-          mountPath: /pfs/meiyan/public
+          mountPath: /pfs/dlnel/public
       restartPolicy: Never
