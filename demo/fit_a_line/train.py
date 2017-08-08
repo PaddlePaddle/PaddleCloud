@@ -1,10 +1,15 @@
 import paddle.v2 as paddle
-import pcloud.dataset.uci_housing as uci_housing
+import paddle.v2.dataset as dataset
 import os
 import gzip
 import glob
 import recordio
 import cPickle as pickle
+
+#PaddleCloud cached the dataset on /pfs/${DATACENTER}/public/dataset/...
+dc = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
+dataset.common.DATA_HOME = "/pfs/%s/public/dataset" % dc
+
 trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
 trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS"))
 
@@ -59,7 +64,7 @@ def main():
 
         if isinstance(event, paddle.event.EndPass):
             result = trainer.test(
-                reader=paddle.batch(uci_housing.test(), batch_size=2),
+                reader=paddle.batch(dataset.uci_housing.test(), batch_size=2),
                 feeding=feeding)
             print "Test %d, Cost %f" % (event.pass_id, result.cost)
             if trainer_id == "0":

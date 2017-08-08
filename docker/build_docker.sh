@@ -18,22 +18,14 @@ fi
 echo "base_image": $base_image
 echo "pcloudjob_image": $pcloudjob_image
 
-#Build Python Package
-docker run --rm -it -v $PWD:/cloud $base_image \
-  bash -c "cd /cloud/python && python setup.py bdist_wheel"
-
 #Build Docker Image
 cat > Dockerfile <<EOF
 FROM ${base_image}
-RUN pip install -U kubernetes && apt-get update -y && apt-get install -y iputils-ping
+RUN pip install -U kubernetes opencv-python && \
+  apt-get update -y && \
+  apt-get install -y iputils-ping libgtk2.0-dev 
 ADD ./paddle_k8s /usr/bin
 ADD ./k8s_tools.py /root/
-ADD ./python/dist/pcloud-0.1.1-py2-none-any.whl /tmp/
-#RUN pip install /tmp/pcloud-0.1.1-py2-none-any.whl && \
-#  rm /tmp/pcloud-0.1.1-py2-none-any.whl
-RUN pip install /tmp/pcloud-0.1.1-py2-none-any.whl && \
-  pip install opencv-python && \
-  apt-get install -y libgtk2.0-dev
 
 CMD ["paddle_k8s"]
 EOF

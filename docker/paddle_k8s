@@ -43,6 +43,21 @@ check_trainer_ret() {
   exit $ret
 }
 
+start_new_trainer() {
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ips)
+  export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
+  # NOTE: $TRAINER_PACKAGE may be large, do not copy
+  export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
+  cd $TRAINER_PACKAGE
+
+  stdbuf -oL echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
+  $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
+  "version: " $1 
+
+  stdbuf -oL sh -c "${ENTRY}"
+  check_trainer_ret $?
+}
+
 start_trainer() {
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
@@ -100,6 +115,7 @@ usage() {
     echo "  start_trainer  [v1|v2]    Start a trainer process with v1 or v2 API"
     echo "  start_pserver             Start a pserver process"
     echo "  start_new_pserver         Start a new pserver process"
+    echo "  start_new_trainer         Start a new triner process"
 }
 
 case "$1" in
@@ -108,6 +124,9 @@ case "$1" in
         ;;
     start_trainer)
         start_trainer $2
+        ;;
+    start_new_trainer)
+        start_new_trainer
         ;;
     start_new_pserver)
         start_new_pserver

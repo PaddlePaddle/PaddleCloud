@@ -27,7 +27,7 @@ class PaddleJob(object):
                  volumes=[],
                  registry_secret=None,
                  envs = {},
-                 new_pserver=True,
+                 fault_tolerant=False,
                  etcd_image="quay.io/coreos/etcd:v3.2.1"):
 
         self._ports_num=1
@@ -54,7 +54,7 @@ class PaddleJob(object):
         self._mastercpu = 1
         self._mastermemory = "300Mi"
         # use new pserver for tolerant
-        self._new_pserver = new_pserver
+        self._fault_tolerant = fault_tolerant
         self._etcd_image = etcd_image
 
     @property
@@ -92,7 +92,6 @@ class PaddleJob(object):
         envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self._ports_num_for_sparse)})
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
         envs.append({"name":"PADDLE_INIT_NUM_PASSES",           "value":str(self._passes)})
-
         if self._gpu:
             envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("1")})
             # HACK: add nvidia lib LD_LIBRARY_PATH for all pods
@@ -131,13 +130,15 @@ class PaddleJob(object):
         return ["paddle_k8s", "start_master"]
 
     def _get_pserver_entrypoint(self):
-        if not self._new_pserver:
+        if not self._fault_tolerant:
             return ["paddle_k8s", "start_pserver"]
         else:
             return ["paddle_k8s", "start_new_pserver"]
 
     def _get_trainer_entrypoint(self):
         if self._entry:
+            if self._fault_tolerant:
+                return ["paddle_k8s", "start_new_trainer"]
             return ["paddle_k8s", "start_trainer", "v2"]
         return ["paddle_k8s", "start_trainer", "v1"]
 

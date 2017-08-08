@@ -146,7 +146,7 @@ class JobsView(APIView):
             registry_secret = registry_secret,
             volumes = volumes,
             envs = envs,
-            new_pserver = fault_tolerant,
+            fault_tolerant = fault_tolerant,
             etcd_image = settings.ETCD_IMAGE
         )
         # ========== submit master ReplicaSet if using fault_tolerant feature ==
