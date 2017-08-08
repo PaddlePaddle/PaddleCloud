@@ -17,7 +17,7 @@ start_new_pserver() {
     -port=$PADDLE_INIT_PORT \
     -num-pservers=$PSERVERS \
     -log-level=debug \
-    -etcd-endpoint=http://$PADDLE_INIT_MASTER_IP:2379
+    -etcd-endpoint=http://$MASTER_IP:2379
 }
 
 start_master() {
@@ -48,6 +48,7 @@ start_trainer() {
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
     export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
     export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
+    export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ips)
     stdbuf -oL echo $PADDLE_INIT_TRAINER_ID > /trainer_id
     # FIXME: /trainer_count = PADDLE_INIT_NUM_GRADIENT_SERVERS
     stdbuf -oL echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count
@@ -98,6 +99,7 @@ usage() {
     echo "usage: paddle_k8s [<args>]:"
     echo "  start_trainer  [v1|v2]    Start a trainer process with v1 or v2 API"
     echo "  start_pserver             Start a pserver process"
+    echo "  start_new_pserver         Start a new pserver process"
 }
 
 case "$1" in

@@ -1,5 +1,5 @@
 #!/bin/bash
-paddlecloud submit -jobname fitaline \
+paddlecloud submit -jobname fitaline-ft \
   -cpu 1 \
   -gpu 0 \
   -memory 1Gi \
