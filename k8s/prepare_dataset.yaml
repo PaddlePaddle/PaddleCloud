@@ -24,3 +24,5 @@ spec:
         - name: data-storage
           mountPath: /pfs/<DATACENTER>/public
       restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: <YOUR_NODE_HERE>
