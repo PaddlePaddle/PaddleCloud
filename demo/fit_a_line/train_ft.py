@@ -5,7 +5,8 @@ import glob
 import recordio
 import cPickle as pickle
 from paddle.v2.reader.creator import cloud_reader
-# TODO(Yancey1989): start up etcd cluster independently
+import paddle.v2.dataset.uci_housing as uci_housing
+
 master_ip = os.getenv("MASTER_IP")
 etcd_endpoint = "http://" + master_ip + ":" + "2379"
 trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
@@ -57,7 +58,7 @@ def main():
         reader=paddle.batch(
             paddle.reader.shuffle(cloud_reader(
                 ["/pfs/dlnel/public/dataset/uci_housing/uci_housing_train-*"],
-                etcd_endpoint), buffer_size=500),
+                etcd_endpoint), buf_size=500),
             batch_size=2),
         feeding=feeding,
         event_handler=event_handler,

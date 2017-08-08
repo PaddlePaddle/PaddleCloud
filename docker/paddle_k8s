@@ -12,7 +12,8 @@ start_pserver() {
 }
 
 start_new_pserver() {
-  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ips)
   stdbuf -oL /usr/bin/pserver \
     -port=$PADDLE_INIT_PORT \
     -num-pservers=$PSERVERS \
@@ -44,6 +45,7 @@ check_trainer_ret() {
 }
 
 start_new_trainer() {
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
   export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ips)
   export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
   # NOTE: $TRAINER_PACKAGE may be large, do not copy
