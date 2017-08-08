@@ -100,7 +100,7 @@ def convolutional_neural_network(img):
 
 
 def main():
-    paddle.init(use_gpu=False, trainer_count=1)
+    paddle.init()
 
     # define network topology
     images = paddle.layer.data(
