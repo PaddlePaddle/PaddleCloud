@@ -44,8 +44,8 @@ English tutorials(comming soon...)
   mkdir -p /home/pcloud/data/mysql
   mkdir -p /home/pcloud/data/certs
   ```
-  - Copy Kubernetes CA files (ca.pem, ca-key.pem, ca.srl) to `/home/pcloud/data/certs` folder
-  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `/home/pcloud/data/certs` folder
+  - Copy Kubernetes CA files (ca.pem, ca-key.pem) to `/home/pcloud/data/certs` folder
+  - Copy Kubernetes admin user key (admin.pem, admin-key.pem) to `/home/pcloud/data/certs` folder (if you don't have it on Kubernetes worker node, you'll find it on Kubernetes master node)
   - Optianal: copy CephFS Key file(admin.secret) to `/home/pcloud/data/certs` folder
   - Copy `paddlecloud/settings.py` file to `/home/pcloud/data` folder
 
@@ -53,16 +53,31 @@ English tutorials(comming soon...)
   - `spec.template.spec.containers[0].volumes` change the `hostPath` which match your data folder.
   - `spec.template.spec.nodeSelector.`, edit the value `kubernetes.io/hostname` to host which data folder on.You can use `kubectl get nodes` to list all the Kubernetes nodes.
 - Configure `settings.py`
-  - Add your domain name to `ALLOWED_HOSTS`.
+  - Add your domain name (or the paddle cloud server's hostname or ip address) to `ALLOWED_HOSTS`.
   - Configure `DATACENTERS` to your backend storage, supports CephFS and HostPath currently.
     You can use HostPath mode to make use of shared file-systems like "NFS".
-- Configure `cloud_ingress.yaml` is your kubernetes cluster is using [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+    If you use something like hostPath, you need to modify the DATACENTERS field in settings.py as follows:
+   
+    ```
+    DATACENTERS = {
+        "<MY_DATA_CENTER_NAME_HERE>":{
+            "fstype": "hostpath",
+            "host_path": "/home/pcloud/data/public/",
+            "mount_path": "/pfs/%s/home/%s/" # mount_path % ( dc, username )
+        }
+    }
+    ```
+    
+- Configure `cloud_ingress.yaml` is your kubernetes cluster is using [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) (if you need to use Jupyter notebook, you have to configure the ingress controller)
   to proxy HTTP traffics, or you can configure `cloud_service.yaml` to use [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport)
   - if using ingress, configure `spec.rules[0].host` to your domain name
+- Deploy mysql on Kubernetes first if you don't have it on your cluster, and modify the mysql endpoint in settings.py
+  - `kubectl create -f ./mysql_deployment.yaml` (you need to fill in the nodeselector field with your node's hostname or ip in yaml first)
+  - `kubectl create -f ./mysql_service.yaml`
 - Deploy cloud on Kubernetes
-  - `kubectl create -f k8s/cloud_deployment.yaml`
+  - `kubectl create -f k8s/cloud_deployment.yaml`(you need to fill in the nodeselector field with your node's hostname or ip in yaml first)
   - `kubectl create -f k8s/cloud_service.yaml`
-  - `kubectl create -f k8s/cloud_ingress.yaml`(optianal)
+  - `kubectl create -f k8s/cloud_ingress.yaml`(optianal if you don't need Jupyter notebook)
 
 
 To test or visit the website, find out the kubernetes ingress IP

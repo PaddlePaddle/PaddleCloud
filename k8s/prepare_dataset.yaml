@@ -24,3 +24,4 @@ spec:
         - name: data-storage
           mountPath: /pfs/<DATACENTER>/public
       restartPolicy: Never
+
