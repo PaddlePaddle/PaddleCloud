@@ -71,7 +71,7 @@ def get_mov_combined_features():
 
 
 def main():
-    paddle.init(use_gpu=False)
+    paddle.init()
     usr_combined_features = get_usr_combined_features()
     mov_combined_features = get_mov_combined_features()
     inference = paddle.layer.cos_sim(
