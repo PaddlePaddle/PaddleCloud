@@ -70,7 +70,7 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *ChunkMetaCmd) ValidateCloudArgs(userName string) error {
-	if err := ValidatePfsPath([]string{p.FilePath}, userName); err != nil {
+	if err := ValidatePfsPath([]string{p.FilePath}, userName, ChunkMetaCmdName); err != nil {
 		return err
 	}
 

@@ -39,7 +39,7 @@ func (p *MkdirCmd) ValidateLocalArgs() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *MkdirCmd) ValidateCloudArgs(userName string) error {
-	return ValidatePfsPath(p.Args, userName)
+	return ValidatePfsPath(p.Args, userName, mkdirCmdName)
 }
 
 // ToURLParam need not to be implemented.

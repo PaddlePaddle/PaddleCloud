@@ -49,8 +49,28 @@ func checkUser(pathStr string, user string) error {
 	return nil
 }
 
-// ValidatePfsPath returns whether a path is a pfspath.
-func ValidatePfsPath(paths []string, userName string) error {
+func isPublic(pathStr string) bool {
+	pathStr = path.Clean(strings.TrimSpace(pathStr))
+	a := strings.Split(pathStr, "/")
+
+	if len(a) >= 4 && a[3] == "public" {
+		return true
+	}
+
+	return false
+}
+
+func checkPublic(cmdName string) error {
+	switch cmdName {
+	case "ls", "stat":
+		return nil
+	default:
+		return errors.New("public data supports only ls or stat command")
+	}
+}
+
+// ValidatePfsPath returns whether a pfspath is valid and autorized
+func ValidatePfsPath(paths []string, userName string, cmdName string) error {
 	if len(paths) == 0 {
 		return errors.New(StatusNotEnoughArgs)
 	}
@@ -58,6 +78,13 @@ func ValidatePfsPath(paths []string, userName string) error {
 	for _, path := range paths {
 		if !strings.HasPrefix(path, "/pfs/") {
 			return errors.New(StatusShouldBePfsPath + ":" + path)
+		}
+
+		if isPublic(path) {
+			if err := checkPublic(cmdName); err != nil {
+				return err
+			}
+			continue
 		}
 
 		if err := checkUser(path, userName); err != nil {

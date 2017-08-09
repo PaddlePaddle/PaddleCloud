@@ -45,7 +45,7 @@ func (p *TouchCmd) ValidateLocalArgs() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *TouchCmd) ValidateCloudArgs(userName string) error {
-	if err := ValidatePfsPath([]string{p.Path}, userName); err != nil {
+	if err := ValidatePfsPath([]string{p.Path}, userName, TouchCmdName); err != nil {
 		return err
 	}
 
