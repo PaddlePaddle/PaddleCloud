@@ -42,15 +42,10 @@ def fetch_pserver_ips():
     return ",".join(pserver_ips)
 
 def fetch_master_ip():
-    while True:
-        label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
-        pod_list = fetch_pods_info(label_selector)
-        master_ip = ""
-        if len(pod_list) >=1:
-            master_ip = pod_list[0][1]
-        if master_ip:
-            return master_ip
-        time.sleep(5)
+    label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
+    pod_list = fetch_pods_info(label_selector)
+    master_ips = [item[1] for item in pod_list]
+    return master_ips[0]
 
 def fetch_trainer_id():
     label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
