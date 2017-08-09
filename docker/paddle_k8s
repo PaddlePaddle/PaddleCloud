@@ -46,8 +46,13 @@ check_trainer_ret() {
 
 start_new_trainer() {
   stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
-  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ips)
+  # FIXME: use etcd lock instead of trainer id
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS} 
+
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
+  export ETCD_IP="$MASTER_IP"
   export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
+
   # NOTE: $TRAINER_PACKAGE may be large, do not copy
   export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
   cd $TRAINER_PACKAGE
@@ -65,7 +70,6 @@ start_trainer() {
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
     export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
     export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
-    export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ips)
     stdbuf -oL echo $PADDLE_INIT_TRAINER_ID > /trainer_id
     # FIXME: /trainer_count = PADDLE_INIT_NUM_GRADIENT_SERVERS
     stdbuf -oL echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count

@@ -1,14 +1,11 @@
 import paddle.v2 as paddle
 import os
 import gzip
-import glob
-import recordio
-import cPickle as pickle
 from paddle.v2.reader.creator import cloud_reader
 import paddle.v2.dataset.uci_housing as uci_housing
 
-master_ip = os.getenv("MASTER_IP")
-etcd_endpoint = "http://" + master_ip + ":" + "2379"
+etcd_ip = os.getenv("ETCD_IP")
+etcd_endpoint = "http://" + etcd_ip + ":" + "2379"
 trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
 
 def main():
