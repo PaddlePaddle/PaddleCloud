@@ -60,7 +60,7 @@ English tutorials(comming soon...)
    
     ```
     DATACENTERS = {
-        "meiyan":{
+        "<MY_DATA_CENTER_NAME_HERE>":{
             "fstype": "hostpath",
             "host_path": "/home/pcloud/data/public/",
             "mount_path": "/pfs/%s/home/%s/" # mount_path % ( dc, username )
@@ -72,10 +72,10 @@ English tutorials(comming soon...)
   to proxy HTTP traffics, or you can configure `cloud_service.yaml` to use [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport)
   - if using ingress, configure `spec.rules[0].host` to your domain name
 - Deploy mysql on Kubernetes first if you don't have it on your cluster, and modify the mysql endpoint in settings.py
-  - `kubectl create -f ./mysql_deployment.yaml` (you need to setup the nodeselector in yaml first)
+  - `kubectl create -f ./mysql_deployment.yaml` (you need to fill in the nodeselector field with your node's hostname or ip in yaml first)
   - `kubectl create -f ./mysql_service.yaml`
 - Deploy cloud on Kubernetes
-  - `kubectl create -f k8s/cloud_deployment.yaml`(you need to setup the nodeselector in yaml first)
+  - `kubectl create -f k8s/cloud_deployment.yaml`(you need to fill in the nodeselector field with your node's hostname or ip in yaml first)
   - `kubectl create -f k8s/cloud_service.yaml`
   - `kubectl create -f k8s/cloud_ingress.yaml`(optianal if you don't need Jupyter notebook)
 
