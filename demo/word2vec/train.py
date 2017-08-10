@@ -6,6 +6,10 @@ import sys
 import paddle.v2 as paddle
 import paddle.v2.dataset.common as common
 
+etcd_ip = os.getenv("MASTER_IP", "127.0.0.1")
+etcd_endpoints = "http://" + etcd_ip + ":2379"
+print "etcd endpoints: ", etcd_endpoints
+
 embsize = 32
 hiddensize = 256
 N = 5
@@ -134,8 +138,9 @@ def main():
         regularization=paddle.optimizer.L2Regularization(8e-4))
     trainer = paddle.trainer.SGD(cost, parameters, adam_optimizer)
     trainer.train(
-        # NOTE: use either cluster_reader_recordio or cluster_reader_recordio_from_master
-        paddle.batch(cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT), 32),
+        # NOTE: use either cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT) or 
+        # cluster_reader_recordio_from_master(etcd_endpoints)
+        paddle.batch(cluster_reader_recordio_from_master(etcd_endpoints), 32),
         num_passes=30,
         event_handler=event_handler)
 
