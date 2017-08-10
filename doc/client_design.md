@@ -39,8 +39,44 @@ current-datacenter: datacenter1
 
 # Client commands
 
-## Reference
+## PaddleCloud command-line design
+You can use the following syntax to run `paddlecloud` commands from your terminal window:
+`paddlecloud [command] [resource] [name] [flags]`
+  - `command`: The operation that you want to perform on the resource, for example, `submit`, `get`, `delete`, `describe`.
+  - `resource`: The resource types for Paddle job, for example `job`, `worker`, `quota`.
+  - `name`: You can specify a name for the given resource
+  - `flags`: You can specify any flags override default values for `command` or `resource`
 
+- Command
+  - `submit`: submit the specify resource, we only support submit a PaddleJob for now
+  - `get`: get all instances for the specified resource
+  - `describe`: output the description for the specify resource
+  - `delete`: delete the specific resource, we only support delete a PaddleJob for now
+  - `logs`: output the logs for the specific instance, if the resource is a job, output all the workers' logs.
+
+- Resource
+  - `job`, PaddleJob running on PaddleCloud
+  - `workers`, The workers for PaddleJob, for example the master, trainer or pserver.
+  - `quota`, The quota for the current user
+
+- Example
+  - `paddle submit job -name <job-name> -cpu 1 ...`
+  - `paddle get [job|worker|quota]`
+  - `paddle describe job <job name>`, `paddle describe worker <worker name>`
+  - `paddle delete job <job name>`
+  - `paddle logs job <job name>`, `paddle logs worker <worker name>`
+
+## PaddleCloud File System command-line design 
+PaddleCloud File System(PFS) command-line interface allows user to operate the file system on PaddleCloud, the syntax is as following:
+`pfs [command] [path1|path2..]`
+
+- `ls`: `pfs ls <path>` will list all folders and files under the path.
+- `put`: `pfs put <src> <desc>` will upload the local folder or file to the cloud path.
+- `get`: `pfs get <src> <desc>` will download the foler or file to the local path.
+- `rm`: `pfs rm <path>` will remove the specify folder or file.
+
+
+## Reference
 - `paddlecloud submit [options] <package path>`: submit job to PaddlePaddle Cloud
     - `<package path>`: ***Required*** Job package to submit. Including user training program and it's dependencies.
     - `-parallelism`: Number of parallel trainers. Defaults to 1.
