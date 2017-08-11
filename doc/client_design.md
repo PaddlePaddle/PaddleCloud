@@ -70,10 +70,10 @@ You can use the following syntax to run `pcloud` command-line interface tool fro
 PaddleCloud File System(PFS) command-line interface allows user to operate the file system on PaddleCloud, the syntax is as following:
 `pcloud pfs [ls|put|get|rm...] [path1|path2...]`
 
-- `ls`: `pfs ls <path>` will list all folders and files under the path.
-- `put`: `pfs put <src> <desc>` will upload the local folder or file to the cloud path.
-- `get`: `pfs get <src> <desc>` will download the foler or file to the local path.
-- `rm`: `pfs rm <path>` will remove the specify folder or file.
+- `ls`: will list all folders and files under the path.
+- `put`: will upload the local folder or file to the cloud path.
+- `get`: will download the foler or file to the local path.
+- `rm`: will remove the specify folder or file.
 
 
 ## Reference
