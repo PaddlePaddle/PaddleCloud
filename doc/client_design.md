@@ -39,7 +39,7 @@ current-datacenter: datacenter1
 
 # Client commands
 
-## PaddleCloud command-line design
+## PaddleCloud Server command-line design
 You can use the following syntax to run `pcloud` command-line interface tool from your terminal window:
 `pcloud [sub-command] [resource] [name] [flags]`
   - `sub-command`: The operation that you want to perform on the resource, for example, `submit`, `get`, `kill`, `describe`.
@@ -68,7 +68,7 @@ You can use the following syntax to run `pcloud` command-line interface tool fro
 
 ## PaddleCloud File System command-line design 
 PaddleCloud File System(PFS) command-line interface allows user to operate the file system on PaddleCloud, the syntax is as following:
-`pfs [sub-command] [path1|path2..]`
+`pcloud pfs [ls|put|get|rm...] [path1|path2...]`
 
 - `ls`: `pfs ls <path>` will list all folders and files under the path.
 - `put`: `pfs put <src> <desc>` will upload the local folder or file to the cloud path.
