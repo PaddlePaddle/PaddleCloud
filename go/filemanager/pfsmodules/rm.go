@@ -42,7 +42,7 @@ func (p *RmCmd) ValidateLocalArgs() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *RmCmd) ValidateCloudArgs(userName string) error {
-	return ValidatePfsPath(p.Args, userName)
+	return ValidatePfsPath(p.Args, userName, rmCmdName)
 }
 
 // ToURLParam needs not to be implemented.

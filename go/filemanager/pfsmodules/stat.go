@@ -60,7 +60,7 @@ func (p *StatCmd) ValidateLocalArgs() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *StatCmd) ValidateCloudArgs(userName string) error {
-	return ValidatePfsPath([]string{p.Path}, userName)
+	return ValidatePfsPath([]string{p.Path}, userName, StatCmdName)
 }
 
 // Run runs the StatCmd.
