@@ -13,6 +13,7 @@ spec:
       volumes:
       - name: public-data-storage
         cephfs:
+          # Notice: change ip to your's
           monitors: ["ip:6789"]
           user: "admin"
           path: "/public/dataset"
@@ -21,6 +22,7 @@ spec:
           readOnly: true
       - name: data-storage
         cephfs:
+          # Notice: change ip to your's
           monitors: ["ip:6789"]
           user: "admin"
           path: "/"
@@ -29,6 +31,7 @@ spec:
       containers:
       - name: pfs
         imagePullPolicy: Always
+        # Notice: change repo to your's
         image: <repo>/paddlepaddle/pfsserver:latest
         env:
           - name: CURRENT_DATACENTER
