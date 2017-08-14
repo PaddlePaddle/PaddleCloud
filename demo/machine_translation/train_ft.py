@@ -5,8 +5,8 @@ import numpy as np
 import paddle.v2 as paddle
 from paddle.v2.reader.creator import cloud_reader
 
-master_ip = os.getenv("MASTER_IP")
-etcd_endpoint = "http://" + master_ip + ":" + "2379"
+etcd_ip = os.getenv("ETCD_IP")
+etcd_endpoint = "http://" + etcd_ip + ":" + "2379"
 
 def save_model(parameters, save_path):
     with open(save_path, 'w') as f:

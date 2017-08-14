@@ -6,8 +6,8 @@ import paddle.v2.dataset.conll05 as conll05
 import paddle.v2.evaluator as evaluator
 from paddle.v2.reader.creator import cloud_reader
 
-master_ip = os.getenv("MASTER_IP")
-etcd_endpoint = "http://" + master_ip + ":" + "2379"
+etcd_ip = os.getenv("ETCD_IP")
+etcd_endpoint = "http://" + etcd_ip + ":" + "2379"
 
 word_dict, verb_dict, label_dict = conll05.get_dict()
 word_dict_len = len(word_dict)
