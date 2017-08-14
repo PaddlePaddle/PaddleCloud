@@ -58,6 +58,17 @@ def fetch_trainer_id():
             return i
     return None
 
+def fetch_job_fail_count():
+    batch_client = client.BatchV1Api()
+    job_list = batch_client.list_namespaced_job(NAMESPACE)
+    for j in job_list.items:
+        if j.metadata.name == PADDLE_JOB_NAME:
+            failed_count = j.status.failed
+            break
+    if not failed_count:
+        return 0
+    else:
+        return failed_count
 
 if __name__ == "__main__":
     command = sys.argv[1]
@@ -69,3 +80,5 @@ if __name__ == "__main__":
         print fetch_master_ip()
     elif command == "wait_pods_running":
         wait_pods_running(sys.argv[2], sys.argv[3])
+    elif command == "fetch_job_fail_count":
+        print fetch_job_fail_count()
