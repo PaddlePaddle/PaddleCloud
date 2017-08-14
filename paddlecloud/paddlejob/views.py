@@ -96,10 +96,7 @@ class JobsView(APIView):
         # jobPackage validation: startwith /pfs
         # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
         job_name = obj.get("name", "paddle-cluster-job")
-        if settings.STORAGE_MODE == "CEPHFS":
-            package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
-        elif settings.STORAGE_MODE == "HDFS":
-            package_in_pod = obj.get("jobPackage")
+        package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
 
         logging.info("current package: %s", package_in_pod)
         # package must be ready before submit a job
