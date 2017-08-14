@@ -87,7 +87,10 @@ class PaddleJob(object):
         envs.append({"name":"ENTRY",                "value":self._entry})
         envs.append({"name":"TRAINER_PACKAGE",      "value":self._job_package})
         envs.append({"name":"PADDLE_INIT_PORT",     "value":str(DEFAULT_PADDLE_PORT)})
-        envs.append({"name":"PADDLE_INIT_TRAINER_COUNT",        "value":str(self._cpu)})
+        if self._gpu > 0:
+            envs.append({"name":"PADDLE_INIT_TRAINER_COUNT", "value":str(self._gpu)})
+        else:
+            envs.append({"name":"PADDLE_INIT_TRAINER_COUNT", "value":str(self._cpu)})
         envs.append({"name":"PADDLE_INIT_PORTS_NUM",            "value":str(self._ports_num)})
         envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self._ports_num_for_sparse)})
         envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self._num_gradient_servers)})
