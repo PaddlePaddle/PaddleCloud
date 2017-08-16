@@ -29,7 +29,7 @@ def wait_pods_running(label_selector, desired):
         count = count_pods_by_phase(label_selector, 'Running')
         if count == int(desired):
             break
-        print 'sleep for 5 seconds...'
+        print 'current cnt: %d sleep for 5 seconds...' % count
         time.sleep(5)
 
 def count_pods_by_phase(label_selector, phase):
