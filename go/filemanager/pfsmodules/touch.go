@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 )
 
 const (
@@ -137,4 +139,33 @@ func (p *TouchCmd) Run() (interface{}, error) {
 	return &TouchResult{
 		Path: p.Path,
 	}, nil
+}
+
+func remoteTouch(cmd *TouchCmd) error {
+	j, err := cmd.ToJSON()
+	if err != nil {
+		return err
+	}
+
+	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
+	body, err := restclient.PostCall(t, j)
+	if err != nil {
+		return err
+	}
+
+	type touchResponse struct {
+		Err     string      `json:"err"`
+		Results TouchResult `json:"results"`
+	}
+
+	resp := touchResponse{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return err
+	}
+
+	if len(resp.Err) == 0 {
+		return nil
+	}
+
+	return errors.New(resp.Err)
 }

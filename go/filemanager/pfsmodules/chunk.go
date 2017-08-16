@@ -1,16 +1,10 @@
 package pfsmodules
 
 import (
-	"bytes"
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"strconv"
-
-	log "github.com/golang/glog"
 )
 
 // Chunk respresents a chunk info.
@@ -38,7 +32,7 @@ func (p *ChunkParam) ToURLParam() url.Values {
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
 func ParseChunkParam(path string) (*ChunkParam, error) {
-	cmd := Chunk{}
+	cmd := ChunkParam{}
 
 	m, err := url.ParseQuery(path)
 	if err != nil ||
@@ -64,78 +58,14 @@ func ParseChunkParam(path string) (*ChunkParam, error) {
 }
 
 type Chunk struct {
-	Offset int64
-	Len    int64
-	Sum    string
-	Data   []byte
+	Offset   int64
+	Len      int64
+	Checksum string
+	Data     []byte
 }
 
-func NewChunk() {
-	return &ChunkData{
-		Offset: -1,
-		Len:    -1,
-	}
-}
-
-type FileHandle struct {
-	F      *File
-	Offset int64
-}
-
-func NewFileHandle() {
-	return &FileHandle{
-		Offset: -1,
-	}
-}
-
-// LoadChunkData loads a specified chunk to io.Writer.
-func (f *FileHandle) Load(offset, len int64) (*Chunk, error) {
-	if offset != f.Offset {
-		_, err = f.Seek(offset, 0)
-		if err != nil {
-			return nil, err
-		}
-		f.Offset = offset
-	}
-
-	c = NewChunk()
-
-	n, err := io.CopyN(c.Data, f.F, len)
-	log.V(2).Infof("expect %d read %d\n", len, n)
-
-	if err != nil {
-		return nil, err
-	}
-	f.Offset += n
-
-	c.Offset = offset
-	c.Len = len
-	sum := md5.Sum(c.Data[:n])
-	c.Sum = hex.EncodeToString(sum[:])
-
-	return c, nil
-}
-
-// Save save data to file
-func (f *FileHandle) SaveChunk(c *Chunk) error {
-	return f.Save(bytes.NewReader(c.Data), c.Offset, c.Len)
-}
-
-// SaveChunkData save data from io.Reader.
-func (f *FileHanle) Save(r io.Reader, offset, len int64) error {
-	if offset != f.Offset {
-		_, err = f.Seek(offset, 0)
-		if err != nil {
-			return nil, err
-		}
-		f.Offset = offset
-	}
-
-	n, err := io.CopyN(f.F, c.Data, len)
-	log.V(2).Infof("expect write %d writen:%d\n", len, n)
-	if err == nil {
-		f.Offset += n
-	}
-
-	return err
+func NewChunk(capcity int64) *Chunk {
+	c := Chunk{}
+	c.Data = make([]byte, capcity)
+	return &c
 }
