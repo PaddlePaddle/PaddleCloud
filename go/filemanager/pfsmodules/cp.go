@@ -111,8 +111,6 @@ func RunCp(cmd *CpCmd) error {
 	var results []CpCmdResult
 
 	for _, arg := range cmd.Src {
-		fmt.Println("[Info] " + cmd.PartToString(arg, cmd.Dst))
-
 		var ret []CpCmdResult
 		var err error
 
@@ -139,7 +137,6 @@ func RunCp(cmd *CpCmd) error {
 		if ret != nil {
 			results = append(results, ret...)
 		}
-		fmt.Println("")
 	}
 
 	return nil

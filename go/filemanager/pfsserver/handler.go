@@ -25,7 +25,6 @@ type response struct {
 var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
-	return "gongwb", nil
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = token
 
@@ -315,7 +314,7 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadChunkData(p *pfsmod.ChunkParam, w io.Writer) error {
 	r := pfsmod.FileHandle{}
-	if err := r.Open(p.Path, os.O_RDONLY); err != nil {
+	if err := r.Open(p.Path, os.O_RDONLY, 0); err != nil {
 		return err
 	}
 	defer r.Close()
@@ -340,11 +339,15 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	part, err := writer.CreateFormFile("chunk", fileName)
 	if err != nil {
 		log.Error(err)
+		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
 		return
 	}
 
-	if err = loadChunkData(p, part); err != nil {
+	resp := response{}
+	if err = loadChunkData(p, part); err != nil && err != io.EOF {
 		log.Error(err)
+		resp.Err = err.Error()
+		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 		return
 	}
 
@@ -389,7 +392,7 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 		log.V(2).Infof("received post chunk param:%#v\n", param.ToString())
 
 		fw := pfsmod.FileHandle{}
-		if err := fw.Open(param.Path, os.O_WRONLY); err != nil {
+		if err := fw.Open(param.Path, os.O_WRONLY, 0); err != nil {
 			resp.Err = err.Error()
 			writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 		}

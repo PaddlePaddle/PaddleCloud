@@ -13,6 +13,7 @@ import (
 	log "github.com/golang/glog"
 )
 
+// RFileHandle is a remote file's handle.
 type RFileHandle struct {
 	Path string
 	Flag int
@@ -20,7 +21,12 @@ type RFileHandle struct {
 }
 
 const (
-	ReadOnly, WriteOnly, ReadAndWrite = os.O_RDONLY, os.O_WRONLY, os.O_RDWR
+	// ReadOnly means read only.
+	ReadOnly = os.O_RDONLY
+	// WriteOnly means write only.
+	WriteOnly = os.O_WRONLY
+	// ReadAndWrite means read and write.
+	ReadAndWrite = os.O_RDWR
 )
 
 // Open file to read ,write or read-write.
@@ -53,10 +59,11 @@ func (f *RFileHandle) Open(path string, flag int, size int64) error {
 	return nil
 }
 
-func getChunkData(target string, m ChunkParam) (*Chunk, error) {
-	log.V(1).Info("target url: " + target)
+func getChunkData(m ChunkParam) (*Chunk, error) {
+	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
+	log.V(1).Info("target url: " + t)
 
-	resp, err := restclient.GetChunk(target, m.ToURLParam())
+	resp, err := restclient.GetChunk(t, m.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
@@ -69,20 +76,24 @@ func getChunkData(target string, m ChunkParam) (*Chunk, error) {
 	var c *Chunk
 	partReader := multipart.NewReader(resp.Body, DefaultMultiPartBoundary)
 	for {
-		part, error := partReader.NextPart()
-		if error == io.EOF {
+		part, err := partReader.NextPart()
+		if err == io.EOF {
 			break
 		}
 
 		if part.FormName() == "chunk" {
-			m, err := ParseChunkParam(part.FileName())
+			m1, err := ParseChunkParam(part.FileName())
 			if err != nil {
 				return nil, errors.New(err.Error())
 			}
 
-			c = NewChunk(m.Size)
-			c.Len = m.Size
-			c.Offset = m.Offset
+			if m1.Size == 0 {
+				return c, io.EOF
+			}
+
+			c = NewChunk(m1.Size)
+			c.Len = m1.Size
+			c.Offset = m1.Offset
 			if _, err := part.Read(c.Data); err != nil {
 				return nil, err
 			}
@@ -91,24 +102,25 @@ func getChunkData(target string, m ChunkParam) (*Chunk, error) {
 
 	return c, nil
 }
-func (f *RFileHandle) Read(offset int64, len int64) (*Chunk, error) {
-	/*
-		m := &ChunkParam{
-			Path:   f.Path,
-			Offset: offset,
-			Size:   len,
-		}
-	*/
 
-	//return getChunkData(offset, len)
-	return nil, nil
+// ReadChunk reads Chunk data from f.
+func (f *RFileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
+	m := ChunkParam{
+		Path:   f.Path,
+		Offset: offset,
+		Size:   len,
+	}
+
+	return getChunkData(m)
 }
 
+// GetChunkMeta gets ChunkMeta info from f.
 func (f *RFileHandle) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) {
 	return remoteChunkMeta(f.Path, offset, len)
 }
 
-func (f *RFileHandle) Write(c *Chunk) error {
+// WriteChunk writes chunk data to f.
+func (f *RFileHandle) WriteChunk(c *Chunk) error {
 	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
 	log.V(4).Infoln("chunk's URI:" + t)
 
@@ -140,5 +152,6 @@ func (f *RFileHandle) Write(c *Chunk) error {
 	return errors.New(resp.Err)
 }
 
+// Close is function not need implement.
 func (f *RFileHandle) Close() {
 }

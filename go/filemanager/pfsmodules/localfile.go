@@ -10,18 +10,36 @@ import (
 	log "github.com/golang/glog"
 )
 
+// FileHandle is a local *os.File with offset.
 type FileHandle struct {
 	F      *os.File
 	Offset int64
 }
 
+// Close closes FileHandle.
 func (f *FileHandle) Close() {
 	if f.F != nil {
 		f.F.Close()
 	}
 }
 
-func (f *FileHandle) Open(path string, flag int) error {
+// Open opens a file.
+func (f *FileHandle) Open(path string, flag int, size int64) error {
+	if flag == WriteOnly ||
+		flag == ReadAndWrite {
+
+		cmd := TouchCmd{
+			Method:   TouchCmdName,
+			Path:     path,
+			FileSize: size,
+		}
+		// attempt to create sized file if it does't exist or
+		// file's size != size
+		if err := localTouch(&cmd); err != nil {
+			return err
+		}
+	}
+
 	fd, err := os.OpenFile(path, flag, 0666)
 	if err != nil {
 		return err
@@ -41,7 +59,7 @@ func (f *FileHandle) checkOffset(offset int64) error {
 	return nil
 }
 
-// LoadChunkData loads a specified chunk to io.Writer.
+// ReadChunk loads a chunk at offset with len.
 func (f *FileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
 	if err := f.checkOffset(offset); err != nil {
 		return nil, err
@@ -65,6 +83,7 @@ func (f *FileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
 	return c, err
 }
 
+// Read loads filedata to io.Writer.
 func (f *FileHandle) Read(w io.Writer, offset, len int64) error {
 	if err := f.checkOffset(offset); err != nil {
 		return err
@@ -81,12 +100,12 @@ func (f *FileHandle) Read(w io.Writer, offset, len int64) error {
 	return err
 }
 
-// Save save data to file
+// WriteChunk writes data to file.
 func (f *FileHandle) WriteChunk(c *Chunk) error {
 	return f.Write(bytes.NewReader(c.Data), c.Offset, c.Len)
 }
 
-// SaveChunkData save data from io.Reader.
+// Write writes data from io.Reader.
 func (f *FileHandle) Write(r io.Reader, offset int64, len int64) error {
 	if err := f.checkOffset(offset); err != nil {
 		return err

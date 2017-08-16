@@ -3,67 +3,62 @@ package pfsmodules
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	log "github.com/golang/glog"
 )
 
-func downloadChunks(src string,
-	dst string) error {
-	/*
-		if len(diffMeta) == 0 {
-			log.V(1).Infof("srcfile:%s and dstfile:%s are already same\n", src, dst)
-			fmt.Printf("download ok\n")
-			return nil
-		}
-
-		t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
-		for _, meta := range diffMeta {
-			chunk := Chunk{
-				Path:   src,
-				Offset: meta.Offset,
-				Size:   meta.Len,
-			}
-
-			err := getChunkData(t, chunk, dst)
-			if err != nil {
-				return err
-			}
-		}
-	*/
-
-	return nil
-}
-
 func downloadFile(src string, srcFileSize int64, dst string) error {
-	/*
-		srcMeta, err := remoteChunkMeta(src, defaultChunkSize)
-		if err != nil {
-			return err
-		}
-		log.V(4).Infof("srcMeta:%#v\n\n", srcMeta)
-
-		dstMeta, err := GetChunkMeta(dst, defaultChunkSize)
-		if err != nil {
-			if os.IsNotExist(err) {
-				if err = CreateSizedFile(dst, srcFileSize); err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		}
-		log.V(4).Infof("dstMeta:%#v\n", dstMeta)
-
-		diffMeta, err := GetDiffChunkMeta(srcMeta, dstMeta)
-		if err != nil {
-			return err
-		}
-
-		err = downloadChunks(src, dst, diffMeta)
+	w := FileHandle{}
+	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
 		return err
-	*/
+	}
+	defer w.Close()
+
+	r := RFileHandle{}
+	if err := r.Open(src, os.O_RDONLY, 0); err != nil {
+		return err
+	}
+	defer r.Close()
+
+	offset := int64(0)
+	size := defaultChunkSize
+
+	for {
+		m, err := r.GetChunkMeta(offset, size)
+		if err != nil {
+			return err
+		}
+		c, err := w.ReadChunk(offset, size)
+		if err != nil {
+			return err
+		}
+		offset += m.Len
+
+		if m.Checksum == c.Checksum {
+			log.V(4).Infof("remote chunk is same as local chunk:%s", c.ToString())
+			continue
+		}
+
+		c, err = r.ReadChunk(offset, size)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		if err := w.WriteChunk(c); err != nil {
+			return err
+		}
+	}
+
+	if offset != srcFileSize {
+		return fmt.Errorf("expect %d but read %d", srcFileSize, offset)
+	}
+
 	return nil
 }
 
@@ -96,6 +91,7 @@ func download(src, dst string) error {
 
 	for _, attr := range lsRet {
 		if attr.IsDir {
+			ColorError("Download %s error info:%s\n", StatusOnlySupportFiles)
 			return errors.New(StatusOnlySupportFiles)
 		}
 
@@ -107,10 +103,11 @@ func download(src, dst string) error {
 			realDst = dst + "/" + file
 		}
 
-		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
 		if err := downloadFile(realSrc, attr.Size, realDst); err != nil {
+			ColorError("Download %s to %s error info:%s\n", realSrc, realDst, err)
 			return err
 		}
+		ColorInfo("Downloaded %s\n", realSrc)
 	}
 
 	return nil

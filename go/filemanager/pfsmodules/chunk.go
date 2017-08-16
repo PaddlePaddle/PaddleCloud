@@ -7,13 +7,14 @@ import (
 	"strconv"
 )
 
-// Chunk respresents a chunk info.
+// ChunkParam respresents a chunk info.
 type ChunkParam struct {
 	Path   string
 	Offset int64
 	Size   int64
 }
 
+// ToString packs info of ChunkParam.
 func (p *ChunkParam) ToString() string {
 	return fmt.Sprintf("Path:%s Offset:%d Size:%d", p.Path, p.Offset, p.Size)
 }
@@ -32,7 +33,7 @@ func (p *ChunkParam) ToURLParam() url.Values {
 	return parameters
 }
 
-// ParseChunk get a Chunk struct from path.
+// ParseChunkParam get a Chunk struct from path.
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
 func ParseChunkParam(path string) (*ChunkParam, error) {
@@ -61,6 +62,7 @@ func ParseChunkParam(path string) (*ChunkParam, error) {
 	return &cmd, nil
 }
 
+// Chunk is struct.
 type Chunk struct {
 	Offset   int64
 	Len      int64
@@ -68,10 +70,12 @@ type Chunk struct {
 	Data     []byte
 }
 
+// ToString packs info of Chunk
 func (c *Chunk) ToString() string {
 	return fmt.Sprintf("Offset:%d Len:%d Checksum:%s", c.Offset, c.Len, c.Checksum)
 }
 
+// NewChunk make a Chunk struct.
 func NewChunk(capcity int64) *Chunk {
 	c := Chunk{}
 	c.Data = make([]byte, capcity)

@@ -37,7 +37,7 @@ func getChunkReader(path string, offset int64) (*os.File, error) {
 
 func uploadFile(src, dst string, srcFileSize int64) error {
 	r := FileHandle{}
-	if err := r.Open(src, os.O_RDONLY); err != nil {
+	if err := r.Open(src, os.O_RDONLY, 0); err != nil {
 		return err
 	}
 	defer r.Close()
@@ -75,10 +75,14 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 			continue
 		}
 
-		if err := w.Write(c); err != nil {
+		if err := w.WriteChunk(c); err != nil {
 			return err
 		}
 		log.V(2).Infof("upload chunk:%s ok\n", c.ToString())
+	}
+
+	if offset != srcFileSize {
+		return fmt.Errorf("expect %d upload %d", srcFileSize, offset)
 	}
 
 	return nil
@@ -87,13 +91,13 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 // ColorError print red ERROR before message.
 func ColorError(format string, a ...interface{}) {
 	color.New(color.FgRed).Printf("[ERROR]  ")
-	fmt.Printf(format, a)
+	fmt.Printf(format, a...)
 }
 
-// ColorOK print green OK before message.
-func ColorOK(format string, a ...interface{}) {
-	color.New(color.FgGreen).Printf("[OK]  ")
-	fmt.Printf(format, a)
+// ColorInfo print green INFO before message.
+func ColorInfo(format string, a ...interface{}) {
+	color.New(color.FgGreen).Printf("[INFO]  ")
+	fmt.Printf(format, a...)
 }
 
 func upload(src, dst string) error {
@@ -106,6 +110,7 @@ func upload(src, dst string) error {
 
 	dstMeta, err := remoteStat(&StatCmd{Path: dst, Method: StatCmdName})
 	if err != nil && !strings.Contains(err.Error(), StatusFileNotFound) {
+		ColorError("Upload %s to %s error info:%s\n", src, dst, err)
 		return err
 	}
 	log.V(1).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
@@ -129,10 +134,10 @@ func upload(src, dst string) error {
 			realSrc, srcMeta.Size, realDst)
 
 		if err := uploadFile(realSrc, realDst, srcMeta.Size); err != nil {
-			ColorError("Upload %s to %s\n", realSrc, realDst)
+			ColorError("Upload %s to %s error:%v\n", realSrc, realDst, err)
 			return err
 		}
-		ColorOK("Uploaded %s\n", realSrc)
+		ColorInfo("Uploaded %s\n", realSrc)
 	}
 
 	return nil

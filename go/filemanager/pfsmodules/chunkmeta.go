@@ -28,6 +28,7 @@ type ChunkMeta struct {
 	Len      int64  `json:"len"`
 }
 
+// ToString  pack a info tring of ChunkMeta.
 func (m *ChunkMeta) ToString() string {
 	return fmt.Sprintf("Offset:%d Checksum:%s Len:%d", m.Offset, m.Checksum, m.Len)
 }
@@ -63,7 +64,7 @@ func (p *ChunkMetaCmd) ToJSON() ([]byte, error) {
 // Run is a functions which run ChunkMetaCmd.
 func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	f := FileHandle{}
-	if err := f.Open(p.FilePath, os.O_RDONLY); err != nil {
+	if err := f.Open(p.FilePath, os.O_RDONLY, 0); err != nil {
 		return nil, err
 	}
 

@@ -141,6 +141,13 @@ func (p *TouchCmd) Run() (interface{}, error) {
 	}, nil
 }
 
+func localTouch(cmd *TouchCmd) error {
+	if _, err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
 func remoteTouch(cmd *TouchCmd) error {
 	j, err := cmd.ToJSON()
 	if err != nil {
