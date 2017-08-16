@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
+	"github.com/fatih/color"
 	log "github.com/golang/glog"
 )
 
@@ -114,11 +115,12 @@ func upload(src, dst string) error {
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
 
-		fmt.Printf("uploading %s to %s\n", realSrc, realDst)
+		fmt.Printf(" uploading %s to %s ...", realSrc, realDst)
 		if err := uploadFile(realSrc, realDst, srcMeta.Size); err != nil {
 			fmt.Printf(" error %v\n", err)
 			return err
 		}
+		color.Green(" ok")
 	}
 
 	return nil

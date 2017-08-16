@@ -65,10 +65,7 @@ func newCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
 
 // PartToString prints command's info.
 func (p *CpCmd) PartToString(src, dst string) string {
-	if p.V {
-		return fmt.Sprintf("cp -v %s %s\n", src, dst)
-	}
-	return fmt.Sprintf("cp %s %s\n", src, dst)
+	return fmt.Sprintf("cp %s %s", src, dst)
 }
 
 // Name returns CpCmd's name.
