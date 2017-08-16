@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 start_pserver() {
     stdbuf -oL paddle pserver \
       --use_gpu=0 \
@@ -29,8 +28,15 @@ start_master() {
 
 check_trainer_ret() {
   ret=$1
-  echo "job returned $ret...setting pod return message..."
-  echo "==============================="
+  max_failed=$2
+  stdbuf -oL echo "job returned $ret...setting pod return message..."
+  stdbuf -oL echo "==============================="
+  failed_count=$(python /root/k8s_tools.py count_pods_by_phase paddle-job=${PADDLE_JOB_NAME} Failed)
+  if [ $ret -ne 0 ] && [ $failed_count -gt $max_failed ]; then
+    echo "Failed count beyond the threshold: " $TRAINERS > /dev/termination-log
+    exit 0
+  fi
+
   if [ $ret -eq 136 ] ; then
     echo "Error Arithmetic Operation(Floating Point Exception)" > /dev/termination-log
   elif [ $ret -eq 139 ] ; then
@@ -40,7 +46,7 @@ check_trainer_ret() {
   elif [ $ret -eq 134 ] ; then
     echo "Program Abort" > /dev/termination-log
   fi
-  echo "termination log wroted..."
+  stdbuf -oL echo "termination log wroted..."
   exit $ret
 }
 
@@ -62,7 +68,8 @@ start_new_trainer() {
   "version: " $1 
 
   stdbuf -oL sh -c "${ENTRY}"
-  check_trainer_ret $?
+  # FIXME(Yancey1989): use command-line interface to configure the max failed count
+  check_trainer_ret $? ${TRAINERS}
 }
 
 start_trainer() {
@@ -105,11 +112,13 @@ start_trainer() {
           --save_dir=$OUTPUT \
           --pservers=$PADDLE_INIT_PSERVERS \
           --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
-        check_trainer_ret $?
+        # paddle v1 API does not allow any trainer failed.
+        check_trainer_ret $? 0
         ;;
       "v2")
         stdbuf -oL sh -c "${ENTRY}"
-        check_trainer_ret $?
+        # paddle v2 API does not allow any trainer failed.
+        check_trainer_ret $? 0
         ;;
       *)
         ;;
