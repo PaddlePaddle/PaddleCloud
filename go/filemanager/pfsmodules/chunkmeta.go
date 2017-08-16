@@ -163,7 +163,7 @@ func GetDiffChunkMeta(srcMeta []ChunkMeta, dstMeta []ChunkMeta) ([]ChunkMeta, er
 }
 
 // GetChunkMeta gets chunk metas from path of file.
-func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
+func GetChunkMeta(path string, pos int64, len int64, chunkNum int64) ([]ChunkMeta, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -178,6 +178,8 @@ func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
 
 	data := make([]byte, len)
 	offset := int64(0)
+
+	err := f.Seek(pos, 0)
 
 	for {
 		n, err := f.Read(data)

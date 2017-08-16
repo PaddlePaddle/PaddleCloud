@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	defaultMaxCreateFileSize = int64(4 * 1024 * 1024 * 1024)
+	defaultMaxCreateFileSize = int64(1 * 1024 * 1024 * 1024 * 1024)
 )
 
 const (

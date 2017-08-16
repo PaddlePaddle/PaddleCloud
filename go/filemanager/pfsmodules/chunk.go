@@ -1,25 +1,27 @@
 package pfsmodules
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	"strconv"
 
 	log "github.com/golang/glog"
 )
 
 // Chunk respresents a chunk info.
-type Chunk struct {
+type ChunkParam struct {
 	Path   string
 	Offset int64
 	Size   int64
 }
 
 // ToURLParam encodes variables to url encoding parameters.
-func (p *Chunk) ToURLParam() url.Values {
+func (p *ChunkParam) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("path", p.Path)
 
@@ -35,7 +37,7 @@ func (p *Chunk) ToURLParam() url.Values {
 // ParseChunk get a Chunk struct from path.
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
-func ParseChunk(path string) (*Chunk, error) {
+func ParseChunkParam(path string) (*ChunkParam, error) {
 	cmd := Chunk{}
 
 	m, err := url.ParseQuery(path)
@@ -61,38 +63,79 @@ func ParseChunk(path string) (*Chunk, error) {
 	return &cmd, nil
 }
 
+type Chunk struct {
+	Offset int64
+	Len    int64
+	Sum    string
+	Data   []byte
+}
+
+func NewChunk() {
+	return &ChunkData{
+		Offset: -1,
+		Len:    -1,
+	}
+}
+
+type FileHandle struct {
+	F      *File
+	Offset int64
+}
+
+func NewFileHandle() {
+	return &FileHandle{
+		Offset: -1,
+	}
+}
+
 // LoadChunkData loads a specified chunk to io.Writer.
-func (p *Chunk) LoadChunkData(w io.Writer) error {
-	f, err := os.Open(p.Path)
-	if err != nil {
-		return err
-	}
-	defer Close(f)
-
-	_, err = f.Seek(p.Offset, 0)
-	if err != nil {
-		return err
+func (f *FileHandle) Load(offset, len int64) (*Chunk, error) {
+	if offset != f.Offset {
+		_, err = f.Seek(offset, 0)
+		if err != nil {
+			return nil, err
+		}
+		f.Offset = offset
 	}
 
-	loaded, err := io.CopyN(w, f, p.Size)
-	log.V(2).Infof("loaded:%d\n", loaded)
-	return err
+	c = NewChunk()
+
+	n, err := io.CopyN(c.Data, f.F, len)
+	log.V(2).Infof("expect %d read %d\n", len, n)
+
+	if err != nil {
+		return nil, err
+	}
+	f.Offset += n
+
+	c.Offset = offset
+	c.Len = len
+	sum := md5.Sum(c.Data[:n])
+	c.Sum = hex.EncodeToString(sum[:])
+
+	return c, nil
+}
+
+// Save save data to file
+func (f *FileHandle) SaveChunk(c *Chunk) error {
+	return f.Save(bytes.NewReader(c.Data), c.Offset, c.Len)
 }
 
 // SaveChunkData save data from io.Reader.
-func (p *Chunk) SaveChunkData(r io.Reader) error {
-	f, err := os.OpenFile(p.Path, os.O_WRONLY, 0600)
-	if err != nil {
-		return err
-	}
-	defer Close(f)
-
-	_, err = f.Seek(p.Offset, 0)
-	if err != nil {
-		return err
+func (f *FileHanle) Save(r io.Reader, offset, len int64) error {
+	if offset != f.Offset {
+		_, err = f.Seek(offset, 0)
+		if err != nil {
+			return nil, err
+		}
+		f.Offset = offset
 	}
 
-	writen, err := io.CopyN(f, r, p.Size)
-	log.V(2).Infof("chunksize:%d writen:%d\n", p.Size, writen)
+	n, err := io.CopyN(f.F, c.Data, len)
+	log.V(2).Infof("expect write %d writen:%d\n", len, n)
+	if err == nil {
+		f.Offset += n
+	}
+
 	return err
 }
