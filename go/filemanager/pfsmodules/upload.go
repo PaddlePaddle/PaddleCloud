@@ -50,7 +50,8 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 
 	// upload chunks.
 	size := defaultChunkSize
-	var offset int64 = 0
+
+	offset := int64(0)
 	for {
 		log.V(2).Infoln("\n")
 		c, err := r.ReadChunk(offset, size)
@@ -81,6 +82,18 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 	}
 
 	return nil
+}
+
+// ColorError print red ERROR before message.
+func ColorError(format string, a ...interface{}) {
+	color.New(color.FgRed).Printf("[ERROR]  ")
+	fmt.Printf(format, a)
+}
+
+// ColorOK print green OK before message.
+func ColorOK(format string, a ...interface{}) {
+	color.New(color.FgGreen).Printf("[OK]  ")
+	fmt.Printf(format, a)
 }
 
 func upload(src, dst string) error {
@@ -115,12 +128,11 @@ func upload(src, dst string) error {
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
 
-		fmt.Printf(" uploading %s to %s ...", realSrc, realDst)
 		if err := uploadFile(realSrc, realDst, srcMeta.Size); err != nil {
-			fmt.Printf(" error %v\n", err)
+			ColorError("Upload %s to %s\n", realSrc, realDst)
 			return err
 		}
-		color.Green(" ok")
+		ColorOK("Uploaded %s\n", realSrc)
 	}
 
 	return nil
