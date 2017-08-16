@@ -29,7 +29,7 @@ type ChunkMeta struct {
 }
 
 func (m *ChunkMeta) ToString() string {
-	return fmt.Sprint("Offset:%d Checksum:%d Len:%d", m.Offset, m.Checksum, m.Len)
+	return fmt.Sprintf("Offset:%d Checksum:%s Len:%d", m.Offset, m.Checksum, m.Len)
 }
 
 // ChunkMetaCmd is a command.
@@ -142,6 +142,7 @@ func remoteChunkMeta(path string, offset int64,
 		Method:    ChunkMetaCmdName,
 		FilePath:  path,
 		ChunkSize: chunkSize,
+		Offset:    offset,
 	}
 
 	t := fmt.Sprintf("%s/api/v1/pfs/chunks", Config.ActiveConfig.Endpoint)

@@ -22,7 +22,7 @@ func (f *FileHandle) Close() {
 }
 
 func (f *FileHandle) Open(path string, flag int) error {
-	fd, err := os.Open(path)
+	fd, err := os.OpenFile(path, flag, 0666)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (f *FileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
 	f.Offset += int64(n)
 
 	c.Offset = offset
-	c.Len = len
+	c.Len = int64(n)
 	sum := md5.Sum(c.Data[:n])
 	c.Checksum = hex.EncodeToString(sum[:])
 

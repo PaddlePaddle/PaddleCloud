@@ -51,6 +51,7 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 	size := defaultChunkSize
 	var offset int64 = 0
 	for {
+		log.V(2).Infoln("\n")
 		c, err := r.ReadChunk(offset, size)
 		if err == io.EOF {
 			break
@@ -58,24 +59,24 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 		if err != nil {
 			return err
 		}
-		offset += c.Len
-		log.V(2).Infoln(c.ToString())
+		log.V(2).Infoln("local chunk info:" + c.ToString())
 
 		m, err := w.GetChunkMeta(offset, size)
 		if err != nil {
 			return err
 		}
-		log.V(2).Infoln(m.ToString())
+		log.V(2).Infoln("remote chunk info:" + m.ToString())
+		offset += c.Len
 
 		if c.Checksum == m.Checksum {
-			log.V(2).Infof("remote and local chunk are same chunk info:%s\n", offset, c.ToString())
+			log.V(2).Infof("remote and local chunk are same chunk info:%s\n", c.ToString())
 			continue
 		}
 
 		if err := w.Write(c); err != nil {
 			return err
 		}
-		log.V(2).Infoln("put chunk:" + c.ToString())
+		log.V(2).Infof("upload chunk:%s ok\n", c.ToString())
 	}
 
 	return nil
@@ -113,12 +114,11 @@ func upload(src, dst string) error {
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
 
-		fmt.Printf("uploading %s to %s", realSrc, realDst)
+		fmt.Printf("uploading %s to %s\n", realSrc, realDst)
 		if err := uploadFile(realSrc, realDst, srcMeta.Size); err != nil {
 			fmt.Printf(" error %v\n", err)
 			return err
 		}
-		fmt.Printf(" ok!\n")
 	}
 
 	return nil

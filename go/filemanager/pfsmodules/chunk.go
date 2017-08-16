@@ -15,7 +15,7 @@ type ChunkParam struct {
 }
 
 func (p *ChunkParam) ToString() string {
-	return fmt.Sprint("Path:%s Offset:%d Size:%d", p.Path, p.Offset, p.Size)
+	return fmt.Sprintf("Path:%s Offset:%d Size:%d", p.Path, p.Offset, p.Size)
 }
 
 // ToURLParam encodes variables to url encoding parameters.
@@ -69,7 +69,7 @@ type Chunk struct {
 }
 
 func (c *Chunk) ToString() string {
-	return fmt.Sprint("Offset:%d Len:%d Checksum:%s", c.Offset, c.Len, c.Checksum)
+	return fmt.Sprintf("Offset:%d Len:%d Checksum:%s", c.Offset, c.Len, c.Checksum)
 }
 
 func NewChunk(capcity int64) *Chunk {
