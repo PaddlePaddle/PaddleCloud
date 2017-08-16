@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"os"
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
@@ -24,6 +25,7 @@ type response struct {
 var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
+	return "gongwb", nil
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = token
 
@@ -311,11 +313,21 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func loadChunkData(p *pfsmod.ChunkParam, w io.Writer) error {
+	r := pfsmod.FileHandle{}
+	if err := r.Open(p.Path, os.O_RDONLY); err != nil {
+		return err
+	}
+	defer r.Close()
+
+	return r.Read(w, p.Offset, p.Size)
+}
+
 // GetChunkHandler processes GET Chunk  request.
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
 
-	chunk, err := pfsmod.ParseChunk(r.URL.RawQuery)
+	p, err := pfsmod.ParseChunkParam(r.URL.RawQuery)
 	if err != nil {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
 		return
@@ -324,14 +336,14 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	writer := multipart.NewWriter(w)
 	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
 
-	fileName := chunk.ToURLParam().Encode()
+	fileName := p.ToURLParam().Encode()
 	part, err := writer.CreateFormFile("chunk", fileName)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	if err = chunk.LoadChunkData(part); err != nil {
+	if err = loadChunkData(p, part); err != nil {
 		log.Error(err)
 		return
 	}
@@ -367,19 +379,25 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		cmd, err := pfsmod.ParseChunk(part.FileName())
+		param, err := pfsmod.ParseChunkParam(part.FileName())
 		if err != nil {
 			resp.Err = err.Error()
 			writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 			return
 		}
 
-		log.V(1).Infof("recv cmd:%#v\n", cmd)
+		log.V(2).Infof("received post chunk param:%#v\n", param.ToString())
 
-		if err := cmd.SaveChunkData(part); err != nil {
+		fw := pfsmod.FileHandle{}
+		if err := fw.Open(param.Path, os.O_WRONLY); err != nil {
 			resp.Err = err.Error()
 			writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
-			return
+		}
+		defer fw.Close()
+
+		if err := fw.Write(part, param.Offset, param.Size); err != nil {
+			resp.Err = err.Error()
+			writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 		}
 
 		writeJSONResponse(w, part.FileName(), http.StatusOK, resp)

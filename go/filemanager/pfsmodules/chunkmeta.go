@@ -28,6 +28,10 @@ type ChunkMeta struct {
 	Len      int64  `json:"len"`
 }
 
+func (m *ChunkMeta) ToString() string {
+	return fmt.Sprint("Offset:%d Checksum:%d Len:%d", m.Offset, m.Checksum, m.Len)
+}
+
 // ChunkMetaCmd is a command.
 type ChunkMetaCmd struct {
 	Method    string `json:"method"`
@@ -65,7 +69,7 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 
 	defer f.Close()
 
-	c, err := f.Read(p.Offset, p.ChunkSize)
+	c, err := f.ReadChunk(p.Offset, p.ChunkSize)
 	if err != nil {
 		return nil, err
 	}

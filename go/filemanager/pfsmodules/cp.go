@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	cpCmdName        = "cp"
-	defaultChunkSize = 2 * 1024 * 1024
+	cpCmdName              = "cp"
+	defaultChunkSize int64 = 2 * 1024 * 1024
 )
 
 // CpCmdResult means the copy-command's result.
