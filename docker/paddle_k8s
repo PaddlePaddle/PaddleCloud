@@ -55,13 +55,11 @@ check_trainer_ret() {
 }
 
 start_new_trainer() {
+  # FIXME(Yancey1989): use command-line interface to configure the max failed count
+  check_failed_cnt ${TRAINERS}
   stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
   # FIXME: use etcd lock instead of trainer id
   stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS} 
-
-  # FIXME(Yancey1989): use command-line interface to configure the max failed count
-  check_failed_cnt 0
-
   export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
   export ETCD_IP="$MASTER_IP"
   export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
@@ -79,10 +77,10 @@ start_new_trainer() {
 }
 
 start_trainer() {
+    # paddle v1 and V2 distributed training does not allow any trainer failed. 
     check_failed_cnt 0
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
-    # paddle v1 and V2 distributed training does not allow any trainer failed. 
 
     export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
     export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
