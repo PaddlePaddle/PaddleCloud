@@ -71,7 +71,7 @@ type Chunk struct {
 }
 
 // ToString packs info of Chunk
-func (c *Chunk) ToString() string {
+func (c *Chunk) String() string {
 	return fmt.Sprintf("Offset:%d Len:%d Checksum:%s", c.Offset, c.Len, c.Checksum)
 }
 

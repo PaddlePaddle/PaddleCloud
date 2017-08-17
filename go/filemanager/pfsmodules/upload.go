@@ -49,36 +49,42 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 	defer w.Close()
 
 	// upload chunks.
-	size := defaultChunkSize
+	const size int64 = defaultChunkSize
 
 	offset := int64(0)
 	for {
-		log.V(2).Infoln("\n")
-		c, err := r.ReadChunk(offset, size)
-		if err == io.EOF {
-			break
+		c, errc := r.ReadChunk(offset, size)
+		if errc != nil && errc != io.EOF {
+			return errc
 		}
-		if err != nil {
-			return err
-		}
-		log.V(2).Infoln("local chunk info:" + c.ToString())
+		log.V(2).Infoln("local chunk info:" + c.String())
 
-		m, err := w.GetChunkMeta(offset, size)
-		if err != nil {
-			return err
+		m, errm := w.GetChunkMeta(offset, size)
+		if errm != nil && errm != io.EOF {
+			return errm
 		}
-		log.V(2).Infoln("remote chunk info:" + m.ToString())
+		log.V(2).Infoln("remote chunk info:" + m.String())
 		offset += c.Len
 
 		if c.Checksum == m.Checksum {
-			log.V(2).Infof("remote and local chunk are same chunk info:%s\n", c.ToString())
+			log.V(2).Infof("remote and local chunk are same chunk info:%s\n", c.String())
+
+			if errm == io.EOF || errc == io.EOF {
+				break
+			}
+
 			continue
 		}
 
 		if err := w.WriteChunk(c); err != nil {
 			return err
 		}
-		log.V(2).Infof("upload chunk:%s ok\n", c.ToString())
+
+		log.V(2).Infof("upload chunk:%s ok\n\n", c.String())
+
+		if errm == io.EOF || errc == io.EOF {
+			break
+		}
 	}
 
 	if offset != srcFileSize {

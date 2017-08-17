@@ -20,37 +20,29 @@ type RFileHandle struct {
 	Size int64
 }
 
-const (
-	// ReadOnly means read only.
-	ReadOnly = os.O_RDONLY
-	// WriteOnly means write only.
-	WriteOnly = os.O_WRONLY
-	// ReadAndWrite means read and write.
-	ReadAndWrite = os.O_RDWR
-)
-
 // Open file to read ,write or read-write.
 // if flag == WriteOnly or flag == ReadAndWrite, this function will
 // attempt to create a sized file on remote if it does't exist.
 func (f *RFileHandle) Open(path string, flag int, size int64) error {
-	if flag != ReadOnly &&
-		flag != WriteOnly &&
-		flag != ReadAndWrite {
-		return errors.New("only support ReadOnly, WriteOnly, ReadAndWrite")
+	if flag != os.O_RDONLY &&
+		flag != os.O_WRONLY &&
+		flag != os.O_RDWR {
+		return errors.New("only support os.O_RDONLY, os.O_WRONLY, os.O_RDWR")
 	}
 
 	f.Path = path
 	f.Flag = flag
 	f.Size = size
 
-	if flag == WriteOnly ||
-		flag == ReadAndWrite {
+	if flag == os.O_WRONLY ||
+		flag == os.O_RDWR {
 
 		cmd := TouchCmd{
 			Method:   TouchCmdName,
 			Path:     path,
 			FileSize: size,
 		}
+
 		// create sized file.
 		if err := remoteTouch(&cmd); err != nil {
 			return err
@@ -73,7 +65,7 @@ func getChunkData(m ChunkParam) (*Chunk, error) {
 		return nil, errors.New("http server returned non-200 status: " + resp.Status)
 	}
 
-	var c *Chunk
+	var c = &Chunk{}
 	partReader := multipart.NewReader(resp.Body, DefaultMultiPartBoundary)
 	for {
 		part, err := partReader.NextPart()
@@ -87,14 +79,10 @@ func getChunkData(m ChunkParam) (*Chunk, error) {
 				return nil, errors.New(err.Error())
 			}
 
-			if m1.Size == 0 {
-				return c, io.EOF
-			}
-
 			c = NewChunk(m1.Size)
 			c.Len = m1.Size
 			c.Offset = m1.Offset
-			if _, err := part.Read(c.Data); err != nil {
+			if _, err := part.Read(c.Data); err != nil && err != io.EOF {
 				return nil, err
 			}
 		}
@@ -105,6 +93,10 @@ func getChunkData(m ChunkParam) (*Chunk, error) {
 
 // ReadChunk reads Chunk data from f.
 func (f *RFileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
+	if len == 0 {
+		return &Chunk{}, nil
+	}
+
 	m := ChunkParam{
 		Path:   f.Path,
 		Offset: offset,
@@ -116,6 +108,10 @@ func (f *RFileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
 
 // GetChunkMeta gets ChunkMeta info from f.
 func (f *RFileHandle) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) {
+	if len == 0 {
+		return &ChunkMeta{}, nil
+	}
+
 	return remoteChunkMeta(f.Path, offset, len)
 }
 

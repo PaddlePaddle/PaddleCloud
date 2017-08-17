@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 )
@@ -29,7 +31,7 @@ type ChunkMeta struct {
 }
 
 // ToString  pack a info tring of ChunkMeta.
-func (m *ChunkMeta) ToString() string {
+func (m *ChunkMeta) String() string {
 	return fmt.Sprintf("Offset:%d Checksum:%s Len:%d", m.Offset, m.Checksum, m.Len)
 }
 
@@ -71,7 +73,7 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	defer f.Close()
 
 	c, err := f.ReadChunk(p.Offset, p.ChunkSize)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return nil, err
 	}
 
@@ -79,7 +81,7 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 		Offset:   p.Offset,
 		Checksum: c.Checksum,
 		Len:      c.Len,
-	}, nil
+	}, err
 }
 
 func (p *ChunkMetaCmd) checkChunkSize() error {
@@ -164,6 +166,10 @@ func remoteChunkMeta(path string, offset int64,
 
 	if len(resp.Err) == 0 {
 		return &resp.Results, nil
+	}
+
+	if strings.Contains(resp.Err, StatusFileEOF) {
+		return &resp.Results, io.EOF
 	}
 
 	return &resp.Results, errors.New(resp.Err)

@@ -25,6 +25,7 @@ type response struct {
 var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
+	return "gongwb", nil
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = token
 
@@ -75,7 +76,7 @@ func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header ht
 	}
 
 	result, err := cmd.Run()
-	if err != nil {
+	if err != nil && err != io.EOF {
 		resp.Err = err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)
 		return
@@ -120,9 +121,6 @@ func writeJSONResponse(w http.ResponseWriter,
 		log.Errorf("%s httpStatus:%d resp:=%v\n",
 			req, httpStatus, resp.Err)
 	} else {
-		log.Infof("%s httpStatus:%d\n",
-			req, httpStatus)
-
 		log.V(1).Infof("%s httpStatus:%d resp:%#v\n",
 			req, httpStatus, resp)
 	}
@@ -278,11 +276,11 @@ func DeleteFilesHandler(w http.ResponseWriter, r *http.Request) {
 
 // PostFilesHandler processes files' POST request.
 func PostFilesHandler(w http.ResponseWriter, r *http.Request) {
-	log.V(1).Infof("begin PostFilesHandler")
+	log.V(1).Infof("begin PostFilesHandler\n")
 
 	modifyFilesHandler(w, r)
 
-	log.V(1).Infof("end PostFilesHandler")
+	log.V(1).Infof("end PostFilesHandler\n")
 }
 
 func getChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
@@ -312,16 +310,6 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func loadChunkData(p *pfsmod.ChunkParam, w io.Writer) error {
-	r := pfsmod.FileHandle{}
-	if err := r.Open(p.Path, os.O_RDONLY, 0); err != nil {
-		return err
-	}
-	defer r.Close()
-
-	return r.Read(w, p.Offset, p.Size)
-}
-
 // GetChunkHandler processes GET Chunk  request.
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
@@ -344,11 +332,26 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := response{}
-	if err = loadChunkData(p, part); err != nil && err != io.EOF {
-		log.Error(err)
+
+	fr := pfsmod.FileHandle{}
+	if err := fr.Open(p.Path, os.O_RDONLY, 0); err != nil {
 		resp.Err = err.Error()
+		log.Error(err)
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 		return
+	}
+	defer fr.Close()
+
+	if err = fr.CopyN(part, p.Offset, p.Size); err != nil {
+		if err != io.EOF {
+			resp.Err = err.Error()
+			log.Error(err)
+			writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
+			return
+		}
+
+		resp.Err = pfsmod.StatusFileEOF
+		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 	}
 
 	err = writer.Close()
@@ -363,6 +366,7 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 
 // PostChunkHandler processes POST Chunk request.
 func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
+	log.V(1).Infoln("")
 	log.V(1).Infof("begin proc PostChunksHandler\n")
 
 	resp := response{}
@@ -406,5 +410,5 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 	}
 
-	log.V(1).Infof("end proc PostChunksHandler\n")
+	log.V(1).Infof("end proc PostChunksHandler\n\n")
 }

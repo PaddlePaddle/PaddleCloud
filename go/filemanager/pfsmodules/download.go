@@ -27,31 +27,39 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 	size := defaultChunkSize
 
 	for {
-		m, err := r.GetChunkMeta(offset, size)
-		if err != nil {
-			return err
+		m, errm := r.GetChunkMeta(offset, size)
+		if errm != nil && errm != io.EOF {
+			return errm
 		}
-		c, err := w.ReadChunk(offset, size)
-		if err != nil {
-			return err
+		log.V(2).Infoln("remote chunk info:" + m.String())
+
+		c, errc := w.ReadChunk(offset, size)
+		if errc != nil && errc != io.EOF {
+			return errc
 		}
 		offset += m.Len
+		log.V(2).Infoln("local chunk info:" + c.String())
 
 		if m.Checksum == c.Checksum {
-			log.V(4).Infof("remote chunk is same as local chunk:%s", c.ToString())
+			log.V(2).Infof("remote chunk is same as local chunk:%s\n", c.String())
+			if errc == io.EOF || errm == io.EOF {
+				break
+			}
 			continue
 		}
 
-		c, err = r.ReadChunk(offset, size)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
+		c, err := r.ReadChunk(offset, m.Len)
+		if err != nil && err != io.EOF {
 			return err
 		}
 
 		if err := w.WriteChunk(c); err != nil {
 			return err
+		}
+
+		log.V(2).Infof("downlod chunk:%s ok\n\n", c.String())
+		if errc == io.EOF || errm == io.EOF {
+			break
 		}
 	}
 
