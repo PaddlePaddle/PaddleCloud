@@ -34,8 +34,8 @@ func (f *FileHandle) Open(path string, flag int, size int64) error {
 		return errors.New("only support os.O_RDONLY, os.O_WRONLY, os.O_RDWR")
 	}
 
-	if flag == os.O_WRONLY ||
-		flag == os.O_RDWR {
+	if (flag == os.O_WRONLY ||
+		flag == os.O_RDWR) && size >= 0 {
 
 		cmd := TouchCmd{
 			Method:   TouchCmdName,

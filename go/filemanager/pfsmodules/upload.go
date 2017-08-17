@@ -108,14 +108,14 @@ func upload(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
+	log.V(3).Infof("ls src:%s result:%#v\n", src, srcRet)
 
 	dstMeta, err := remoteStat(&StatCmd{Path: dst, Method: StatCmdName})
 	if err != nil && !strings.Contains(err.Error(), StatusFileNotFound) {
 		ColorError("Upload %s to %s error info:%s\n", src, dst, err)
 		return err
 	}
-	log.V(1).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
+	log.V(3).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
 
 	srcMetas := srcRet.([]LsResult)
 

@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
-	log "github.com/golang/glog"
 )
 
 const (
@@ -111,15 +110,13 @@ func CreateSizedFile(path string, size int64) error {
 		return nil
 	}
 
-	/*
-		_, err = fd.Seek(size-1, 0)
-		if err != nil {
-			return err
-		}
+	_, err = fd.Seek(size-1, 0)
+	if err != nil {
+		return err
+	}
 
-		_, err = fd.Write([]byte{0})
-	*/
-	return fd.Truncate(size)
+	_, err = fd.Write([]byte{0})
+	return err
 }
 
 // Run is a function runs TouchCmd.
@@ -132,8 +129,6 @@ func (p *TouchCmd) Run() (interface{}, error) {
 	if os.IsExist(err) && fi.IsDir() {
 		return nil, errors.New(StatusDirectoryAlreadyExist)
 	}
-
-	log.V(3).Infof("cur file Size:%d expected :%d\n", fi.Size(), p.FileSize)
 
 	if os.IsNotExist(err) || fi.Size() != p.FileSize {
 		if err := CreateSizedFile(p.Path, p.FileSize); err != nil {

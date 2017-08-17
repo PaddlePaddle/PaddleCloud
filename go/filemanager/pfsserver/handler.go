@@ -295,8 +295,6 @@ func getChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmdHandler(w, r.URL.RawQuery, cmd, r.Header)
-	pfsmod.TestSeek(0, 2097152)
-	pfsmod.TestSeek(2097152, 2097152)
 	log.V(1).Infof("end proc getChunkMeta\n")
 }
 
@@ -398,16 +396,16 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 		log.V(2).Infof("received post chunk param:%#v\n", param.ToString())
 
 		fw := pfsmod.FileHandle{}
-		if err := fw.Open(param.Path, os.O_RDWR, 0); err != nil {
+		if err := fw.Open(param.Path, os.O_RDWR, -1); err != nil {
 			resp.Err = err.Error()
 			writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 		}
-		defer fw.Close()
 
 		if err := fw.Write(part, param.Offset, param.Size); err != nil {
 			resp.Err = err.Error()
 			writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 		}
+		defer fw.Close()
 
 		writeJSONResponse(w, part.FileName(), http.StatusOK, resp)
 	}

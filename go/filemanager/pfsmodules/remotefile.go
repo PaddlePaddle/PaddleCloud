@@ -118,13 +118,14 @@ func (f *RFileHandle) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) 
 // WriteChunk writes chunk data to f.
 func (f *RFileHandle) WriteChunk(c *Chunk) error {
 	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
-	log.V(4).Infoln("chunk's URI:" + t)
+	log.V(3).Infoln("chunk's URI:" + t)
 
 	p := ChunkParam{
 		Path:   f.Path,
 		Offset: c.Offset,
 		Size:   c.Len,
 	}
+	log.V(3).Infof("write chunk param:%v\n", p)
 	param := p.ToURLParam().Encode()
 
 	body, err := restclient.PostChunk(t, param,
@@ -134,7 +135,7 @@ func (f *RFileHandle) WriteChunk(c *Chunk) error {
 		return err
 	}
 
-	log.V(5).Info("received body:" + string(body[:]))
+	log.V(3).Info("received body:" + string(body[:]))
 
 	resp := uploadChunkResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
