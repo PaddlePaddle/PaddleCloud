@@ -63,17 +63,6 @@ func (p *ChunkMetaCmd) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
 }
 
-// TestSeek tests seek.
-func TestSeek(pos int64, len int64) {
-	f, _ := os.OpenFile("/pfs/dlnel/home/gongwb/1.dat", os.O_RDONLY, 0666)
-	f.Seek(pos, 0)
-	//data := make([]byte, len)
-	c := NewChunk(len)
-	n, _ := f.Read(c.Data)
-	fmt.Println(n)
-	f.Close()
-}
-
 // Run is a functions which run ChunkMetaCmd.
 func (p *ChunkMetaCmd) Run() (interface{}, error) {
 	f := FileHandle{}
@@ -159,7 +148,7 @@ func remoteChunkMeta(path string, offset int64,
 		Offset:    offset,
 	}
 
-	t := fmt.Sprintf("%s/api/v1/pfs/chunks", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTChunksPath)
 	ret, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err

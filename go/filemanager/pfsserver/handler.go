@@ -25,7 +25,6 @@ type response struct {
 var TokenURI = ""
 
 func getUserName(uri string, token string) (string, error) {
-	return "gongwb", nil
 	authHeader := make(map[string]string)
 	authHeader["Authorization"] = token
 

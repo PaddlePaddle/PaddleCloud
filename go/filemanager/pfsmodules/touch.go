@@ -154,7 +154,7 @@ func remoteTouch(cmd *TouchCmd) error {
 		return err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTFilesPath)
 	body, err := restclient.PostCall(t, j)
 	if err != nil {
 		return err

@@ -84,7 +84,7 @@ func (p *StatCmd) Run() (interface{}, error) {
 }
 
 func remoteStat(cmd *StatCmd) (*LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTFilesPath)
 	log.V(3).Infoln("remotestat target URI:" + t)
 	body, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {

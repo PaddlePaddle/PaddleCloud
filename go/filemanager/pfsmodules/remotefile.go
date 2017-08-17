@@ -52,7 +52,7 @@ func (f *RFileHandle) Open(path string, flag int, size int64) error {
 }
 
 func getChunkData(m ChunkParam) (*Chunk, error) {
-	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTChunksStoragePath)
 	log.V(1).Info("target url: " + t)
 
 	resp, err := restclient.GetChunk(t, m.ToURLParam())
@@ -117,7 +117,7 @@ func (f *RFileHandle) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) 
 
 // WriteChunk writes chunk data to f.
 func (f *RFileHandle) WriteChunk(c *Chunk) error {
-	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTChunksStoragePath)
 	log.V(3).Infoln("chunk's URI:" + t)
 
 	p := ChunkParam{

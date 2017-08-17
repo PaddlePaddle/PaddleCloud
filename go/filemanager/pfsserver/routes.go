@@ -2,6 +2,8 @@ package pfsserver
 
 import (
 	"net/http"
+
+	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 )
 
 // Route represents route struct.
@@ -19,39 +21,39 @@ var routes = Routes{
 	Route{
 		"GetFiles",
 		"GET",
-		"/api/v1/pfs/files",
+		"/" + pfsmod.RESTFilesPath,
 		GetFilesHandler,
 	},
 	Route{
 		"PostFiles",
 		"POST",
-		"/api/v1/pfs/files",
+		"/" + pfsmod.RESTFilesPath,
 		PostFilesHandler,
 	},
 	Route{
 		"DeleteFiles",
 		"DELETE",
-		"/api/v1/pfs/files",
+		"/" + pfsmod.RESTFilesPath,
 		DeleteFilesHandler,
 	},
 
 	Route{
 		"GetChunksMeta",
 		"GET",
-		"/api/v1/pfs/chunks",
+		"/" + pfsmod.RESTChunksPath,
 		GetChunkMetaHandler,
 	},
 	Route{
 		"GetChunksData",
 		"GET",
-		"/api/v1/pfs/storage/chunks",
+		"/" + pfsmod.RESTChunksStoragePath,
 		GetChunkHandler,
 	},
 
 	Route{
 		"PostChunksData",
 		"POST",
-		"/api/v1/pfs/storage/chunks",
+		"/" + pfsmod.RESTChunksStoragePath,
 		PostChunkHandler,
 	},
 }
