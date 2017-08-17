@@ -41,40 +41,30 @@ current-datacenter: datacenter1
 
 ## PaddleCloud Server command-line design
 You can use the following syntax to run `pcloud` command-line interface tool from your terminal window:
-`pcloud [sub-command] [resource] [name] [flags]`
-  - `sub-command`: The operation that you want to perform on the resource, for example, `submit`, `get`, `kill`, `describe`.
-  - `resource`: The resource types for Paddle job, for example `job`, `worker`, `quota`.
-  - `name`: You can specify a name for the given resource
-  - `flags`: You can specify any flags override default values for `command` or `resource`
+`pcloud [sub-command] [name] [flags]`
 
 - Sub-Command
-  - `submit`: submit the specify resource, we only support submit a PaddleJob for now
-  - `get`: get all instances for the specified resource
-  - `describe`: output the description for the specify resource
-  - `kill`: kill the specific job 
-  - `logs`: output the logs for the specific instance, if the resource is a job, output all the workers' logs.
-
-- Resource
-  - `job`, PaddleJob running on PaddleCloud
-  - `workers`, The workers for PaddleJob, for example the master, trainer or pserver.
-  - `quota`, The quota for the current user
-
-- Example
-  - `pcloud submit job -name <job-name> -cpu 1 ...`
-  - `pcloud get [job|worker|quota]`
-  - `pcloud describe job <job name>`, `paddle describe worker <worker name>`
-  - `pcloud kill <job name>`
-  - `pcloud logs job <job name>`, `paddle logs worker <worker name>`
+  - `submit <job-name>`: submit a PaddleCloud Job with the specify job name.
+  - `jobs [-v <job-name>]`: list all jobs for the current user, `-v` show the 
+  specify job information with verbose output.
+  - `pods [-v <pod-name>]`: list all pods for the current user, `-v` show the 
+  specity worker information with verbose output.
+  - `quota`: the quota info for the current user.
+  - `kill <job-name>`: kill a job with the specify job name.
+  - `logs <pod-name>`: output logs for the specify pod name .
 
 ## PaddleCloud File System command-line design 
 PaddleCloud File System(PFS) command-line interface allows user to operate the file system on PaddleCloud, the syntax is as following:
 `pcloud pfs [ls|put|get|rm...] [path1|path2...]`
 
-- `ls`: will list all folders and files under the path.
-- `put`: will upload the local folder or file to the cloud path.
-- `get`: will download the foler or file to the local path.
-- `rm`: will remove the specify folder or file.
-
+- `ls <dest>`: list all folders and files under the destination path.
+- `put <src> <dest>`: upload the local folder or file to the cloud path.
+- `get <src> <dest>`: download the foler or file from cloud path
+- `rm <dest>`: remove the specify folder or file on cloud.
+- `mv <src> <dest>`: move a folder or a file from `<src>` 
+to `<dest>`, `<src>` and `<dest>` only support cloud path.
+- `cp <src> <dest`: copy a folder or a file from `<src>` to `<dest>`, `<src>`
+and `<dest>` only support cloud path.
 
 ## Reference
 - `paddlecloud submit [options] <package path>`: submit job to PaddlePaddle Cloud
