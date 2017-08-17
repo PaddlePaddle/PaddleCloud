@@ -77,8 +77,9 @@ func (f *FileHandle) ReadChunk(offset int64, size int64) (*Chunk, error) {
 
 	c := NewChunk(size)
 
-	n, err := f.F.Read(c.Data)
-	if err != nil && err != io.EOF {
+	//n, err := f.F.Read(c.Data)
+	n, err := io.ReadFull(f.F, c.Data)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 		return nil, err
 	}
 	f.Offset += int64(n)
@@ -88,8 +89,16 @@ func (f *FileHandle) ReadChunk(offset int64, size int64) (*Chunk, error) {
 	sum := md5.Sum(c.Data[:n])
 	c.Checksum = hex.EncodeToString(sum[:])
 
-	log.V(3).Infof("f:%d offset:%d need offset:%d size:%d Readed Chunk:%s\n",
-		f.F, f.Offset-int64(n), offset, size, c.String())
+	log.V(3).Infof("f:%d offset:%d need offset:%d size:%d Readed Chunk:%s error_info:%v\n",
+		f.F, f.Offset-int64(n), offset, size, c.String(), err)
+
+	fi, errfi := f.F.Stat()
+	log.V(3).Infof("f.stat size:%d error:%v", fi.Size(), errfi)
+
+	if err == io.ErrUnexpectedEOF {
+		err = io.EOF
+	}
+
 	return c, err
 }
 

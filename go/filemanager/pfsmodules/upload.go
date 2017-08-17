@@ -68,20 +68,16 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 
 		if c.Checksum == m.Checksum {
 			log.V(2).Infof("remote and local chunk are same chunk info:%s\n", c.String())
-
 			if errm == io.EOF || errc == io.EOF {
 				break
 			}
-
 			continue
 		}
 
 		if err := w.WriteChunk(c); err != nil {
 			return err
 		}
-
 		log.V(2).Infof("upload chunk:%s ok\n\n", c.String())
-
 		if errm == io.EOF || errc == io.EOF {
 			break
 		}
