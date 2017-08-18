@@ -324,3 +324,16 @@ ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"
 
 # domains that allow notebook to enter
 NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]
+
+# GPU limit for users
+# TODO(Yancey1989): 
+# 1. Implement 
+# 2. Move GPU quota to Kubernetes
+GPU_QUOTA={
+    "DEFAULT": {
+        "limit": 2
+    },
+    "yanxu05@baidu.com": {
+        "limit": 5
+    }
+}

@@ -33,7 +33,6 @@ class JobsView(APIView):
         """
         Submit the PaddlePaddle job
         """
-        #submit parameter server, it's Kubernetes ReplicaSet
         username = request.user.username
         namespace = notebook.utils.email_escape(username)
         obj = json.loads(request.body)
@@ -107,6 +106,26 @@ class JobsView(APIView):
                 return utils.error_message_response("package not exist in cloud: %s"%current_package_path)
         logging.info("current package in pod: %s", current_package_path)
 
+        # checkout GPU quota
+        # TODO(Yancey1989) We should move this to Kubernetes
+        if 'GPU_QUOTA' in dir(settings):
+            gpu_usage = 0
+            pods = client.CoreV1Api(api_client=api_client).list_namespaced_pod(namespace=namespace)
+            for pod in pods.items:
+                # only statistics trainer GPU resource, pserver does not use GPU
+                if 'paddle-job' in pod.metadata.labels and \
+                    pod.status.phase == 'Running':
+                    gpu_usage += pod.spec.containers[0].resources.limits['alpha.kubernetes.io/nvidia-gpu']
+            if username in settings.GPU_QUOTA:
+                gpu_quota = settings.GPU_QUOTA[username]['limit']
+            else:
+                gpu_quota = settings.GPU_QUOTA['DEFAULT']['limit']
+            gpu_available = gpu_quota - gpu_usage
+            gpu_request = int(obj.get('gpu', 0)) * int(obj.get('parallelism', 1))
+            print 'gpu available: %d, gpu request: %d' % (gpu_available, gpu_request)
+            if gpu_available < gpu_request:
+                return utils.error_message_response("You don't have enought GPU quota," + \
+                    "request: %d, usage: %d, limit: %d" % (gpu_request, gpu_usage, gpu_quota))
 
         # use default images
         if not job_image :
