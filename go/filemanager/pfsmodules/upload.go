@@ -42,7 +42,7 @@ func uploadFile(src, dst string, srcFileSize int64) error {
 	}
 	defer r.Close()
 
-	w := RFileHandle{}
+	w := RemoteFile{}
 	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
 		return err
 	}

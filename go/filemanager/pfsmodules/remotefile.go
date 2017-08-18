@@ -13,8 +13,8 @@ import (
 	log "github.com/golang/glog"
 )
 
-// RFileHandle is a remote file's handle.
-type RFileHandle struct {
+// RemoteFile is a remote file's handle.
+type RemoteFile struct {
 	Path string
 	Flag int
 	Size int64
@@ -23,7 +23,7 @@ type RFileHandle struct {
 // Open file to read ,write or read-write.
 // if flag == WriteOnly or flag == ReadAndWrite, this function will
 // attempt to create a sized file on remote if it does't exist.
-func (f *RFileHandle) Open(path string, flag int, size int64) error {
+func (f *RemoteFile) Open(path string, flag int, size int64) error {
 	if flag != os.O_RDONLY &&
 		flag != os.O_WRONLY &&
 		flag != os.O_RDWR {
@@ -92,7 +92,7 @@ func getChunkData(m ChunkParam) (*Chunk, error) {
 }
 
 // ReadChunk reads Chunk data from f.
-func (f *RFileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
+func (f *RemoteFile) ReadChunk(offset int64, len int64) (*Chunk, error) {
 	if len == 0 {
 		return &Chunk{}, nil
 	}
@@ -107,7 +107,7 @@ func (f *RFileHandle) ReadChunk(offset int64, len int64) (*Chunk, error) {
 }
 
 // GetChunkMeta gets ChunkMeta info from f.
-func (f *RFileHandle) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) {
+func (f *RemoteFile) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) {
 	if len == 0 {
 		return &ChunkMeta{}, nil
 	}
@@ -116,7 +116,7 @@ func (f *RFileHandle) GetChunkMeta(offset int64, len int64) (*ChunkMeta, error) 
 }
 
 // WriteChunk writes chunk data to f.
-func (f *RFileHandle) WriteChunk(c *Chunk) error {
+func (f *RemoteFile) WriteChunk(c *Chunk) error {
 	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTChunksStoragePath)
 	log.V(3).Infoln("chunk's URI:" + t)
 
@@ -150,5 +150,5 @@ func (f *RFileHandle) WriteChunk(c *Chunk) error {
 }
 
 // Close is function not need implement.
-func (f *RFileHandle) Close() {
+func (f *RemoteFile) Close() {
 }

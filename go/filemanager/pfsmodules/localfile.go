@@ -69,6 +69,20 @@ func (f *FileHandle) checkOffset(offset int64) error {
 	return nil
 }
 
+// GetChunkMeta returns ChunkMeta at offset with size.
+func (f *FileHandle) GetChunkMeta(offset, size int64) (*ChunkMeta, error) {
+	c, err := f.ReadChunk(offset, size)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	return &ChunkMeta{
+		Offset:   offset,
+		Checksum: c.Checksum,
+		Len:      c.Len,
+	}, err
+}
+
 // ReadChunk loads a chunk at offset with len.
 func (f *FileHandle) ReadChunk(offset int64, size int64) (*Chunk, error) {
 	if err := f.checkOffset(offset); err != nil {

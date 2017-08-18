@@ -30,7 +30,7 @@ type ChunkMeta struct {
 	Len      int64  `json:"len"`
 }
 
-// ToString  pack a info tring of ChunkMeta.
+// String  pack a info tring of ChunkMeta.
 func (m *ChunkMeta) String() string {
 	return fmt.Sprintf("Offset:%d Checksum:%s Len:%d", m.Offset, m.Checksum, m.Len)
 }
@@ -72,16 +72,7 @@ func (p *ChunkMetaCmd) Run() (interface{}, error) {
 
 	defer f.Close()
 
-	c, err := f.ReadChunk(p.Offset, p.ChunkSize)
-	if err != nil && err != io.EOF {
-		return nil, err
-	}
-
-	return &ChunkMeta{
-		Offset:   p.Offset,
-		Checksum: c.Checksum,
-		Len:      c.Len,
-	}, err
+	return f.GetChunkMeta(p.Offset, p.ChunkSize)
 }
 
 func (p *ChunkMetaCmd) checkChunkSize() error {
@@ -164,7 +155,7 @@ func remoteChunkMeta(path string, offset int64,
 		return nil, err
 	}
 
-	if len(resp.Err) == 0 {
+	if resp.Err == "" {
 		return &resp.Results, nil
 	}
 

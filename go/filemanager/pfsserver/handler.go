@@ -392,7 +392,7 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.V(2).Infof("received post chunk param:%#v\n", param.ToString())
+		log.V(2).Infof("received post chunk param:%s\n", param.String())
 
 		fw := pfsmod.FileHandle{}
 		if err := fw.Open(param.Path, os.O_RDWR, -1); err != nil {

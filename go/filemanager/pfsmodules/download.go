@@ -17,7 +17,7 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 	}
 	defer w.Close()
 
-	r := RFileHandle{}
+	r := RemoteFile{}
 	if err := r.Open(src, os.O_RDONLY, 0); err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 		if errm != nil && errm != io.EOF {
 			return errm
 		}
-		log.V(2).Infoln("remote chunk info:" + m.String())
+		log.V(2).Infoln("remote chunk info:", m)
 
 		c, errc := w.ReadChunk(offset, size)
 		if errc != nil && errc != io.EOF {

@@ -14,8 +14,8 @@ type ChunkParam struct {
 	Size   int64
 }
 
-// ToString packs info of ChunkParam.
-func (p *ChunkParam) ToString() string {
+// String packs info of ChunkParam.
+func (p *ChunkParam) String() string {
 	return fmt.Sprintf("Path:%s Offset:%d Size:%d", p.Path, p.Offset, p.Size)
 }
 
@@ -70,7 +70,7 @@ type Chunk struct {
 	Data     []byte
 }
 
-// ToString packs info of Chunk
+// String packs info of Chunk
 func (c *Chunk) String() string {
 	return fmt.Sprintf("Offset:%d Len:%d Checksum:%s", c.Offset, c.Len, c.Checksum)
 }

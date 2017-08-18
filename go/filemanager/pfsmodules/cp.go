@@ -130,7 +130,6 @@ func RunCp(cmd *CpCmd) error {
 		}
 
 		if err != nil {
-			//fmt.Printf("%#v\n", err)
 			return err
 		}
 
