@@ -63,8 +63,6 @@ PaddleCloud File System(PFS) command-line interface allows user to operate the f
 - `rm <dest>`: remove the specify folder or file on cloud.
 - `mv <src> <dest>`: move a folder or a file from `<src>` 
 to `<dest>`, `<src>` and `<dest>` only support cloud path.
-- `cp <src> <dest`: copy a folder or a file from `<src>` to `<dest>`, `<src>`
-and `<dest>` only support cloud path.
 
 ## Reference
 - `paddlecloud submit [options] <package path>`: submit job to PaddlePaddle Cloud
