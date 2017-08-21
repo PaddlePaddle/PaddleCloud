@@ -1,76 +1,20 @@
 package pfsmodules
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
-	"github.com/PaddlePaddle/cloud/go/utils/restclient"
+	"github.com/fatih/color"
 	log "github.com/golang/glog"
 )
 
 // Config is global config object for pfs commandline
 var Config = config.ParseDefaultConfig()
-
-func remoteStat(cmd *StatCmd) (*LsResult, error) {
-	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
-	log.V(3).Infoln(t)
-	body, err := restclient.GetCall(t, cmd.ToURLParam())
-	if err != nil {
-		return nil, err
-	}
-
-	type statResponse struct {
-		Err     string   `json:"err"`
-		Results LsResult `json:"results"`
-	}
-
-	resp := statResponse{}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
-
-	log.V(1).Infof("result:%#v\n", resp)
-
-	if len(resp.Err) != 0 {
-		return nil, errors.New(resp.Err)
-	}
-
-	return &resp.Results, nil
-}
-
-func remoteTouch(cmd *TouchCmd) error {
-	j, err := cmd.ToJSON()
-	if err != nil {
-		return err
-	}
-
-	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
-	body, err := restclient.PostCall(t, j)
-	if err != nil {
-		return err
-	}
-
-	type touchResponse struct {
-		Err     string      `json:"err"`
-		Results TouchResult `json:"results"`
-	}
-
-	resp := touchResponse{}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return err
-	}
-
-	if len(resp.Err) == 0 {
-		return nil
-	}
-
-	return errors.New(resp.Err)
-}
 
 type uploadChunkResponse struct {
 	Err string `json:"err"`
@@ -91,100 +35,71 @@ func getChunkReader(path string, offset int64) (*os.File, error) {
 	return f, nil
 }
 
-func getDstParam(src *Chunk, dst string) string {
-	cmd := Chunk{
-		Path:   dst,
-		Offset: src.Offset,
-		Size:   src.Size,
+func uploadFile(src, dst string, srcFileSize int64) error {
+	r := FileHandle{}
+	if err := r.Open(src, os.O_RDONLY, 0); err != nil {
+		return err
 	}
+	defer r.Close()
 
-	return cmd.ToURLParam().Encode()
-}
-
-func postChunk(src *Chunk, dst string) ([]byte, error) {
-	f, err := getChunkReader(src.Path, src.Offset)
-	if err != nil {
-		return nil, err
+	w := RemoteFile{}
+	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
+		return err
 	}
-	defer Close(f)
+	defer w.Close()
 
-	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
-	log.V(4).Infoln(t)
+	// upload chunks.
+	const size int64 = defaultChunkSize
 
-	return restclient.PostChunk(t, getDstParam(src, dst),
-		f, src.Size, DefaultMultiPartBoundary)
-}
-
-func uploadChunks(src string,
-	dst string,
-	diffMeta []ChunkMeta) error {
-	if len(diffMeta) == 0 {
-		log.V(1).Infof("srcfile:%s and destfile:%s are same\n", src, dst)
-		return nil
-	}
-
-	for _, meta := range diffMeta {
-		log.V(3).Infof("diffMeta:%v\n", meta)
-
-		chunk := Chunk{
-			Path:   src,
-			Offset: meta.Offset,
-			Size:   meta.Len,
+	offset := int64(0)
+	for {
+		c, errc := r.ReadChunk(offset, size)
+		if errc != nil && errc != io.EOF {
+			return errc
 		}
+		log.V(2).Infoln("local chunk info:" + c.String())
 
-		body, err := postChunk(&chunk, dst)
-		if err != nil {
-			return err
+		m, errm := w.GetChunkMeta(offset, size)
+		if errm != nil && errm != io.EOF {
+			return errm
 		}
+		log.V(2).Infoln("remote chunk info:" + m.String())
+		offset += c.Len
 
-		resp := uploadChunkResponse{}
-		if err := json.Unmarshal(body, &resp); err != nil {
-			return err
-		}
-
-		if len(resp.Err) == 0 {
+		if c.Checksum == m.Checksum {
+			log.V(2).Infof("remote and local chunk are same chunk info:%s\n", c.String())
+			if errm == io.EOF || errc == io.EOF {
+				break
+			}
 			continue
 		}
 
-		return errors.New(resp.Err)
+		if err := w.WriteChunk(c); err != nil {
+			return err
+		}
+		log.V(2).Infof("upload chunk:%s ok\n\n", c.String())
+		if errm == io.EOF || errc == io.EOF {
+			break
+		}
+	}
+
+	if offset != srcFileSize {
+		return fmt.Errorf("expect %d upload %d", srcFileSize, offset)
 	}
 
 	return nil
 }
 
-func uploadFile(src, dst string, srcFileSize int64) error {
+// ColorError print red ERROR before message.
+func ColorError(format string, a ...interface{}) {
+	color.New(color.FgRed).Printf("[ERROR]  ")
+	fmt.Printf(format, a...)
+}
 
-	log.V(1).Infof("touch %s size:%d\n", dst, srcFileSize)
-
-	cmd := TouchCmd{
-		Method:   TouchCmdName,
-		Path:     dst,
-		FileSize: srcFileSize,
-	}
-
-	if err := remoteTouch(&cmd); err != nil {
-		return err
-	}
-
-	dstMeta, err := remoteChunkMeta(dst, defaultChunkSize)
-	if err != nil {
-		return err
-	}
-	log.V(2).Infof("dst %s chunkMeta:%#v\n", dst, dstMeta)
-
-	srcMeta, err := GetChunkMeta(src, defaultChunkSize)
-	if err != nil {
-		return err
-	}
-	log.V(2).Infof("src %s chunkMeta:%#v\n", src, srcMeta)
-
-	diffMeta, err := GetDiffChunkMeta(srcMeta, dstMeta)
-	if err != nil {
-		return err
-	}
-	log.V(2).Infof("diff chunkMeta:%#v\n", diffMeta)
-
-	return uploadChunks(src, dst, diffMeta)
+// ColorInfo print green INFO before message.
+func ColorInfo(format string, a ...interface{}) {
+	color.New(color.FgGreen).Printf("[INFO]  ")
+	fmt.Printf(format, a...)
 }
 
 func upload(src, dst string) error {
@@ -193,13 +108,14 @@ func upload(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	log.V(1).Infof("ls src:%s result:%#v\n", src, srcRet)
+	log.V(3).Infof("ls src:%s result:%#v\n", src, srcRet)
 
 	dstMeta, err := remoteStat(&StatCmd{Path: dst, Method: StatCmdName})
 	if err != nil && !strings.Contains(err.Error(), StatusFileNotFound) {
+		ColorError("Upload %s to %s error info:%s\n", src, dst, err)
 		return err
 	}
-	log.V(1).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
+	log.V(3).Infof("stat dst:%s result:%#v\n", dst, dstMeta)
 
 	srcMetas := srcRet.([]LsResult)
 
@@ -218,13 +134,12 @@ func upload(src, dst string) error {
 
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
-		fmt.Printf("uploading %s to %s", realSrc, realDst)
+
 		if err := uploadFile(realSrc, realDst, srcMeta.Size); err != nil {
-			fmt.Printf(" error %v\n", err)
+			ColorError("Upload %s to %s error:%v\n", realSrc, realDst, err)
 			return err
 		}
-
-		fmt.Printf(" ok!\n")
+		ColorInfo("Uploaded %s\n", realSrc)
 	}
 
 	return nil

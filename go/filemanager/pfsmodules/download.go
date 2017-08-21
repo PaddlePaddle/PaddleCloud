@@ -1,137 +1,73 @@
 package pfsmodules
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 
-	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	log "github.com/golang/glog"
 )
 
-func remoteChunkMeta(path string,
-	chunkSize int64) ([]ChunkMeta, error) {
-	cmd := ChunkMetaCmd{
-		Method:    ChunkMetaCmdName,
-		FilePath:  path,
-		ChunkSize: chunkSize,
-	}
-
-	t := fmt.Sprintf("%s/api/v1/pfs/chunks", Config.ActiveConfig.Endpoint)
-	ret, err := restclient.GetCall(t, cmd.ToURLParam())
-	if err != nil {
-		return nil, err
-	}
-
-	type chunkMetaResponse struct {
-		Err     string      `json:"err"`
-		Results []ChunkMeta `json:"results"`
-	}
-
-	resp := chunkMetaResponse{}
-	if err := json.Unmarshal(ret, &resp); err != nil {
-		return nil, err
-	}
-
-	if len(resp.Err) == 0 {
-		return resp.Results, nil
-	}
-
-	return resp.Results, errors.New(resp.Err)
-}
-
-func getChunkData(target string, chunk Chunk, dst string) error {
-	log.V(1).Info("target url: " + target)
-
-	resp, err := restclient.GetChunk(target, chunk.ToURLParam())
-	if err != nil {
+func downloadFile(src string, srcFileSize int64, dst string) error {
+	w := FileHandle{}
+	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
 		return err
 	}
-	defer Close(resp.Body)
+	defer w.Close()
 
-	if resp.Status != restclient.HTTPOK {
-		return errors.New("http server returned non-200 status: " + resp.Status)
+	r := RemoteFile{}
+	if err := r.Open(src, os.O_RDONLY, 0); err != nil {
+		return err
 	}
+	defer r.Close()
 
-	partReader := multipart.NewReader(resp.Body, DefaultMultiPartBoundary)
+	offset := int64(0)
+	size := defaultChunkSize
+
 	for {
-		part, error := partReader.NextPart()
-		if error == io.EOF {
+		m, errm := r.GetChunkMeta(offset, size)
+		if errm != nil && errm != io.EOF {
+			return errm
+		}
+		log.V(2).Infoln("remote chunk info:", m)
+
+		c, errc := w.ReadChunk(offset, size)
+		if errc != nil && errc != io.EOF {
+			return errc
+		}
+		offset += m.Len
+		log.V(2).Infoln("local chunk info:" + c.String())
+
+		if m.Checksum == c.Checksum {
+			log.V(2).Infof("remote chunk is same as local chunk:%s\n", c.String())
+			if errc == io.EOF || errm == io.EOF {
+				break
+			}
+			continue
+		}
+
+		c, err := r.ReadChunk(offset, m.Len)
+		if err != nil && err != io.EOF {
+			return err
+		}
+
+		if err := w.WriteChunk(c); err != nil {
+			return err
+		}
+
+		log.V(2).Infof("downlod chunk:%s ok\n\n", c.String())
+		if errc == io.EOF || errm == io.EOF {
 			break
 		}
+	}
 
-		if part.FormName() == "chunk" {
-			recvCmd, err := ParseChunk(part.FileName())
-			if err != nil {
-				return errors.New(err.Error())
-			}
-
-			recvCmd.Path = dst
-
-			if err := recvCmd.SaveChunkData(part); err != nil {
-				return err
-			}
-		}
+	if offset != srcFileSize {
+		return fmt.Errorf("expect %d but read %d", srcFileSize, offset)
 	}
 
 	return nil
-}
-
-func downloadChunks(src string,
-	dst string, diffMeta []ChunkMeta) error {
-	if len(diffMeta) == 0 {
-		log.V(1).Infof("srcfile:%s and dstfile:%s are already same\n", src, dst)
-		fmt.Printf("download ok\n")
-		return nil
-	}
-
-	t := fmt.Sprintf("%s/api/v1/pfs/storage/chunks", Config.ActiveConfig.Endpoint)
-	for _, meta := range diffMeta {
-		chunk := Chunk{
-			Path:   src,
-			Offset: meta.Offset,
-			Size:   meta.Len,
-		}
-
-		err := getChunkData(t, chunk, dst)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func downloadFile(src string, srcFileSize int64, dst string) error {
-	srcMeta, err := remoteChunkMeta(src, defaultChunkSize)
-	if err != nil {
-		return err
-	}
-	log.V(4).Infof("srcMeta:%#v\n\n", srcMeta)
-
-	dstMeta, err := GetChunkMeta(dst, defaultChunkSize)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if err = CreateSizedFile(dst, srcFileSize); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-	log.V(4).Infof("dstMeta:%#v\n", dstMeta)
-
-	diffMeta, err := GetDiffChunkMeta(srcMeta, dstMeta)
-	if err != nil {
-		return err
-	}
-
-	err = downloadChunks(src, dst, diffMeta)
-	return err
 }
 
 func checkBeforeDownLoad(src []LsResult, dst string) (bool, error) {
@@ -163,6 +99,7 @@ func download(src, dst string) error {
 
 	for _, attr := range lsRet {
 		if attr.IsDir {
+			ColorError("Download %s error info:%s\n", StatusOnlySupportFiles)
 			return errors.New(StatusOnlySupportFiles)
 		}
 
@@ -174,10 +111,11 @@ func download(src, dst string) error {
 			realDst = dst + "/" + file
 		}
 
-		fmt.Printf("download src_path:%s dst_path:%s\n", realSrc, realDst)
 		if err := downloadFile(realSrc, attr.Size, realDst); err != nil {
+			ColorError("Download %s to %s error info:%s\n", realSrc, realDst, err)
 			return err
 		}
+		ColorInfo("Downloaded %s\n", realSrc)
 	}
 
 	return nil

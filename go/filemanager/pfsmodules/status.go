@@ -36,4 +36,7 @@ const (
 	StatusAlreadyExist = "already exist"
 	// StatusBadPath is a error string of that the form of path is not correct.
 	StatusBadPath = "the path should be in format eg:/pf/datacentername/"
+
+	// StatusFileEOF is a status string indicates that the file reaches end
+	StatusFileEOF = "this file reaches end"
 )

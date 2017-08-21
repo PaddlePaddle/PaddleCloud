@@ -3,23 +3,24 @@ package pfsmodules
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
-	"os"
 	"strconv"
-
-	log "github.com/golang/glog"
 )
 
-// Chunk respresents a chunk info.
-type Chunk struct {
+// ChunkParam respresents a chunk info.
+type ChunkParam struct {
 	Path   string
 	Offset int64
 	Size   int64
 }
 
+// String packs info of ChunkParam.
+func (p *ChunkParam) String() string {
+	return fmt.Sprintf("Path:%s Offset:%d Size:%d", p.Path, p.Offset, p.Size)
+}
+
 // ToURLParam encodes variables to url encoding parameters.
-func (p *Chunk) ToURLParam() url.Values {
+func (p *ChunkParam) ToURLParam() url.Values {
 	parameters := url.Values{}
 	parameters.Add("path", p.Path)
 
@@ -32,11 +33,11 @@ func (p *Chunk) ToURLParam() url.Values {
 	return parameters
 }
 
-// ParseChunk get a Chunk struct from path.
+// ParseChunkParam get a Chunk struct from path.
 // path example:
 // 	  path=/pfs/datacenter1/1.txt&offset=4096&chunksize=4096
-func ParseChunk(path string) (*Chunk, error) {
-	cmd := Chunk{}
+func ParseChunkParam(path string) (*ChunkParam, error) {
+	cmd := ChunkParam{}
 
 	m, err := url.ParseQuery(path)
 	if err != nil ||
@@ -61,38 +62,22 @@ func ParseChunk(path string) (*Chunk, error) {
 	return &cmd, nil
 }
 
-// LoadChunkData loads a specified chunk to io.Writer.
-func (p *Chunk) LoadChunkData(w io.Writer) error {
-	f, err := os.Open(p.Path)
-	if err != nil {
-		return err
-	}
-	defer Close(f)
-
-	_, err = f.Seek(p.Offset, 0)
-	if err != nil {
-		return err
-	}
-
-	loaded, err := io.CopyN(w, f, p.Size)
-	log.V(2).Infof("loaded:%d\n", loaded)
-	return err
+// Chunk is struct.
+type Chunk struct {
+	Offset   int64
+	Len      int64
+	Checksum string
+	Data     []byte
 }
 
-// SaveChunkData save data from io.Reader.
-func (p *Chunk) SaveChunkData(r io.Reader) error {
-	f, err := os.OpenFile(p.Path, os.O_WRONLY, 0600)
-	if err != nil {
-		return err
-	}
-	defer Close(f)
+// String packs info of Chunk
+func (c *Chunk) String() string {
+	return fmt.Sprintf("Offset:%d Len:%d Checksum:%s", c.Offset, c.Len, c.Checksum)
+}
 
-	_, err = f.Seek(p.Offset, 0)
-	if err != nil {
-		return err
-	}
-
-	writen, err := io.CopyN(f, r, p.Size)
-	log.V(2).Infof("chunksize:%d writen:%d\n", p.Size, writen)
-	return err
+// NewChunk make a Chunk struct.
+func NewChunk(capcity int64) *Chunk {
+	c := Chunk{}
+	c.Data = make([]byte, capcity)
+	return &c
 }

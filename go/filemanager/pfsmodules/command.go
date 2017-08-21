@@ -18,6 +18,15 @@ const (
 	MaxJSONRequestSize = 2048
 )
 
+const (
+	// RESTChunksStoragePath is chunk's storage path of REST API.
+	RESTChunksStoragePath = "api/v1/pfs/storage/chunks"
+	// RESTFilesPath is files' path of REST API.
+	RESTFilesPath = "api/v1/pfs/files"
+	// RESTChunksPath is chunks' path of REST API.
+	RESTChunksPath = "api/v1/pfs/chunks"
+)
+
 // Command is a interface of all commands.
 type Command interface {
 	// ToURLParam generates url.Values of the command struct.
