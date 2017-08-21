@@ -130,6 +130,7 @@ func RunCp(cmd *CpCmd) error {
 		}
 
 		if err != nil {
+			ColorError("err:%s\n", err)
 			return err
 		}
 

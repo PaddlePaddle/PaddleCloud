@@ -41,7 +41,7 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 		log.V(2).Infoln("local chunk info:" + c.String())
 
 		if m.Checksum == c.Checksum {
-			log.V(2).Infof("remote chunk is same as local chunk:%s\n", c.String())
+			log.V(2).Infof("remote chunk is same as local chunk:%s\n\n", c.String())
 			if errc == io.EOF || errm == io.EOF {
 				break
 			}

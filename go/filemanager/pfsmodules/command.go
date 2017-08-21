@@ -20,11 +20,11 @@ const (
 
 const (
 	// RESTChunksStoragePath is chunk's storage path of REST API.
-	RESTChunksStoragePath = "api/v1/pfs/storage/chunks"
+	RESTChunksStoragePath = "api/test/pfs/storage/chunks"
 	// RESTFilesPath is files' path of REST API.
-	RESTFilesPath = "api/v1/pfs/files"
+	RESTFilesPath = "api/test/pfs/files"
 	// RESTChunksPath is chunks' path of REST API.
-	RESTChunksPath = "api/v1/pfs/chunks"
+	RESTChunksPath = "api/test/pfs/chunks"
 )
 
 // Command is a interface of all commands.

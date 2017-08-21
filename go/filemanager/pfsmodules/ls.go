@@ -260,6 +260,8 @@ func RemoteLs(cmd *LsCmd) ([]LsResult, error) {
 		Results []LsResult `json:"results"`
 	}
 
+	log.V(4).Infoln(string(body[:]))
+
 	resp := lsResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return resp.Results, err
