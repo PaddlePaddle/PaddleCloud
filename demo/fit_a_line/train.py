@@ -2,9 +2,6 @@ import paddle.v2 as paddle
 import paddle.v2.dataset as dataset
 import os
 import gzip
-import glob
-import recordio
-import cPickle as pickle
 
 #PaddleCloud cached the dataset on /pfs/${DATACENTER}/public/dataset/...
 dc = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
@@ -13,26 +10,30 @@ dataset.common.DATA_HOME = "/pfs/%s/public/dataset" % dc
 trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
 trainer_count = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS"))
 
-def recordio_reader_creator(path):
-    files = glob.glob(path)
-    files.sort()
-    flie_count = len(files)
-    files_current_train = []
+# TODO(helin): remove this once paddle.v2.reader.creator.recordio is
+# fixed.
+def recordio(paths, buf_size=100):
+    """
+    Creates a data reader from given RecordIO file paths separated by ",",
+        glob pattern is supported.
+    :path: path of recordio files.
+    :returns: data reader of recordio files.
+    """
 
-    for idx, fn in enumerate(files): 
-        if idx % trainer_count == trainer_id:
-            files_current_train.append(fn)
+    import recordio as rec
+    import paddle.v2.reader.decorator as dec
+    import cPickle as pickle
 
     def reader():
-        for fn in files_current_train:
-            reader = recordio.reader(fn)
-            while True:
-                r = reader.read()
-                if r is None:
-                    break 
-                yield pickle.loads(r) 
-            reader.close()
-    return reader
+        f = rec.reader(paths)
+        while True:
+            r = f.read()
+            if r is None:
+                break
+            yield pickle.loads(r)
+        f.close()
+
+    return dec.buffered(reader, buf_size)
 
 def main():
     # init
@@ -74,7 +75,7 @@ def main():
     # training
     trainer.train(
         reader=paddle.batch(
-            paddle.reader.shuffle(recordio_reader_creator("/pfs/dlnel/public/dataset/uci_housing/uci_housing_train*"), buf_size=500),
+            paddle.reader.shuffle(recordio("/pfs/dlnel/public/dataset/uci_housing/uci_housing_train*"), buf_size=500),
             batch_size=2),
         feeding=feeding,
         event_handler=event_handler,

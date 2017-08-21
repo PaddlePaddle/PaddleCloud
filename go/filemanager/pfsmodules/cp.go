@@ -72,7 +72,7 @@ func (p *CpCmd) PartToString(src, dst string) string {
 func (*CpCmd) Name() string { return "cp" }
 
 // Synopsis returns synopsis of CpCmd.
-func (*CpCmd) Synopsis() string { return "uoload or download files" }
+func (*CpCmd) Synopsis() string { return "upload or download files" }
 
 // Usage returns usage of CpCmd.
 func (*CpCmd) Usage() string {
