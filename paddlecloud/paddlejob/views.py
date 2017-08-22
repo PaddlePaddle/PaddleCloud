@@ -115,7 +115,7 @@ class JobsView(APIView):
                 # only statistics trainer GPU resource, pserver does not use GPU
                 if 'paddle-job' in pod.metadata.labels and \
                     pod.status.phase == 'Running':
-                    gpu_usage += pod.spec.containers[0].resources.limits['alpha.kubernetes.io/nvidia-gpu']
+                    gpu_usage += int(pod.spec.containers[0].resources.limits['alpha.kubernetes.io/nvidia-gpu'])
             if username in settings.GPU_QUOTA:
                 gpu_quota = settings.GPU_QUOTA[username]['limit']
             else:
