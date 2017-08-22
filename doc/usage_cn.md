@@ -43,7 +43,7 @@ Subcommands:
 	submit           Submit job to PaddlePaddle Cloud.
 
 Subcommands for PFS:
-	cp               uoload or download files
+	cp               upload or download files
 	ls               List files on PaddlePaddle Cloud
 	mkdir            mkdir directoies on PaddlePaddle Cloud
 	rm               rm files on PaddlePaddle Cloud

@@ -1,8 +1,6 @@
 package pfsmodules
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,8 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"sort"
 	"strconv"
+	"strings"
+
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 )
 
 const (
@@ -30,10 +30,16 @@ type ChunkMeta struct {
 	Len      int64  `json:"len"`
 }
 
+// String  pack a info tring of ChunkMeta.
+func (m *ChunkMeta) String() string {
+	return fmt.Sprintf("Offset:%d Checksum:%s Len:%d", m.Offset, m.Checksum, m.Len)
+}
+
 // ChunkMetaCmd is a command.
 type ChunkMetaCmd struct {
 	Method    string `json:"method"`
 	FilePath  string `json:"path"`
+	Offset    int64  `json:"offset"`
 	ChunkSize int64  `json:"chunksize"`
 }
 
@@ -46,6 +52,9 @@ func (p *ChunkMetaCmd) ToURLParam() url.Values {
 	str := fmt.Sprint(p.ChunkSize)
 	parameters.Add("chunksize", str)
 
+	str = fmt.Sprint(p.Offset)
+	parameters.Add("offset", str)
+
 	return parameters
 }
 
@@ -56,7 +65,14 @@ func (p *ChunkMetaCmd) ToJSON() ([]byte, error) {
 
 // Run is a functions which run ChunkMetaCmd.
 func (p *ChunkMetaCmd) Run() (interface{}, error) {
-	return GetChunkMeta(p.FilePath, p.ChunkSize)
+	f := FileHandle{}
+	if err := f.Open(p.FilePath, os.O_RDONLY, 0); err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+
+	return f.GetChunkMeta(p.Offset, p.ChunkSize)
 }
 
 func (p *ChunkMetaCmd) checkChunkSize() error {
@@ -70,7 +86,7 @@ func (p *ChunkMetaCmd) checkChunkSize() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *ChunkMetaCmd) ValidateCloudArgs(userName string) error {
-	if err := ValidatePfsPath([]string{p.FilePath}, userName); err != nil {
+	if err := ValidatePfsPath([]string{p.FilePath}, userName, ChunkMetaCmdName); err != nil {
 		return err
 	}
 
@@ -87,11 +103,13 @@ func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 	method := r.URL.Query().Get("method")
 	path := r.URL.Query().Get("path")
 	chunkStr := r.URL.Query().Get("chunksize")
+	offsetStr := r.URL.Query().Get("offset")
 
 	if len(method) == 0 ||
 		method != ChunkMetaCmdName ||
 		len(path) == 0 ||
-		len(chunkStr) == 0 {
+		len(chunkStr) == 0 ||
+		len(offsetStr) == 0 {
 		return nil, errors.New(http.StatusText(http.StatusBadRequest))
 	}
 
@@ -100,105 +118,50 @@ func NewChunkMetaCmdFromURLParam(r *http.Request) (*ChunkMetaCmd, error) {
 		return nil, errors.New(StatusBadChunkSize)
 	}
 
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		return nil, errors.New(StatusBadChunkSize)
+	}
+
 	return &ChunkMetaCmd{
 		Method:    method,
 		FilePath:  path,
 		ChunkSize: chunkSize,
+		Offset:    offset,
 	}, nil
 }
-
-type metaSlice []ChunkMeta
-
-func (a metaSlice) Len() int           { return len(a) }
-func (a metaSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a metaSlice) Less(i, j int) bool { return a[i].Offset < a[j].Offset }
-
-// GetDiffChunkMeta gets difference between srcMeta and dstMeta.
-func GetDiffChunkMeta(srcMeta []ChunkMeta, dstMeta []ChunkMeta) ([]ChunkMeta, error) {
-	if len(dstMeta) == 0 || len(srcMeta) == 0 {
-		return srcMeta, nil
+func remoteChunkMeta(path string, offset int64,
+	chunkSize int64) (*ChunkMeta, error) {
+	cmd := ChunkMetaCmd{
+		Method:    ChunkMetaCmdName,
+		FilePath:  path,
+		ChunkSize: chunkSize,
+		Offset:    offset,
 	}
 
-	if !sort.IsSorted(metaSlice(srcMeta)) {
-		sort.Sort(metaSlice(srcMeta))
-	}
-
-	if !sort.IsSorted(metaSlice(dstMeta)) {
-		sort.Sort(metaSlice(dstMeta))
-	}
-
-	dstIdx := 0
-	srcIdx := 0
-	diff := make([]ChunkMeta, 0, len(srcMeta))
-
-	for {
-		if srcMeta[srcIdx].Offset < dstMeta[dstIdx].Offset {
-			diff = append(diff, srcMeta[srcIdx])
-			srcIdx++
-		} else if srcMeta[srcIdx].Offset > dstMeta[dstIdx].Offset {
-			dstIdx++
-		} else {
-			if srcMeta[srcIdx].Checksum != dstMeta[dstIdx].Checksum {
-				diff = append(diff, srcMeta[srcIdx])
-			}
-
-			dstIdx++
-			srcIdx++
-		}
-
-		if dstIdx >= len(dstMeta) {
-			break
-		}
-
-		if srcIdx >= len(srcMeta) {
-			break
-		}
-	}
-
-	if srcIdx < len(srcMeta) {
-		diff = append(diff, srcMeta[srcIdx:]...)
-	}
-
-	return diff, nil
-}
-
-// GetChunkMeta gets chunk metas from path of file.
-func GetChunkMeta(path string, len int64) ([]ChunkMeta, error) {
-	f, err := os.Open(path)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTChunksPath)
+	ret, err := restclient.GetCall(t, cmd.ToURLParam())
 	if err != nil {
 		return nil, err
 	}
-	defer Close(f)
 
-	if len > defaultMaxChunkSize || len < defaultMinChunkSize {
-		return nil, errors.New(StatusBadChunkSize)
+	type chunkMetaResponse struct {
+		Err     string    `json:"err"`
+		Results ChunkMeta `json:"results"`
 	}
 
-	var metas []ChunkMeta
-
-	data := make([]byte, len)
-	offset := int64(0)
-
-	for {
-		n, err := f.Read(data)
-		if err != nil && err != io.EOF {
-			return nil, err
-		}
-
-		if err == io.EOF {
-			break
-		}
-
-		m := ChunkMeta{}
-		m.Offset = offset
-		sum := md5.Sum(data[:n])
-		m.Checksum = hex.EncodeToString(sum[:])
-		m.Len = int64(n)
-
-		metas = append(metas, m)
-
-		offset += int64(n)
+	resp := chunkMetaResponse{}
+	if err := json.Unmarshal(ret, &resp); err != nil {
+		return nil, err
 	}
 
-	return metas, nil
+	if resp.Err == "" {
+		return &resp.Results, nil
+	}
+
+	if strings.Contains(resp.Err, StatusFileEOF) {
+		return &resp.Results, io.EOF
+	}
+
+	return &resp.Results, errors.New(resp.Err)
 }

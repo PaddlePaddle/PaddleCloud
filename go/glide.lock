@@ -1,8 +1,10 @@
-hash: 0088fecf2fd86f86b9de43bb1e8310af22f01a150076da2eb0c4ab239201f5b7
-updated: 2017-07-07T09:23:59.887345255Z
+hash: 1947cbe0f6d5b240005e768fb807a33cfacaa792b5c4c27f67fc443c202c2ee8
+updated: 2017-08-16T10:41:29.11381888Z
 imports:
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
+- name: github.com/fatih/color
+  version: 67c513e5729f918f5e69786686770c27141a4490
 - name: github.com/golang/glog
   version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/google/subcommands
@@ -11,6 +13,17 @@ imports:
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
   version: bcd8bc72b08df0f70df986b97f95590779502d31
+- name: github.com/mattn/go-colorable
+  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
+  repo: https://github.com/mattn/go-colorable
+- name: github.com/mattn/go-isatty
+  version: 57fdcb988a5c543893cc61bce354a6e24ab70022
+  repo: https://github.com/mattn/go-isatty
+- name: golang.org/x/sys
+  version: e24f485414aeafb646f6fca458b0bf869c0880a1
+  repo: https://go.googlesource.com/sys
+  subpackages:
+  - unix
 - name: gopkg.in/yaml.v2
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports: []

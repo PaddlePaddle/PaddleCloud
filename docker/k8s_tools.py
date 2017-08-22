@@ -26,13 +26,16 @@ def fetch_pods_info(label_selector):
 def wait_pods_running(label_selector, desired):
     print "label selector: %s, desired: %s" % (label_selector, desired)
     while True:
-        pod_list = fetch_pods_info(label_selector)
-        running_pod_list = filter(lambda x: x[0] == "Running", pod_list)
-        print "running pod list: ", running_pod_list
-        if len(running_pod_list) == int(desired):
-            return [item[1] for item in running_pod_list]
-        print "sleep for 5 seconds..."
+        count = count_pods_by_phase(label_selector, 'Running')
+        if count == int(desired):
+            break
+        print 'current cnt: %d sleep for 5 seconds...' % count
         time.sleep(5)
+
+def count_pods_by_phase(label_selector, phase):
+    pod_list = fetch_pods_info(label_selector)
+    filtered_pod_list = filter(lambda x: x[0] == phase, pod_list)
+    return len(filtered_pod_list)
 
 
 def fetch_pserver_ips():
@@ -67,5 +70,7 @@ if __name__ == "__main__":
         print fetch_trainer_id()
     elif command == "fetch_master_ip":
         print fetch_master_ip()
+    elif command == "count_pods_by_phase":
+        print count_pods_by_phase(sys.argv[2], sys.argv[3])
     elif command == "wait_pods_running":
         wait_pods_running(sys.argv[2], sys.argv[3])

@@ -42,7 +42,7 @@ func (p *RmCmd) ValidateLocalArgs() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *RmCmd) ValidateCloudArgs(userName string) error {
-	return ValidatePfsPath(p.Args, userName)
+	return ValidatePfsPath(p.Args, userName, rmCmdName)
 }
 
 // ToURLParam needs not to be implemented.
@@ -162,7 +162,7 @@ func RemoteRm(cmd *RmCmd) ([]RmResult, error) {
 		return nil, err
 	}
 
-	t := fmt.Sprintf("%s/api/v1/pfs/files", Config.ActiveConfig.Endpoint)
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTFilesPath)
 	body, err := restclient.DeleteCall(t, j)
 	if err != nil {
 		return nil, err

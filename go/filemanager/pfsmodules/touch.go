@@ -8,10 +8,12 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 )
 
 const (
-	defaultMaxCreateFileSize = int64(4 * 1024 * 1024 * 1024)
+	defaultMaxCreateFileSize = int64(1 * 1024 * 1024 * 1024 * 1024)
 )
 
 const (
@@ -45,7 +47,7 @@ func (p *TouchCmd) ValidateLocalArgs() error {
 
 // ValidateCloudArgs checks the conditions when running on cloud.
 func (p *TouchCmd) ValidateCloudArgs(userName string) error {
-	if err := ValidatePfsPath([]string{p.Path}, userName); err != nil {
+	if err := ValidatePfsPath([]string{p.Path}, userName, TouchCmdName); err != nil {
 		return err
 	}
 
@@ -137,4 +139,40 @@ func (p *TouchCmd) Run() (interface{}, error) {
 	return &TouchResult{
 		Path: p.Path,
 	}, nil
+}
+
+func localTouch(cmd *TouchCmd) error {
+	if _, err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+func remoteTouch(cmd *TouchCmd) error {
+	j, err := cmd.ToJSON()
+	if err != nil {
+		return err
+	}
+
+	t := fmt.Sprintf("%s/%s", Config.ActiveConfig.Endpoint, RESTFilesPath)
+	body, err := restclient.PostCall(t, j)
+	if err != nil {
+		return err
+	}
+
+	type touchResponse struct {
+		Err     string      `json:"err"`
+		Results TouchResult `json:"results"`
+	}
+
+	resp := touchResponse{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return err
+	}
+
+	if len(resp.Err) == 0 {
+		return nil
+	}
+
+	return errors.New(resp.Err)
 }

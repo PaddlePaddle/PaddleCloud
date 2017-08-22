@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	cpCmdName        = "cp"
-	defaultChunkSize = 2 * 1024 * 1024
+	cpCmdName              = "cp"
+	defaultChunkSize int64 = 2 * 1024 * 1024
 )
 
 // CpCmdResult means the copy-command's result.
@@ -65,17 +65,14 @@ func newCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
 
 // PartToString prints command's info.
 func (p *CpCmd) PartToString(src, dst string) string {
-	if p.V {
-		return fmt.Sprintf("cp -v %s %s\n", src, dst)
-	}
-	return fmt.Sprintf("cp %s %s\n", src, dst)
+	return fmt.Sprintf("cp %s %s", src, dst)
 }
 
 // Name returns CpCmd's name.
 func (*CpCmd) Name() string { return "cp" }
 
 // Synopsis returns synopsis of CpCmd.
-func (*CpCmd) Synopsis() string { return "uoload or download files" }
+func (*CpCmd) Synopsis() string { return "upload or download files" }
 
 // Usage returns usage of CpCmd.
 func (*CpCmd) Usage() string {
@@ -114,8 +111,6 @@ func RunCp(cmd *CpCmd) error {
 	var results []CpCmdResult
 
 	for _, arg := range cmd.Src {
-		fmt.Println(cmd.PartToString(arg, cmd.Dst))
-
 		var ret []CpCmdResult
 		var err error
 
@@ -135,14 +130,12 @@ func RunCp(cmd *CpCmd) error {
 		}
 
 		if err != nil {
-			fmt.Printf("%#v\n", err)
 			return err
 		}
 
 		if ret != nil {
 			results = append(results, ret...)
 		}
-		fmt.Println("")
 	}
 
 	return nil

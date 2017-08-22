@@ -2,6 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: pfsserver
+  namespace: paddlecloud
 spec:
   replicas: 1
   template:
@@ -10,22 +11,37 @@ spec:
         app: pfsserver
     spec:
       volumes:
+      - name: public-data-storage
+        cephfs:
+          # Notice: change ip to your's
+          monitors: ["ip:6789"]
+          user: "admin"
+          path: "/public/dataset"
+          secretRef:
+            name: ceph-secret
+          readOnly: true
       - name: data-storage
-        hostPath:
-          path: /home/gongwb/ceph
+        cephfs:
+          # Notice: change ip to your's
+          monitors: ["ip:6789"]
+          user: "admin"
+          path: "/"
+          secretRef:
+            name: ceph-secret
       containers:
       - name: pfs
         imagePullPolicy: Always
-        image: paddlepaddle/pfsserver:latest
+        # Notice: change repo to your's
+        image: <repo>/paddlepaddle/pfsserver:latest
         env:
           - name: CURRENT_DATACENTER
-            value: "meiyan"
+            value: "datacenter"
         command: ["/pfsserver/pfsserver", "-tokenuri", "http://paddle-cloud-service:8000", "-logtostderr=true", "-log_dir=./log", "-v=4"]
         volumeMounts:
         - name: data-storage
-          mountPath: /pfs/datacenter1/home/
+          mountPath: /pfs/datacenter/home
+        - name: public-data-storage
+          mountPath: /pfs/datacenter/public/dataset
         ports:
         - containerPort: 8080
-      nodeSelector:
-        kubernetes.io/hostname: k8s-node1
      
