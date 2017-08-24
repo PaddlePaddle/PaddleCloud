@@ -108,12 +108,12 @@ class JobsView(APIView):
 
         # checkout GPU quota
         # TODO(Yancey1989) We should move this to Kubernetes
-        if 'GPU_QUOTA' in dir(settings):
+        if 'GPU_QUOTA' in dir(settings) and int(obj.get('gpu', '0')) > 0:
             gpu_usage = 0
             pods = client.CoreV1Api(api_client=api_client).list_namespaced_pod(namespace=namespace)
             for pod in pods.items:
                 # only statistics trainer GPU resource, pserver does not use GPU
-                if 'paddle-job' in pod.metadata.labels and \
+                if pod.metadata.labels and 'paddle-job' in pod.metadata.labels and \
                     pod.status.phase == 'Running':
                     gpu_usage += int(pod.spec.containers[0].resources.limits.get('alpha.kubernetes.io/nvidia-gpu', '0'))
             if username in settings.GPU_QUOTA:
