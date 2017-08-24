@@ -39,8 +39,32 @@ current-datacenter: datacenter1
 
 # Client commands
 
-## Reference
+## PaddleCloud Server command-line design
+You can use the following syntax to run `pcloud` command-line interface tool from your terminal window:
+`pcloud [sub-command] [name] [flags]`
 
+- Sub-Command
+  - `submit <job-name>`: submit a PaddleCloud Job with the specify job name.
+  - `jobs [-v <job-name>]`: list all jobs for the current user, `-v` show the 
+  specify job information with verbose output.
+  - `pods [-v <pod-name>]`: list all pods for the current user, `-v` show the 
+  specity worker information with verbose output.
+  - `quota`: the quota info for the current user.
+  - `kill <job-name>`: kill a job with the specify job name.
+  - `logs <pod-name>`: output logs for the specify pod name .
+
+## PaddleCloud File System command-line design 
+PaddleCloud File System(PFS) command-line interface allows user to operate the file system on PaddleCloud, the syntax is as following:
+`pcloud pfs [ls|put|get|rm...] [path1|path2...]`
+
+- `ls <dest>`: list all folders and files under the cloud path.
+- `put [src1|src2...] <dest>`: upload the specify local folders or files to the cloud path.
+- `get [src1|src2...] <dest>`: download the specify folers or files from the cloud path.
+- `rm [dest1|dest2...]`: remove the specify folders or files on cloud, we can remove multiple folders or files in one line.
+- `mv <src> <dest>`: move the specify folder or a file from `<src>` 
+to `<dest>`, `<src>` and `<dest>` should be a cloud path.
+
+## Reference
 - `paddlecloud submit [options] <package path>`: submit job to PaddlePaddle Cloud
     - `<package path>`: ***Required*** Job package to submit. Including user training program and it's dependencies.
     - `-parallelism`: Number of parallel trainers. Defaults to 1.
