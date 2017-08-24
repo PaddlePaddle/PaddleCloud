@@ -15,6 +15,7 @@ import notebook.utils
 import logging
 import volume
 import os
+import copy
 
 class JobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -27,7 +28,26 @@ class JobsView(APIView):
         namespace = notebook.utils.email_escape(username)
         api_instance = client.BatchV1Api(api_client=notebook.utils.get_user_api_client(username))
         job_list = api_instance.list_namespaced_job(namespace)
-        return Response(job_list.to_dict())
+        # NOTE: when job is deleted, some pods of the job will be at "Terminating" status
+        # for a while, which may cause submit fail. Find all pods that are still "Terminating".
+        user_pod_list = client.CoreV1Api(api_client=notebook.utils.get_user_api_client(username)).list_namespaced_pod(namespace)
+        terminating_jobs = []
+        for pod in user_pod_list.items:
+            jobname = ""
+            if "paddle-job" in pod.metadata.labels:
+                jobname = pod.metadata.labels["paddle-job"]
+            elif "paddle-job-master" in pod.metadata.labels:
+                jobname = pod.metadata.labels["paddle-job-master"]
+            elif "paddle-job-pserver" in pod.metadata.labels:
+                jobname = pod.metadata.labels["paddle-job-pserver"]
+            if pod.metadata.deletion_timestamp and jobname:
+                if jobname not in terminating_jobs:
+                    terminating_jobs.append(jobname)
+            print jobname, pod.metadata.deletion_timestamp
+        # NOTE: put it in the original dict for backward compability
+        ret_dict = copy.deepcopy(job_list.to_dict())
+        ret_dict["terminating"] = terminating_jobs
+        return Response(ret_dict)
 
     def post(self, request, format=None):
         """
