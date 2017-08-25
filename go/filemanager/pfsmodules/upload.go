@@ -36,7 +36,7 @@ func getChunkReader(path string, offset int64) (*os.File, error) {
 	return f, nil
 }
 
-func uploadFile(src, dst string, srcFileSize int64, verbose bool) error {
+func uploadFile(src, dst string, srcFileSize int64, verbose bool, chunkSize int64) error {
 	r := FileHandle{}
 	if err := r.Open(src, os.O_RDONLY, 0); err != nil {
 		return err
@@ -50,18 +50,20 @@ func uploadFile(src, dst string, srcFileSize int64, verbose bool) error {
 	defer w.Close()
 
 	// upload chunks.
-	const size int64 = defaultChunkSize
+	if chunkSize <= 0 {
+		chunkSize = defaultChunkSize
+	}
 
 	offset := int64(0)
 	for {
 		start := time.Now()
-		c, errc := r.ReadChunk(offset, size)
+		c, errc := r.ReadChunk(offset, chunkSize)
 		if errc != nil && errc != io.EOF {
 			return errc
 		}
 		log.V(2).Infoln("local chunk info:" + c.String())
 
-		m, errm := w.GetChunkMeta(offset, size)
+		m, errm := w.GetChunkMeta(offset, chunkSize)
 		if errm != nil && errm != io.EOF {
 			return errm
 		}
@@ -120,7 +122,7 @@ func ColorInfoOverWrite(format string, a ...interface{}) {
 	fmt.Printf(format, a...)
 }
 
-func upload(src, dst string, verbose bool) error {
+func upload(src, dst string, verbose bool, chunkSize int64) error {
 	lsCmd := NewLsCmd(true, src)
 	srcRet, err := lsCmd.Run()
 	if err != nil {
@@ -153,7 +155,7 @@ func upload(src, dst string, verbose bool) error {
 		log.V(1).Infof("upload src_path:%s src_file_size:%d dst_path:%s\n",
 			realSrc, srcMeta.Size, realDst)
 
-		if err := uploadFile(realSrc, realDst, srcMeta.Size, verbose); err != nil {
+		if err := uploadFile(realSrc, realDst, srcMeta.Size, verbose, chunkSize); err != nil {
 			ColorError("Upload %s to %s error:%v\n", realSrc, realDst, err)
 			return err
 		}

@@ -207,8 +207,8 @@ func (*LsCmd) Synopsis() string { return "List files on PaddlePaddle Cloud" }
 // Usage returns usage of LsCmd.
 func (*LsCmd) Usage() string {
 	return `ls [-r] <pfspath>:
-	List files on PaddlePaddleCloud
-	Options:
+    List files on PaddlePaddleCloud
+    Options:
 `
 }
 

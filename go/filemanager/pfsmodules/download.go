@@ -11,7 +11,7 @@ import (
 	log "github.com/golang/glog"
 )
 
-func downloadFile(src string, srcFileSize int64, dst string, verbose bool) error {
+func downloadFile(src string, srcFileSize int64, dst string, verbose bool, chunkSize int64) error {
 	w := FileHandle{}
 	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
 		return err
@@ -25,17 +25,19 @@ func downloadFile(src string, srcFileSize int64, dst string, verbose bool) error
 	defer r.Close()
 
 	offset := int64(0)
-	size := defaultChunkSize
+	if chunkSize <= 0 {
+		chunkSize = defaultChunkSize
+	}
 
 	for {
 		start := time.Now()
-		m, errm := r.GetChunkMeta(offset, size)
+		m, errm := r.GetChunkMeta(offset, chunkSize)
 		if errm != nil && errm != io.EOF {
 			return errm
 		}
 		log.V(2).Infoln("remote chunk info:", m)
 
-		c, errc := w.ReadChunk(offset, size)
+		c, errc := w.ReadChunk(offset, chunkSize)
 		if errc != nil && errc != io.EOF {
 			return errc
 		}
@@ -96,7 +98,7 @@ func checkBeforeDownLoad(src []LsResult, dst string) (bool, error) {
 	return bDir, err
 }
 
-func download(src, dst string, verbose bool) error {
+func download(src, dst string, verbose bool, chunkSize int64) error {
 	log.V(1).Infof("download %s to %s\n", src, dst)
 	lsRet, err := RemoteLs(NewLsCmd(true, src))
 	if err != nil {
@@ -122,7 +124,7 @@ func download(src, dst string, verbose bool) error {
 			realDst = dst + "/" + file
 		}
 
-		if err := downloadFile(realSrc, attr.Size, realDst, verbose); err != nil {
+		if err := downloadFile(realSrc, attr.Size, realDst, verbose, chunkSize); err != nil {
 			ColorError("Download %s to %s error info:%s\n", realSrc, realDst, err)
 			return err
 		}
