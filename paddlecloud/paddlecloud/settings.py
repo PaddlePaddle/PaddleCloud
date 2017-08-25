@@ -273,7 +273,7 @@ PADDLE_BOOK_PORT=8888
 #   ...
 #   "dc1":{
 #       "fstype": "hostpath",
-#       "host_path": "/mnt/hdfs/",
+#       "host_path": "/mnt/hdfs/%s/", # host_path % username
 #       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
 #    }
 #}
@@ -323,7 +323,7 @@ NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
 ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"
 
 # domains that allow notebook to enter
-NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]
+NOTEBOOK_DOMAINS=["cloud.paddlepaddle.org"]
 
 # GPU limit for users
 # TODO(Yancey1989): 
