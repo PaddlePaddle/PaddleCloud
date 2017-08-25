@@ -20,7 +20,7 @@ import glob
 import pickle
 
 # NOTE: must change this to your own username on paddlecloud.
-USERNAME = "wanghaoshuang@baidu.com"
+USERNAME = "demo"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
 TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "imdb")

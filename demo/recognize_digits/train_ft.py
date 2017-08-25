@@ -9,7 +9,7 @@ import pickle
 
 
 # NOTE: must change this to your own username on paddlecloud.
-USERNAME = "wanghaoshuang@baidu.com"
+USERNAME = "demo"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
 TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
@@ -25,7 +25,7 @@ def prepare_dataset():
                 8192, "train")
     common.convert(TEST_FILES_PATH,
                 paddle.dataset.mnist.test(),
-                1, "test")
+                512, "test")
 
 def cluster_reader_recordio(trainer_id, trainer_count, flag):
     '''
