@@ -25,6 +25,8 @@ const (
 	RESTFilesPath = "api/test/pfs/files"
 	// RESTChunksPath is chunks' path of REST API.
 	RESTChunksPath = "api/test/pfs/chunks"
+	// RESTTokenPath is token's path of REST API.
+	RESTTokenPath = "api/v1/token2user/"
 )
 
 // Command is a interface of all commands.
@@ -71,7 +73,7 @@ func isPublic(pathStr string) bool {
 
 func checkPublic(cmdName string) error {
 	switch cmdName {
-	case "ls", "stat":
+	case "ls", "stat", "GetChunk":
 		return nil
 	default:
 		return errors.New("public data supports only ls or stat command")

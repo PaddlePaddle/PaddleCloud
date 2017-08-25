@@ -50,9 +50,9 @@ func (p *LsCmd) ToURLParam() url.Values {
 	return parameters
 }
 
-// ToJSON does't need to be implemented.
+// ToJSON encodes cmd members to json string.
 func (p *LsCmd) ToJSON() ([]byte, error) {
-	panic("not implemented")
+	return json.Marshal(p)
 }
 
 func newLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {

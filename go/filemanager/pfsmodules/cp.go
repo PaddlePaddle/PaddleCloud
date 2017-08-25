@@ -76,7 +76,7 @@ func (*CpCmd) Synopsis() string { return "upload or download files" }
 
 // Usage returns usage of CpCmd.
 func (*CpCmd) Usage() string {
-	return `cp [-v] <src> <dst>
+	return `cp <src>... <dst>
 	upload or downlod files, does't support directories this version
 	Options:
 	`
@@ -84,6 +84,7 @@ func (*CpCmd) Usage() string {
 
 // SetFlags sets CpCmd's parameter.
 func (p *CpCmd) SetFlags(f *flag.FlagSet) {
+	// TODO: showing details of copy process.
 	f.BoolVar(&p.V, "v", false, "Cause cp to be verbose, showing files after they are copied.")
 }
 

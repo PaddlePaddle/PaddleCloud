@@ -21,7 +21,7 @@ type RemoteFile struct {
 }
 
 // Open file to read ,write or read-write.
-// if flag == WriteOnly or flag == ReadAndWrite, this function will
+// if flag == O_WRONLY or flag == O_RDWR, this function will
 // attempt to create a sized file on remote if it does't exist.
 func (f *RemoteFile) Open(path string, flag int, size int64) error {
 	if flag != os.O_RDONLY &&
@@ -48,6 +48,7 @@ func (f *RemoteFile) Open(path string, flag int, size int64) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
