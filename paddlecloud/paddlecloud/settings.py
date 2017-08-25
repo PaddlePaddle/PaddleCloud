@@ -323,7 +323,7 @@ NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
 ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"
 
 # domains that allow notebook to enter
-NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]
+NOTEBOOK_DOMAINS=["cloud.paddlepaddle.org"]
 
 # GPU limit for users
 # TODO(Yancey1989): 
