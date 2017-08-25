@@ -356,6 +356,8 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp := response{}
+
 	fr := pfsmod.FileHandle{}
 	if err := fr.Open(p.Path, os.O_RDONLY, 0); err != nil {
 		resp.Err = err.Error()

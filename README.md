@@ -40,6 +40,7 @@ English tutorials(comming soon...)
   a good tutorial of creating kubernetes certs: https://coreos.com/kubernetes/docs/latest/getting-started.html
 
   - create data folder on a Kubernetes node, such as:
+  
   ```bash
   mkdir -p /home/pcloud/data/mysql
   mkdir -p /home/pcloud/data/certs
@@ -117,6 +118,7 @@ source paddlecloudenv/bin/activate
 To run for the first time, you need to:
 
 ```
+cd paddlecloud
 npm install
 pip install -r requirements.txt
 ./manage.py migrate

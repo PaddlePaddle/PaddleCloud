@@ -48,7 +48,6 @@ func (f *RemoteFile) Open(path string, flag int, size int64) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
