@@ -34,6 +34,8 @@ class JobsView(APIView):
         terminating_jobs = []
         for pod in user_pod_list.items:
             jobname = ""
+            if not pod.metadata.labels:
+                continue
             if "paddle-job" in pod.metadata.labels:
                 jobname = pod.metadata.labels["paddle-job"]
             elif "paddle-job-master" in pod.metadata.labels:
@@ -43,7 +45,6 @@ class JobsView(APIView):
             if pod.metadata.deletion_timestamp and jobname:
                 if jobname not in terminating_jobs:
                     terminating_jobs.append(jobname)
-            print jobname, pod.metadata.deletion_timestamp
         # NOTE: put it in the original dict for backward compability
         ret_dict = copy.deepcopy(job_list.to_dict())
         ret_dict["terminating"] = terminating_jobs
