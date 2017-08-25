@@ -97,7 +97,7 @@ class JobsView(APIView):
                     host_path = cfg["host_path"]
                 else:
                     mount_path = cfg["mount_path"] % (dc, username)
-                    host_path = cfg["host_path"]
+                    host_path = cfg["host_path"] % username
 
                 volumes.append(volume.get_volume_config(
                     fstype = fstype,
