@@ -154,6 +154,7 @@ func jobs() error {
 	if err != nil {
 		return err
 	}
+
 	pserverItems := respObj.(map[string]interface{})["items"].([]interface{})
 
 	// get kubernetes jobs info
@@ -168,6 +169,7 @@ func jobs() error {
 		return err
 	}
 	items := respObj.(map[string]interface{})["items"].([]interface{})
+	terminatingJobs := respObj.(map[string]interface{})["terminating"].([]interface{})
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	if len(items) >= 0 {
@@ -198,8 +200,14 @@ func jobs() error {
 			j.(map[string]interface{})["status"].(map[string]interface{})["completion_time"],
 			readyReplicas, replicas)
 	}
-	w.Flush()
 
+	for _, t := range terminatingJobs {
+		fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%v\t%v\t%v\t%v\t\n",
+			t,
+			"Terminating",
+			nil, nil, nil, nil, nil, nil)
+	}
+	w.Flush()
 	return err
 }
 
