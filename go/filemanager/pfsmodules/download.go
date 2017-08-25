@@ -6,11 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/golang/glog"
 )
 
-func downloadFile(src string, srcFileSize int64, dst string) error {
+func downloadFile(src string, srcFileSize int64, dst string, verbose bool) error {
 	w := FileHandle{}
 	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
 		return err
@@ -27,6 +28,7 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 	size := defaultChunkSize
 
 	for {
+		start := time.Now()
 		m, errm := r.GetChunkMeta(offset, size)
 		if errm != nil && errm != io.EOF {
 			return errm
@@ -41,6 +43,10 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 		log.V(2).Infoln("local chunk info:" + c.String())
 
 		if m.Checksum == c.Checksum {
+			if verbose {
+				used := time.Since(start).Nanoseconds() / time.Millisecond.Nanoseconds()
+				ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, m.Len/used)
+			}
 			log.V(2).Infof("remote chunk is same as local chunk:%s\n\n", c.String())
 			if errc == io.EOF || errm == io.EOF {
 				break
@@ -55,6 +61,11 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 
 		if err := w.WriteChunk(c); err != nil {
 			return err
+		}
+
+		if verbose {
+			used := time.Since(start).Nanoseconds() / time.Millisecond.Nanoseconds()
+			ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, m.Len/used)
 		}
 
 		log.V(2).Infof("downlod chunk:%s ok\n\n", c.String())
@@ -85,7 +96,7 @@ func checkBeforeDownLoad(src []LsResult, dst string) (bool, error) {
 	return bDir, err
 }
 
-func download(src, dst string) error {
+func download(src, dst string, verbose bool) error {
 	log.V(1).Infof("download %s to %s\n", src, dst)
 	lsRet, err := RemoteLs(NewLsCmd(true, src))
 	if err != nil {
@@ -111,7 +122,7 @@ func download(src, dst string) error {
 			realDst = dst + "/" + file
 		}
 
-		if err := downloadFile(realSrc, attr.Size, realDst); err != nil {
+		if err := downloadFile(realSrc, attr.Size, realDst, verbose); err != nil {
 			ColorError("Download %s to %s error info:%s\n", realSrc, realDst, err)
 			return err
 		}

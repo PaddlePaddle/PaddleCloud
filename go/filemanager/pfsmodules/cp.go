@@ -13,7 +13,7 @@ import (
 
 const (
 	cpCmdName              = "cp"
-	defaultChunkSize int64 = 2 * 1024 * 1024
+	defaultChunkSize int64 = 4 * 1024 * 1024
 )
 
 // CpCmdResult means the copy-command's result.
@@ -76,7 +76,7 @@ func (*CpCmd) Synopsis() string { return "upload or download files" }
 
 // Usage returns usage of CpCmd.
 func (*CpCmd) Usage() string {
-	return `cp <src>... <dst>
+	return `cp -v <src>... <dst>
 	upload or downlod files, does't support directories this version
 	Options:
 	`
@@ -84,7 +84,6 @@ func (*CpCmd) Usage() string {
 
 // SetFlags sets CpCmd's parameter.
 func (p *CpCmd) SetFlags(f *flag.FlagSet) {
-	// TODO: showing details of copy process.
 	f.BoolVar(&p.V, "v", false, "Cause cp to be verbose, showing files after they are copied.")
 }
 
@@ -119,11 +118,11 @@ func RunCp(cmd *CpCmd) error {
 			if IsCloudPath(cmd.Dst) {
 				err = errors.New(StatusOnlySupportFiles)
 			} else {
-				err = download(arg, cmd.Dst)
+				err = download(arg, cmd.Dst, cmd.V)
 			}
 		} else {
 			if IsCloudPath(cmd.Dst) {
-				err = upload(arg, cmd.Dst)
+				err = upload(arg, cmd.Dst, cmd.V)
 			} else {
 				//can't do that
 				err = errors.New(StatusOnlySupportFiles)
