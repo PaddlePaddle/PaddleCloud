@@ -59,6 +59,7 @@ func newCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
 			if cmd.ChunkSize > defaultMaxChunkSize ||
 				cmd.ChunkSize < defaultMinChunkSize {
 				log.Errorln("ChunkSize should be in [%d, %d]", defaultMinChunkSize, defaultMaxChunkSize)
+				return
 			}
 		}
 
