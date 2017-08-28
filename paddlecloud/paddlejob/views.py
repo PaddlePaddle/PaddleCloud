@@ -165,6 +165,7 @@ class JobsView(APIView):
             ))
         envs = {}
         envs.update({"PADDLE_CLOUD_CURRENT_DATACENTER": dc})
+        envs.update({"PADDLE_CLOUD_USERNAME": username})
         # ===================== create PaddleJob instance ======================
         paddle_job = PaddleJob(
             name = job_name,
