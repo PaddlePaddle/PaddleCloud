@@ -355,6 +355,7 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
 		return
 	}
+	defer writer.Close()
 
 	resp = response{}
 
@@ -369,7 +370,8 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("user:%s download %s\n", user, p.String())
 
-	if err = fr.CopyN(part, p.Offset, p.Size); err != nil {
+	err = fr.CopyN(part, p.Offset, p.Size)
+	if err != nil {
 		if err != io.EOF {
 			resp.Err = err.Error()
 			log.Error(err)
@@ -379,12 +381,6 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 
 		resp.Err = pfsmod.StatusFileEOF
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
-	}
-
-	err = writer.Close()
-	if err != nil {
-		log.Error(err)
-		return
 	}
 
 	log.V(1).Info("end proc GetChunkHandler")

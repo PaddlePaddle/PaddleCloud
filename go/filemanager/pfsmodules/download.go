@@ -31,32 +31,32 @@ func downloadFile(src string, srcFileSize int64, dst string, verbose bool, chunk
 
 	for {
 		start := time.Now()
-		m, errm := r.GetChunkMeta(offset, chunkSize)
-		if errm != nil && errm != io.EOF {
-			return errm
+		sm, errs := r.GetChunkMeta(offset, chunkSize)
+		if errs != nil && errs != io.EOF {
+			return errs
 		}
-		log.V(2).Infoln("remote chunk info:", m)
+		log.V(2).Infoln("remote chunk info:", sm)
 
-		c, errc := w.ReadChunk(offset, chunkSize)
-		if errc != nil && errc != io.EOF {
-			return errc
+		wm, errw := w.GetChunkMeta(offset, chunkSize)
+		if errw != nil && errw != io.EOF {
+			return errw
 		}
-		offset += m.Len
-		log.V(2).Infoln("local chunk info:" + c.String())
+		log.V(2).Infoln("local chunk info:", wm)
 
-		if m.Checksum == c.Checksum {
+		if sm.Checksum == wm.Checksum {
 			if verbose {
 				used := time.Since(start).Nanoseconds() / time.Millisecond.Nanoseconds()
-				ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, m.Len/used)
+				ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, sm.Len/used)
 			}
-			log.V(2).Infof("remote chunk is same as local chunk:%s\n\n", c.String())
-			if errc == io.EOF || errm == io.EOF {
+			offset += sm.Len
+			log.V(2).Infoln("remote chunk is same as local chunk:", sm)
+			if errs == io.EOF || errw == io.EOF {
 				break
 			}
 			continue
 		}
 
-		c, err := r.ReadChunk(offset, m.Len)
+		c, err := r.ReadChunk(offset, sm.Len)
 		if err != nil && err != io.EOF {
 			return err
 		}
@@ -64,14 +64,15 @@ func downloadFile(src string, srcFileSize int64, dst string, verbose bool, chunk
 		if err := w.WriteChunk(c); err != nil {
 			return err
 		}
+		offset += sm.Len
 
 		if verbose {
 			used := time.Since(start).Nanoseconds() / time.Millisecond.Nanoseconds()
-			ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, m.Len/used)
+			ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, sm.Len/used)
 		}
 
 		log.V(2).Infof("downlod chunk:%s ok\n\n", c.String())
-		if errc == io.EOF || errm == io.EOF {
+		if errs == io.EOF || errw == io.EOF {
 			break
 		}
 	}
@@ -128,7 +129,7 @@ func download(src, dst string, verbose bool, chunkSize int64) error {
 			ColorError("Download %s to %s error info:%s\n", realSrc, realDst, err)
 			return err
 		}
-		ColorInfo("Downloaded %s\n", realSrc)
+		ColorInfoOverWrite("Downloaded %s\n", realSrc)
 	}
 
 	return nil
