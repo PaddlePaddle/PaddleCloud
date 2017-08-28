@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultMaxChunkSize = 4 * 1024 * 1024
+	defaultMaxChunkSize = 32 * 1024 * 1024
 	defaultMinChunkSize = 4 * 1024
 )
 const (

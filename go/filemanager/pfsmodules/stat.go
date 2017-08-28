@@ -33,9 +33,9 @@ func (p *StatCmd) ToURLParam() url.Values {
 
 }
 
-// ToJSON here need not tobe implemented.
+// ToJSON encodes memebers to json string.
 func (p *StatCmd) ToJSON() ([]byte, error) {
-	return nil, nil
+	return json.Marshal(p)
 }
 
 // NewStatCmdFromURLParam return a new StatCmd.

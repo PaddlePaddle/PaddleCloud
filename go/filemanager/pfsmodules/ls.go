@@ -50,9 +50,9 @@ func (p *LsCmd) ToURLParam() url.Values {
 	return parameters
 }
 
-// ToJSON does't need to be implemented.
+// ToJSON encodes cmd members to json string.
 func (p *LsCmd) ToJSON() ([]byte, error) {
-	panic("not implemented")
+	return json.Marshal(p)
 }
 
 func newLsCmdFromFlag(f *flag.FlagSet) (*LsCmd, error) {
@@ -207,8 +207,8 @@ func (*LsCmd) Synopsis() string { return "List files on PaddlePaddle Cloud" }
 // Usage returns usage of LsCmd.
 func (*LsCmd) Usage() string {
 	return `ls [-r] <pfspath>:
-	List files on PaddlePaddleCloud
-	Options:
+    List files on PaddlePaddleCloud
+    Options:
 `
 }
 
@@ -259,6 +259,8 @@ func RemoteLs(cmd *LsCmd) ([]LsResult, error) {
 		Err     string     `json:"err"`
 		Results []LsResult `json:"results"`
 	}
+
+	log.V(4).Infoln(string(body[:]))
 
 	resp := lsResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {

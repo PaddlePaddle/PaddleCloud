@@ -13,7 +13,7 @@ import (
 
 const (
 	cpCmdName              = "cp"
-	defaultChunkSize int64 = 2 * 1024 * 1024
+	defaultChunkSize int64 = 4 * 1024 * 1024
 )
 
 // CpCmdResult means the copy-command's result.
@@ -24,10 +24,11 @@ type CpCmdResult struct {
 
 // CpCmd means copy-command.
 type CpCmd struct {
-	Method string
-	V      bool
-	Src    []string
-	Dst    string
+	Method    string
+	V         bool
+	Src       []string
+	Dst       string
+	ChunkSize int64
 }
 
 func newCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
@@ -45,6 +46,23 @@ func newCpCmdFromFlag(f *flag.FlagSet) (*CpCmd, error) {
 				return
 			}
 		}
+
+		if flag.Name == "chunksize" {
+			cmd.ChunkSize, err = strconv.ParseInt(flag.Value.String(), 10, 64)
+			if err != nil {
+				log.Errorln("meets error when parsing argument v")
+				return
+			}
+
+			cmd.ChunkSize = cmd.ChunkSize * 1024
+
+			if cmd.ChunkSize > defaultMaxChunkSize ||
+				cmd.ChunkSize < defaultMinChunkSize {
+				log.Errorln("ChunkSize should be in [%d, %d]", defaultMinChunkSize, defaultMaxChunkSize)
+				return
+			}
+		}
+
 	})
 
 	if err != nil {
@@ -76,14 +94,15 @@ func (*CpCmd) Synopsis() string { return "upload or download files" }
 
 // Usage returns usage of CpCmd.
 func (*CpCmd) Usage() string {
-	return `cp [-v] <src> <dst>
-	upload or downlod files, does't support directories this version
-	Options:
+	return `cp [-v] [-chunksize] <src>... <dst>
+    upload or downlod files, does't support directories this version
+    Options:
 	`
 }
 
 // SetFlags sets CpCmd's parameter.
 func (p *CpCmd) SetFlags(f *flag.FlagSet) {
+	f.Int64Var(&p.ChunkSize, "chunksize", defaultChunkSize, "Upload or download unit KB.")
 	f.BoolVar(&p.V, "v", false, "Cause cp to be verbose, showing files after they are copied.")
 }
 
@@ -118,11 +137,11 @@ func RunCp(cmd *CpCmd) error {
 			if IsCloudPath(cmd.Dst) {
 				err = errors.New(StatusOnlySupportFiles)
 			} else {
-				err = download(arg, cmd.Dst)
+				err = download(arg, cmd.Dst, cmd.V, cmd.ChunkSize)
 			}
 		} else {
 			if IsCloudPath(cmd.Dst) {
-				err = upload(arg, cmd.Dst)
+				err = upload(arg, cmd.Dst, cmd.V, cmd.ChunkSize)
 			} else {
 				//can't do that
 				err = errors.New(StatusOnlySupportFiles)
@@ -130,6 +149,7 @@ func RunCp(cmd *CpCmd) error {
 		}
 
 		if err != nil {
+			ColorError("err:%s\n", err)
 			return err
 		}
 

@@ -61,7 +61,7 @@ func getUserName(uri string, token string) (string, error) {
 func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header http.Header) {
 	resp := response{}
 
-	user, err := getUserName(TokenURI+"/api/v1/token2user/", header.Get("Authorization"))
+	user, err := getUserName(TokenURI+"/"+pfsmod.RESTTokenPath, header.Get("Authorization"))
 	if err != nil {
 		resp.Err = "get username error:" + err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)
@@ -73,6 +73,9 @@ func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header ht
 		writeJSONResponse(w, req, http.StatusOK, resp)
 		return
 	}
+
+	ret, _ := cmd.ToJSON()
+	log.Infof("user:%s cmd:%s\n", user, string(ret[:]))
 
 	result, err := cmd.Run()
 	if err != nil && err != io.EOF {
@@ -309,6 +312,23 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func checkChunkAuthorization(path string, header http.Header, cmdName string) (string, response) {
+	resp := response{}
+	// Check user authorization.
+	user, err := getUserName(TokenURI+"/"+pfsmod.RESTTokenPath, header.Get("Authorization"))
+	if err != nil {
+		resp.Err = "get username error:" + err.Error()
+		return "", resp
+	}
+
+	if err := pfsmod.ValidatePfsPath([]string{path}, user, cmdName); err != nil {
+		resp.Err = err.Error()
+		return user, resp
+	}
+
+	return user, resp
+}
+
 // GetChunkHandler processes GET Chunk  request.
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
@@ -316,6 +336,12 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	p, err := pfsmod.ParseChunkParam(r.URL.RawQuery)
 	if err != nil {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
+		return
+	}
+
+	user, resp := checkChunkAuthorization(p.Path, r.Header, "GetChunk")
+	if resp.Err != "" {
+		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 		return
 	}
 
@@ -330,7 +356,7 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := response{}
+	resp = response{}
 
 	fr := pfsmod.FileHandle{}
 	if err := fr.Open(p.Path, os.O_RDONLY, 0); err != nil {
@@ -340,6 +366,8 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer fr.Close()
+
+	log.Infof("user:%s download %s\n", user, p.String())
 
 	if err = fr.CopyN(part, p.Offset, p.Size); err != nil {
 		if err != io.EOF {
@@ -392,7 +420,14 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		user, resp := checkChunkAuthorization(param.Path, r.Header, "PostChunk")
+		if resp.Err != "" {
+			writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
+			return
+		}
+
 		log.V(2).Infof("received post chunk param:%s\n", param.String())
+		log.Infof("user:%s upload %s\n", user, param.String())
 
 		fw := pfsmod.FileHandle{}
 		if err := fw.Open(param.Path, os.O_RDWR, -1); err != nil {
