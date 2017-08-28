@@ -168,8 +168,20 @@ func jobs() error {
 	if err != nil {
 		return err
 	}
-	items := respObj.(map[string]interface{})["items"].([]interface{})
-	terminatingJobs := respObj.(map[string]interface{})["terminating"].([]interface{})
+	itemsRaw, ok := respObj.(map[string]interface{})["items"]
+	if !ok {
+		// nothing to print
+		return nil
+	}
+	items := itemsRaw.([]interface{})
+	// NOTE: terminating section may not exist
+	var termJobs []interface{}
+	termJobsRaw, ok := respObj.(map[string]interface{})["terminating"]
+	if !ok {
+		termJobs = []interface{}{}
+	} else {
+		termJobs = termJobsRaw.([]interface{})
+	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	if len(items) >= 0 {
@@ -201,7 +213,7 @@ func jobs() error {
 			readyReplicas, replicas)
 	}
 
-	for _, t := range terminatingJobs {
+	for _, t := range termJobs {
 		fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%v\t%v\t%v\t%v\t\n",
 			t,
 			"Terminating",
