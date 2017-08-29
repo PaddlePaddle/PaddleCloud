@@ -11,7 +11,7 @@
 
 推荐优先从 https://github.com/PaddlePaddle/cloud/releases 下载最新release的版本，或者点击下面链接下载最新代码编译的alpha版本:
 
-|操作系统|文件名称|alpha版本二进制
+|操作系统|文件名称|最新版本二进制
 -- | -- | --
 Mac OSX| paddlecloud.darwin | [paddlecloud.darwin](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.darwin)
 Windows| paddlecloud.exe | [paddlecloud.exe](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.exe)
