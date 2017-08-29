@@ -6,9 +6,10 @@
 
 `paddlecloud`是提交PaddlePaddleCloud分布式训练任务的命令行工具。
 
-步骤1: 访问链接 https://github.com/PaddlePaddle/cloud/releases 根据操作系统下载最新的`paddlecloud`
-二进制客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：
-`chmod +x /usr/local/bin/paddlecloud`, 您也可以直接点击下发链接，下载用最新代码编译的alpha版本客户端程序。
+步骤1：下载`paddlecloud`客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：
+`chmod +x /usr/local/bin/paddlecloud`
+
+推荐优先从 https://github.com/PaddlePaddle/cloud/releases 下载最新release的版本，或者点击下面链接下载最新代码编译的alpha版本:
 
 |操作系统|文件名称|alpha版本二进制
 -- | -- | --
