@@ -92,7 +92,7 @@ func getChunkData(m ChunkParam) (*Chunk, error) {
 		}
 
 		if int64(n) != m1.Size {
-			return nil, fmt.Errorf("download chunk data error expected %d real %d", m1.Size, n)
+			log.V(2).Infof("download chunk data error expected %d real %d", m1.Size, n)
 		}
 	}
 
