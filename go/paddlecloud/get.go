@@ -176,11 +176,10 @@ func jobs() error {
 	items := itemsRaw.([]interface{})
 	// NOTE: terminating section may not exist
 	var termJobs []interface{}
-	termJobsRaw, ok := respObj.(map[string]interface{})["terminating"]
-	if !ok {
-		termJobs = []interface{}{}
-	} else {
+	if termJobsRaw, ok := respObj.(map[string]interface{})["terminating"]; ok {
 		termJobs = termJobsRaw.([]interface{})
+	} else {
+		termJobs = []interface{}{}
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
