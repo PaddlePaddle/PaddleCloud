@@ -8,13 +8,13 @@
 
 步骤1: 访问链接 https://github.com/PaddlePaddle/cloud/releases 根据操作系统下载最新的`paddlecloud`
 二进制客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：
-`chmod +x /usr/local/bin/paddlecloud`
+`chmod +x /usr/local/bin/paddlecloud`, 您也可以直接点击下发链接，下载用最新代码编译的alpha版本客户端程序。
 
-|操作系统|二进制版本|
--- | --
-Mac OSX| paddlecloud.dawin
-Windows| paddlecloud.exe
-Linux | paddlecloud.x86_64
+|操作系统|文件名称|alpha版本二进制
+-- | -- | --
+Mac OSX| paddlecloud.darwin | [paddlecloud.darwin](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.darwin)
+Windows| paddlecloud.exe | [paddlecloud.exe](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.exe)
+Linux | paddlecloud.x86_64 | [paddlecloud.x86_64](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.darwin)
 
 步骤2: 创建`~/.paddle/config`文件(windows系统创建当前用户目录下的`.paddle\config`文件)，并写入下面内容，
 
