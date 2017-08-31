@@ -329,6 +329,34 @@ func checkChunkAuthorization(path string, header http.Header, cmdName string) (s
 	return user, resp
 }
 
+func getChunk(w http.ResponseWriter, r *http.Request, param *pfsmod.ChunkParam) error {
+	writer := multipart.NewWriter(w)
+	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
+
+	fileName := param.ToURLParam().Encode()
+	part, err := writer.CreateFormFile("chunk", fileName)
+	if err != nil {
+		return err
+	}
+	defer writer.Close()
+
+	fr := pfsmod.FileHandle{}
+	if err := fr.Open(param.Path, os.O_RDONLY, 0); err != nil {
+		return err
+	}
+	defer fr.Close()
+
+	err = fr.CopyN(part, param.Offset, param.Size)
+	if err != nil {
+		if err != io.EOF {
+			return err
+		}
+
+		return errors.New(pfsmod.StatusFileEOF)
+	}
+	return nil
+}
+
 // GetChunkHandler processes GET Chunk  request.
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
@@ -344,49 +372,17 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 		return
 	}
-
-	writer := multipart.NewWriter(w)
-	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
-
-	fileName := p.ToURLParam().Encode()
-	part, err := writer.CreateFormFile("chunk", fileName)
-	if err != nil {
-		log.Error(err)
-		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
-		return
-	}
-
-	resp = response{}
-
-	fr := pfsmod.FileHandle{}
-	if err := fr.Open(p.Path, os.O_RDONLY, 0); err != nil {
-		resp.Err = err.Error()
-		log.Error(err)
-		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
-		return
-	}
-	defer fr.Close()
-
 	log.Infof("user:%s download %s\n", user, p.String())
 
-	if err = fr.CopyN(part, p.Offset, p.Size); err != nil {
-		if err != io.EOF {
-			resp.Err = err.Error()
-			log.Error(err)
-			writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
-			return
-		}
-
-		resp.Err = pfsmod.StatusFileEOF
-		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
-	}
-
-	err = writer.Close()
+	err = getChunk(w, r, p)
 	if err != nil {
-		log.Error(err)
-		return
+		if err.Error() != pfsmod.StatusFileEOF {
+			log.Errorln("cmd %s error info:%s", p.String(), err)
+		}
+		resp.Err = err.Error()
 	}
 
+	writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 	log.V(1).Info("end proc GetChunkHandler")
 	return
 }

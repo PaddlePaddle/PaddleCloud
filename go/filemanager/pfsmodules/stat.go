@@ -30,7 +30,6 @@ func (p *StatCmd) ToURLParam() url.Values {
 	parameters.Add("path", p.Path)
 
 	return parameters
-
 }
 
 // ToJSON encodes memebers to json string.

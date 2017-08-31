@@ -149,7 +149,7 @@ func RunCp(cmd *CpCmd) error {
 		}
 
 		if err != nil {
-			ColorError("err:%s\n", err)
+			ColorError("proc %s err:%s\n", arg, err)
 			return err
 		}
 
