@@ -1,6 +1,8 @@
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, HttpResponseNotFound, HttpResponseForbidden
 from django.contrib import messages
 from django.conf import settings
+from django.utils.encoding import smart_str
+from django.contrib.auth.decorators import login_required
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from . import PaddleJob
@@ -16,6 +18,63 @@ import logging
 import volume
 import os
 import copy
+from notebook.models import FilePublish
+import uuid
+
+def file_publish_view(request):
+    """
+        view for download published files
+    """
+    username = request.user.username
+    publish_uuid = request.GET.get("uuid")
+    if not publish_uuid:
+        return HttpResponseNotFound()
+    record = FilePublish.objects.get(uuid=publish_uuid)
+    if not record:
+        return HttpResponseNotFound()
+    # FIXME(typhoonzero): not support folder currently
+    if record.path.endswith("/"):
+        return HttpResponseNotFound()
+
+    real_path = "/".join([settings.STORAGE_PATH] + record.path.split("/")[4:])
+    logging.info("downloading file from: %s, record(%s)", real_path, record.path)
+
+    # mimetype is replaced by content_type for django 1.7
+    response = HttpResponse(open(real_path), content_type='application/force-download') 
+    response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(record.path)
+    # It's usually a good idea to set the 'Content-Length' header too.
+    # You can also set any other required headers: Cache-Control, etc.
+    return response
+
+class FilePublishAPIView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None):
+        """
+            return a list of published files for current user
+        """
+        record = FilePublish.objects.filter(user=request.user)
+        file_list = [rec.path for rec in record]
+        url_list = [rec.url for rec in record]
+        return Response({"files": file_list, "urls": url_list})
+
+    def post(self, request, format=None):
+        """
+            given a pfs path generate a uniq sharing url for the path
+        """
+        post_body = json.loads(request.body)
+        file_path = post_body.get("path")
+        publish_uuid = uuid.uuid4()
+        publish_url = "http://%s/filepub/?uuid=%s" % (request.META["HTTP_HOST"], publish_uuid)
+        # save publish_url to mysql
+        publish_record = FilePublish()
+        publish_record.url = publish_url
+        publish_record.user = request.user
+        publish_record.path = file_path
+        publish_record.uuid = publish_uuid
+        publish_record.save()
+        return Response({"url": publish_url})
+
 
 class JobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
