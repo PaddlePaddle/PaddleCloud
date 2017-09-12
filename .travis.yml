@@ -22,6 +22,6 @@ matrix:
         - mysql -e 'create database paddlecloud;'
         - mkdir $HOME/.kube && cp ./k8s/config $HOME/.kube/
         - pip install -r paddlecloud/requirements.txt
-        - cd paddlecloud && python manage.py migrate
+        - cd paddlecloud && python manage.py makemigrations && python manage.py migrate
       script:
         - python manage.py test

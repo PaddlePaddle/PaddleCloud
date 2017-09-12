@@ -20,6 +20,7 @@ func main() {
 	subcommands.Register(&paddlecloud.SimpleFileCmd{}, "")
 	subcommands.Register(&paddlecloud.RegistryCmd{}, "")
 	subcommands.Register(&paddlecloud.DeleteCommand{}, "")
+	subcommands.Register(&paddlecloud.PublishCmd{}, "")
 	subcommands.Register(&pfsmod.LsCmd{}, "PFS")
 	subcommands.Register(&pfsmod.CpCmd{}, "PFS")
 	subcommands.Register(&pfsmod.RmCmd{}, "PFS")
