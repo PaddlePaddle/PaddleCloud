@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: paddle-cloud-ingress
+spec:
+  rules:
+  - host: cloud.paddlepaddle.org
+    http:
+      paths:
+      - path: /api/v1/files
+        backend:
+          serviceName: pfs-service
+          servicePort: 8080
+      - path: /
+        backend:
+          serviceName: paddle-cloud-service
+          servicePort: 8000
+

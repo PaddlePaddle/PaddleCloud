@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: paddle-cloud
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: paddle-cloud
+    spec:
+      volumes:
+      - name: cert-volume
+        hostPath:
+          path: /pfs/pcloud/config/certs
+      - name: mysql-data
+        hostPath:
+          path: /pfs/pcloud/data/mysql
+      - name: settings
+        hostPath:
+          path: /pfs/pcloud/config/settings.py
+      #- name: email-tmp-msg:
+      #  hostPath:
+      #    path: /home/pcloud/templates/email_confirmation_message.txt
+      #- name: email-tmp-subj:
+      #  hostPath:
+      #    path: /home/pcloud/templates/email_confirmation_subject.txt
+      #- name: homepage
+      #  hostPath:
+      #    path: /home/pcloud/templates/homepage.html
+      # - name: data-storage
+      #   cephfs:
+      #     name: cephfs
+      #     monitors: ["172.19.32.166:6789"]
+      #     path: "/"
+      #     user: "admin"
+      #     secretRef:
+      #       name: ceph-secret
+      containers:
+      - name: paddle-cloud
+        imagePullPolicy: Always
+        image: paddlepaddle/cloud
+        volumeMounts:
+        - name: cert-volume
+          mountPath: /certs
+        - name: settings
+          mountPath: /pcloud/paddlecloud/settings.py
+        # - name: data-storage
+        #   mountPath: /pfs
+        #- name: homepage
+        #  mountPath: /pcloud/paddlecloud/templates/homepage.html
+        #- name: email-tmp-msg:
+        #  mountPath: /pcloud/notebook/templates/account/email/email_confirmation_message.txt
+        #- name: email-tmp-subj:
+        #  mountPath: /pcloud/notebook/templates/account/email/email_confirmation_subject.txt
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: PORT
+          value: "8000"
+#        livenessProbe:
+#         httpGet:
+#           path: /healthz/
+#           port: 8000
+#           httpHeaders:
+#           - name: User-Agent
+#             value: kubernetes-health-check
+#         initialDelaySeconds: 3
+#         periodSeconds: 5
+#nodeSelector:
+#kubernetes.io/hostname: your-host-name
