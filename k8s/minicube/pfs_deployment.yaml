@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pfsserver
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pfsserver
+    spec:
+      volumes:
+      - name: public-data-storage
+        hostPath:
+          path: /tmp/public
+      - name: data-storage
+        hostPath:
+          path: /tmp/users
+      containers:
+      - name: pfs
+        imagePullPolicy: Always
+        image: paddlepaddle/pfsserver:latest
+        env:
+          - name: CURRENT_DATACENTER
+            value: "datacenter"
+        command: ["/pfsserver/pfsserver", "-tokenuri", "http://paddle-cloud-service:8000", "-logtostderr=true", "-log_dir=./log", "-v=4"]
+        volumeMounts:
+        - name: data-storage
+          mountPath: /pfs/datacenter/home
+        - name: public-data-storage
+          mountPath: /pfs/datacenter/public/dataset
+        ports:
+        - containerPort: 8080
+      nodeSelector:
+        kubernetes.io/hostname: minikube
+     

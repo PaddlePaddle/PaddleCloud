@@ -12,7 +12,7 @@ spec:
       volumes:
       - name: mysql-data
         hostPath:
-          path: /pfs/pcloud/data/mysql
+          path: "/pcloud/data/mysql"
       containers:
       - name: mysql
         image: mysql:5.7
@@ -25,5 +25,5 @@ spec:
           - name: MYSQL_DATABASE
             value: paddlecloud
         args: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-        #nodeSelector:
-        #kubernetes.io/hostname: your-host-name
+      nodeSelector:
+        kubernetes.io/hostname: minikube

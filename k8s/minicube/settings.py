@@ -13,19 +13,14 @@ DATABASES = {
         "NAME": "paddlecloud",
         'USER': 'root',
         'PASSWORD': 'root',
-        'HOST': 'paddle-cloud-mysql-service',   # Or an IP Address that your DB is hosted on
+        'HOST': '127.0.0.1',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
 }
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
-    "cloud.dlnel.com",
-    "dlnel.com",
-    "www.dlnel.com",
-    "cloud.dlnel.org",
-    "dlnel.org",
-    "paddle-cloud-service"
+    "cloud.paddlepaddle.org",
 ]
 
 POD_IP = os.getenv("POD_IP")
@@ -227,8 +222,7 @@ FIXTURE_DIRS = [
     os.path.join(PROJECT_ROOT, "fixtures"),
 ]
 
-#EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-EMAIL_BACKEND = "django_sendmail_backend.backends.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 LOGIN_URL="/account/login"
 
@@ -256,18 +250,13 @@ USER_CERTS_PATH="/certs"
 K8S_HOST = "https://%s:%s" % (os.getenv("KUBERNETES_SERVICE_HOST"),
     os.getenv("KUBERNETES_SERVICE_PORT_HTTPS"))
 # PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
-PADDLE_BOOK_IMAGE="bootstrapper:5000/paddlepaddle/book"
+PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
 PADDLE_BOOK_PORT=8888
 
-#if os.getenv("KUBERNETES_SERVICE_HOST", None):
-    # init kubernete client with service account
-#    config.load_incluster_config()
-#else:
-    # init kubernetes client with ~/.kube/config file
-#    config.load_kube_config()
-
+# ============== Datacenter Storage Config Samples ==============
 #if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
 #the following is an example:
+
 #DATACENTERS = {
 #   "datacenter1":{
 #       "fstype": "cephfs",
@@ -281,57 +270,60 @@ PADDLE_BOOK_PORT=8888
 #}
 #for HostPath example:
 DATACENTERS = {
-   ...
-   "dc1":{
+   "datacenter":{
        "fstype": "hostpath",
-       "host_path": "/pfs/",
+       "host_path": "/tmp/%s/", # host_path % username
        "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
     }
 }
+#FSTYPE_CEPHFS = "cephfs"
+#FSTYPE_HOSTPATH = "hostpath"
 #DATACENTERS = {
-#    "dlnel":{
-#        "fstype": "cephfs",
-#        "monitors_addr": ["192.168.16.23:6789"],  # must be a list
+#    "meiyan":{
+#        "fstype": FSTYPE_CEPHFS,
+#        "monitors_addr": ["172.19.32.166:6789"],  # must be a list
 #        "secret": "ceph-secret",
 #        "user": "admin",
 #        "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
 #        "cephfs_path": "/%s", # cephfs_path % username
-#        "admin_key": "/certs/admin.secret"
+#        "admin_key": "/certs/admin.secret",
 #    },
-#    "public":{
-#        "fstype": "cephfs",
-#        "monitors_addr": ["192.168.16.23:6789"],  # must be a list
+#    "public": {
+#        "fstype": FSTYPE_CEPHFS,
+#        "monitors_addr": ["172.19.32.166:6789"],  # must be a list
 #        "secret": "ceph-secret",
 #        "user": "admin",
-#        "mount_path": "/pfs/%s/public", # mount_path % dc
-#        "cephfs_path": "/public/", # cephfs_path % username
-#        "admin_key": "/certs/admin.secret"
+#        "mount_path": "/pfs/%s/public/", # mount_path % ( dc, username )
+#        "cephfs_path": "/public", # cephfs_path % username
+#        "admin_key": "/certs/admin.secret",
+#        "read_only": True
 #    }
-#
 #}
-FSTYPE_CEPHFS = "cephfs"
-FSTYPE_HOSTPATH = "hostpath"
-
 # where cephfs root is mounted when using cephfs storage service
 STORAGE_PATH="/pfs"
-STORAGE_MODE="CEPHFS"
-#NVIDIA_LIB_PATH="/usr/local/nvidia"
-NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
+# HACK: define use HDFS or CEPHFS, in cephfs mode jobpath will be /pfs/jobs/[jobname]
+STORAGE_MODE="HDFS"
+
+# ===================== Docker image registry =====================
 JOB_DOCKER_IMAGE = {
-    "image": "bootstrapper:5000/yancey1989/paddlecloud-job",
-    "image_gpu": "bootstrapper:5000/yancey1989/paddlecloud-job:latest-gpu"
+    # These images are built by `docker/build_docker.sh` under this repo.
+    "image": "typhoon1986/paddlecloud-job",
+    "image_gpu": "typhoon1986/paddlecloud-job:gpu",
+    # docker registry credentials
+    "registry_secret": "job-registry-secret", # put this to None if not using registry login
+    "docker_config":{"auths":
+                     {"registry.baidu.com":
+                      {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
 }
 
-ETCD_IMAGE="bootstrapper:5000/quay.io/coreos/etcd:v3.2.1"
-#JOB_DOCKER_IMAGE = {
-#    "image": "yancey1989/paddlecloud-job",
-#    "registry_secret": "job-registry-secret",
-#    "docker_config":{"auths":
-#                     {"registry.baidu.com":
-#                      {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
-#}
+# Path store all cuda, nvidia driver libs
+NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
+# etcd image for fault-tolerant jobs
+ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"
+
 # domains that allow notebook to enter
-NOTEBOOK_DOMAINS=["cloud.dlnel.org", "cloud.dlnel.com"]
+NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]
+
 # GPU limit for users
 # TODO(Yancey1989): 
 # 1. Implement 
@@ -341,15 +333,6 @@ GPU_QUOTA={
         "limit": 2
     },
     "yanxu05@baidu.com": {
-        "limit": 4
-    },
-    "sunxinghai@baidu.com": {
-        "limit": 32
-    },
-    "yangyaming@baidu.com": {
-        "limit": 32
-    },
-    "shiyabing01@baidu.com": {
-        "limit": 20
+        "limit": 5
     }
 }
