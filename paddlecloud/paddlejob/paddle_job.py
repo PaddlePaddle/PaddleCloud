@@ -14,26 +14,26 @@ class UniversionedAPI(object):
     """
     required = {
         "name": "The name of the job.",
-        "job_package": "A folder containing job programs.",
-        "parallelism": "Number of trainers to langch.",
-        "cpu": "CPU resource for each trainer.",
-        "memory": "memory resource for each trainer.",
-        "pservers": "Number of pservers to langch.",
-        "pscpu": "CPU resource for each pserver.",
-        "psmemory": "Memory resouce for each pserver.",
-        "topology": "Paddle V1 config file.",
-        "entry": "Command to run for training.",
-        "dc": "Datacenter specs"
+        "job_package": "The folder containing the job programs.",
+        "parallelism": "The number of trainers to launch.",
+        "cpu": "The CPU resource for each trainer.",
+        "memory": "The memory resource for each trainer.",
+        "pservers": "The number of pservers to launch.",
+        "pscpu": "The CPU resource for each pserver.",
+        "psmemory": "The memory resouce for each pserver.",
+        "topology": "The Paddle V1 config file.",
+        "entry": "The command to run.",
+        "dc": "The datacenter specs."
     }
     optional = {
-        "image": "Docker image to use",
-        "passes": "Number of passes to run.",
-        "gpu": "Number of GPU for each trainer.",
-        "fault_tolerant": "Whether use new fault tolerant mode.",
-        "volumes": "Mount data volumes to pod.",
-        "registry_secret": "secret for reading registry.",
-        "envs": "Envs for all pods",
-        "etcd_image": "Docker image of etcd."
+        "image": "The docker image to use",
+        "passes": "The number of passes to run.",
+        "gpu": "The number of GPU for each trainer.",
+        "fault_tolerant": "Whether using the new fault-tolerant mode.",
+        "volumes": "The data volumes to mount on pod.",
+        "registry_secret": "The secret for reading registry.",
+        "envs": "The environment variables for all pods",
+        "etcd_image": "The etcd docker image."
     }
     optional_defaults = {
         "image": "",
