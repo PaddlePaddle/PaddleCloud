@@ -1,11 +1,11 @@
 # Web Interface design
 
-This design doc will talk about features and web pages needed to let users to manage cloud paddle jobs.
+This design doc will talk about features and web pages needed to let users manage cloud paddle jobs.
 
 ## Feature List
 
 - Account Management
-    - Registration, send email to inform if registration suceeded
+    - Registration, send email to inform if registration succeeded
     - Account Login/Logout
     - Password changing, find back
     - Download SSL keys
@@ -14,7 +14,7 @@ This design doc will talk about features and web pages needed to let users to ma
     - Private workspace
     - Submit job from Jupiter Notebook
 - Job Dashboard
-    - Job history and current running jobs
+    - Job history and currently running jobs
     - Performance Monitoring
     - Quota Monitoring
 - Datasets
@@ -36,33 +36,42 @@ This design doc will talk about features and web pages needed to let users to ma
 
 ## Account Management
 
-I'll skip this section because it is a design that almost every website need.
+Account management page is designed to satisfy multi-tenant use cases. One account should have a unique account ID for login, and this account owns one access key to one unique [Kubernetes namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) cluster. Multiple users can log in to this account ID and operate jobs and data files. The only "master user" can do modifications like increase quota or manage account settings.
+
+One example is [AWS IAM](https://aws.amazon.com/iam/?nc2=h_m1), but we can do more simpler than that.
+
+The current implementation under this repo can only have one user for one Kubernetes namespace. We can implement multi-tenant in the near future.
+
+Once a user logged in, s/he will be redirected to the "Job Dashboard" page.
 
 ## Jupiter Notebook
 
-Start a ReplicaSet using image `docker.paddlepaddle.org/book` in kubernetes cluster and add an ingress endpoint when user first enters the notebook page.
+Start a [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) using image `docker.paddlepaddle.org/book` in the Kubernetes cluster and add an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) endpoint when a user first enters the notebook page. This is already implemented.
 
 <img src="pictures/notebook.png" width="500px" align="center">
 
-Users can write program in python in the web page and save their programs, which will be saved at cloud storage. Users also can run script like below to submit a cluster training job:
+Users can write a program in python in the web page and save their programs, which will be saved at cloud storage. Users also can run a script like below to submit a cluster training job:
 
 ```python
-sess = paddle.framework.remote_session(
-    topology=block,
-    reader=reader,
-    jobname="cluster_job",
-    gpu=12
+create_cloud_job(
+    name,
+    num_trainer,
+    mem_per_trainer,
+    gpu_per_trainer,
+    cpu_per_trainer,
+    num_ps,
+    mem_per_ps,
+    cpu_per_ps,
 )
-sess.run()
 ```
 
-After this, there will be a job description and perfomance monitoring pages able to view at "Job Dashboard"
+After this, there will be a job description and performance monitoring pages able to view at "Job Dashboard"
 
 ## Job Dashboard
 
-### Job history and current running jobs
+### Job history and currently running jobs
 
-A web page containing a table to list jobs satisfing user's filters. User can only list jobs that was submited by themselves.
+A web page containing a table to list jobs satisfying user's filters. The user can only list jobs that were submitted by themselves.
 
 | jobname | start time | age      | success | fails | actions |
 | ------- | ---------- | -------- | ------- | ----- | ------- |
@@ -70,13 +79,13 @@ A web page containing a table to list jobs satisfing user's filters. User can on
 
 Users can filter the list using:
 
-- status:  running/stoped/failed
+- status:  running/stopped/failed
 - time:    job start time
 - jobname: search by jobname
 
 Viewing job logs:
 
-Click the "log" button on the right of the job will pop up a console frame at the bottom of the page showing the tail of the job log, here shows the first pod's log. On the left side of pop up console frame, there should be a vertical list containing the list of pods, when click one of the pod, the console will show the log of it.
+Click the "log" button on the right of the job will pop up a console frame at the bottom of the page showing the tail of the job log, here shows the first pod's log. On the left side of pop up console frame, there should be a vertical list containing the list of pods, then click one of the pod, the console will show it's log.
 
 ### Performance Monitoring
 
@@ -92,7 +101,7 @@ A web page containing graphs monitoring job's resource usages according to time 
 
 A web page displaying total quota and quota currently in use.
 
-Also display total CPU time, GPU time in latest 1day, 1week and 1month.
+Also display total CPU time, GPU time in latest 1day, 1week, and 1month.
 
 ## Datasets and Models
 
@@ -104,9 +113,9 @@ Datasets and Models are quite the same, both like a simple file management and s
 
 ## Paddle Board
 
-A web page containing graphs showing the internal status when job is training, metrics like:
+A web page containing graphs showing the internal status when the job is training, metrics like:
 
-- cost, can be multiple cost graphs
+- cost(can be multiple costs)
 - evaluator output
 - user-defined metric
 
@@ -129,13 +138,16 @@ Calling `draw_board` will output graph files on the distributed storage, and the
 
 ## Serving
 
-After training or uploading pre-trained models, user can start a serving instance to serve the model as an inference HTTP service:
+After training or uploading pre-trained models, a user can start a serving instance to serve the model as an inference HTTP service:
 
-The page which user can start the serving should be able to configure:
-1. model `tar.gz` file path in cloud.
-1. inference network configuration in `.proto` format, or user can also define the network in Python in the webpage.
+The Serving web page contains a table listing currently running serving instance and a "Launch" button to configure and start the serving program.
+
+Click the "Launch" button in this web page will pop up a modal dialogue to configure the job:
+
+1. model `tar.gz` files to the cloud.
+1. inference network configuration in `.proto` format or user can also define the network in Python in the web page.
 1. number of CPU/GPU resource in total to use for serving the model, the more resource there is, the more concurrent calls can be served.
 
-After cliking the "Langch" button, a "kubernetes deployment" will be created to serve the model. The current serving instances will be listed at the current page.
+Then click the "Launch" button on the pop-up dialogue, a "Kubernetes Deployment" will be created to serve the model. The current serving instances will be listed at the current page.
 
 Users can also scale/shrink the resource used for the serving instances.
