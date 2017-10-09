@@ -16,14 +16,13 @@ in the near future. This design doc considers both of them.
 an autoscaling solution provided by Kuberentes, but it's not suitable
 for the training job autoscaling for the following reasons:
 
-- The training job autoscaling tries to fairly distribute the
-  computation resources to different training jobs, in order to
-  optimize the computation resource utilization of the **entire**
-  cluster. The HPA is trying to improve the quality of service of a
-  **single** service. The training job autoscaling requires the
-  controller to have a global view of all the available computation
-  resources and all the training jobs, but HPA does not have the
-  global view.
+- The goal of autoscaling is to fairly distribute the computation
+  resources to different training jobs in a way that optimizes the
+  computation resource utilization of the **entire** cluster. The HPA
+  is trying to improve the quality of service of a **single**
+  service. The training job autoscaling requires the controller to
+  have a global view of all the available computation resources and
+  all the training jobs, but HPA does not have the global view.
 
 - HPA is designed to automatically scale a homogeneous set of Pods,
   but we need to scale a heterogeneous set of Pods (the trainer Pods
@@ -59,7 +58,7 @@ describes the training job.
 A pseudo resource declaration (`training_job.yaml`) is as follows:
 
 ```yaml
-apiVersion: cloud.paddlepaddle.org/v1
+apiVersion: paddlepaddle.org/v1
 kind: TrainingJob
 metadata:
   name: job-1
@@ -67,8 +66,8 @@ spec:
   trainer:
     entrypoint: "python train.py"
     workspace: "/home/job-1/"
-    min-replica: 3
-    max-replica: 6
+    min-instance: 3
+    max-instance: 6
     resources:
       limits:
         alpha.kubernetes.io/nvidia-gpu: 1
@@ -78,8 +77,16 @@ spec:
         cpu: "500m"
         memory: "600Mi"
   pserver:
-    min-replica: 3
-    max-replica: 3
+    min-instance: 3
+    max-instance: 3
+    resources:
+      limits:
+        cpu: "800m"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "600Mi"
+  master:
     resources:
       limits:
         cpu: "800m"
@@ -91,7 +98,11 @@ spec:
 
 The training job controller will create and continuously scale the
 number of trainers and the number of pservers between the
-corresponding `min-replica` and `max-replica`.
+corresponding `min-instance` and `max-instance`.
+
+Since the `master` server is necessary only when the trainer is using
+`paddle.v2.reader.creator.cloud_reader`, The `master` spec is
+optional: the master server will be created only when configured.
 
 The training job custom resource can be created with: `kubectl create
 -f training_job.yaml`.
@@ -142,16 +153,19 @@ implementing custom resources:
   since Kubernetes v1.2, fully deprecated in v1.8, will be removed in
   v1.9.
 
-We will be using CRD unless our cluster can not be updated to
-Kubernetes v1.7, since TPR will be removed in v1.9.
+We will support TPR first, because some of our clusters is using
+Kubernetes v1.6. CRD will be supported in the future.
+
 
 ### Training Job Controller
 
-Currently, we will run a single training job instance and assume that
-there is no training job controller running concurrently (the
-assumption could be false when split-brain happens). In the future, we
-will run multiple instances and use leader election to choose a
-leader.
+Currently, we will run a single training job controller instance and
+assume that there is no training job controller running concurrently
+(the assumption could be false
+when
+[split-brain](https://en.wikipedia.org/wiki/Split-brain_(computing))
+happens). In the future, we will run multiple instances and use leader
+election to choose a leader.
 
 The pseudo-logic is as follows:
 
@@ -161,9 +175,80 @@ for {
   quota := getTotalComputationResourceQuota()
   current := getCurrentJobStates()
   desired := getDesiredJobStates()
-  dynamicSchedule(quota, current, desired)
+  dynamicScaling(quota, current, desired)
 }
 ```
+
+#### Scaling Algorithm
+
+##### Elastic Job
+
+A job is elastic only when it's trainer and pserver's `min-instance`
+equals to the `max-instance` respectively. We will only scale elastic
+jobs.
+
+Currently, we will not scale the parameter server instances.
+
+##### Fulfillment Score
+
+When there are available computation resources, the algorithm needs to
+decide which jobs to assign the resources to. When there are no more
+available computation resources but the newly submitted job needs it,
+the algorithm needs to decide which job to take the resource away
+from. We will introduce the *fulfillment score* to answer these
+questions:
+
+```go
+func (j Job) Score() float64 {
+  minInstance := j.spec.trainer.minInstance
+  maxInstance := j.spec.trainer.minInstance
+  curInstance := j.trainer.currentInstance()
+  return float64(curInstance - minInstance) / float64(maxInstance - minInstance)
+}
+```
+
+##### Scaling GPU Jobs
+
+The controller knows the total number of available GPUs in a cluster
+and will try to assign all of them to the training jobs.
+
+All elastic GPU jobs will be sorted according to their fulfillment
+score. The number of GPU per instance, CPU requests value, Mem
+requests value will be used as tiebreakers in decreasing importance.
+
+An available GPU resource will be assigned to the least fulfilled job
+unless that job is already fulfilled (with a fulfillment score of
+`1.0`). A GPU resource will be take away from the most fulfilled job
+when there is another GPU job's `min-instance` is not satisfied
+(unless the most fulfilled job's `cur-instance` equals to
+`min-instance`). When the most fulfilled job's `cur-instance` equals
+to `min-instance`, no training job will be scaled down, the new job
+cannot be scheduled and will wait for more resources.
+
+
+##### Scaling CPU Jobs
+
+The controller knows the total CPU capacity, Mem capacity of the
+cluster, and the total CPU limits, Mem limits of all training jobs. We
+define the available CPU and Mem as the difference of the capacity and
+the
+[limits](https://kubernetes.io/docs/concepts/policy/resource-quotas/#requests-vs-limits) (not
+the
+[requests](https://kubernetes.io/docs/concepts/policy/resource-quotas/#requests-vs-limits))
+respectively.
+
+All elastic CPU jobs will be sorted according to their fulfillment
+score. The CPU requests value, Mem requests value will be used as
+tiebreakers in decreasing importance.
+
+The available CPU and Mem resource will be assigned to the least
+fulfilled job unless that job is already fulfilled (with a fulfillment
+score of `1.0`). The CPU and Mem resource will be take away from the
+most fulfilled job when there is another job's `min-instance` is not
+satisfied (unless the most fulfilled job's `cur-instance` equals to
+`min-instance`). When the most fulfilled job's `cur-instance` equals
+to `min-instance`, no training job will be scaled down, but the job
+will be still scheduled optimistically.
 
 ## References
 
