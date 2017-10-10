@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PaddlePaddle/cloud/go/operator"
+	"github.com/PaddlePaddle/cloud/go/controller"
 	"github.com/stretchr/testify/assert"
 )
 
