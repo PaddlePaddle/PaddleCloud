@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	k8scontroller "github.com/PaddlePaddle/cloud/go/controller"
+	k8scontroller "github.com/PaddlePaddle/cloud/go/controller/k8s"
 )
 
 func newClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
