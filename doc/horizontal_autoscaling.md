@@ -201,7 +201,7 @@ questions:
 ```go
 func (j Job) Score() float64 {
   minInstance := j.spec.trainer.minInstance
-  maxInstance := j.spec.trainer.minInstance
+  maxInstance := j.spec.trainer.maxInstance
   curInstance := j.trainer.currentInstance()
   return float64(curInstance - minInstance) / float64(maxInstance - minInstance)
 }
