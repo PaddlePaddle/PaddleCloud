@@ -140,7 +140,8 @@ func (a *Autoscaler) dynamicScaling() {
 	// TODO(helin)
 }
 
-// Monitor schedules and scales the training jobs.
+// Monitor should monitor the cluster free resource and do
+// scale/shrink the "TrainerJob"'s inner "Job"/"ReplicaSet".
 func (a *Autoscaler) Monitor(event <-chan ConfigEvent) {
 	for {
 		select {
