@@ -13,10 +13,10 @@ const (
 
 // Cluster represents the cluster managment system such as Kubernetes.
 type Cluster interface {
-	// Free resources, must reflect the resources consumed by the
-	// jobs created by SubmitJob that are still pending, or the
-	// resource release by the job deletion by DeleteJob that are
-	// still pending.
+	// Available free resources, must reflect the resources
+	// consumed by the jobs created by SubmitJob that are still
+	// pending, or the resource release by the job deletion by
+	// DeleteJob that are still pending.
 	FreeGPU() int
 	FreeCPU() float64
 	FreeMem() float64
@@ -57,16 +57,16 @@ func (j job) Fulfullment() float64 {
 	return float64(curInstance-minInstance) / float64(maxInstance-minInstance)
 }
 
-// Controller controls a training job.
-type Controller struct {
+// Autoscaler launches and scales the training jobs.
+type Autoscaler struct {
 	ticker  *time.Ticker
 	cluster Cluster
 	jobs    map[string]job
 }
 
-// New creates a new controller.
-func New(cluster Cluster, options ...func(*Controller)) *Controller {
-	c := &Controller{
+// New creates a new monitor.
+func New(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
+	c := &Autoscaler{
 		cluster: cluster,
 		ticker:  time.NewTicker(defaultLoopDur),
 		jobs:    make(map[string]job),
@@ -117,10 +117,10 @@ func gpu(j job) bool {
 
 // sortedElasticJobs return the names of sorted jobs by fulfillment
 // and tiebreakers in ascending order.
-func (c *Controller) sortedJobs(filters ...func(job) bool) []string {
+func (a *Autoscaler) sortedJobs(filters ...func(job) bool) []string {
 	var js jobs
 nextJob:
-	for _, v := range c.jobs {
+	for _, v := range a.jobs {
 		for _, f := range filters {
 			if !f(v) {
 				continue nextJob
@@ -136,41 +136,41 @@ nextJob:
 	return result
 }
 
-func (c *Controller) dynamicScaling() {
+func (a *Autoscaler) dynamicScaling() {
 	// TODO(helin)
 }
 
 // Monitor schedules and scales the training jobs.
-func (c *Controller) Monitor(event <-chan ConfigEvent) {
+func (a *Autoscaler) Monitor(event <-chan ConfigEvent) {
 	for {
 		select {
-		case <-c.ticker.C:
+		case <-a.ticker.C:
 		case e := <-event:
 			switch e.Type {
 			case Add:
 				log.Debugf("Add config: %s", e.Config.MetaData.Name)
-				_, ok := c.jobs[e.Config.MetaData.Name]
+				_, ok := a.jobs[e.Config.MetaData.Name]
 				if ok {
 					log.Errorf("The config %s to add already exists.", e.Config.MetaData.Name)
 					continue
 				}
-				c.jobs[e.Config.MetaData.Name] = job{Config: e.Config}
+				a.jobs[e.Config.MetaData.Name] = job{Config: e.Config}
 			case Delete:
 				log.Debugf("Delete config: %s", e.Config.MetaData.Name)
-				j, ok := c.jobs[e.Config.MetaData.Name]
+				j, ok := a.jobs[e.Config.MetaData.Name]
 				if !ok {
 					log.Errorf("Could not find the config %s to delete.", e.Config.MetaData.Name)
 					continue
 				}
-				delete(c.jobs, e.Config.MetaData.Name)
+				delete(a.jobs, e.Config.MetaData.Name)
 				go func(j job) {
-					err := c.cluster.DeleteJob(j.Config)
+					err := a.cluster.DeleteJob(j.Config)
 					if err != nil {
 						log.Errorf("error on delete job: %v", err)
 					}
 				}(j)
 			}
 		}
-		c.dynamicScaling()
+		a.dynamicScaling()
 	}
 }
