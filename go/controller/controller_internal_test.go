@@ -7,7 +7,7 @@ import (
 )
 
 func TestDynamicScaling(t *testing.T) {
-
+	// TODO(helin)
 }
 
 func TestFulfillment(t *testing.T) {
@@ -29,7 +29,7 @@ func TestFulfillment(t *testing.T) {
 	assert.Equal(t, float64(0.5), j.Fulfullment())
 }
 
-func TestSortedElasticJobs(t *testing.T) {
+func TestSortedJobs(t *testing.T) {
 	jobs := make([]job, 4)
 	jobs[0].CurInstance = 2
 	jobs[0].Config.MetaData.Name = "a"
@@ -58,10 +58,43 @@ func TestSortedElasticJobs(t *testing.T) {
 		c.jobs[j.Config.MetaData.Name] = j
 	}
 
-	assert.Equal(t, expected, c.sortedElasticJobs())
+	assert.Equal(t, expected, c.sortedJobs(elastic))
 }
 
-func TestSortedElasticJobsWithTie(t *testing.T) {
+func TestSortedJobsGPUOnly(t *testing.T) {
+	jobs := make([]job, 4)
+	jobs[0].CurInstance = 2
+	jobs[0].Config.MetaData.Name = "a"
+	jobs[0].Config.Spec.Trainer.MinInstance = 1
+	jobs[0].Config.Spec.Trainer.MaxInstance = 2
+	jobs[0].Config.Spec.Trainer.Resources.Limits.GPU = 1
+
+	jobs[1].CurInstance = 2
+	jobs[1].Config.MetaData.Name = "b"
+	jobs[1].Config.Spec.Trainer.MinInstance = 1
+	jobs[1].Config.Spec.Trainer.MaxInstance = 20
+
+	jobs[2].CurInstance = 2
+	jobs[2].Config.MetaData.Name = "c"
+	jobs[2].Config.Spec.Trainer.MinInstance = 1
+	jobs[2].Config.Spec.Trainer.MaxInstance = 10
+
+	jobs[3].CurInstance = 1
+	jobs[3].Config.MetaData.Name = "d"
+	jobs[3].Config.Spec.Trainer.MinInstance = 1
+	jobs[3].Config.Spec.Trainer.MaxInstance = 1
+
+	expected := []string{"a"}
+
+	c := New(nil)
+	for _, j := range jobs {
+		c.jobs[j.Config.MetaData.Name] = j
+	}
+
+	assert.Equal(t, expected, c.sortedJobs(elastic, gpu))
+}
+
+func TestSortedJobsWithTie(t *testing.T) {
 	jobs := make([]job, 4)
 	jobs[0].CurInstance = 1
 	jobs[0].Config.MetaData.Name = "a"
@@ -96,5 +129,5 @@ func TestSortedElasticJobsWithTie(t *testing.T) {
 		c.jobs[j.Config.MetaData.Name] = j
 	}
 
-	assert.Equal(t, expected, c.sortedElasticJobs())
+	assert.Equal(t, expected, c.sortedJobs(elastic))
 }

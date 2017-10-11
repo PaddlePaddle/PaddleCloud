@@ -11,11 +11,16 @@ const (
 	defaultLoopDur = time.Second
 )
 
-// FreeResource indicates the free resource available.
-type FreeResource interface {
-	GPU() int
-	CPU() float64
-	Mem() float64
+// Cluster represents the cluster managment system such as Kubernetes.
+type Cluster interface {
+	// Free resources, must reflect the resources consumed by the
+	// jobs created by SubmitJob that are still pending.
+	FreeGPU() int
+	FreeCPU() float64
+	FreeMem() float64
+
+	// Submit a job
+	SubmitJob(Config) error
 }
 
 // EventType is the type of the spec event.
@@ -52,17 +57,17 @@ func (j job) Fulfullment() float64 {
 
 // Controller controls a training job.
 type Controller struct {
-	ticker *time.Ticker
-	free   FreeResource
-	jobs   map[string]job
+	ticker  *time.Ticker
+	cluster Cluster
+	jobs    map[string]job
 }
 
 // New creates a new controller.
-func New(free FreeResource, options ...func(*Controller)) *Controller {
+func New(cluster Cluster, options ...func(*Controller)) *Controller {
 	c := &Controller{
-		free:   free,
-		ticker: time.NewTicker(defaultLoopDur),
-		jobs:   make(map[string]job),
+		cluster: cluster,
+		ticker:  time.NewTicker(defaultLoopDur),
+		jobs:    make(map[string]job),
 	}
 	for _, option := range options {
 		option(c)
@@ -98,15 +103,27 @@ func (j jobs) Swap(a int, b int) {
 	j[a], j[b] = j[b], j[a]
 }
 
+// elastic job filter.
+func elastic(j job) bool {
+	return j.Config.Elastic()
+}
+
+// gpu job filter.
+func gpu(j job) bool {
+	return j.Config.Spec.Trainer.Resources.Limits.GPU > 0
+}
+
 // sortedElasticJobs return the names of sorted jobs by fulfillment
 // and tiebreakers in ascending order.
-func (c *Controller) sortedElasticJobs() []string {
+func (c *Controller) sortedJobs(filters ...func(job) bool) []string {
 	var js jobs
+nextJob:
 	for _, v := range c.jobs {
-		if !v.Config.Elastic() {
-			continue
+		for _, f := range filters {
+			if !f(v) {
+				continue nextJob
+			}
 		}
-
 		js = append(js, v)
 	}
 	sort.Sort(js)
