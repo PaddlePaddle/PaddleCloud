@@ -1,9 +1,8 @@
-package operator_test
+package controller
 
 import (
 	"testing"
 
-	"github.com/PaddlePaddle/cloud/go/controller"
 	"github.com/stretchr/testify/assert"
 )
 

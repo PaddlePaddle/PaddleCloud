@@ -1,20 +1,19 @@
-package operator_test
+package controller
 
 import (
 	"testing"
 	"time"
 
-	"github.com/PaddlePaddle/cloud/go/controller"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
-	c := operator.New(nil)
+	c := NewAutoscaler(nil)
 	assert.NotNil(t, c)
 }
 
 func TestMonitor(t *testing.T) {
-	c := operator.New(nil)
+	c := NewAutoscaler(nil)
 	ch := make(chan struct{})
 
 	go func() {

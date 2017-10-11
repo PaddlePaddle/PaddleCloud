@@ -42,16 +42,10 @@ func main() {
 		panic(err)
 	}
 
-	// make a new config for our extension's API group, using the first config as a baseline
-	client, scheme, err := newClient(config)
+	// start a controller on instances of our custom resource
+	controller, err := k8scontroller.NewController(config)
 	if err != nil {
 		panic(err)
-	}
-
-	// start a controller on instances of our custom resource
-	controller := k8scontroller.Controller{
-		Client: client,
-		Scheme: scheme,
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
