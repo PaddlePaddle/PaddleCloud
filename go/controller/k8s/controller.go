@@ -28,13 +28,11 @@ import (
 	"context"
 
 	log "github.com/sirupsen/logrus"
-	// kubernetes api utilities
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	v1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/api"
-	// kubernetes go client
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -44,7 +42,6 @@ import (
 
 // Controller for dispatching TrainingJob resource.
 type Controller struct {
-	// logger     *logrus.Logger
 	client     *rest.RESTClient
 	clientset  *kubernetes.Clientset
 	autoscaler *paddlejob.Autoscaler
@@ -70,13 +67,11 @@ func NewController(config *rest.Config) (*Controller, error) {
 
 // Run start to watch kubernetes events and do handlers.
 func (c *Controller) Run(ctx context.Context) error {
-	// start controller watch
 	err := c.startWatch(ctx)
 	if err != nil {
 		return err
 	}
-	// start autoscaler
-	// call c.autoscaler.Monitor(nil) to start
+	// TODO(helin): start autoscaler
 
 	<-ctx.Done()
 	return ctx.Err()
@@ -93,9 +88,9 @@ func (c *Controller) startWatch(ctx context.Context) error {
 		source,
 		&paddlejob.TrainingJob{},
 
-		// resyncPeriod
-		// Every resyncPeriod, all resources in the cache will retrigger events.
-		// Set to 0 to disable the resync.
+		// resyncPeriod: Every resyncPeriod, all resources in
+		// the cache will retrigger events. Set to 0 to
+		// disable the resync.
 		0,
 
 		// TrainingJob custom resource event handlers.
@@ -111,16 +106,15 @@ func (c *Controller) startWatch(ctx context.Context) error {
 
 func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
-	log.Debugln("onAdd.")
-	log.Debugln(job)
-	// call c.client.Put() to send REST call to api-server
+	log.Debugln("onAdd: %v", *job)
+	// TODO: call c.client.Put() to send REST call to api-server
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	rslist, err := c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}
-	log.Debugln(rslist)
+	log.Debugln("Existing replicasets: %v", *rslist)
 	exist := false
 	for _, item := range rslist.Items {
 		if item.Name == jobname {
@@ -128,11 +122,15 @@ func (c *Controller) onAdd(obj interface{}) {
 			break
 		}
 	}
+
+	if exist {
+		log.Errorln("Job name already exists:", jobname)
+		return
+	}
+
 	// generate a pserver replicaset resource according to "TrainingJob" resource specs.
 	pserverRS := v1beta1.ReplicaSet{}
-	if !exist {
-		c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(&pserverRS)
-	}
+	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(&pserverRS)
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
@@ -141,12 +139,12 @@ func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 	log.Debugln(oldjob)
 	log.Debugln(newjob)
 	log.Debugln("onUpdate.")
-	// call c.client.Put() to update resource
+	// TODO: call c.client.Put() to update resource
 }
 
 func (c *Controller) onDelete(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("onDelete.")
 	log.Debugln(job)
-	// call c.client.Delete()
+	// TODO: call c.client.Delete()
 }
