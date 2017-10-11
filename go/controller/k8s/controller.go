@@ -28,8 +28,13 @@ import (
 	"context"
 
 	log "github.com/sirupsen/logrus"
-	apiv1 "k8s.io/api/core/v1"
+	// kubernetes api utilities
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	v1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/kubernetes/pkg/api"
+	// kubernetes go client
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -51,9 +56,13 @@ func NewController(config *rest.Config) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
-	client, err := rest.RESTClientFor(&config)
+	client, err := rest.RESTClientFor(config)
+	if err != nil {
+		return nil, err
+	}
 	as := paddlejob.NewAutoscaler(nil)
 	return &Controller{
+		client:     client,
 		clientset:  clientset,
 		autoscaler: as,
 	}, nil
@@ -75,9 +84,9 @@ func (c *Controller) Run(ctx context.Context) error {
 
 func (c *Controller) startWatch(ctx context.Context) error {
 	source := cache.NewListWatchFromClient(
-		c.clientset,
+		c.client,
 		paddlejob.TrainingJobs,
-		apiv1.NamespaceAll,
+		api.NamespaceAll,
 		fields.Everything())
 
 	_, informer := cache.NewInformer(
@@ -101,19 +110,34 @@ func (c *Controller) startWatch(ctx context.Context) error {
 }
 
 func (c *Controller) onAdd(obj interface{}) {
-	job := obj.(*TrainingJob)
+	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("onAdd.")
 	log.Debugln(job)
 	// call c.client.Put() to send REST call to api-server
+	namespace := job.ObjectMeta.Namespace
+	jobname := job.ObjectMeta.Name
 	rslist, err := c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}
+	log.Debugln(rslist)
+	exist := false
+	for _, item := range rslist.Items {
+		if item.Name == jobname {
+			exist = true
+			break
+		}
+	}
+	// generate a pserver replicaset resource according to "TrainingJob" resource specs.
+	pserverRS := v1beta1.ReplicaSet{}
+	if !exist {
+		c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(&pserverRS)
+	}
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
-	oldjob := oldObj.(*TrainingJob)
-	newjob := newObj.(*TrainingJob)
+	oldjob := oldObj.(*paddlejob.TrainingJob)
+	newjob := newObj.(*paddlejob.TrainingJob)
 	log.Debugln(oldjob)
 	log.Debugln(newjob)
 	log.Debugln("onUpdate.")
@@ -121,7 +145,7 @@ func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *Controller) onDelete(obj interface{}) {
-	job := obj.(*TrainingJob)
+	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("onDelete.")
 	log.Debugln(job)
 	// call c.client.Delete()

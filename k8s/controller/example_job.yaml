@@ -1,0 +1,29 @@
+apiVersion: paddlepaddle.org/v1
+kind: TrainingJob
+metadata:
+  name: job-1
+spec:
+  image: "paddlepaddle/paddlecloud-job"
+  trainer:
+    entrypoint: "python train.py"
+    workspace: "/home/job-1/"
+    min-instance: 3
+    max-instance: 6
+    resources:
+      limits:
+        alpha.kubernetes.io/nvidia-gpu: 1
+        cpu: "800m"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "600Mi"
+  pserver:
+    min-instance: 3
+    max-instance: 3
+    resources:
+      limits:
+        cpu: "800m"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "600Mi"

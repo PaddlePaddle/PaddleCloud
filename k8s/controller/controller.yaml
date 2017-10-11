@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: training-job-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: training-job-controller
+    spec:
+      containers:
+      - name: training-job-controller
+        image: typhoon1986/training-job-controller
+        imagePullPolicy: IfNotPresent
+        command: ["/controller"]
