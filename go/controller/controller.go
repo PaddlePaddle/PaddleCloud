@@ -14,13 +14,15 @@ const (
 // Cluster represents the cluster managment system such as Kubernetes.
 type Cluster interface {
 	// Free resources, must reflect the resources consumed by the
-	// jobs created by SubmitJob that are still pending.
+	// jobs created by SubmitJob that are still pending, or the
+	// resource release by the job deletion by DeleteJob that are
+	// still pending.
 	FreeGPU() int
 	FreeCPU() float64
 	FreeMem() float64
 
-	// Submit a job
 	SubmitJob(Config) error
+	DeleteJob(Config) error
 }
 
 // EventType is the type of the spec event.
@@ -146,9 +148,27 @@ func (c *Controller) Monitor(event <-chan ConfigEvent) {
 		case e := <-event:
 			switch e.Type {
 			case Add:
-				log.Debugf("Add spec: %s", e.Config.MetaData.Name)
+				log.Debugf("Add config: %s", e.Config.MetaData.Name)
+				_, ok := c.jobs[e.Config.MetaData.Name]
+				if ok {
+					log.Errorf("The config %s to add already exists.", e.Config.MetaData.Name)
+					continue
+				}
+				c.jobs[e.Config.MetaData.Name] = job{Config: e.Config}
 			case Delete:
-				log.Debugf("Delete spec: %s", e.Config.MetaData.Name)
+				log.Debugf("Delete config: %s", e.Config.MetaData.Name)
+				j, ok := c.jobs[e.Config.MetaData.Name]
+				if !ok {
+					log.Errorf("Could not find the config %s to delete.", e.Config.MetaData.Name)
+					continue
+				}
+				delete(c.jobs, e.Config.MetaData.Name)
+				go func(j job) {
+					err := c.cluster.DeleteJob(j.Config)
+					if err != nil {
+						log.Errorf("error on delete job: %v", err)
+					}
+				}(j)
 			}
 		}
 		c.dynamicScaling()
