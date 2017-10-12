@@ -28,12 +28,14 @@ import (
 	"context"
 
 	log "github.com/sirupsen/logrus"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	v1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/api"
 
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
@@ -57,6 +59,7 @@ func NewController(config *rest.Config) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
+	// TODO: init autoscaler with correct arguments.
 	as := paddlejob.NewAutoscaler(nil)
 	return &Controller{
 		client:     client,
@@ -129,7 +132,28 @@ func (c *Controller) onAdd(obj interface{}) {
 	}
 
 	// generate a pserver replicaset resource according to "TrainingJob" resource specs.
-	pserverRS := v1beta1.ReplicaSet{}
+	replicas := int32(job.Spec.Pserver.MinInstance)
+	pserverRS := v1beta1.ReplicaSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "extensions/v1beta1",
+			APIVersion: "ReplicaSet",
+		},
+		ObjectMeta: job.ObjectMeta,
+		Spec: v1beta1.ReplicaSetSpec{
+			Replicas: &replicas,
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						v1.Container{
+							Name:  job.ObjectMeta.Name + "-pserver",
+							Image: job.Spec.Image,
+							// TODO: add resource, env
+						},
+					},
+				},
+			},
+		},
+	}
 	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(&pserverRS)
 }
 

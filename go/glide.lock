@@ -1,5 +1,5 @@
-hash: 8753b64b42ce00efc9b056b49c3c18baf3f106f70b1a51c51b03c92ce468deed
-updated: 2017-10-11T21:18:43.057911+08:00
+hash: b61e453f02a745b1ce7bfc59e0a7788ea8f9440df4ab2e17d9fb267830afbad9
+updated: 2017-10-12T10:31:36.608873+08:00
 imports:
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
@@ -118,7 +118,6 @@ imports:
   - pkg/apimachinery
   - pkg/apimachinery/announced
   - pkg/apimachinery/registered
-  - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
   - pkg/conversion
@@ -241,7 +240,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/kubernetes
-  version: 7810eb8da0d8d0de16169af0a781754ae6e3e087
+  version: d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae
   subpackages:
   - pkg/api
 testImports:

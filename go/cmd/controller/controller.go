@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -15,7 +15,14 @@ import (
 
 func main() {
 	kubeconfig := flag.String("kubeconfig", "", "Path to a kube config. Only required if out-of-cluster.")
+	loglevel := flag.String("log_level", "info", "Log level can be debug, info, warn, error, fatal, panic.")
 	flag.Parse()
+
+	level, err := log.ParseLevel(*loglevel)
+	if err != nil {
+		panic(err)
+	}
+	log.SetLevel(level)
 
 	// Create the client config. Use kubeconfig if given, otherwise assume in-cluster.
 	config, err := buildConfig(*kubeconfig)
@@ -38,7 +45,6 @@ func main() {
 
 	for {
 		time.Sleep(time.Second)
-		fmt.Println("tick.")
 	}
 }
 

@@ -10,3 +10,5 @@ import:
 - package: github.com/fatih/color
 - package: k8s.io/client-go
   version: release-3.0
+- package: k8s.io/kubernetes
+  version: release-1.6.3
