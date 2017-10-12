@@ -20,16 +20,16 @@ def prepare_dataset():
                            dataset.uci_housing.train(), 100, "train")
 
 TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
-TRAINER_COUNT = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS"))
+TRAINER_INSTANCES = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS"))
 
-def cluster_reader_recordio(paths, trainer_id, trainer_count):
+def cluster_reader_recordio(paths, trainer_id, trainer_instances):
     """
     Creates a cluster data reader from given RecordIO file paths,
         each trainer will read a subset of the whole files set.
 
     :paths: path of recordio files.
     :trainer_id: current trainer ID.
-    :trainer_count: total trainer instances count.
+    :trainer_instances: total trainer instances count.
     :returns data reader of RecordIO files.
     """
 
@@ -43,7 +43,7 @@ def cluster_reader_recordio(paths, trainer_id, trainer_count):
         my_file_list = []
         # collect a subset files according with the trainer_id
         for idx, f in enumerate(file_list):
-            if idx % trainer_count == trainer_id:
+            if idx % trainer_instances == trainer_id:
                 my_file_list.append(f)
         for f in my_file_list:
             print "processing", f
@@ -99,7 +99,7 @@ def main():
                 cluster_reader_recordio(
                     os.path.join(TRAIN_FILES_PATH, "train-*"),
                     TRAINER_ID,
-                    TRAINER_COUNT),
+                    TRAINER_INSTANCES),
                 buf_size=500),
             batch_size=2),
         feeding=feeding,
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         print usage
         exit(1)
 
-    if TRAINER_ID == -1 or TRAINER_COUNT == -1:
+    if TRAINER_ID == -1 or TRAINER_INSTANCES == -1:
         print "no cloud environ found, must run on cloud"
         exit(1)
 
