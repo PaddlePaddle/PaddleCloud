@@ -22,7 +22,7 @@
 // When controller starts, both event watching routine and resource
 // monitoring and scaling routine should be started.
 
-package k8s
+package controller
 
 import (
 	"context"
@@ -31,22 +31,21 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	v1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/api"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/controller"
+	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	autoscaler "github.com/PaddlePaddle/cloud/go/controller/autoscaler"
 )
 
 // Controller for dispatching TrainingJob resource.
 type Controller struct {
 	client     *rest.RESTClient
 	clientset  *kubernetes.Clientset
-	autoscaler *paddlejob.Autoscaler
+	autoscaler *autoscaler.Autoscaler
 }
 
 // NewController construct a new Controller struct
@@ -60,7 +59,7 @@ func NewController(config *rest.Config) (*Controller, error) {
 		return nil, err
 	}
 	// TODO: init autoscaler with correct arguments.
-	as := paddlejob.NewAutoscaler(nil)
+	as := autoscaler.NewAutoscaler(nil)
 	return &Controller{
 		client:     client,
 		clientset:  clientset,
@@ -109,15 +108,12 @@ func (c *Controller) startWatch(ctx context.Context) error {
 
 func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
-	log.Debugln("onAdd: %v", *job)
-	// TODO: call c.client.Put() to send REST call to api-server
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	rslist, err := c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}
-	log.Debugln("Existing replicasets: %v", *rslist)
 	exist := false
 	for _, item := range rslist.Items {
 		if item.Name == jobname {
@@ -131,30 +127,9 @@ func (c *Controller) onAdd(obj interface{}) {
 		return
 	}
 
-	// generate a pserver replicaset resource according to "TrainingJob" resource specs.
-	replicas := int32(job.Spec.Pserver.MinInstance)
-	pserverRS := v1beta1.ReplicaSet{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "extensions/v1beta1",
-			APIVersion: "ReplicaSet",
-		},
-		ObjectMeta: job.ObjectMeta,
-		Spec: v1beta1.ReplicaSetSpec{
-			Replicas: &replicas,
-			Template: v1.PodTemplateSpec{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
-						v1.Container{
-							Name:  job.ObjectMeta.Name + "-pserver",
-							Image: job.Spec.Image,
-							// TODO: add resource, env
-						},
-					},
-				},
-			},
-		},
-	}
-	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(&pserverRS)
+	var parser DefaultJobParser
+
+	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(parser.ParseToPserver(job))
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {

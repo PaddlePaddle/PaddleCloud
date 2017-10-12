@@ -9,8 +9,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/controller"
-	k8scontroller "github.com/PaddlePaddle/cloud/go/controller/k8s"
 )
 
 func main() {
@@ -31,17 +31,17 @@ func main() {
 	}
 
 	// setup some optional configuration
-	controller.ConfigureClient(config)
+	paddlejob.ConfigureClient(config)
 
 	// start a controller on instances of our custom resource
-	controller, err := k8scontroller.NewController(config)
+	informer, err := controller.NewController(config)
 	if err != nil {
 		panic(err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	go controller.Run(ctx)
+	go informer.Run(ctx)
 
 	for {
 		time.Sleep(time.Second)

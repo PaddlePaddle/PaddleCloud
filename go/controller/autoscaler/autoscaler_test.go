@@ -1,4 +1,4 @@
-package controller
+package autoscaler
 
 import (
 	"testing"

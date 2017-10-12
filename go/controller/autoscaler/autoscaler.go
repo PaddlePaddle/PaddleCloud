@@ -1,9 +1,10 @@
-package controller
+package autoscaler
 
 import (
 	"sort"
 	"time"
 
+	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,8 +22,8 @@ type Cluster interface {
 	FreeCPU() float64
 	FreeMem() float64
 
-	SubmitJob(TrainingJob) error
-	DeleteJob(TrainingJob) error
+	SubmitJob(paddlejob.TrainingJob) error
+	DeleteJob(paddlejob.TrainingJob) error
 }
 
 // EventType is the type of the spec event.
@@ -37,15 +38,15 @@ const (
 // ConfigEvent is an event happened to the specs.
 type ConfigEvent struct {
 	Type   EventType
-	Config TrainingJob
+	Config paddlejob.TrainingJob
 }
 
 type job struct {
-	Config      TrainingJob
+	Config      paddlejob.TrainingJob
 	CurInstance int
 }
 
-func (j job) Fulfullment() float64 {
+func (j job) Fulfillment() float64 {
 	minInstance := j.Config.Spec.Trainer.MinInstance
 	maxInstance := j.Config.Spec.Trainer.MaxInstance
 
@@ -84,19 +85,26 @@ func (j jobs) Len() int {
 }
 
 func (j jobs) Less(a int, b int) bool {
-	scoreA := j[a].Fulfullment()
-	scoreB := j[b].Fulfullment()
+	scoreA := j[a].Fulfillment()
+	scoreB := j[b].Fulfillment()
 
 	if scoreA == scoreB {
 		resA := j[a].Config.Spec.Trainer.Resources
 		resB := j[b].Config.Spec.Trainer.Resources
-		if resA.Limits.GPU == resB.Limits.GPU {
-			if resA.Requests.CPU == resB.Requests.CPU {
-				return resA.Requests.Mem < resB.Requests.Mem
+		// FIXME: use Quantity type, should refine these code.
+		resALimitsGPU := resA.Limits[paddlejob.GPUResourceName]
+		resBLimitsGPU := resB.Limits[paddlejob.GPUResourceName]
+		if resALimitsGPU.Cmp(resALimitsGPU) == 0 {
+			resARequestsCPU := resA.Requests["cpu"]
+			resBRequestsCPU := resB.Requests["cpu"]
+			if resARequestsCPU.Cmp(resBRequestsCPU) == 0 {
+				resARequestsMem := resA.Requests["memory"]
+				resBRequestsMem := resB.Requests["memory"]
+				return resARequestsMem.Cmp(resBRequestsMem) == -1
 			}
-			return resA.Requests.CPU < resB.Requests.CPU
+			return resARequestsCPU.Cmp(resBRequestsCPU) == -1
 		}
-		return resA.Limits.GPU < resB.Limits.GPU
+		return resALimitsGPU.Cmp(resBLimitsGPU) == -1
 	}
 	return scoreA < scoreB
 }
@@ -112,7 +120,7 @@ func elastic(j job) bool {
 
 // gpu job filter.
 func gpu(j job) bool {
-	return j.Config.Spec.Trainer.Resources.Limits.GPU > 0
+	return j.Config.NeedGPU()
 }
 
 // sortedElasticJobs return the names of sorted jobs by fulfillment

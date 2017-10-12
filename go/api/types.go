@@ -52,20 +52,18 @@ spec:
 				memory: "600Mi"
 */
 
-package controller
+package api
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	clientgoapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/rest"
 )
 
 // TrainingJobs string for registration
 const TrainingJobs = "TrainingJobs"
+
+// GPUResourceName is now alpha.
+const GPUResourceName = "alpha.kubernetes.io/nvidia-gpu"
 
 // TrainingJob defination
 // +k8s:deepcopy-gen=true
@@ -80,7 +78,14 @@ type TrainingJob struct {
 // TrainingJobSpec defination
 // +k8s:deepcopy-gen=true
 type TrainingJobSpec struct {
-	Image   string      `json:"image"`
+	// General job attributes.
+	Image             string `json:"image,omitempty"`
+	Port              int    `json:"port,omitempty"`
+	PortsNum          int    `json:"ports_num,omitempty"`
+	PortsNumForSparse int    `json:"ports_num_for_sparse,omitempty"`
+	FaultTolerant     bool   `json:"fault_tolerant,omitempty"`
+	Passes            int    `json:"passes,omitempty"`
+	// Job components.
 	Trainer TrainerSpec `json:"trainer"`
 	Pserver PserverSpec `json:"pserver"`
 	Master  MasterSpec  `json:"master,omitempty"`
@@ -89,26 +94,26 @@ type TrainingJobSpec struct {
 // TrainerSpec defination
 // +k8s:deepcopy-gen=true
 type TrainerSpec struct {
-	Entrypoint  string    `json:"entrypoint"`
-	Workspace   string    `json:"workspace"`
-	MinInstance int       `json:"min-instance"`
-	MaxInstance int       `json:"max-instance"`
-	Resources   Resources `json:"resources"`
+	Entrypoint  string                  `json:"entrypoint"`
+	Workspace   string                  `json:"workspace"`
+	MinInstance int                     `json:"min-instance"`
+	MaxInstance int                     `json:"max-instance"`
+	Resources   v1.ResourceRequirements `json:"resources"`
 }
 
 // PserverSpec defination
 // +k8s:deepcopy-gen=true
 type PserverSpec struct {
-	MinInstance int       `json:"min-instance"`
-	MaxInstance int       `json:"max-instance"`
-	Resources   Resources `json:"resources"`
+	MinInstance int                     `json:"min-instance"`
+	MaxInstance int                     `json:"max-instance"`
+	Resources   v1.ResourceRequirements `json:"resources"`
 }
 
 // MasterSpec defination
 // +k8s:deepcopy-gen=true
 type MasterSpec struct {
-	EtcdEndpoint string    `json:"etcd-endpoint"`
-	Resources    Resources `json:"resources"`
+	EtcdEndpoint string                  `json:"etcd-endpoint"`
+	Resources    v1.ResourceRequirements `json:"resources"`
 }
 
 // TrainingJobStatus defination
@@ -137,24 +142,10 @@ type TrainingJobList struct {
 	Items           []TrainingJob `json:"items"`
 }
 
-// Resources defination
-// +k8s:deepcopy-gen=true
-type Resources struct {
-	Limits struct {
-		GPU int
-		CPU float64
-		Mem float64
-	}
-	Requests struct {
-		GPU int
-		CPU float64
-		Mem float64
-	}
-}
-
 // NeedGPU returns true if the job need GPU resource to run.
 func (s *TrainingJob) NeedGPU() bool {
-	return s.Spec.Trainer.Resources.Limits.GPU > 0
+	q := s.Spec.Trainer.Resources.Limits[GPUResourceName]
+	return q.CmpInt64(0) == 1
 }
 
 // Elastic returns true if the job can scale to more workers.
@@ -162,28 +153,14 @@ func (s *TrainingJob) Elastic() bool {
 	return s.Spec.Trainer.MinInstance < s.Spec.Trainer.MaxInstance
 }
 
-// ConfigureClient will setup required field that the k8s rest client needs.
-func ConfigureClient(config *rest.Config) {
-	groupversion := schema.GroupVersion{
-		Group:   "paddlepaddle.org",
-		Version: "v1",
+// GPU convert Resource Limit Quantity to int
+func (s *TrainingJob) GPU() int {
+	q := s.Spec.Trainer.Resources.Limits[GPUResourceName]
+	gpu, ok := q.AsInt64()
+	if !ok {
+		// FIXME: treat errors
+		gpu = 0
 	}
-
-	config.GroupVersion = &groupversion
-	config.APIPath = "/apis"
-	config.ContentType = runtime.ContentTypeJSON
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: clientgoapi.Codecs}
-
-	schemeBuilder := runtime.NewSchemeBuilder(
-		func(scheme *runtime.Scheme) error {
-			scheme.AddKnownTypes(
-				groupversion,
-				&TrainingJob{},
-				&TrainingJobList{},
-				&v1.ListOptions{},
-				&v1.DeleteOptions{},
-			)
-			return nil
-		})
-	schemeBuilder.AddToScheme(clientgoapi.Scheme)
+	// NOTE: gpu value should not exceed int64.
+	return int(gpu)
 }
