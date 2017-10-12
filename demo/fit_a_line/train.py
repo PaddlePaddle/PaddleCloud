@@ -4,9 +4,10 @@ import os
 import gzip
 import sys
 
-# NOTE: You should change USERNAME to your account.
+# NOTE: You should full fill your username, for example:
+#   USERNAME = "paddle@example.com"
 # TODO(Yancey1989): fetch username from environment variable.
-USERNAME = "yanxu05@baidu.com"
+USERNAME = "YOUR USERNAME"
 
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 
