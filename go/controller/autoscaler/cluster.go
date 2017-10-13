@@ -108,14 +108,19 @@ func (c K8sCluster) scaleSizeTrainer(job *paddlejob.TrainingJob,
 		q := container.Resources.Requests.Cpu()
 		jobCPURequest += int(q.Value())
 	}
-	if c.FreeGPU() > jobGPURequest*(max-current) {
-		// can scale to max
-		return int32(max)
+	// scale the job by GPU first
+	if jobGPURequest > 0 {
+		if c.FreeGPU() > jobGPURequest*(max-current) {
+			// can scale to max
+			return int32(max)
+		}
+		// can add at least one pod
+		if c.FreeGPU() > jobGPURequest {
+			return int32(c.FreeGPU()/jobGPURequest + current)
+		}
 	}
-	// can add at least one pod
-	if c.FreeGPU() > jobGPURequest {
-		return int32(c.FreeGPU()/jobGPURequest + current)
-	}
+	// TODO(typhoonzer): scale by CPU
+
 	return int32(current)
 }
 
