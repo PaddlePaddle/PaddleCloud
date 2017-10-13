@@ -20,25 +20,12 @@ type Cluster interface {
 	// DeleteJob that are still pending.
 	FreeGPU() int
 	FreeCPU() float64
-	FreeMem() float64
+	FreeMem() int64 // in Gi bytes
 
-	SubmitJob(paddlejob.TrainingJob) error
-	DeleteJob(paddlejob.TrainingJob) error
-}
-
-// EventType is the type of the spec event.
-type EventType int
-
-// Spec event types
-const (
-	Add EventType = iota
-	Delete
-)
-
-// ConfigEvent is an event happened to the specs.
-type ConfigEvent struct {
-	Type   EventType
-	Config paddlejob.TrainingJob
+	Scale(*paddlejob.TrainingJob) error
+	// SyncResource will sync resource values with the cluster.
+	// should call this function in every tick.
+	SyncResource() error
 }
 
 type job struct {
@@ -145,40 +132,24 @@ nextJob:
 }
 
 func (a *Autoscaler) dynamicScaling() {
-	// TODO(helin)
+	err := a.cluster.SyncResource()
+	if err != nil {
+		log.Errorln("Unable to SyncResource: ", err)
+	}
+	a.sortedJobs(nil)
+	// FIXME: need to determin the order/priority to scale jobs.
+	// Currently: resource asc order to scale, GPU first
+	for _, j := range a.jobs {
+		a.cluster.Scale(&j.Config)
+	}
 }
 
-// Monitor should monitor the cluster free resource and do
-// scale/shrink the "TrainerJob"'s inner "Job"/"ReplicaSet".
-func (a *Autoscaler) Monitor(event <-chan ConfigEvent) {
+// Monitor monitors the cluster free resource in a loop. Do
+// scale/shrink according to the cluster resource.
+func (a *Autoscaler) Monitor() {
 	for {
 		select {
 		case <-a.ticker.C:
-		case e := <-event:
-			switch e.Type {
-			case Add:
-				log.Debugf("Add config: %s", e.Config.ObjectMeta.Name)
-				_, ok := a.jobs[e.Config.ObjectMeta.Name]
-				if ok {
-					log.Errorf("The config %s to add already exists.", e.Config.ObjectMeta.Name)
-					continue
-				}
-				a.jobs[e.Config.ObjectMeta.Name] = job{Config: e.Config}
-			case Delete:
-				log.Debugf("Delete config: %s", e.Config.ObjectMeta.Name)
-				j, ok := a.jobs[e.Config.ObjectMeta.Name]
-				if !ok {
-					log.Errorf("Could not find the config %s to delete.", e.Config.ObjectMeta.Name)
-					continue
-				}
-				delete(a.jobs, e.Config.ObjectMeta.Name)
-				go func(j job) {
-					err := a.cluster.DeleteJob(j.Config)
-					if err != nil {
-						log.Errorf("error on delete job: %v", err)
-					}
-				}(j)
-			}
 		}
 		a.dynamicScaling()
 	}

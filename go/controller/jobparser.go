@@ -38,6 +38,7 @@ type JobParser interface {
 // DefaultJobParser implement a basic JobParser.
 type DefaultJobParser int
 
+// Validate updates default values for the added job and validates the fields.
 func (p *DefaultJobParser) Validate(job *paddlejob.TrainingJob) error {
 	// Fill in default values
 	// FIXME: Need to test. What is the value if specified "omitempty"
@@ -58,7 +59,7 @@ func (p *DefaultJobParser) Validate(job *paddlejob.TrainingJob) error {
 	}
 
 	if !job.Spec.FaultTolerant && job.Elastic() {
-		return errors.New("max-instances should equal to min-instances when fault_tolerant is disabled.")
+		return errors.New("max-instances should equal to min-instances when fault_tolerant is disabled")
 	}
 	// TODO: add validations.
 	return nil
@@ -89,7 +90,7 @@ func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.R
 				},
 				Spec: v1.PodSpec{
 					// TODO: setup pserver volumes on cloud.
-					Volumes: []v1.Volume{},
+					Volumes: podVolumes(job),
 					Containers: []v1.Container{
 						v1.Container{
 							Name:      job.ObjectMeta.Name,
@@ -106,11 +107,15 @@ func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.R
 	}
 }
 
+// ParseToTrainer parse TrainingJob to a kubernetes job resource.
 func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.Job {
+	// TODO: create job.
 	return &batchv1.Job{}
 }
 
+// ParseToMaster parse TrainingJob to a kubernetes replicaset resource.
 func (p *DefaultJobParser) ParseToMaster(job *paddlejob.TrainingJob) *v1beta1.ReplicaSet {
+	// TODO: create master if needed.
 	return &v1beta1.ReplicaSet{}
 }
 
@@ -141,8 +146,9 @@ func podEnv(job *paddlejob.TrainingJob) []v1.EnvVar {
 		q := job.Spec.Trainer.Resources.Requests[paddlejob.GPUResourceName]
 		trainerCount = int(q.Value())
 	} else {
-		// TODO: cpu count
-		trainerCount = 1
+		q := job.Spec.Trainer.Resources.Requests["cpu"]
+		// FIXME: CPU resource value can be less than 1.
+		trainerCount = int(q.Value())
 	}
 	return []v1.EnvVar{
 		v1.EnvVar{Name: "PADDLE_JOB_NAME", Value: job.ObjectMeta.Name},
@@ -175,10 +181,12 @@ func podEnv(job *paddlejob.TrainingJob) []v1.EnvVar {
 }
 
 func podVolumes(job *paddlejob.TrainingJob) []v1.Volume {
+	// TODO: prepare volumes.
 	return []v1.Volume{}
 }
 
 func podVolumeMounts(job *paddlejob.TrainingJob) []v1.VolumeMount {
+	// TODO: preapare volume mounts for pods.
 	return []v1.VolumeMount{}
 }
 

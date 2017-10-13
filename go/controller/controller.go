@@ -29,7 +29,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/kubernetes/pkg/api"
 
@@ -74,6 +73,9 @@ func (c *Controller) Run(ctx context.Context) error {
 		return err
 	}
 	// TODO(helin): start autoscaler
+	cluster := autoscaler.NewK8sCluster(c.clientset)
+	as := autoscaler.NewAutoscaler(cluster)
+	go as.Monitor()
 
 	<-ctx.Done()
 	return ctx.Err()
@@ -108,42 +110,20 @@ func (c *Controller) startWatch(ctx context.Context) error {
 
 func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
-	namespace := job.ObjectMeta.Namespace
-	jobname := job.ObjectMeta.Name
-	rslist, err := c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		log.Errorln(err)
-	}
-	exist := false
-	for _, item := range rslist.Items {
-		if item.Name == jobname {
-			exist = true
-			break
-		}
-	}
-
-	if exist {
-		log.Errorln("Job name already exists:", jobname)
-		return
-	}
-
-	var parser DefaultJobParser
-
-	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(parser.ParseToPserver(job))
+	log.Debugln("TrainingJob Resource added: ", job.ObjectMeta.Name)
+	// TODO: if we need to create training job instance by the resource,
+	//       you should add the following code:
+	// var parser DefaultJobParser
+	// c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(parser.ParseToPserver(job))
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 	oldjob := oldObj.(*paddlejob.TrainingJob)
 	newjob := newObj.(*paddlejob.TrainingJob)
-	log.Debugln(oldjob)
-	log.Debugln(newjob)
-	log.Debugln("onUpdate.")
-	// TODO: call c.client.Put() to update resource
+	log.Debugln("TrainingJob Resource updated: ", oldjob.ObjectMeta.Name, " to ", newjob.ObjectMeta.Name)
 }
 
 func (c *Controller) onDelete(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
-	log.Debugln("onDelete.")
-	log.Debugln(job)
-	// TODO: call c.client.Delete()
+	log.Debugln("Deleted TrainingJob Resource: ", job.ObjectMeta.Name)
 }
