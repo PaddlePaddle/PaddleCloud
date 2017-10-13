@@ -1,12 +1,15 @@
 package autoscaler
 
 import (
+	"fmt"
+
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
+	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
 // K8sCluster is an implementation of Cluster interface to monitor
@@ -50,8 +53,70 @@ func (c K8sCluster) FreeMem() int64 {
 }
 
 // Scale one job if there's enough resource.
-func (c K8sCluster) Scale(*paddlejob.TrainingJob) error {
+func (c K8sCluster) Scale(job *paddlejob.TrainingJob) error {
+	namespace := job.ObjectMeta.Namespace
+	jobname := job.ObjectMeta.Name
+	// TODO(typhoonzero): ignore namespace quota for now, scale
+	// will return error if quota is not sufficient.
+	// 1. get current replicas for the job
+	trainerJob, err := c.clientset.
+		BatchV1().
+		Jobs(namespace).
+		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
+	if err != nil {
+		log.Errorln("get trainer job error: ", err)
+	}
+
+	newSize := c.scaleSizeTrainer(job, trainerJob)
+	if newSize == trainerJob.Spec.Parallelism {
+		log.Infoln("no need to scale: ", jobname)
+		return nil
+	}
+	// Paddle job scale need to update both parallelism and completions
+	*trainerJob.Spec.Parallelism = newSize
+	*trainerJob.Spec.Completions = newSize
+	// TODO: Sync status before scale?
+	c.clientset.BatchV1().Jobs(namespace).Update(trainerJob)
+	// TODO: wait the scale to finish
 	return nil
+}
+
+func (c K8sCluster) scaleSizeTrainer(job *paddlejob.TrainingJob,
+	trainerJob batchv1.Job) int32 {
+	// FIXME: use static parallelism or the active pod?
+	//        Some pod may already completed?
+	current := int(*trainerJob.Spec.Parallelism)
+	min := job.Spec.Trainer.MinInstance
+	max := job.Spec.Trainer.MaxInstance
+	if current < min {
+		return int32(min)
+	}
+	if current >= max {
+		return int32(max)
+	}
+	// job requested GPU/CPU for each pod
+	jobGPURequest := 0
+	jobCPURequest := 0
+	for _, container := range trainerJob.Spec.Template.Spec.Containers {
+		qReq := container.Resources.Requests.NvidiaGPU()
+		qLim := container.Resources.Limits.NvidiaGPU()
+		if qReq.IsZero() {
+			jobGPURequest += int(qLim.Value())
+		} else {
+			jobGPURequest += int(qReq.Value())
+		}
+		q := container.Resources.Requests.Cpu()
+		jobCPURequest += int(q.Value())
+	}
+	if c.FreeGPU() > jobGPURequest*(max-current) {
+		// can scale to max
+		return int32(max)
+	}
+	// can add at least one pod
+	if c.FreeGPU() > jobGPURequest {
+		return int32(c.FreeGPU()/jobGPURequest + current)
+	}
+	return int32(current)
 }
 
 // SyncResource will update free and total resources in k8s cluster.
