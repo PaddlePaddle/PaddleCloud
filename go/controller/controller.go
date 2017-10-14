@@ -37,7 +37,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	autoscaler "github.com/PaddlePaddle/cloud/go/controller/autoscaler"
+	"github.com/PaddlePaddle/cloud/go/controller/autoscaler"
 )
 
 // Controller for dispatching TrainingJob resource.
@@ -72,7 +72,7 @@ func (c *Controller) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO(helin): start autoscaler
+
 	cluster := autoscaler.NewK8sCluster(c.clientset)
 	as := autoscaler.NewAutoscaler(cluster)
 	go as.Monitor()

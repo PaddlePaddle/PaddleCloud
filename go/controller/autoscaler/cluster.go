@@ -28,8 +28,8 @@ type K8sCluster struct {
 }
 
 // NewK8sCluster create a new instance of K8sCluster.
-func NewK8sCluster(clientset *kubernetes.Clientset) K8sCluster {
-	return K8sCluster{
+func NewK8sCluster(clientset *kubernetes.Clientset) *K8sCluster {
+	return &K8sCluster{
 		NodeCount: 0,
 		GPUTotal:  0,
 		CPUTotal:  0,
@@ -38,22 +38,22 @@ func NewK8sCluster(clientset *kubernetes.Clientset) K8sCluster {
 }
 
 // FreeGPU returns cluster total freeGPU card count.
-func (c K8sCluster) FreeGPU() int {
+func (c *K8sCluster) FreeGPU() int {
 	return c.GPUFree
 }
 
 // FreeCPU returns cluster total free CPU resource.
-func (c K8sCluster) FreeCPU() float64 {
+func (c *K8sCluster) FreeCPU() float64 {
 	return c.CPUFree
 }
 
 // FreeMem returns cluster total free memory in Gi bytes.
-func (c K8sCluster) FreeMem() int64 {
+func (c *K8sCluster) FreeMem() int64 {
 	return c.MemoryFreeGi
 }
 
 // Scale one job if there's enough resource.
-func (c K8sCluster) Scale(job *paddlejob.TrainingJob) error {
+func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	// TODO(typhoonzero): ignore namespace quota for now, scale
@@ -68,7 +68,7 @@ func (c K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	}
 
 	newSize := c.scaleSizeTrainer(job, trainerJob)
-	if newSize == trainerJob.Spec.Parallelism {
+	if newSize == *trainerJob.Spec.Parallelism {
 		log.Infoln("no need to scale: ", jobname)
 		return nil
 	}
@@ -81,8 +81,8 @@ func (c K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	return nil
 }
 
-func (c K8sCluster) scaleSizeTrainer(job *paddlejob.TrainingJob,
-	trainerJob batchv1.Job) int32 {
+func (c *K8sCluster) scaleSizeTrainer(job *paddlejob.TrainingJob,
+	trainerJob *batchv1.Job) int32 {
 	// FIXME: use static parallelism or the active pod?
 	//        Some pod may already completed?
 	current := int(*trainerJob.Spec.Parallelism)
@@ -125,7 +125,7 @@ func (c K8sCluster) scaleSizeTrainer(job *paddlejob.TrainingJob,
 }
 
 // SyncResource will update free and total resources in k8s cluster.
-func (c K8sCluster) SyncResource() error {
+func (c *K8sCluster) SyncResource() error {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
