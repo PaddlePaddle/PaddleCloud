@@ -94,78 +94,8 @@ class K8sProvider:
     def submit_job(self, paddlejob, username):
         namespace = utils.email_escape(username)
         api_client = utils.get_user_api_client(username)
-        self.__setup_volumes(paddlejob, username)
-        if not paddlejob.registry_secret:
-            paddlejob.registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
-        if not paddlejob.image:
-            if paddlejob.gpu > 0:
-                paddlejob.image = settings.JOB_DOCKER_IMAGE["image_gpu"]
-            else:
-                paddlejob.image = settings.JOB_DOCKER_IMAGE["image"]
-        # jobPackage validation: startwith /pfs
-        # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
-        package_in_pod = os.path.join("/pfs/%s/home/%s"%(paddlejob.dc, username), "jobs", paddlejob.name)
-
-        logging.info("current package: %s", package_in_pod)
-        # package must be ready before submit a job
-        current_package_path = package_in_pod.replace("/pfs/%s/home"%paddlejob.dc, settings.STORAGE_PATH)
-        if not os.path.exists(current_package_path):
-            current_package_path = package_in_pod.replace("/pfs/%s/home/%s"%(paddlejob.dc, username), settings.STORAGE_PATH)
-            if not os.path.exists(current_package_path):
-                raise Exception("package not exist in cloud: %s"%current_package_path)
-        logging.info("current package in pod: %s", current_package_path)
-        # GPU quota management
-        # TODO(Yancey1989) We should move this to Kubernetes
-        if 'GPU_QUOTA' in dir(settings) and int(paddlejob.gpu) > 0:
-            gpu_usage = 0
-            pods = client.CoreV1Api(api_client=api_client).list_namespaced_pod(namespace=namespace)
-            for pod in pods.items:
-                # only statistics trainer GPU resource, pserver does not use GPU
-                if pod.metadata.labels and 'paddle-job' in pod.metadata.labels and \
-                    pod.status.phase == 'Running':
-                    gpu_usage += int(pod.spec.containers[0].resources.limits.get('alpha.kubernetes.io/nvidia-gpu', '0'))
-            if username in settings.GPU_QUOTA:
-                gpu_quota = settings.GPU_QUOTA[username]['limit']
-            else:
-                gpu_quota = settings.GPU_QUOTA['DEFAULT']['limit']
-            gpu_available = gpu_quota - gpu_usage
-            gpu_request = int(paddlejob.gpu) * int(paddlejob.parallelism)
-            logging.info('gpu available: %d, gpu request: %d' % (gpu_available, gpu_request))
-            if gpu_available < gpu_request:
-                raise Exception("You don't have enought GPU quota," + \
-                    "request: %d, usage: %d, limit: %d" % (gpu_request, gpu_usage, gpu_quota))
-
-        # add Nvidia lib volume if training with GPU
-        if paddlejob.gpu > 0:
-            volumes.append(volume.get_volume_config(
-                fstype = settings.FSTYPE_HOSTPATH,
-                name = "nvidia-libs",
-                mount_path = "/usr/local/nvidia/lib64",
-                host_path = settings.NVIDIA_LIB_PATH
-            ))
-        # ========== submit master ReplicaSet if using fault_tolerant feature ==
-        # FIXME: alpha features in separate module
-        if paddlejob.fault_tolerant:
-            try:
-                ret = client.ExtensionsV1beta1Api(api_client=api_client).create_namespaced_replica_set(
-                    namespace,
-                    paddlejob.new_master_job())
-            except ApiException, e:
-                logging.error("error submitting master job: %s", traceback.format_exc())
-                raise e
-        # ========================= submit pserver job =========================
         try:
-            ret = client.ExtensionsV1beta1Api(api_client=api_client).create_namespaced_replica_set(
-                namespace,
-                paddlejob.new_pserver_job())
-        except ApiException, e:
-            logging.error("error submitting pserver job: %s ", traceback.format_exc())
-            raise e
-        # ========================= submit trainer job =========================
-        try:
-            ret = client.BatchV1Api(api_client=api_client).create_namespaced_job(
-                namespace,
-                paddlejob.new_trainer_job())
+            ret = api_client.create_third_party_resource(paddlejob)
         except ApiException, e:
             logging.error("error submitting trainer job: %s" % traceback.format_exc())
             raise e

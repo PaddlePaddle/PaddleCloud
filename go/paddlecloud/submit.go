@@ -10,10 +10,14 @@ import (
 	"path"
 	"strings"
 
+	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -44,6 +48,8 @@ type SubmitCmd struct {
 	// Alpha features:
 	// TODO: separate API versions
 	FaultTolerant bool `json:"faulttolerant"`
+	MinInstance   int  `json:"min-instance"`
+	MaxInstance   int  `json:"max-instance"`
 }
 
 // Name is subcommands name.
@@ -73,9 +79,77 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
-	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
+	f.StringVar(&p.Image, "image", "", "Runtim Docker image for the job")
 	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
 	f.BoolVar(&p.FaultTolerant, "faulttolerant", false, "if true, use new fault-tolerant pservers")
+}
+
+// ParseToTrainingJob parse command-line parameters to TrainingJob
+func (p *SubmitCmd) ParseToTrainingJob() *paddlejob.TrainingJob {
+	job := paddlejob.TrainingJob{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "TrainingJob",
+			APIVersion: "paddlepaddle.org/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: p.Name(),
+		},
+		Spec: paddlejob.TrainingJobSpec{
+			Image:             p.Image,
+			Port:              7164,
+			PortsNum:          1,
+			PortsNumForSparse: 1,
+			FaultTolerant:     p.FaultTolerant,
+			Passes:            p.Passes,
+			Trainer: paddlejob.TrainerSpec{
+				Entrypoint:  p.Entry,
+				MinInstance: p.MinInstance,
+				MaxInstance: p.MaxInstance,
+				Resources: v1.ResourceRequirements{
+					Limits: v1.ResourceList{
+						v1.ResourceCPU:       resource.MustParse(string(p.CPU)),
+						v1.ResourceMemory:    resource.MustParse(p.Memory),
+						v1.ResourceNvidiaGPU: resource.MustParse(string(p.GPU)),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceCPU:       resource.MustParse(string(p.CPU)),
+						v1.ResourceMemory:    resource.MustParse(p.Memory),
+						v1.ResourceNvidiaGPU: resource.MustParse(string(p.GPU)),
+					},
+				},
+			},
+			Pserver: paddlejob.PserverSpec{
+				MinInstance: p.Pservers,
+				MaxInstance: p.Pservers,
+				Resources: v1.ResourceRequirements{
+					Limits: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse(string(p.PSCPU)),
+						v1.ResourceMemory: resource.MustParse(p.PSMemory),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse(string(p.PSCPU)),
+						v1.ResourceMemory: resource.MustParse(p.PSMemory),
+					},
+				},
+			},
+		},
+	}
+	if p.FaultTolerant {
+		job.Spec.Master = paddlejob.MasterSpec{
+			Resources: v1.ResourceRequirements{
+				// TODO(Yancey1989) caculate resource according trainingjob resource
+				Limits: v1.ResourceList{
+					v1.ResourceCPU:    resource.MustParse("1"),
+					v1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+				Requests: v1.ResourceList{
+					v1.ResourceCPU:    resource.MustParse("1"),
+					v1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+			},
+		}
+	}
+	return &job
 }
 
 // Execute submit command.
@@ -132,7 +206,7 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
 	// 2. call paddlecloud server to create kubernetes job
-	jsonString, err := json.Marshal(s.args)
+	jsonString, err := json.Marshal(s.args.ParseToTrainingJob())
 	if err != nil {
 		return err
 	}
