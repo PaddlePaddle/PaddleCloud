@@ -79,8 +79,10 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
-	f.StringVar(&p.Image, "image", "", "Runtim Docker image for the job")
+	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
 	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
+	f.IntVar(&p.MinInstance, "min-instance", 1, "The minimum instance number for the trainer.")
+	f.IntVar(&p.MaxInstance, "max-instance", 1, "The maximum instance number for the trainer.")
 	f.BoolVar(&p.FaultTolerant, "faulttolerant", false, "if true, use new fault-tolerant pservers")
 }
 
