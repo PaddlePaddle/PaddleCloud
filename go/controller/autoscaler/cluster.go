@@ -147,7 +147,7 @@ func (c *K8sCluster) SyncResource() error {
 		}
 		for resname, q := range item.Status.Allocatable {
 			if resname == v1.ResourceCPU {
-				totalCPU += float64(q.Value()) + float64(q.MilliValue())/1000.0
+				totalCPU += float64(q.Value()) + float64(q.MilliValue())/1000
 			}
 			if resname == v1.ResourceNvidiaGPU {
 				totalGPU += int(q.Value())
@@ -167,7 +167,7 @@ func (c *K8sCluster) SyncResource() error {
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
 			q := container.Resources.Requests.Cpu()
-			requestedCPU += float64(q.Value()) + float64(q.MilliValue())/1000.0
+			requestedCPU += float64(q.Value()) + float64(q.MilliValue())/1000
 
 			qGPU := container.Resources.Requests.NvidiaGPU()
 			if qGPU.IsZero() {
