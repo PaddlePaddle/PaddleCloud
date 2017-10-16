@@ -116,7 +116,7 @@ func (c *Controller) startWatch(ctx context.Context) error {
 func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("TrainingJob Resource added: ", job.ObjectMeta.Name)
-	c.autoscaler.OnAdd(job)
+	c.autoscaler.OnAdd(*job)
 	// TODO: if we need to create training job instance by the resource,
 	//       you should add the following code:
 	// var parser DefaultJobParser
@@ -132,5 +132,5 @@ func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 func (c *Controller) onDelete(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("Deleted TrainingJob Resource: ", job.ObjectMeta.Name)
-	c.autoscaler.OnDel(job)
+	c.autoscaler.OnDel(*job)
 }
