@@ -28,8 +28,8 @@ type K8sCluster struct {
 }
 
 // NewK8sCluster create a new instance of K8sCluster.
-func NewK8sCluster(clientset *kubernetes.Clientset) K8sCluster {
-	return K8sCluster{
+func NewK8sCluster(clientset *kubernetes.Clientset) *K8sCluster {
+	return &K8sCluster{
 		NodeCount: 0,
 		GPUTotal:  0,
 		CPUTotal:  0,
@@ -38,17 +38,17 @@ func NewK8sCluster(clientset *kubernetes.Clientset) K8sCluster {
 }
 
 // FreeGPU returns cluster total freeGPU card count.
-func (c K8sCluster) FreeGPU() int {
+func (c *K8sCluster) FreeGPU() int {
 	return c.GPUFree
 }
 
 // FreeCPU returns cluster total free CPU resource.
-func (c K8sCluster) FreeCPU() float64 {
+func (c *K8sCluster) FreeCPU() float64 {
 	return c.CPUFree
 }
 
 // FreeMem returns cluster total free memory in Gi bytes.
-func (c K8sCluster) FreeMem() int64 {
+func (c *K8sCluster) FreeMem() int64 {
 	return c.MemoryFreeGi
 }
 
@@ -68,7 +68,7 @@ func (c K8sCluster) GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32 {
 }
 
 // Scale one job if there's enough resource.
-func (c K8sCluster) Scale(job *paddlejob.TrainingJob) error {
+func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	// TODO(typhoonzero): ignore namespace quota for now, scale
@@ -140,7 +140,7 @@ func (c K8sCluster) getScaleSizeTrainer(job *paddlejob.TrainingJob,
 }
 
 // SyncResource will update free and total resources in k8s cluster.
-func (c K8sCluster) SyncResource() error {
+func (c *K8sCluster) SyncResource() error {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
@@ -162,7 +162,7 @@ func (c K8sCluster) SyncResource() error {
 		}
 		for resname, q := range item.Status.Allocatable {
 			if resname == v1.ResourceCPU {
-				totalCPU += float64(q.Value()) + float64(q.MilliValue())/1000.0
+				totalCPU += float64(q.Value()) + float64(q.MilliValue())/1000
 			}
 			if resname == v1.ResourceNvidiaGPU {
 				totalGPU += int(q.Value())
@@ -182,7 +182,7 @@ func (c K8sCluster) SyncResource() error {
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
 			q := container.Resources.Requests.Cpu()
-			requestedCPU += float64(q.Value()) + float64(q.MilliValue())/1000.0
+			requestedCPU += float64(q.Value()) + float64(q.MilliValue())/1000
 
 			qGPU := container.Resources.Requests.NvidiaGPU()
 			if qGPU.IsZero() {
