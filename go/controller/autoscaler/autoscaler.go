@@ -125,13 +125,13 @@ type event struct {
 	Job  *paddlejob.TrainingJob
 }
 
-// AddJob append the current job to the jobmap.
-func (a *Autoscaler) AddJob(trainingjob *paddlejob.TrainingJob) {
+// OnAdd notifies the autoscaler that a job has been added.
+func (a *Autoscaler) OnAdd(trainingjob *paddlejob.TrainingJob) {
 	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
-// DelJob append the current job to the jobmap.
-func (a *Autoscaler) DelJob(trainingjob *paddlejob.TrainingJob) {
+// OnDel notifies the autoscaler that a job has been deleted.
+func (a *Autoscaler) OnDel(trainingjob *paddlejob.TrainingJob) {
 	a.eventCh <- event{Type: del, Job: trainingjob}
 }
 
