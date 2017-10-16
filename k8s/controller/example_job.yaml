@@ -7,7 +7,7 @@ spec:
   port: 7164
   ports_num: 1
   ports_num_for_sparse: 1
-  fault_tolerant: 1
+  fault_tolerant: true
   trainer:
     entrypoint: "python train.py"
     workspace: "/home/job-1/"

@@ -13,4 +13,4 @@ spec:
       - name: training-job-controller
         image: typhoon1986/training-job-controller
         imagePullPolicy: IfNotPresent
-        command: ["/controller", "-logtostderr" , "-v", "100", "-log_level", "debug"]
+        command: ["/controller", "-logtostderr", "-log_level", "debug"]

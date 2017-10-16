@@ -2,6 +2,7 @@ package autoscaler
 
 import (
 	"sort"
+	"sync"
 	"time"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
@@ -9,7 +10,7 @@ import (
 )
 
 const (
-	defaultLoopDur = time.Second
+	defaultLoopDur = time.Second * 5
 )
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -26,10 +27,12 @@ type Cluster interface {
 	// SyncResource will sync resource values with the cluster.
 	// should call this function in every tick.
 	SyncResource() error
+	// GetTrainerJobParallelism get current parallelism for the trainer.
+	GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32
 }
 
 type job struct {
-	Config      paddlejob.TrainingJob
+	Config      *paddlejob.TrainingJob
 	CurInstance int
 }
 
@@ -50,6 +53,7 @@ type Autoscaler struct {
 	ticker  *time.Ticker
 	cluster Cluster
 	jobs    map[string]job
+	mutex   *sync.Mutex
 }
 
 // NewAutoscaler creates a new Autoscaler.
@@ -58,6 +62,7 @@ func NewAutoscaler(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
 		cluster: cluster,
 		ticker:  time.NewTicker(defaultLoopDur),
 		jobs:    make(map[string]job),
+		mutex:   &sync.Mutex{},
 	}
 	for _, option := range options {
 		option(c)
@@ -110,10 +115,31 @@ func gpu(j job) bool {
 	return j.Config.NeedGPU()
 }
 
+// AddJob append the current job to the jobmap.
+func (a *Autoscaler) AddJob(trainingjob *paddlejob.TrainingJob) {
+	log.Debugln("AddJob to autoscaler: ", trainingjob.ObjectMeta.Name)
+	jobInstance := job{Config: trainingjob, CurInstance: 0}
+	// TODO: use int(a.cluster.GetTrainerJobParallelism(trainingjob))
+	a.mutex.Lock()
+	log.Debugln("AddJob to autoscaler1: ", trainingjob.ObjectMeta.Name)
+	a.jobs[trainingjob.ObjectMeta.Name] = jobInstance
+	log.Debugln("AddJob to autoscaler2: ", a)
+	a.mutex.Unlock()
+}
+
+// DelJob append the current job to the jobmap.
+func (a *Autoscaler) DelJob(trainingjob *paddlejob.TrainingJob) {
+	log.Debugln("DelJob to autoscaler: ", trainingjob.ObjectMeta.Name)
+	a.mutex.Lock()
+	delete(a.jobs, trainingjob.ObjectMeta.Name)
+	a.mutex.Unlock()
+}
+
 // sortedElasticJobs return the names of sorted jobs by fulfillment
 // and tiebreakers in ascending order.
 func (a *Autoscaler) sortedJobs(filters ...func(job) bool) []string {
 	var js jobs
+	a.mutex.Lock()
 nextJob:
 	for _, v := range a.jobs {
 		for _, f := range filters {
@@ -123,6 +149,7 @@ nextJob:
 		}
 		js = append(js, v)
 	}
+	a.mutex.Unlock()
 	sort.Sort(js)
 	var result []string
 	for _, v := range js {
@@ -139,9 +166,13 @@ func (a *Autoscaler) dynamicScaling() {
 	a.sortedJobs(nil)
 	// FIXME: need to determin the order/priority to scale jobs.
 	// Currently: resource asc order to scale, GPU first
-	for _, j := range a.jobs {
-		a.cluster.Scale(&j.Config)
+	a.mutex.Lock()
+	log.Infoln("before scaling job: ", len(a.jobs), a)
+	for jobname, j := range a.jobs {
+		log.Infoln("try scaling job: ", jobname)
+		a.cluster.Scale(j.Config)
 	}
+	a.mutex.Unlock()
 }
 
 // Monitor monitors the cluster free resource in a loop. Do

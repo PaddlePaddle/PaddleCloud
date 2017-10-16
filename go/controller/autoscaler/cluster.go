@@ -52,6 +52,21 @@ func (c *K8sCluster) FreeMem() int64 {
 	return c.MemoryFreeGi
 }
 
+// GetTrainerJobParallelism get current parallelism for the trainer.
+func (c K8sCluster) GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32 {
+	namespace := job.ObjectMeta.Namespace
+	jobname := job.ObjectMeta.Name
+	trainerJob, err := c.clientset.
+		BatchV1().
+		Jobs(namespace).
+		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
+	if err != nil {
+		log.Errorln("get trainer job error: ", err)
+		return 0
+	}
+	return *trainerJob.Spec.Parallelism
+}
+
 // Scale one job if there's enough resource.
 func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	namespace := job.ObjectMeta.Namespace
@@ -67,7 +82,7 @@ func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 		log.Errorln("get trainer job error: ", err)
 	}
 
-	newSize := c.scaleSizeTrainer(job, trainerJob)
+	newSize := c.getScaleSizeTrainer(job, trainerJob)
 	if newSize == *trainerJob.Spec.Parallelism {
 		log.Infoln("no need to scale: ", jobname)
 		return nil
@@ -81,7 +96,7 @@ func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	return nil
 }
 
-func (c *K8sCluster) scaleSizeTrainer(job *paddlejob.TrainingJob,
+func (c K8sCluster) getScaleSizeTrainer(job *paddlejob.TrainingJob,
 	trainerJob *batchv1.Job) int32 {
 	// FIXME: use static parallelism or the active pod?
 	//        Some pod may already completed?
