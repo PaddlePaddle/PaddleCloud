@@ -2,7 +2,6 @@ package autoscaler
 
 import (
 	"sort"
-	"sync"
 	"time"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
@@ -52,9 +51,8 @@ func (j job) Fulfillment() float64 {
 type Autoscaler struct {
 	ticker  *time.Ticker
 	cluster Cluster
-
-	mutex sync.Mutex
-	jobs  map[string]job
+	jobs    map[string]job
+	eventCh chan event
 }
 
 // NewAutoscaler creates a new Autoscaler.
@@ -115,31 +113,32 @@ func gpu(j job) bool {
 	return j.Config.NeedGPU()
 }
 
+type eventType int
+
+const (
+	add eventType = iota
+	del
+)
+
+type event struct {
+	Type eventType
+	Job  *paddlejob.TrainingJob
+}
+
 // AddJob append the current job to the jobmap.
 func (a *Autoscaler) AddJob(trainingjob *paddlejob.TrainingJob) {
-	log.Debugln("AddJob to autoscaler: ", trainingjob.ObjectMeta.Name)
-	jobInstance := job{Config: trainingjob, CurInstance: 0}
-	// TODO: use int(a.cluster.GetTrainerJobParallelism(trainingjob))
-	a.mutex.Lock()
-	log.Debugln("AddJob to autoscaler1: ", trainingjob.ObjectMeta.Name)
-	a.jobs[trainingjob.ObjectMeta.Name] = jobInstance
-	log.Debugln("AddJob to autoscaler2: ", a)
-	a.mutex.Unlock()
+	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
 // DelJob append the current job to the jobmap.
 func (a *Autoscaler) DelJob(trainingjob *paddlejob.TrainingJob) {
-	log.Debugln("DelJob to autoscaler: ", trainingjob.ObjectMeta.Name)
-	a.mutex.Lock()
-	delete(a.jobs, trainingjob.ObjectMeta.Name)
-	a.mutex.Unlock()
+	a.eventCh <- event{Type: del, Job: trainingjob}
 }
 
 // sortedElasticJobs return the names of sorted jobs by fulfillment
 // and tiebreakers in ascending order.
 func (a *Autoscaler) sortedJobs(filters ...func(job) bool) []string {
 	var js jobs
-	a.mutex.Lock()
 nextJob:
 	for _, v := range a.jobs {
 		for _, f := range filters {
@@ -149,7 +148,7 @@ nextJob:
 		}
 		js = append(js, v)
 	}
-	a.mutex.Unlock()
+
 	sort.Sort(js)
 	var result []string
 	for _, v := range js {
@@ -166,13 +165,11 @@ func (a *Autoscaler) dynamicScaling() {
 	a.sortedJobs()
 	// FIXME: need to determin the order/priority to scale jobs.
 	// Currently: resource asc order to scale, GPU first
-	a.mutex.Lock()
 	log.Infoln("before scaling job: ", len(a.jobs), a)
 	for jobname, j := range a.jobs {
 		log.Infoln("try scaling job: ", jobname)
 		a.cluster.Scale(j.Config)
 	}
-	a.mutex.Unlock()
 }
 
 // Monitor monitors the cluster free resource in a loop. Do
@@ -181,6 +178,21 @@ func (a *Autoscaler) Monitor() {
 	for {
 		select {
 		case <-a.ticker.C:
+		case e := <-a.eventCh:
+			switch e.Type {
+			case add:
+				log.Debugln("AddJob to autoscaler: ", e.Job.ObjectMeta.Name)
+				j := job{Config: e.Job, CurInstance: 0}
+				// TODO: use int(a.cluster.GetTrainerJobParallelism(trainingjob))
+				log.Debugln("AddJob to autoscaler1: ", e.Job.ObjectMeta.Name)
+				a.jobs[e.Job.ObjectMeta.Name] = j
+				log.Debugln("AddJob to autoscaler2: ", a)
+			case del:
+				log.Debugln("DelJob to autoscaler: ", e.Job.ObjectMeta.Name)
+				delete(a.jobs, e.Job.ObjectMeta.Name)
+			default:
+				log.Errorln("Unrecognized event: %v.", e)
+			}
 		}
 		// TODO(helin): if we handle job add / delete by
 		// receiving from channels here, then we don't need to
