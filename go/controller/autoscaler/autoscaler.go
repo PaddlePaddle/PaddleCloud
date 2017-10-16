@@ -52,8 +52,9 @@ func (j job) Fulfillment() float64 {
 type Autoscaler struct {
 	ticker  *time.Ticker
 	cluster Cluster
-	jobs    map[string]job
-	mutex   *sync.Mutex
+
+	mutex sync.Mutex
+	jobs  map[string]job
 }
 
 // NewAutoscaler creates a new Autoscaler.
@@ -62,7 +63,6 @@ func NewAutoscaler(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
 		cluster: cluster,
 		ticker:  time.NewTicker(defaultLoopDur),
 		jobs:    make(map[string]job),
-		mutex:   &sync.Mutex{},
 	}
 	for _, option := range options {
 		option(c)
@@ -163,7 +163,7 @@ func (a *Autoscaler) dynamicScaling() {
 	if err != nil {
 		log.Errorln("Unable to SyncResource: ", err)
 	}
-	a.sortedJobs(nil)
+	a.sortedJobs()
 	// FIXME: need to determin the order/priority to scale jobs.
 	// Currently: resource asc order to scale, GPU first
 	a.mutex.Lock()
@@ -182,6 +182,10 @@ func (a *Autoscaler) Monitor() {
 		select {
 		case <-a.ticker.C:
 		}
+		// TODO(helin): if we handle job add / delete by
+		// receiving from channels here, then we don't need to
+		// use a.mu.Lock() everywhere, since everything is in
+		// a single goroutine.
 		a.dynamicScaling()
 	}
 }

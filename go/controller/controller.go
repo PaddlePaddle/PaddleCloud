@@ -85,12 +85,17 @@ func (c *Controller) startWatch(ctx context.Context) error {
 	source := cache.NewListWatchFromClient(
 		c.client,
 		paddlejob.TrainingJobs,
+		// TODO(helin): pass in namespace as an argument.
 		api.NamespaceAll,
 		fields.Everything())
 
 	_, informer := cache.NewInformer(
 		source,
 		&paddlejob.TrainingJob{},
+
+		// TODO(helin): support resync. resync will eventually
+		// happen even if the resyncPeriod parameter is set to
+		// 0.
 
 		// resyncPeriod: Every resyncPeriod, all resources in
 		// the cache will retrigger events. Set to 0 to
