@@ -22,7 +22,7 @@ type Cluster interface {
 	FreeCPU() float64
 	FreeMem() int64 // in Gi bytes
 
-	Scale(*paddlejob.TrainingJob) error
+	Scale(paddlejob.TrainingJob) error
 	// SyncResource will sync resource values with the cluster.
 	// should call this function in every tick.
 	SyncResource() error
@@ -31,7 +31,7 @@ type Cluster interface {
 }
 
 type job struct {
-	Config      *paddlejob.TrainingJob
+	Config      paddlejob.TrainingJob
 	CurInstance int
 }
 
@@ -81,10 +81,9 @@ func (j jobs) Less(a int, b int) bool {
 	if scoreA == scoreB {
 		resA := j[a].Config.Spec.Trainer.Resources
 		resB := j[b].Config.Spec.Trainer.Resources
-		// FIXME: use Quantity type, should refine these code.
 		resALimitsGPU := resA.Limits[paddlejob.GPUResourceName]
 		resBLimitsGPU := resB.Limits[paddlejob.GPUResourceName]
-		if resALimitsGPU.Cmp(resALimitsGPU) == 0 {
+		if resALimitsGPU.Cmp(resBLimitsGPU) == 0 {
 			resARequestsCPU := resA.Requests["cpu"]
 			resBRequestsCPU := resB.Requests["cpu"]
 			if resARequestsCPU.Cmp(resBRequestsCPU) == 0 {
@@ -122,16 +121,16 @@ const (
 
 type event struct {
 	Type eventType
-	Job  *paddlejob.TrainingJob
+	Job  paddlejob.TrainingJob
 }
 
 // OnAdd notifies the autoscaler that a job has been added.
-func (a *Autoscaler) OnAdd(trainingjob *paddlejob.TrainingJob) {
+func (a *Autoscaler) OnAdd(trainingjob paddlejob.TrainingJob) {
 	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
 // OnDel notifies the autoscaler that a job has been deleted.
-func (a *Autoscaler) OnDel(trainingjob *paddlejob.TrainingJob) {
+func (a *Autoscaler) OnDel(trainingjob paddlejob.TrainingJob) {
 	a.eventCh <- event{Type: del, Job: trainingjob}
 }
 

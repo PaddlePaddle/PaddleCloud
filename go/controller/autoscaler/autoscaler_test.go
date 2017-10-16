@@ -17,7 +17,7 @@ func TestMonitor(t *testing.T) {
 	ch := make(chan struct{})
 
 	go func() {
-		c.Monitor(nil)
+		c.Monitor()
 		close(ch)
 	}()
 
