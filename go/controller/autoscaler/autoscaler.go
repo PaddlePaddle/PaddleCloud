@@ -194,10 +194,6 @@ func (a *Autoscaler) Monitor() {
 				log.Errorln("Unrecognized event: %v.", e)
 			}
 		}
-		// TODO(helin): if we handle job add / delete by
-		// receiving from channels here, then we don't need to
-		// use a.mu.Lock() everywhere, since everything is in
-		// a single goroutine.
 		a.dynamicScaling()
 	}
 }
