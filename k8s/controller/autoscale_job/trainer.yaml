@@ -32,7 +32,7 @@ spec:
         - name: TOPOLOGY
           value: ""
         - name: ENTRY
-          value: "python /workspace/train_ft.py"
+          value: "cd /workspace && python /workspace/train_ft.py"
         - name: TRAINER_PACKAGE
           value: "/tmp"
         - name: PADDLE_INIT_PORT
@@ -48,7 +48,7 @@ spec:
         - name: PADDLE_INIT_NUM_PASSES
           value: "1"
         - name: PADDLE_INIT_USE_GPU
-          value: "1"
+          value: "0"
         - name: LD_LIBRARY_PATH
           value: "/usr/local/nvidia/lib64"
         - name: NAMESPACE
@@ -58,10 +58,10 @@ spec:
         resources:
           requests:
             memory: 500Mi
-            cpu: 1
+            cpu: 200m
           limits:
-            memroy: 500Mi
-            cpu: 1
-            alpha.kubernetes.io/nvidia-gpu: 1
+            memory: 500Mi
+            cpu: 200m
+            #alpha.kubernetes.io/nvidia-gpu: 1
       restartPolicy: Never
 

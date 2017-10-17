@@ -14,7 +14,11 @@ def main():
 
     # network config
     x = paddle.layer.data(name='x', type=paddle.data_type.dense_vector(13))
-    y_predict = paddle.layer.fc(input=x, size=1, act=paddle.activation.Linear())
+    y_predict = paddle.layer.fc(input=x,
+                                param_attr=paddle.attr.Param(name='w', learning_rate=1e-3),
+                                size=1,
+                                act=paddle.activation.Linear(),
+                                bias_attr=paddle.attr.Param(name='b', learning_rate=1e-3))
     y = paddle.layer.data(name='y', type=paddle.data_type.dense_vector(1))
     cost = paddle.layer.square_error_cost(input=y_predict, label=y)
 
@@ -22,7 +26,7 @@ def main():
     parameters = paddle.parameters.create(cost)
 
     # create optimizer
-    optimizer = paddle.optimizer.Momentum(momentum=0)
+    optimizer = paddle.optimizer.Momentum(momentum=0, learning_rate=2e-4)
 
     trainer = paddle.trainer.SGD(
         cost=cost, 
@@ -54,7 +58,7 @@ def main():
     trainer.train(
         reader=paddle.batch(
             paddle.reader.shuffle(cloud_reader(
-                ["/pfs/dlnel/public/dataset/uci_housing/uci_housing_train-*"],
+                ["/workspace/data/uci_housing/uci_housing_train-*"],
                 etcd_endpoint), buf_size=500),
             batch_size=2),
         feeding=feeding,
