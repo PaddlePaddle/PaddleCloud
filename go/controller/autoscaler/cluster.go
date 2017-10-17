@@ -30,9 +30,6 @@ type K8sCluster struct {
 // NewK8sCluster create a new instance of K8sCluster.
 func NewK8sCluster(clientset *kubernetes.Clientset) *K8sCluster {
 	return &K8sCluster{
-		NodeCount: 0,
-		GPUTotal:  0,
-		CPUTotal:  0,
 		clientset: clientset,
 	}
 }
@@ -66,6 +63,11 @@ func (c K8sCluster) GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32 {
 	}
 	return *trainerJob.Spec.Parallelism
 }
+
+// TODO(helin): refine scale algorithm. E.g., if we have two jobs, a
+// needs 3 more GPU, b needs 3 more GPU, and there are 4 free GPUs, a
+// and b should both get 2 GPUs, but according to the current logic, a
+// will get 3 GPUs and b will get 1 GPU.
 
 // Scale one job if there's enough resource.
 func (c *K8sCluster) Scale(job paddlejob.TrainingJob) error {
@@ -126,28 +128,35 @@ func (c K8sCluster) getScaleSizeTrainer(job paddlejob.TrainingJob,
 		q := container.Resources.Requests.Cpu()
 		jobCPURequest += float64(q.MilliValue()) / 1000
 	}
-	// scale the job by GPU first
+
+	gpuConstraint := int32(current)
 	if jobGPURequest > 0 {
 		if c.FreeGPU() > jobGPURequest*(max-current) {
 			// can scale to max
-			return int32(max)
+			gpuConstraint = int32(max)
 		}
+
 		// can add at least one pod
 		if c.FreeGPU() > jobGPURequest {
-			return int32(c.FreeGPU()/jobGPURequest + current)
-		}
-	}
-	// scale by CPU
-	if jobCPURequest > 0 {
-		if c.FreeCPU() > jobCPURequest*float64(max-current) {
-			return int32(max)
-		}
-		if c.FreeCPU() > jobCPURequest {
-			return int32(c.FreeCPU()/jobCPURequest) + int32(current)
+			gpuConstraint = int32(c.FreeGPU()/jobGPURequest + current)
 		}
 	}
 
-	return int32(current)
+	cpuConstraint := int32(current)
+	if jobCPURequest > 0 {
+		if c.FreeCPU() > jobCPURequest*float64(max-current) {
+			cpuConstraint = int32(max)
+		}
+		if c.FreeCPU() > jobCPURequest {
+			cpuConstraint = int32(c.FreeCPU()/jobCPURequest) + int32(current)
+		}
+	}
+
+	if cpuConstraint < gpuConstraint {
+		return cpuConstraint
+	}
+
+	return gpuConstraint
 }
 
 // SyncResource will update free and total resources in k8s cluster.

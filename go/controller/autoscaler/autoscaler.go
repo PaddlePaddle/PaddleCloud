@@ -182,8 +182,10 @@ func (a *Autoscaler) Monitor() {
 			switch e.Type {
 			case add:
 				log.Debugln("AddJob to autoscaler: ", e.Job.ObjectMeta.Name)
-				j := job{Config: e.Job,
-					CurInstance: int(a.cluster.GetTrainerJobParallelism(&e.Job))}
+				j := job{
+					Config:      e.Job,
+					CurInstance: int(a.cluster.GetTrainerJobParallelism(&e.Job)),
+				}
 				a.jobs[e.Job.ObjectMeta.Name] = j
 			case del:
 				log.Debugln("DelJob to autoscaler: ", e.Job.ObjectMeta.Name)
