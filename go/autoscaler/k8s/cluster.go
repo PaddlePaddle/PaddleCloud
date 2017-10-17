@@ -1,9 +1,23 @@
-package autoscaler
+/* Copyright (c) 2016 PaddlePaddle Authors All Rights Reserve.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+	 limitations under the License. */
+package k8s
 
 import (
 	"fmt"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	"github.com/PaddlePaddle/cloud/go/autoscaler"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,20 +26,20 @@ import (
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
-// K8sCluster resprensents a Kubernetes cluster.
-type K8sCluster struct {
+// Cluster resprensents a Kubernetes cluster.
+type Cluster struct {
 	clientset *kubernetes.Clientset
 }
 
-// NewK8sCluster create a new instance of K8sCluster.
-func NewK8sCluster(clientset *kubernetes.Clientset) *K8sCluster {
-	return &K8sCluster{
+// NewCluster create a new instance of K8sCluster.
+func NewCluster(clientset *kubernetes.Clientset) *Cluster {
+	return &Cluster{
 		clientset: clientset,
 	}
 }
 
 // GetTrainerJob gets the trainer job spec.
-func (c K8sCluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error) {
+func (c Cluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error) {
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	return c.clientset.
@@ -35,18 +49,18 @@ func (c K8sCluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, err
 }
 
 // UpdateTrainerJob updates the trainer job spec.
-func (c K8sCluster) UpdateTrainerJob(job *batchv1.Job) error {
+func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 	_, err := c.clientset.BatchV1().Jobs(job.ObjectMeta.Namespace).Update(job)
 	return err
 }
 
 // SyncResource will update free and total resources in k8s cluster.
-func (c *K8sCluster) SyncResource() (ClusterResource, error) {
+func (c *Cluster) SyncResource() (autoscaler.ClusterResource, error) {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln("Fetching node list error: ", err)
-		return ClusterResource{}, err
+		return autoscaler.ClusterResource{}, err
 	}
 	readyNodeCount := 0
 	totalCPU := 0.0
@@ -78,7 +92,7 @@ func (c *K8sCluster) SyncResource() (ClusterResource, error) {
 	podList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln("Fetching pods error: ", err)
-		return ClusterResource{}, err
+		return autoscaler.ClusterResource{}, err
 	}
 
 	for _, pod := range podList.Items {
@@ -98,7 +112,7 @@ func (c *K8sCluster) SyncResource() (ClusterResource, error) {
 	totalMem := totalMemory.ScaledValue(resource.Giga)
 	totalMemory.Sub(*requestedMemory)
 	freeMem := totalMemory.ScaledValue(resource.Giga)
-	r := ClusterResource{
+	r := autoscaler.ClusterResource{
 		CPUTotal:      totalCPU,
 		GPUTotal:      totalGPU,
 		NodeCount:     readyNodeCount,

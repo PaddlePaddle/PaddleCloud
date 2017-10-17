@@ -22,7 +22,7 @@
 // When controller starts, both event watching routine and resource
 // monitoring and scaling routine should be started.
 
-package controller
+package k8s
 
 import (
 	"context"
@@ -37,7 +37,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	"github.com/PaddlePaddle/cloud/go/controller/autoscaler"
+	"github.com/PaddlePaddle/cloud/go/autoscaler"
 )
 
 // Controller for dispatching TrainingJob resource.
@@ -48,21 +48,10 @@ type Controller struct {
 }
 
 // NewController construct a new Controller struct
-func NewController(config *rest.Config) (*Controller, error) {
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	client, err := rest.RESTClientFor(config)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: init autoscaler with correct arguments.
-	cluster := autoscaler.NewK8sCluster(clientset)
-	as := autoscaler.NewAutoscaler(cluster)
+func NewController(c *rest.RESTClient, cs *kubernetes.Clientset, as *autoscaler.Autoscaler) (*Controller, error) {
 	return &Controller{
-		client:     client,
-		clientset:  clientset,
+		client:     c,
+		clientset:  cs,
 		autoscaler: as,
 	}, nil
 }

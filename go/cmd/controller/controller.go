@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"flag"
-	"time"
 
 	log "github.com/sirupsen/logrus"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	"github.com/PaddlePaddle/cloud/go/controller"
+	"github.com/PaddlePaddle/cloud/go/autoscaler"
+	"github.com/PaddlePaddle/cloud/go/autoscaler/k8s"
 )
 
 func main() {
@@ -33,19 +34,26 @@ func main() {
 	// setup some optional configuration
 	paddlejob.ConfigureClient(config)
 
-	// start a controller on instances of our custom resource
-	informer, err := controller.NewController(config)
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err)
+	}
+
+	client, err := rest.RESTClientFor(config)
+	if err != nil {
+		panic(err)
+	}
+
+	cluster := k8s.NewCluster(clientset)
+	as := autoscaler.New(cluster)
+	controller, err := k8s.NewController(client, clientset, as)
 	if err != nil {
 		panic(err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	go informer.Run(ctx)
-
-	for {
-		time.Sleep(time.Second)
-	}
+	controller.Run(ctx)
 }
 
 func buildConfig(kubeconfig string) (*rest.Config, error) {
