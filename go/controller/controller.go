@@ -85,12 +85,17 @@ func (c *Controller) startWatch(ctx context.Context) error {
 	source := cache.NewListWatchFromClient(
 		c.client,
 		paddlejob.TrainingJobs,
+		// TODO(helin): pass in namespace as an argument.
 		api.NamespaceAll,
 		fields.Everything())
 
 	_, informer := cache.NewInformer(
 		source,
 		&paddlejob.TrainingJob{},
+
+		// TODO(helin): support resync. resync will eventually
+		// happen even if the resyncPeriod parameter is set to
+		// 0.
 
 		// resyncPeriod: Every resyncPeriod, all resources in
 		// the cache will retrigger events. Set to 0 to
@@ -111,7 +116,7 @@ func (c *Controller) startWatch(ctx context.Context) error {
 func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("TrainingJob Resource added: ", job.ObjectMeta.Name)
-	c.autoscaler.AddJob(job)
+	c.autoscaler.OnAdd(*job)
 	// TODO: if we need to create training job instance by the resource,
 	//       you should add the following code:
 	// var parser DefaultJobParser
@@ -127,5 +132,5 @@ func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 func (c *Controller) onDelete(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debugln("Deleted TrainingJob Resource: ", job.ObjectMeta.Name)
-	c.autoscaler.DelJob(job)
+	c.autoscaler.OnDel(*job)
 }

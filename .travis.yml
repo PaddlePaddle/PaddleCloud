@@ -3,8 +3,7 @@ matrix:
     - language: go
       go: 1.8.x
       sudo: required
-      before_script:
-        - eval "$(GIMME_GO_VERSION=1.8.3 gimme)"
+      install:
         - go get -u github.com/golang/lint/golint
         - curl https://glide.sh/get | bash
         - sudo pip install pre-commit

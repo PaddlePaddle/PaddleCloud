@@ -2,7 +2,6 @@ package autoscaler
 
 import (
 	"sort"
-	"sync"
 	"time"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
@@ -23,7 +22,7 @@ type Cluster interface {
 	FreeCPU() float64
 	FreeMem() int64 // in Gi bytes
 
-	Scale(*paddlejob.TrainingJob) error
+	Scale(paddlejob.TrainingJob) error
 	// SyncResource will sync resource values with the cluster.
 	// should call this function in every tick.
 	SyncResource() error
@@ -32,7 +31,7 @@ type Cluster interface {
 }
 
 type job struct {
-	Config      *paddlejob.TrainingJob
+	Config      paddlejob.TrainingJob
 	CurInstance int
 }
 
@@ -53,7 +52,7 @@ type Autoscaler struct {
 	ticker  *time.Ticker
 	cluster Cluster
 	jobs    map[string]job
-	mutex   *sync.Mutex
+	eventCh chan event
 }
 
 // NewAutoscaler creates a new Autoscaler.
@@ -62,7 +61,6 @@ func NewAutoscaler(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
 		cluster: cluster,
 		ticker:  time.NewTicker(defaultLoopDur),
 		jobs:    make(map[string]job),
-		mutex:   &sync.Mutex{},
 	}
 	for _, option := range options {
 		option(c)
@@ -83,10 +81,9 @@ func (j jobs) Less(a int, b int) bool {
 	if scoreA == scoreB {
 		resA := j[a].Config.Spec.Trainer.Resources
 		resB := j[b].Config.Spec.Trainer.Resources
-		// FIXME: use Quantity type, should refine these code.
 		resALimitsGPU := resA.Limits[paddlejob.GPUResourceName]
 		resBLimitsGPU := resB.Limits[paddlejob.GPUResourceName]
-		if resALimitsGPU.Cmp(resALimitsGPU) == 0 {
+		if resALimitsGPU.Cmp(resBLimitsGPU) == 0 {
 			resARequestsCPU := resA.Requests["cpu"]
 			resBRequestsCPU := resB.Requests["cpu"]
 			if resARequestsCPU.Cmp(resBRequestsCPU) == 0 {
@@ -115,31 +112,32 @@ func gpu(j job) bool {
 	return j.Config.NeedGPU()
 }
 
-// AddJob append the current job to the jobmap.
-func (a *Autoscaler) AddJob(trainingjob *paddlejob.TrainingJob) {
-	log.Debugln("AddJob to autoscaler: ", trainingjob.ObjectMeta.Name)
-	jobInstance := job{Config: trainingjob, CurInstance: 0}
-	// TODO: use int(a.cluster.GetTrainerJobParallelism(trainingjob))
-	a.mutex.Lock()
-	log.Debugln("AddJob to autoscaler1: ", trainingjob.ObjectMeta.Name)
-	a.jobs[trainingjob.ObjectMeta.Name] = jobInstance
-	log.Debugln("AddJob to autoscaler2: ", a)
-	a.mutex.Unlock()
+type eventType int
+
+const (
+	add eventType = iota
+	del
+)
+
+type event struct {
+	Type eventType
+	Job  paddlejob.TrainingJob
 }
 
-// DelJob append the current job to the jobmap.
-func (a *Autoscaler) DelJob(trainingjob *paddlejob.TrainingJob) {
-	log.Debugln("DelJob to autoscaler: ", trainingjob.ObjectMeta.Name)
-	a.mutex.Lock()
-	delete(a.jobs, trainingjob.ObjectMeta.Name)
-	a.mutex.Unlock()
+// OnAdd notifies the autoscaler that a job has been added.
+func (a *Autoscaler) OnAdd(trainingjob paddlejob.TrainingJob) {
+	a.eventCh <- event{Type: add, Job: trainingjob}
+}
+
+// OnDel notifies the autoscaler that a job has been deleted.
+func (a *Autoscaler) OnDel(trainingjob paddlejob.TrainingJob) {
+	a.eventCh <- event{Type: del, Job: trainingjob}
 }
 
 // sortedElasticJobs return the names of sorted jobs by fulfillment
 // and tiebreakers in ascending order.
 func (a *Autoscaler) sortedJobs(filters ...func(job) bool) []string {
 	var js jobs
-	a.mutex.Lock()
 nextJob:
 	for _, v := range a.jobs {
 		for _, f := range filters {
@@ -149,7 +147,7 @@ nextJob:
 		}
 		js = append(js, v)
 	}
-	a.mutex.Unlock()
+
 	sort.Sort(js)
 	var result []string
 	for _, v := range js {
@@ -163,16 +161,14 @@ func (a *Autoscaler) dynamicScaling() {
 	if err != nil {
 		log.Errorln("Unable to SyncResource: ", err)
 	}
-	a.sortedJobs(nil)
+	a.sortedJobs()
 	// FIXME: need to determin the order/priority to scale jobs.
 	// Currently: resource asc order to scale, GPU first
-	a.mutex.Lock()
 	log.Infoln("before scaling job: ", len(a.jobs), a)
 	for jobname, j := range a.jobs {
 		log.Infoln("try scaling job: ", jobname)
 		a.cluster.Scale(j.Config)
 	}
-	a.mutex.Unlock()
 }
 
 // Monitor monitors the cluster free resource in a loop. Do
@@ -181,6 +177,21 @@ func (a *Autoscaler) Monitor() {
 	for {
 		select {
 		case <-a.ticker.C:
+		case e := <-a.eventCh:
+			switch e.Type {
+			case add:
+				log.Debugln("AddJob to autoscaler: ", e.Job.ObjectMeta.Name)
+				j := job{Config: e.Job, CurInstance: 0}
+				// TODO: use int(a.cluster.GetTrainerJobParallelism(trainingjob))
+				log.Debugln("AddJob to autoscaler1: ", e.Job.ObjectMeta.Name)
+				a.jobs[e.Job.ObjectMeta.Name] = j
+				log.Debugln("AddJob to autoscaler2: ", a)
+			case del:
+				log.Debugln("DelJob to autoscaler: ", e.Job.ObjectMeta.Name)
+				delete(a.jobs, e.Job.ObjectMeta.Name)
+			default:
+				log.Errorln("Unrecognized event: %v.", e)
+			}
 		}
 		a.dynamicScaling()
 	}

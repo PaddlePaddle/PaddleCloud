@@ -161,6 +161,6 @@ func (s *TrainingJob) GPU() int {
 		// FIXME: treat errors
 		gpu = 0
 	}
-	// NOTE: gpu value should not exceed int64.
+
 	return int(gpu)
 }

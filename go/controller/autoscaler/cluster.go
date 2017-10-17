@@ -68,7 +68,7 @@ func (c K8sCluster) GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32 {
 }
 
 // Scale one job if there's enough resource.
-func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
+func (c *K8sCluster) Scale(job paddlejob.TrainingJob) error {
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	// TODO(typhoonzero): ignore namespace quota for now, scale
@@ -96,7 +96,7 @@ func (c *K8sCluster) Scale(job *paddlejob.TrainingJob) error {
 	return nil
 }
 
-func (c K8sCluster) getScaleSizeTrainer(job *paddlejob.TrainingJob,
+func (c K8sCluster) getScaleSizeTrainer(job paddlejob.TrainingJob,
 	trainerJob *batchv1.Job) int32 {
 	// FIXME: use static parallelism or the active pod?
 	//        Some pod may already completed?
