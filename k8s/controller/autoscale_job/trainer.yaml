@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-trainer
+spec:
+  parallelism: 2
+  completions: 2
+  template:
+    metadata:
+      labels:
+        paddle-job: example
+    spec:
+      volumes:
+      - name: example-workspace
+        hostPath:
+          path: /Users/baidu/testjobft
+      containers:
+      - name: trainer
+        image: paddlepaddle/paddlecloud-job
+        imagePullPolicy: Always
+        command: ["paddle_k8s", "start_new_trainer"]
+        volumeMounts:
+        - mountPath: /workspace
+          name: example-workspace
+        env:
+        - name: PADDLE_JOB_NAME
+          value: example
+        - name: TRAINERS
+          value: "2"
+        - name: PSERVERS
+          value: "2"
+        - name: TOPOLOGY
+          value: ""
+        - name: ENTRY
+          value: "python /workspace/train_ft.py"
+        - name: TRAINER_PACKAGE
+          value: "/tmp"
+        - name: PADDLE_INIT_PORT
+          value: "7164"
+        - name: PADDLE_INIT_TRAINER_COUNT
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM_FOR_SPARSE
+          value: "1"
+        - name: PADDLE_INIT_NUM_GRADIENT_SERVERS
+          value: "2"
+        - name: PADDLE_INIT_NUM_PASSES
+          value: "1"
+        - name: PADDLE_INIT_USE_GPU
+          value: "1"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/nvidia/lib64"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 1
+          limits:
+            memroy: 500Mi
+            cpu: 1
+            alpha.kubernetes.io/nvidia-gpu: 1
+      restartPolicy: Never
+

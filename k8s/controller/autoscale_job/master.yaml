@@ -1,0 +1,81 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: example-master
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        paddle-job-master: example
+    spec:
+      volumes:
+      - name: example-workspace
+        hostPath:
+          path: /Users/baidu/testjobft
+      containers:
+      - name: master
+        image: paddlepaddle/paddlecloud-job
+        ports:
+        - name: master-port
+          containerPort: 8080
+        - name: etcd-port
+          containerPort: 2379
+        volumeMounts:
+        - mountPath: /workspace
+          name: example-workspace
+        env:
+        command: ["paddle_k8s", "start_master"]
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 1
+          limits:
+            memory: 200Mi
+            cpu: 1
+      - name: example-etcd
+        image: quay.io/coreos/etcd:v3.2.1
+        env:
+        - name: PADDLE_JOB_NAME
+          value: example
+        - name: TRAINERS
+          value: "2"
+        - name: PSERVERS
+          value: "2"
+        - name: TOPOLOGY
+          value: ""
+        - name: ENTRY
+          value: "python train.py"
+        - name: TRAINER_PACKAGE
+          value: "/tmp"
+        - name: PADDLE_INIT_PORT
+          value: "7164"
+        - name: PADDLE_INIT_TRAINER_COUNT
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM_FOR_SPARSE
+          value: "1"
+        - name: PADDLE_INIT_NUM_GRADIENT_SERVERS
+          value: "2"
+        - name: PADDLE_INIT_NUM_PASSES
+          value: "1"
+        - name: PADDLE_INIT_USE_GPU
+          value: "1"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/nvidia/lib64"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        command: ["etcd", "-name", "etcd0", 
+                  "-advertise-client-urls", "http://$(POD_IP):2379,http://$(POD_IP):4001", 
+                  "-listen-client-urls", "http://0.0.0.0:2379,http://0.0.0.0:4001", 
+                  "-initial-advertise-peer-urls", "http://$(POD_IP):2380", 
+                  "-listen-peer-urls", "http://0.0.0.0:2380", 
+                  "-initial-cluster", "etcd0=http://$(POD_IP):2380", 
+                  "-initial-cluster-state", "new"]

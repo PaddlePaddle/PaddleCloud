@@ -1,0 +1,61 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: example-pserver
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        paddle-job-pserver: example
+    spec:
+      containers:
+      - name: pserver
+        image: paddlepaddle/paddlecloud-job
+        ports:
+        - name: jobport-7164
+          containerPort: 7164
+        - name: jobport-7165
+          containerPort: 7165
+        env:
+        - name: PADDLE_JOB_NAME
+          value: example
+        - name: TRAINERS
+          value: "2"
+        - name: PSERVERS
+          value: "2"
+        - name: TOPOLOGY
+          value: ""
+        - name: ENTRY
+          value: "python train.py"
+        - name: TRAINER_PACKAGE
+          value: "/tmp"
+        - name: PADDLE_INIT_PORT
+          value: "7164"
+        - name: PADDLE_INIT_TRAINER_COUNT
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM_FOR_SPARSE
+          value: "1"
+        - name: PADDLE_INIT_NUM_GRADIENT_SERVERS
+          value: "2"
+        - name: PADDLE_INIT_NUM_PASSES
+          value: "1"
+        - name: PADDLE_INIT_USE_GPU
+          value: "1"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/nvidia/lib64"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        command: ["paddle_k8s", "start_new_pserver"]
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 500m
+          limits:
+            memory: 200Mi
+            cpu: 500m
+      

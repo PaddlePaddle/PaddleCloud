@@ -61,6 +61,7 @@ func NewAutoscaler(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
 		cluster: cluster,
 		ticker:  time.NewTicker(defaultLoopDur),
 		jobs:    make(map[string]job),
+		eventCh: make(chan event),
 	}
 	for _, option := range options {
 		option(c)
@@ -126,6 +127,7 @@ type event struct {
 
 // OnAdd notifies the autoscaler that a job has been added.
 func (a *Autoscaler) OnAdd(trainingjob paddlejob.TrainingJob) {
+	log.Debugln("OnAdd, adding job to event channel...", a.eventCh)
 	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
@@ -164,7 +166,6 @@ func (a *Autoscaler) dynamicScaling() {
 	a.sortedJobs()
 	// FIXME: need to determin the order/priority to scale jobs.
 	// Currently: resource asc order to scale, GPU first
-	log.Infoln("before scaling job: ", len(a.jobs), a)
 	for jobname, j := range a.jobs {
 		log.Infoln("try scaling job: ", jobname)
 		a.cluster.Scale(j.Config)
@@ -181,11 +182,9 @@ func (a *Autoscaler) Monitor() {
 			switch e.Type {
 			case add:
 				log.Debugln("AddJob to autoscaler: ", e.Job.ObjectMeta.Name)
-				j := job{Config: e.Job, CurInstance: 0}
-				// TODO: use int(a.cluster.GetTrainerJobParallelism(trainingjob))
-				log.Debugln("AddJob to autoscaler1: ", e.Job.ObjectMeta.Name)
+				j := job{Config: e.Job,
+					CurInstance: int(a.cluster.GetTrainerJobParallelism(&e.Job))}
 				a.jobs[e.Job.ObjectMeta.Name] = j
-				log.Debugln("AddJob to autoscaler2: ", a)
 			case del:
 				log.Debugln("DelJob to autoscaler: ", e.Job.ObjectMeta.Name)
 				delete(a.jobs, e.Job.ObjectMeta.Name)

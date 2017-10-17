@@ -58,7 +58,8 @@ func NewController(config *rest.Config) (*Controller, error) {
 		return nil, err
 	}
 	// TODO: init autoscaler with correct arguments.
-	as := autoscaler.NewAutoscaler(nil)
+	cluster := autoscaler.NewK8sCluster(clientset)
+	as := autoscaler.NewAutoscaler(cluster)
 	return &Controller{
 		client:     client,
 		clientset:  clientset,
@@ -73,9 +74,7 @@ func (c *Controller) Run(ctx context.Context) error {
 		return err
 	}
 
-	cluster := autoscaler.NewK8sCluster(c.clientset)
-	as := autoscaler.NewAutoscaler(cluster)
-	go as.Monitor()
+	go c.autoscaler.Monitor()
 
 	<-ctx.Done()
 	return ctx.Err()

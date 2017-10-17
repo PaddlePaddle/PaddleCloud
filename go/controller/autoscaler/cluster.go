@@ -80,6 +80,7 @@ func (c *K8sCluster) Scale(job paddlejob.TrainingJob) error {
 		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
 	if err != nil {
 		log.Errorln("get trainer job error: ", err)
+		return err
 	}
 
 	newSize := c.getScaleSizeTrainer(job, trainerJob)
@@ -91,6 +92,7 @@ func (c *K8sCluster) Scale(job paddlejob.TrainingJob) error {
 	*trainerJob.Spec.Parallelism = newSize
 	*trainerJob.Spec.Completions = newSize
 	// TODO: Sync status before scale?
+	log.Infoln("Scaling job: ", job.ObjectMeta.Name)
 	c.clientset.BatchV1().Jobs(namespace).Update(trainerJob)
 	// TODO: wait the scale to finish
 	return nil
@@ -111,7 +113,8 @@ func (c K8sCluster) getScaleSizeTrainer(job paddlejob.TrainingJob,
 	}
 	// job requested GPU/CPU for each pod
 	jobGPURequest := 0
-	jobCPURequest := 0
+	// CPU resource request are float like 1.5 means 1500m
+	jobCPURequest := 0.0
 	for _, container := range trainerJob.Spec.Template.Spec.Containers {
 		qReq := container.Resources.Requests.NvidiaGPU()
 		qLim := container.Resources.Limits.NvidiaGPU()
@@ -121,7 +124,7 @@ func (c K8sCluster) getScaleSizeTrainer(job paddlejob.TrainingJob,
 			jobGPURequest += int(qReq.Value())
 		}
 		q := container.Resources.Requests.Cpu()
-		jobCPURequest += int(q.Value())
+		jobCPURequest += float64(q.MilliValue()) / 1000
 	}
 	// scale the job by GPU first
 	if jobGPURequest > 0 {
@@ -134,7 +137,15 @@ func (c K8sCluster) getScaleSizeTrainer(job paddlejob.TrainingJob,
 			return int32(c.FreeGPU()/jobGPURequest + current)
 		}
 	}
-	// TODO(typhoonzer): scale by CPU
+	// scale by CPU
+	if jobCPURequest > 0 {
+		if c.FreeCPU() > jobCPURequest*float64(max-current) {
+			return int32(max)
+		}
+		if c.FreeCPU() > jobCPURequest {
+			return int32(c.FreeCPU()/jobCPURequest) + int32(current)
+		}
+	}
 
 	return int32(current)
 }
@@ -162,7 +173,7 @@ func (c *K8sCluster) SyncResource() error {
 		}
 		for resname, q := range item.Status.Allocatable {
 			if resname == v1.ResourceCPU {
-				totalCPU += float64(q.Value()) + float64(q.MilliValue())/1000
+				totalCPU += float64(q.MilliValue()) / 1000
 			}
 			if resname == v1.ResourceNvidiaGPU {
 				totalGPU += int(q.Value())
@@ -172,6 +183,8 @@ func (c *K8sCluster) SyncResource() error {
 			}
 		}
 	}
+	c.CPUTotal = totalCPU
+	c.GPUTotal = totalGPU
 	c.NodeCount = readyNodeCount
 	// namespace == "" will get pods from all namespaces.
 	podList, err := c.clientset.CoreV1().Pods("").List(metav1.ListOptions{})
@@ -182,7 +195,7 @@ func (c *K8sCluster) SyncResource() error {
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
 			q := container.Resources.Requests.Cpu()
-			requestedCPU += float64(q.Value()) + float64(q.MilliValue())/1000
+			requestedCPU += float64(q.MilliValue()) / 1000
 
 			qGPU := container.Resources.Requests.NvidiaGPU()
 			if qGPU.IsZero() {
