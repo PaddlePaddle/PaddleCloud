@@ -4,6 +4,8 @@ import (
 	"sort"
 	"time"
 
+	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
+
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	log "github.com/sirupsen/logrus"
 )
@@ -12,27 +14,52 @@ const (
 	defaultLoopDur = time.Second * 5
 )
 
+// ClusterResurce is the resource of a cluster
+type ClusterResource struct {
+	NodeCount int
+	GPUTotal  int
+	CPUTotal  float64
+	GPUFree   int
+	CPUFree   float64
+
+	MemoryTotalGi int64
+	MemoryFreeGi  int64
+}
+
 // Cluster represents the cluster managment system such as Kubernetes.
 type Cluster interface {
-	// Available free resources, must reflect the resources
-	// consumed by the jobs created by SubmitJob that are still
-	// pending, or the resource release by the job deletion by
-	// DeleteJob that are still pending.
-	FreeGPU() int
-	FreeCPU() float64
-	FreeMem() int64 // in Gi bytes
-
-	Scale(paddlejob.TrainingJob) error
 	// SyncResource will sync resource values with the cluster.
 	// should call this function in every tick.
-	SyncResource() error
-	// GetTrainerJobParallelism get current parallelism for the trainer.
-	GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32
+	SyncResource() (ClusterResource, error)
+
+	// GetTrainerJob gets the trainer job spec.
+	GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error)
+
+	// UpdateTrainerJob updates the trainer job spec.
+	UpdateTrainerJob(job *batchv1.Job) error
 }
 
 type job struct {
-	Config      paddlejob.TrainingJob
-	CurInstance int
+	Config     *paddlejob.TrainingJob
+	TrainerJob *batchv1.Job
+}
+
+func (j job) GPULimit() int {
+	var jobGPURequest int
+	for _, container := range j.TrainerJob.Spec.Template.Spec.Containers {
+		qLim := container.Resources.Limits.NvidiaGPU()
+		jobGPURequest += int(qLim.Value())
+	}
+	return jobGPURequest
+}
+
+func (j job) CPURequest() float64 {
+	var jobCPURequest float64
+	for _, container := range j.TrainerJob.Spec.Template.Spec.Containers {
+		q := container.Resources.Requests.Cpu()
+		jobCPURequest += float64(q.MilliValue()) / 1000
+	}
+	return jobCPURequest
 }
 
 func (j job) Fulfillment() float64 {
@@ -43,7 +70,7 @@ func (j job) Fulfillment() float64 {
 		return 1
 	}
 
-	curInstance := j.CurInstance
+	curInstance := int(*j.TrainerJob.Spec.Parallelism)
 	return float64(curInstance-minInstance) / float64(maxInstance-minInstance)
 }
 
@@ -122,22 +149,22 @@ const (
 
 type event struct {
 	Type eventType
-	Job  paddlejob.TrainingJob
+	Job  *paddlejob.TrainingJob
 }
 
 // OnAdd notifies the autoscaler that a job has been added.
-func (a *Autoscaler) OnAdd(trainingjob paddlejob.TrainingJob) {
+func (a *Autoscaler) OnAdd(trainingjob *paddlejob.TrainingJob) {
 	log.Debugln("OnAdd, adding job to event channel...", a.eventCh)
 	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
 // OnDel notifies the autoscaler that a job has been deleted.
-func (a *Autoscaler) OnDel(trainingjob paddlejob.TrainingJob) {
+func (a *Autoscaler) OnDel(trainingjob *paddlejob.TrainingJob) {
 	a.eventCh <- event{Type: del, Job: trainingjob}
 }
 
-// sortedElasticJobs return the names of sorted jobs by fulfillment
-// and tiebreakers in ascending order.
+// sortedJobs return the names of sorted jobs by fulfillment and
+// tiebreakers in ascending order.
 func (a *Autoscaler) sortedJobs(filters ...func(job) bool) []string {
 	var js jobs
 nextJob:
@@ -158,17 +185,79 @@ nextJob:
 	return result
 }
 
-func (a *Autoscaler) dynamicScaling() {
-	err := a.cluster.SyncResource()
+func scaleDryRun(r *ClusterResource, j job, curDiff int) int {
+	additionalGPUInstance := 0
+	additionalCPUInstance := 0
+
+	if r.GPUFree > j.GPULimit()*(curDiff+1) {
+		additionalCPUInstance = 1
+	}
+
+	if r.CPUFree > j.CPURequest()*float64(curDiff+1) {
+		additionalCPUInstance = 1
+	}
+
+	var additional int
+	if additionalCPUInstance < additionalGPUInstance {
+		additional = additionalCPUInstance
+	} else {
+		additional = additionalGPUInstance
+	}
+
+	if additional > 0 {
+		// TODO(helin): consider memory request as well.
+		r.GPUFree -= j.GPULimit() * additional
+		r.CPUFree -= j.CPURequest() * float64(additional)
+		return additional
+	}
+
+	return 0
+}
+
+func (a *Autoscaler) dynamicScaling(r ClusterResource) {
+	_, err := a.cluster.SyncResource()
 	if err != nil {
 		log.Errorln("Unable to SyncResource: ", err)
 	}
-	a.sortedJobs()
-	// FIXME: need to determin the order/priority to scale jobs.
-	// Currently: resource asc order to scale, GPU first
-	for jobname, j := range a.jobs {
-		log.Infoln("try scaling job: ", jobname)
-		a.cluster.Scale(j.Config)
+
+	// Iteratively calculate scaling diff until nothing changes.
+	diff := make(map[string]int)
+	lastDiff := make(map[string]int)
+	for {
+		order := a.sortedJobs(elastic)
+		for _, name := range order {
+			additional := scaleDryRun(&r, a.jobs[name], diff[name])
+			log.Debugln("%s scale: %d, remaining resource: %v", name, additional, r)
+			diff[name] += additional
+		}
+
+		noChange := true
+		for key := range diff {
+			if diff[key] != lastDiff[key] {
+				noChange = false
+			}
+		}
+
+		if noChange {
+			break
+		}
+
+		for key := range diff {
+			lastDiff[key] = diff[key]
+		}
+	}
+
+	for name := range diff {
+		if diff[name] != 0 {
+			log.Infoln("Scaling job %s, diff: %d.", name, diff[name])
+			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
+			*a.jobs[name].TrainerJob.Spec.Parallelism = target
+			*a.jobs[name].TrainerJob.Spec.Completions = target
+			err := a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
+			if err != nil {
+				log.Errorln("Error updating trainer job: %v", err)
+			}
+		}
 	}
 }
 
@@ -181,19 +270,48 @@ func (a *Autoscaler) Monitor() {
 		case e := <-a.eventCh:
 			switch e.Type {
 			case add:
+				// TODO(helin): schedule the training
+				// k8s Job. Currently we don't
+				// schedule the trainer job, but only
+				// scale it.
 				log.Debugln("AddJob to autoscaler: ", e.Job.ObjectMeta.Name)
+				var tj *batchv1.Job
+				var err error
+				for {
+					tj, err = a.cluster.GetTrainerJob(e.Job)
+					if err == nil {
+						break
+					}
+
+					log.Errorln(
+						"Error getting the trainer job for %s, retrying soon.",
+						e.Job.ObjectMeta.Name,
+					)
+					time.Sleep(3 * time.Second)
+				}
+
 				j := job{
-					Config:      e.Job,
-					CurInstance: int(a.cluster.GetTrainerJobParallelism(&e.Job)),
+					Config:     e.Job,
+					TrainerJob: tj,
 				}
 				a.jobs[e.Job.ObjectMeta.Name] = j
 			case del:
+				// TODO(helin): delete all created
+				// resources (e.g., trainer Job,
+				// pserver Replica Set) when we
+				// schedules the resources.
 				log.Debugln("DelJob to autoscaler: ", e.Job.ObjectMeta.Name)
 				delete(a.jobs, e.Job.ObjectMeta.Name)
 			default:
 				log.Errorln("Unrecognized event: %v.", e)
 			}
 		}
-		a.dynamicScaling()
+
+		r, err := a.cluster.SyncResource()
+		if err != nil {
+			log.Errorln("error sync resource: %v", err)
+		}
+
+		a.dynamicScaling(r)
 	}
 }

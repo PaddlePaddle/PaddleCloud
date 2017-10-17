@@ -12,18 +12,8 @@ import (
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
-// K8sCluster is an implementation of Cluster interface to monitor
-// kubernetes cluster resources.
+// K8sCluster resprensents a Kubernetes cluster.
 type K8sCluster struct {
-	NodeCount int
-	GPUTotal  int
-	CPUTotal  float64
-	GPUFree   int
-	CPUFree   float64
-
-	MemoryTotalGi int64
-	MemoryFreeGi  int64
-
 	clientset *kubernetes.Clientset
 }
 
@@ -34,138 +24,29 @@ func NewK8sCluster(clientset *kubernetes.Clientset) *K8sCluster {
 	}
 }
 
-// FreeGPU returns cluster total freeGPU card count.
-func (c *K8sCluster) FreeGPU() int {
-	return c.GPUFree
-}
-
-// FreeCPU returns cluster total free CPU resource.
-func (c *K8sCluster) FreeCPU() float64 {
-	return c.CPUFree
-}
-
-// FreeMem returns cluster total free memory in Gi bytes.
-func (c *K8sCluster) FreeMem() int64 {
-	return c.MemoryFreeGi
-}
-
-// GetTrainerJobParallelism get current parallelism for the trainer.
-func (c K8sCluster) GetTrainerJobParallelism(job *paddlejob.TrainingJob) int32 {
+// GetTrainerJob gets the trainer job spec.
+func (c K8sCluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error) {
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
-	trainerJob, err := c.clientset.
+	return c.clientset.
 		BatchV1().
 		Jobs(namespace).
 		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
-	if err != nil {
-		log.Errorln("get trainer job error: ", err)
-		return 0
-	}
-	return *trainerJob.Spec.Parallelism
 }
 
-// TODO(helin): refine scale algorithm. E.g., if we have two jobs, a
-// needs 3 more GPU, b needs 3 more GPU, and there are 4 free GPUs, a
-// and b should both get 2 GPUs, but according to the current logic, a
-// will get 3 GPUs and b will get 1 GPU.
-
-// Scale one job if there's enough resource.
-func (c *K8sCluster) Scale(job paddlejob.TrainingJob) error {
-	namespace := job.ObjectMeta.Namespace
-	jobname := job.ObjectMeta.Name
-	// TODO(typhoonzero): ignore namespace quota for now, scale
-	// will return error if quota is not sufficient.
-	// 1. get current replicas for the job
-	trainerJob, err := c.clientset.
-		BatchV1().
-		Jobs(namespace).
-		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
-	if err != nil {
-		log.Errorln("get trainer job error: ", err)
-		return err
-	}
-
-	newSize := c.getScaleSizeTrainer(job, trainerJob)
-	if newSize == *trainerJob.Spec.Parallelism {
-		log.Infoln("no need to scale: ", jobname)
-		return nil
-	}
-	// Paddle job scale need to update both parallelism and completions
-	*trainerJob.Spec.Parallelism = newSize
-	*trainerJob.Spec.Completions = newSize
-	// TODO: Sync status before scale?
-	log.Infoln("Scaling job: ", job.ObjectMeta.Name)
-	c.clientset.BatchV1().Jobs(namespace).Update(trainerJob)
-	// TODO: wait the scale to finish
-	return nil
-}
-
-func (c K8sCluster) getScaleSizeTrainer(job paddlejob.TrainingJob,
-	trainerJob *batchv1.Job) int32 {
-	// FIXME: use static parallelism or the active pod?
-	//        Some pod may already completed?
-	current := int(*trainerJob.Spec.Parallelism)
-	min := job.Spec.Trainer.MinInstance
-	max := job.Spec.Trainer.MaxInstance
-	if current < min {
-		return int32(min)
-	}
-	if current >= max {
-		return int32(max)
-	}
-	// job requested GPU/CPU for each pod
-	jobGPURequest := 0
-	// CPU resource request are float like 1.5 means 1500m
-	jobCPURequest := 0.0
-	for _, container := range trainerJob.Spec.Template.Spec.Containers {
-		qReq := container.Resources.Requests.NvidiaGPU()
-		qLim := container.Resources.Limits.NvidiaGPU()
-		if qReq.IsZero() {
-			jobGPURequest += int(qLim.Value())
-		} else {
-			jobGPURequest += int(qReq.Value())
-		}
-		q := container.Resources.Requests.Cpu()
-		jobCPURequest += float64(q.MilliValue()) / 1000
-	}
-
-	gpuConstraint := int32(current)
-	if jobGPURequest > 0 {
-		if c.FreeGPU() > jobGPURequest*(max-current) {
-			// can scale to max
-			gpuConstraint = int32(max)
-		}
-
-		// can add at least one pod
-		if c.FreeGPU() > jobGPURequest {
-			gpuConstraint = int32(c.FreeGPU()/jobGPURequest + current)
-		}
-	}
-
-	cpuConstraint := int32(current)
-	if jobCPURequest > 0 {
-		if c.FreeCPU() > jobCPURequest*float64(max-current) {
-			cpuConstraint = int32(max)
-		}
-		if c.FreeCPU() > jobCPURequest {
-			cpuConstraint = int32(c.FreeCPU()/jobCPURequest) + int32(current)
-		}
-	}
-
-	if cpuConstraint < gpuConstraint {
-		return cpuConstraint
-	}
-
-	return gpuConstraint
+// UpdateTrainerJob updates the trainer job spec.
+func (c K8sCluster) UpdateTrainerJob(job *batchv1.Job) error {
+	_, err := c.clientset.BatchV1().Jobs(job.ObjectMeta.Namespace).Update(job)
+	return err
 }
 
 // SyncResource will update free and total resources in k8s cluster.
-func (c *K8sCluster) SyncResource() error {
+func (c *K8sCluster) SyncResource() (ClusterResource, error) {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln("Fetching node list error: ", err)
-		return err
+		return ClusterResource{}, err
 	}
 	readyNodeCount := 0
 	totalCPU := 0.0
@@ -192,15 +73,14 @@ func (c *K8sCluster) SyncResource() error {
 			}
 		}
 	}
-	c.CPUTotal = totalCPU
-	c.GPUTotal = totalGPU
-	c.NodeCount = readyNodeCount
-	// namespace == "" will get pods from all namespaces.
-	podList, err := c.clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+
+	namespace := "" // get pods from all namespaces.
+	podList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorln("Fetching pods error: ", err)
-		return err
+		return ClusterResource{}, err
 	}
+
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
 			q := container.Resources.Requests.Cpu()
@@ -214,13 +94,21 @@ func (c *K8sCluster) SyncResource() error {
 			requestedMemory.Add(*container.Resources.Requests.Memory())
 		}
 	}
-	c.CPUFree = totalCPU - requestedCPU
-	c.GPUFree = totalGPU - requestedGPU
-	c.MemoryTotalGi = totalMemory.ScaledValue(resource.Giga)
-	totalMemory.Sub(*requestedMemory)
-	c.MemoryFreeGi = totalMemory.ScaledValue(resource.Giga)
-	log.Debugf("GPU: %d/%d, CPU: %f/%f, Mem: %d/%d Gi", c.GPUFree, c.GPUTotal,
-		c.CPUFree, c.CPUTotal, c.MemoryFreeGi, c.MemoryTotalGi)
 
-	return nil
+	totalMem := totalMemory.ScaledValue(resource.Giga)
+	totalMemory.Sub(*requestedMemory)
+	freeMem := totalMemory.ScaledValue(resource.Giga)
+	r := ClusterResource{
+		CPUTotal:      totalCPU,
+		GPUTotal:      totalGPU,
+		NodeCount:     readyNodeCount,
+		CPUFree:       totalCPU - requestedCPU,
+		GPUFree:       totalGPU - requestedGPU,
+		MemoryTotalGi: totalMem,
+		MemoryFreeGi:  freeMem,
+	}
+
+	log.Debugf("GPU: %d/%d, CPU: %f/%f, Mem: %d/%d Gi", r.GPUFree, r.GPUTotal,
+		r.CPUFree, r.CPUTotal, r.MemoryFreeGi, r.MemoryTotalGi)
+	return r, nil
 }
