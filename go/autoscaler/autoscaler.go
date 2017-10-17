@@ -27,7 +27,7 @@ const (
 	defaultLoopDur = time.Second * 5
 )
 
-// ClusterResurce is the resource of a cluster
+// ClusterResource is the resource of a cluster
 type ClusterResource struct {
 	NodeCount int
 	GPUTotal  int
