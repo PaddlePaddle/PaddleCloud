@@ -88,7 +88,7 @@ def main():
                 reader=paddle.batch(dataset.uci_housing.test(), batch_size=2),
                 feeding=feeding)
             print "Test %d, Cost %f" % (event.pass_id, result.cost)
-            if TRAINER_ID == "0":
+            if TRAINER_ID == 0:
                 with gzip.open("fit-a-line_pass_%05d.tar.gz" % event.pass_id,
                                "w") as f:
                     parameters.to_tar(f)
