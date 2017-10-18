@@ -12,19 +12,19 @@ spec:
     entrypoint: "python train.py"
     workspace: "/home/job-1/"
     passes: 10
-    min-instance: 3
+    min-instance: 2
     max-instance: 6
     resources:
       limits:
-        alpha.kubernetes.io/nvidia-gpu: 1
-        cpu: "800m"
-        memory: "1Gi"
+        #alpha.kubernetes.io/nvidia-gpu: 1
+        cpu: "200m"
+        memory: "500Mi"
       requests:
-        cpu: "500m"
-        memory: "600Mi"
+        cpu: "200m"
+        memory: "500Mi"
   pserver:
-    min-instance: 3
-    max-instance: 3
+    min-instance: 2
+    max-instance: 2
     resources:
       limits:
         cpu: "800m"

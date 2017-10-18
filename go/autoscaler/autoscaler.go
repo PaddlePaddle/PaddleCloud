@@ -11,12 +11,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
 	 limitations under the License. */
+
 package autoscaler
 
 import (
 	"sort"
 	"time"
 
+	// TODO(typhoonzero): this package still depends on k8s API, try to remove this.
+	"k8s.io/apimachinery/pkg/api/resource"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
@@ -35,8 +38,8 @@ type ClusterResource struct {
 	GPUFree   int
 	CPUFree   float64
 
-	MemoryTotalGi int64
-	MemoryFreeGi  int64
+	MemoryTotalMi int64
+	MemoryFreeMi  int64
 }
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -65,6 +68,11 @@ func (j job) TrainerGPULimit() int {
 func (j job) TrainerCPURequest() float64 {
 	q := j.Config.Spec.Trainer.Resources.Requests.Cpu()
 	return float64(q.MilliValue()) / 1000
+}
+
+func (j job) TrainerMemRequestMi() int64 {
+	q := j.Config.Spec.Trainer.Resources.Requests.Memory()
+	return q.ScaledValue(resource.Mega)
 }
 
 func (j job) Fulfillment() float64 {
@@ -190,6 +198,7 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
 	cpuRequest := j.TrainerCPURequest()
+	memRequest := j.TrainerMemRequestMi()
 	gpuLimit := j.TrainerGPULimit()
 
 	// Adjust resource upon return.
@@ -205,6 +214,12 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		// Do not scale or scale down, don't need to check if
 		// there are available free resources.
 		additional = instanceMax - plannedInstance
+		return
+	}
+
+	if r.MemoryFreeMi <= memRequest {
+		// insufficient memory, do not scale
+		additional = 0
 		return
 	}
 
@@ -227,7 +242,6 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		additional = additionalCPUInstance
 	}
 
-	// TODO(helin): consider memory request as well.
 	return
 }
 
@@ -240,7 +254,7 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 		for _, j := range sorted {
 			name := j.Config.Name
 			additional := scaleDryRun(&r, j, diff[name])
-			log.Debugln("Dry run scale job %s: current %d, additional %d, remaining resource: %v", name, diff[name], additional, r)
+			log.Debugf("Dry run scale job %s: current %d, additional %d, remaining resource: %v", name, diff[name], additional, r)
 			diff[name] += additional
 
 			if additional != 0 {
@@ -259,13 +273,13 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 func (a *Autoscaler) scaleAll(diff map[string]int) {
 	for name := range diff {
 		if diff[name] != 0 {
-			log.Infoln("Scaling job %s, diff: %d.", name, diff[name])
+			log.Infof("Scaling job %s, diff: %d.", name, diff[name])
 			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
 			*a.jobs[name].TrainerJob.Spec.Parallelism = target
-			*a.jobs[name].TrainerJob.Spec.Completions = target
+			// *a.jobs[name].TrainerJob.Spec.Completions = target
 			err := a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
 			if err != nil {
-				log.Errorln("Error updating trainer job: %v", err)
+				log.Errorf("Error updating trainer job: %v", err)
 			}
 		}
 	}
@@ -323,13 +337,13 @@ func (a *Autoscaler) Monitor() {
 			continue
 		}
 
-		log.Infoln("Lastest cluster resource: %v", r)
+		log.Infof("Lastest cluster resource: %v", r)
 		var js []job
 		for _, j := range a.jobs {
 			js = append(js, j)
 		}
 		diff := scaleAllDryRun(js, r)
-		log.Infoln("Scaling plan: %v", diff)
+		log.Infof("Scaling plan: %v", diff)
 		a.scaleAll(diff)
 	}
 }

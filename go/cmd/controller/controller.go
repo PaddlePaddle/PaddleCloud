@@ -11,7 +11,7 @@ import (
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/autoscaler"
-	"github.com/PaddlePaddle/cloud/go/autoscaler/k8s"
+	"github.com/PaddlePaddle/cloud/go/controller"
 )
 
 func main() {
@@ -44,9 +44,9 @@ func main() {
 		panic(err)
 	}
 
-	cluster := k8s.NewCluster(clientset)
+	cluster := controller.NewCluster(clientset)
 	as := autoscaler.New(cluster)
-	controller, err := k8s.NewController(client, clientset, as)
+	controller, err := controller.NewController(client, clientset, as)
 	if err != nil {
 		panic(err)
 	}

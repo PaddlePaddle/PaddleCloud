@@ -4,7 +4,7 @@ metadata:
   name: example-trainer
 spec:
   parallelism: 2
-  completions: 2
+#  completions: 2
   template:
     metadata:
       labels:
