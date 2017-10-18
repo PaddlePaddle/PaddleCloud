@@ -14,7 +14,11 @@ def main():
 
     # network config
     x = paddle.layer.data(name='x', type=paddle.data_type.dense_vector(13))
-    y_predict = paddle.layer.fc(input=x, size=1, act=paddle.activation.Linear())
+    y_predict = paddle.layer.fc(
+        input=x, 
+        size=1, 
+        act=paddle.activation.Linear(), 
+        param_attr=paddle.attr.Param(learning_rate=1e-3))
     y = paddle.layer.data(name='y', type=paddle.data_type.dense_vector(1))
     cost = paddle.layer.square_error_cost(input=y_predict, label=y)
 
