@@ -62,9 +62,6 @@ import (
 // TrainingJobs string for registration
 const TrainingJobs = "TrainingJobs"
 
-// GPUResourceName is now alpha.
-const GPUResourceName = "alpha.kubernetes.io/nvidia-gpu"
-
 // TrainingJob defination
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -144,7 +141,7 @@ type TrainingJobList struct {
 
 // NeedGPU returns true if the job need GPU resource to run.
 func (s *TrainingJob) NeedGPU() bool {
-	q := s.Spec.Trainer.Resources.Limits[GPUResourceName]
+	q := s.Spec.Trainer.Resources.Limits.NvidiaGPU()
 	return q.CmpInt64(0) == 1
 }
 
@@ -155,7 +152,7 @@ func (s *TrainingJob) Elastic() bool {
 
 // GPU convert Resource Limit Quantity to int
 func (s *TrainingJob) GPU() int {
-	q := s.Spec.Trainer.Resources.Limits[GPUResourceName]
+	q := s.Spec.Trainer.Resources.Limits.NvidiaGPU()
 	gpu, ok := q.AsInt64()
 	if !ok {
 		// FIXME: treat errors

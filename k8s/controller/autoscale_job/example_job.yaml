@@ -18,10 +18,10 @@ spec:
       limits:
         #alpha.kubernetes.io/nvidia-gpu: 1
         cpu: "200m"
-        memory: "500Mi"
+        memory: "200Mi"
       requests:
         cpu: "200m"
-        memory: "500Mi"
+        memory: "200Mi"
   pserver:
     min-instance: 2
     max-instance: 2

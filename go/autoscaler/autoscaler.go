@@ -122,14 +122,14 @@ func (j jobs) Less(a int, b int) bool {
 	if scoreA == scoreB {
 		resA := j[a].Config.Spec.Trainer.Resources
 		resB := j[b].Config.Spec.Trainer.Resources
-		resALimitsGPU := resA.Limits[paddlejob.GPUResourceName]
-		resBLimitsGPU := resB.Limits[paddlejob.GPUResourceName]
+		resALimitsGPU := *resA.Limits.NvidiaGPU()
+		resBLimitsGPU := *resB.Limits.NvidiaGPU()
 		if resALimitsGPU.Cmp(resBLimitsGPU) == 0 {
 			resARequestsCPU := *resA.Requests.Cpu()
 			resBRequestsCPU := *resB.Requests.Cpu()
 			if resARequestsCPU.Cmp(resBRequestsCPU) == 0 {
-				resARequestsMem := resA.Requests["memory"]
-				resBRequestsMem := resB.Requests["memory"]
+				resARequestsMem := *resA.Requests.Memory()
+				resBRequestsMem := *resB.Requests.Memory()
 				return resARequestsMem.Cmp(resBRequestsMem) == -1
 			}
 			return resARequestsCPU.Cmp(resBRequestsCPU) == -1

@@ -32,7 +32,7 @@ spec:
         - name: TOPOLOGY
           value: ""
         - name: ENTRY
-          value: "cd /workspace && python /workspace/train_ft.py"
+          value: "cd /workspace && python /workspace/train_mnist_ft.py train"
         - name: TRAINER_PACKAGE
           value: "/tmp"
         - name: PADDLE_INIT_PORT
@@ -57,10 +57,10 @@ spec:
               fieldPath: "metadata.namespace"
         resources:
           requests:
-            memory: 500Mi
+            memory: 200Mi
             cpu: 200m
           limits:
-            memory: 500Mi
+            memory: 200Mi
             cpu: 200m
             #alpha.kubernetes.io/nvidia-gpu: 1
       restartPolicy: Never
