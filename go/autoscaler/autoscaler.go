@@ -57,22 +57,14 @@ type job struct {
 	TrainerJob *batchv1.Job
 }
 
-func (j job) GPULimit() int {
-	var jobGPURequest int
-	for _, container := range j.TrainerJob.Spec.Template.Spec.Containers {
-		qLim := container.Resources.Limits.NvidiaGPU()
-		jobGPURequest += int(qLim.Value())
-	}
-	return jobGPURequest
+func (j job) TrainerGPULimit() int {
+	q := j.Config.Spec.Trainer.Resources.Limits.NvidiaGPU()
+	return int(q.Value())
 }
 
-func (j job) CPURequest() float64 {
-	var jobCPURequest float64
-	for _, container := range j.TrainerJob.Spec.Template.Spec.Containers {
-		q := container.Resources.Requests.Cpu()
-		jobCPURequest += float64(q.MilliValue()) / 1000
-	}
-	return jobCPURequest
+func (j job) TrainerCPURequest() float64 {
+	q := j.Config.Spec.Trainer.Resources.Requests.Cpu()
+	return float64(q.MilliValue()) / 1000
 }
 
 func (j job) Fulfillment() float64 {
@@ -125,8 +117,8 @@ func (j jobs) Less(a int, b int) bool {
 		resALimitsGPU := resA.Limits[paddlejob.GPUResourceName]
 		resBLimitsGPU := resB.Limits[paddlejob.GPUResourceName]
 		if resALimitsGPU.Cmp(resBLimitsGPU) == 0 {
-			resARequestsCPU := resA.Requests["cpu"]
-			resBRequestsCPU := resB.Requests["cpu"]
+			resARequestsCPU := *resA.Requests.Cpu()
+			resBRequestsCPU := *resB.Requests.Cpu()
 			if resARequestsCPU.Cmp(resBRequestsCPU) == 0 {
 				resARequestsMem := resA.Requests["memory"]
 				resBRequestsMem := resB.Requests["memory"]
@@ -178,10 +170,10 @@ func (a *Autoscaler) OnDel(trainingjob *paddlejob.TrainingJob) {
 
 // sortedJobs return the names of sorted jobs by fulfillment and
 // tiebreakers in ascending order.
-func (a *Autoscaler) sortedJobs(filters ...func(job) bool) []string {
+func sortedJobs(j []job, filters ...func(job) bool) []job {
 	var js jobs
 nextJob:
-	for _, v := range a.jobs {
+	for _, v := range j {
 		for _, f := range filters {
 			if !f(v) {
 				continue nextJob
@@ -191,62 +183,67 @@ nextJob:
 	}
 
 	sort.Sort(js)
-	var result []string
-	for _, v := range js {
-		result = append(result, v.Config.ObjectMeta.Name)
-	}
-	return result
+	return js
 }
 
-func scaleDryRun(r *ClusterResource, j job, curDiff int) int {
+func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
+	cpuRequest := j.TrainerCPURequest()
+	gpuLimit := j.TrainerGPULimit()
 
-	if r.GPUFree > j.GPULimit()*(curDiff+1) {
+	// Adjust resource upon return.
+	defer func() {
+		r.GPUFree -= gpuLimit * additional
+		r.CPUFree -= cpuRequest * float64(additional)
+	}()
+
+	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
+	instanceMax := j.Config.Spec.Trainer.MaxInstance
+
+	if plannedInstance >= instanceMax {
+		// Do not scale or scale down, don't need to check if
+		// there are available free resources.
+		additional = instanceMax - plannedInstance
+		return
+	}
+
+	if r.CPUFree >= cpuRequest {
 		additionalCPUInstance = 1
 	}
 
-	if r.CPUFree > j.CPURequest()*float64(curDiff+1) {
-		additionalCPUInstance = 1
+	needGPU := gpuLimit > 0
+	if needGPU && r.GPUFree >= gpuLimit {
+		additionalGPUInstance = 1
 	}
 
-	var additional int
-	if additionalCPUInstance < additionalGPUInstance {
-		additional = additionalCPUInstance
+	if needGPU {
+		if additionalGPUInstance < additionalCPUInstance {
+			additional = additionalGPUInstance
+		} else {
+			additional = additionalCPUInstance
+		}
 	} else {
-		additional = additionalGPUInstance
+		additional = additionalCPUInstance
 	}
 
-	if additional > 0 {
-		// TODO(helin): consider memory request as well.
-		r.GPUFree -= j.GPULimit() * additional
-		r.CPUFree -= j.CPURequest() * float64(additional)
-		return additional
-	}
-
-	return 0
+	// TODO(helin): consider memory request as well.
+	return
 }
 
-func (a *Autoscaler) dynamicScaling(r ClusterResource) {
-	_, err := a.cluster.SyncResource()
-	if err != nil {
-		log.Errorln("Unable to SyncResource: ", err)
-	}
-
+func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 	// Iteratively calculate scaling diff until nothing changes.
 	diff := make(map[string]int)
-	lastDiff := make(map[string]int)
 	for {
-		order := a.sortedJobs(elastic)
-		for _, name := range order {
-			additional := scaleDryRun(&r, a.jobs[name], diff[name])
-			log.Debugln("%s scale: %d, remaining resource: %v", name, additional, r)
-			diff[name] += additional
-		}
-
 		noChange := true
-		for key := range diff {
-			if diff[key] != lastDiff[key] {
+		sorted := sortedJobs(jobs, elastic)
+		for _, j := range sorted {
+			name := j.Config.Name
+			additional := scaleDryRun(&r, j, diff[name])
+			log.Debugln("Dry run scale job %s: current %d, additional %d, remaining resource: %v", name, diff[name], additional, r)
+			diff[name] += additional
+
+			if additional != 0 {
 				noChange = false
 			}
 		}
@@ -254,12 +251,12 @@ func (a *Autoscaler) dynamicScaling(r ClusterResource) {
 		if noChange {
 			break
 		}
-
-		for key := range diff {
-			lastDiff[key] = diff[key]
-		}
 	}
 
+	return diff
+}
+
+func (a *Autoscaler) scaleAll(diff map[string]int) {
 	for name := range diff {
 		if diff[name] != 0 {
 			log.Infoln("Scaling job %s, diff: %d.", name, diff[name])
@@ -274,8 +271,8 @@ func (a *Autoscaler) dynamicScaling(r ClusterResource) {
 	}
 }
 
-// Monitor monitors the cluster free resource in a loop. Do
-// scale/shrink according to the cluster resource.
+// Monitor monitors the cluster resources and training jobs in a loop,
+// scales the training jobs according to the cluster resource.
 func (a *Autoscaler) Monitor() {
 	for {
 		select {
@@ -323,8 +320,16 @@ func (a *Autoscaler) Monitor() {
 		r, err := a.cluster.SyncResource()
 		if err != nil {
 			log.Errorln("error sync resource: %v", err)
+			continue
 		}
 
-		a.dynamicScaling(r)
+		log.Infoln("Lastest cluster resource: %v", r)
+		var js []job
+		for _, j := range a.jobs {
+			js = append(js, j)
+		}
+		diff := scaleAllDryRun(js, r)
+		log.Infoln("Scaling plan: %v", diff)
+		a.scaleAll(diff)
 	}
 }

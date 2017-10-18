@@ -146,7 +146,7 @@ func podEnv(job *paddlejob.TrainingJob) []v1.EnvVar {
 		q := job.Spec.Trainer.Resources.Requests[paddlejob.GPUResourceName]
 		trainerCount = int(q.Value())
 	} else {
-		q := job.Spec.Trainer.Resources.Requests["cpu"]
+		q := job.Spec.Trainer.Resources.Requests.Cpu()
 		// FIXME: CPU resource value can be less than 1.
 		trainerCount = int(q.Value())
 	}
