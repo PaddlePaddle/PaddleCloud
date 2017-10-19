@@ -57,6 +57,18 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 	return err
 }
 
+// IsJobAllRunning check if all the pods are in "Running" status.
+func (c Cluster) IsJobAllRunning(job *paddlejob.TrainingJob) bool {
+	k8sjob, err := c.GetTrainerJob(job)
+	if err != nil {
+		return false
+	}
+	if k8sjob.Status.Active == *k8sjob.Spec.Parallelism {
+		return true
+	}
+	return false
+}
+
 // getPodsTotalRequestsAndLimits accumulate resource requests and limits from all pods containers.
 func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, limits v1.ResourceList, err error) {
 	reqs, limits = v1.ResourceList{}, v1.ResourceList{}

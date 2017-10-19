@@ -58,6 +58,9 @@ type Cluster interface {
 
 	// UpdateTrainerJob updates the trainer job spec.
 	UpdateTrainerJob(job *batchv1.Job) error
+
+	// IsJobAllRunning check if all the pods are in "Running" status.
+	IsJobAllRunning(job *paddlejob.TrainingJob) bool
 }
 
 type job struct {
@@ -213,6 +216,11 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 	}()
 
+	// if we are going to scale down
+	if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
+		return -1
+	}
+
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
 
@@ -346,9 +354,11 @@ func (a *Autoscaler) Monitor() {
 		log.Infof("Latest cluster resource: %#v", r)
 		var js []job
 		for _, j := range a.jobs {
-			// FIXME(typhoonzero): scale jobs only when all pods are in running status.
+			// scale jobs only when all pods are in running status.
 			// pods are pending or starting if the job is just submited or just scaled.
-			js = append(js, j)
+			if a.cluster.IsJobAllRunning(j.Config) {
+				js = append(js, j)
+			}
 		}
 		diff := scaleAllDryRun(js, r)
 		log.Infof("Scaling plan: %v", diff)
