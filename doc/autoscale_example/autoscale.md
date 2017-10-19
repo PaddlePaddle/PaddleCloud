@@ -2,10 +2,10 @@
 
 This documentation shows an example to run two jobs on a local kubernetes cluster and see the job scaling status.
 
-## Prepare
+## Prerequisites
 
-- install minikube
-- install kubectl
+- [install minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+- [install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 ## Run local Autoscaling job
 
@@ -28,8 +28,9 @@ cd /path/to/workspace && python convert.py
 Start controller and a example job. Then start another job simulating cluster load, then you can observe the scale process.
 
 ```bash
-kubectl create -f k8s/controller.yaml
-cd k8s/controller/
+cd $REPO_PATH/k8s/controller
+kubectl create -f controller.yaml
+kubectl create -f trainingjob_resource.yaml
 kubectl create -f autoscale_job/
 kubectl get po
 kubectl create -f autoscale_load/

@@ -33,13 +33,18 @@ const (
 // ClusterResource is the resource of a cluster
 type ClusterResource struct {
 	NodeCount int
-	GPUTotal  int
-	CPUTotal  float64
-	GPUFree   int
-	CPUFree   float64
 
-	MemoryTotalMi int64
-	MemoryFreeMi  int64
+	GPURequest int
+	GPULimit   int
+	GPUTotal   int
+
+	CPURequestKilo float64
+	CPULimitKilo   float64
+	CPUTotalKilo   float64
+
+	MemoryRequestMega int64
+	MemoryLimitMega   int64
+	MemoryTotalMega   int64
 }
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -65,12 +70,12 @@ func (j job) TrainerGPULimit() int {
 	return int(q.Value())
 }
 
-func (j job) TrainerCPURequest() float64 {
+func (j job) TrainerCPURequestKilo() float64 {
 	q := j.Config.Spec.Trainer.Resources.Requests.Cpu()
-	return float64(q.MilliValue()) / 1000
+	return float64(q.ScaledValue(resource.Kilo))
 }
 
-func (j job) TrainerMemRequestMi() int64 {
+func (j job) TrainerMemRequestMega() int64 {
 	q := j.Config.Spec.Trainer.Resources.Requests.Memory()
 	return q.ScaledValue(resource.Mega)
 }
@@ -197,14 +202,15 @@ nextJob:
 func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
-	cpuRequest := j.TrainerCPURequest()
-	memRequest := j.TrainerMemRequestMi()
+	cpuRequestKilo := j.TrainerCPURequestKilo()
+	memRequestMega := j.TrainerMemRequestMega()
 	gpuLimit := j.TrainerGPULimit()
 
 	// Adjust resource upon return.
 	defer func() {
-		r.GPUFree -= gpuLimit * additional
-		r.CPUFree -= cpuRequest * float64(additional)
+		r.GPULimit += gpuLimit * additional
+		r.CPURequestKilo += cpuRequestKilo * float64(additional)
+		r.MemoryRequestMega += memRequestMega * int64(additional)
 	}()
 
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
@@ -217,18 +223,18 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		return
 	}
 
-	if r.MemoryFreeMi <= memRequest {
+	if r.MemoryTotalMega-r.MemoryRequestMega <= memRequestMega {
 		// insufficient memory, do not scale
 		additional = 0
 		return
 	}
 
-	if r.CPUFree >= cpuRequest {
+	if r.CPUTotalKilo-r.CPURequestKilo >= cpuRequestKilo {
 		additionalCPUInstance = 1
 	}
 
 	needGPU := gpuLimit > 0
-	if needGPU && r.GPUFree >= gpuLimit {
+	if needGPU && r.GPUTotal-r.GPULimit >= gpuLimit {
 		additionalGPUInstance = 1
 	}
 
@@ -337,7 +343,7 @@ func (a *Autoscaler) Monitor() {
 			continue
 		}
 
-		log.Infof("Lastest cluster resource: %v", r)
+		log.Infof("Latest cluster resource: %#v", r)
 		var js []job
 		for _, j := range a.jobs {
 			js = append(js, j)

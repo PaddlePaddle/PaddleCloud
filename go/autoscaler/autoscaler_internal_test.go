@@ -57,12 +57,12 @@ func TestTrainerRequestLimit(t *testing.T) {
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	assert.Equal(t, float64(1), j.TrainerCPURequest())
+	assert.Equal(t, float64(1), j.TrainerCPURequestKilo())
 	assert.Equal(t, 10, j.TrainerGPULimit())
 }
 
 func TestScaleDryRunSatisfied(t *testing.T) {
-	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{CPUTotalKilo: 1000, MemoryTotalMega: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -79,7 +79,14 @@ func TestScaleDryRunSatisfied(t *testing.T) {
 }
 
 func TestScaleDryRunMoreCPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      100,
+		CPURequestKilo:    100,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+	}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -96,7 +103,15 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 }
 
 func TestScaleDryRunNoMoreCPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 0, CPUTotal: 1000, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      1000,
+		CPURequestKilo:    1000,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -113,7 +128,17 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 }
 
 func TestScaleDryRunMoreGPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 1, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      100,
+		CPURequestKilo:    100,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          0,
+		GPURequest:        0,
+		GPUTotal:          10,
+	}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -130,7 +155,18 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 }
 
 func TestScaleDryRunNoMoreGPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 0, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      100,
+		CPURequestKilo:    100,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          10,
+		GPURequest:        10,
+		GPUTotal:          10,
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -147,7 +183,18 @@ func TestScaleDryRunNoMoreGPU(t *testing.T) {
 }
 
 func TestScaleDryRunScaleDown(t *testing.T) {
-	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      1000,
+		CPURequestKilo:    1000,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 1000,
+		MemoryLimitMega:   1000,
+		MemoryTotalMega:   1000,
+		GPULimit:          10,
+		GPURequest:        10,
+		GPUTotal:          10,
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -158,8 +205,67 @@ func TestScaleDryRunScaleDown(t *testing.T) {
 	assert.Equal(t, -3, scaleDryRun(&r, j, 0))
 }
 
+func TestScaleDryRunNoMem(t *testing.T) {
+	r := ClusterResource{
+		CPULimitKilo:      1000,
+		CPURequestKilo:    1000,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 1000,
+		MemoryLimitMega:   1000,
+		MemoryTotalMega:   1000,
+		GPULimit:          10,
+		GPURequest:        10,
+		GPUTotal:          10,
+	}
+
+	j := job{
+		Config:     &api.TrainingJob{},
+		TrainerJob: &batchv1.Job{},
+	}
+	j.Config.Spec.Trainer.MinInstance = 1
+	j.Config.Spec.Trainer.MaxInstance = 3
+	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0))
+}
+
+func TestScaleAllDryRunNoMem(t *testing.T) {
+	r := ClusterResource{
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 1000,
+		MemoryLimitMega:   1000,
+		MemoryTotalMega:   1000,
+		GPUTotal:          10,
+	}
+
+	j := job{
+		Config:     &api.TrainingJob{},
+		TrainerJob: &batchv1.Job{},
+	}
+	j.Config.Spec.Trainer.MinInstance = 1
+	j.Config.Spec.Trainer.MaxInstance = 3
+	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
+	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
+	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
+	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
+	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	scale := scaleAllDryRun([]job{j}, r)[""]
+	assert.Equal(t, 0, scale)
+}
+
 func TestScaleAllDryRun(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 2, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      100,
+		CPURequestKilo:    100,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          8,
+		GPURequest:        8,
+		GPUTotal:          10,
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -177,7 +283,18 @@ func TestScaleAllDryRun(t *testing.T) {
 }
 
 func TestScaleAllDryRunLessCPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 1, CPUTotal: 1000, GPUFree: 2, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      999,
+		CPURequestKilo:    999,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          8,
+		GPURequest:        8,
+		GPUTotal:          10,
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -195,7 +312,18 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 }
 
 func TestScaleAllDryRunLessGPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 1, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
+	r := ClusterResource{
+		CPULimitKilo:      990,
+		CPURequestKilo:    990,
+		CPUTotalKilo:      1000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          9,
+		GPURequest:        9,
+		GPUTotal:          10,
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
