@@ -50,82 +50,23 @@ func (c Cluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error)
 		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
 }
 
-// UpdateTrainerJob updates the trainer job spec.
+// UpdateTrainerJob updates the trainer job spec
+// this will do the actual scale up/down.
 func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 	_, err := c.clientset.BatchV1().Jobs(job.ObjectMeta.Namespace).Update(job)
 	return err
 }
 
-func podRequestsAndLimits(pod *v1.Pod) (reqs map[v1.ResourceName]resource.Quantity, limits map[v1.ResourceName]resource.Quantity, err error) {
-	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
-	for _, container := range pod.Spec.Containers {
-		for name, quantity := range container.Resources.Requests {
-			if value, ok := reqs[name]; !ok {
-				reqs[name] = *quantity.Copy()
-			} else {
-				value.Add(quantity)
-				reqs[name] = value
-			}
-		}
-		for name, quantity := range container.Resources.Limits {
-			if value, ok := limits[name]; !ok {
-				limits[name] = *quantity.Copy()
-			} else {
-				value.Add(quantity)
-				limits[name] = value
-			}
-		}
-	}
-	// init containers define the minimum of any resource
-	for _, container := range pod.Spec.InitContainers {
-		for name, quantity := range container.Resources.Requests {
-			value, ok := reqs[name]
-			if !ok {
-				reqs[name] = *quantity.Copy()
-				continue
-			}
-			if quantity.Cmp(value) > 0 {
-				reqs[name] = *quantity.Copy()
-			}
-		}
-		for name, quantity := range container.Resources.Limits {
-			value, ok := limits[name]
-			if !ok {
-				limits[name] = *quantity.Copy()
-				continue
-			}
-			if quantity.Cmp(value) > 0 {
-				limits[name] = *quantity.Copy()
-			}
-		}
-	}
-	return
-}
-
-func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs map[v1.ResourceName]resource.Quantity, limits map[v1.ResourceName]resource.Quantity, err error) {
-	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
+// getPodsTotalRequestsAndLimits accumulate resource requests and limits from all pods containers.
+func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, limits v1.ResourceList, err error) {
+	reqs, limits = v1.ResourceList{}, v1.ResourceList{}
 	for _, pod := range podList.Items {
-		podReqs, podLimits, err := podRequestsAndLimits(&pod)
-		if err != nil {
-			return nil, nil, err
-		}
-		for podReqName, podReqValue := range podReqs {
-			if value, ok := reqs[podReqName]; !ok {
-				reqs[podReqName] = *podReqValue.Copy()
-			} else {
-				value.Add(podReqValue)
-				reqs[podReqName] = value
-			}
-		}
-		for podLimitName, podLimitValue := range podLimits {
-			if value, ok := limits[podLimitName]; !ok {
-				limits[podLimitName] = *podLimitValue.Copy()
-			} else {
-				value.Add(podLimitValue)
-				limits[podLimitName] = value
-			}
+		for _, container := range pod.Spec.Containers {
+			AddResourceList(&reqs, container.Resources.Requests)
+			AddResourceList(&limits, container.Resources.Limits)
 		}
 	}
+	// NOTE: Currently paddle trainer do *not* use "InitContainers", add if needed.
 	return
 }
 
@@ -136,65 +77,41 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	if err != nil {
 		return autoscaler.ClusterResource{}, err
 	}
-
-	allReqs := make(map[v1.ResourceName]resource.Quantity)
-	allLimits := make(map[v1.ResourceName]resource.Quantity)
 	allocatable := make(v1.ResourceList)
 	for _, node := range nodeList.Items {
-		a := node.Status.Capacity
-		if len(node.Status.Allocatable) > 0 {
-			a = node.Status.Allocatable
-		}
-
-		for key, item := range a {
-			a := allocatable[key]
-			a.Add(item)
-			allocatable[key] = a
-		}
-
-		namespace := "" // get pods from all namespaces.
-		var fieldSelector fields.Selector
-		fieldSelector, err := fields.ParseSelector("spec.nodeName=" + node.Name + ",status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
-		if err != nil {
-			return autoscaler.ClusterResource{}, err
-		}
-		nodeNonTerminatedPodsList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
-		if err != nil {
-			return autoscaler.ClusterResource{}, err
-		}
-
-		reqs, limits, err := getPodsTotalRequestsAndLimits(nodeNonTerminatedPodsList)
-		if err != nil {
-			return autoscaler.ClusterResource{}, err
-		}
-
-		for key, item := range reqs {
-			a := allReqs[key]
-			a.Add(item)
-			allReqs[key] = a
-		}
-
-		for key, item := range limits {
-			a := allLimits[key]
-			a.Add(item)
-			allLimits[key] = a
-		}
+		AddResourceList(&allocatable, node.Status.Allocatable)
 	}
 
-	gpuReq, gpuLimit := allReqs[v1.ResourceNvidiaGPU], allLimits[v1.ResourceNvidiaGPU]
-	cpuReq, cpuLimit := allReqs[v1.ResourceCPU], allLimits[v1.ResourceCPU]
-	memoryReq, memoryLimit := allReqs[v1.ResourceMemory], allLimits[v1.ResourceMemory]
+	// get non-terminated pods from all namespaces all nodes.
+	// FIXME(typhoonzero): scan all pods is not a efficient way.
+	namespace := ""
+	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
+	if err != nil {
+		return autoscaler.ClusterResource{}, err
+	}
+	// FIXME(typhoonzero): allPodList may be large
+	allPodsList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+	if err != nil {
+		return autoscaler.ClusterResource{}, err
+	}
+	allReqs, allLimits, err := getPodsTotalRequestsAndLimits(allPodsList)
+	if err != nil {
+		return autoscaler.ClusterResource{}, err
+	}
+
 	res = autoscaler.ClusterResource{
-		NodeCount:         len(nodeList.Items),
-		GPURequest:        int(gpuReq.Value()),
-		GPULimit:          int(gpuLimit.Value()),
-		GPUTotal:          int(allocatable.NvidiaGPU().Value()),
-		CPURequestKilo:    float64(cpuReq.ScaledValue(resource.Kilo)),
-		CPULimitKilo:      float64(cpuLimit.ScaledValue(resource.Kilo)),
-		CPUTotalKilo:      float64(allocatable.Cpu().ScaledValue(resource.Kilo)),
-		MemoryRequestMega: memoryReq.ScaledValue(resource.Mega),
-		MemoryLimitMega:   memoryLimit.ScaledValue(resource.Mega),
-		MemoryTotalMega:   allocatable.Memory().ScaledValue(resource.Mega),
+		NodeCount:       len(nodeList.Items),
+		GPUTotal:        int(allocatable.NvidiaGPU().Value()),
+		CPUTotalMilli:   allocatable.Cpu().ScaledValue(resource.Milli),
+		MemoryTotalMega: allocatable.Memory().ScaledValue(resource.Mega),
+
+		GPURequest:        int(allReqs.NvidiaGPU().Value()),
+		CPURequestMilli:   allReqs.Cpu().ScaledValue(resource.Milli),
+		MemoryRequestMega: allReqs.Memory().ScaledValue(resource.Mega),
+
+		GPULimit:        int(allLimits.NvidiaGPU().Value()),
+		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
+		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 	}
 
 	return

@@ -38,9 +38,9 @@ type ClusterResource struct {
 	GPULimit   int
 	GPUTotal   int
 
-	CPURequestKilo float64
-	CPULimitKilo   float64
-	CPUTotalKilo   float64
+	CPURequestMilli int64
+	CPULimitMilli   int64
+	CPUTotalMilli   int64
 
 	MemoryRequestMega int64
 	MemoryLimitMega   int64
@@ -70,9 +70,9 @@ func (j job) TrainerGPULimit() int {
 	return int(q.Value())
 }
 
-func (j job) TrainerCPURequestKilo() float64 {
+func (j job) TrainerCPURequestMilli() int64 {
 	q := j.Config.Spec.Trainer.Resources.Requests.Cpu()
-	return float64(q.ScaledValue(resource.Kilo))
+	return q.ScaledValue(resource.Milli)
 }
 
 func (j job) TrainerMemRequestMega() int64 {
@@ -202,14 +202,14 @@ nextJob:
 func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
-	cpuRequestKilo := j.TrainerCPURequestKilo()
+	cpuRequestMilli := j.TrainerCPURequestMilli()
 	memRequestMega := j.TrainerMemRequestMega()
 	gpuLimit := j.TrainerGPULimit()
 
 	// Adjust resource upon return.
 	defer func() {
 		r.GPULimit += gpuLimit * additional
-		r.CPURequestKilo += cpuRequestKilo * float64(additional)
+		r.CPURequestMilli += cpuRequestMilli * int64(additional)
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 	}()
 
@@ -229,7 +229,7 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		return
 	}
 
-	if r.CPUTotalKilo-r.CPURequestKilo >= cpuRequestKilo {
+	if r.CPUTotalMilli-r.CPURequestMilli >= cpuRequestMilli {
 		additionalCPUInstance = 1
 	}
 
@@ -257,10 +257,11 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 	for {
 		noChange := true
 		sorted := sortedJobs(jobs, elastic)
+		// TODO(typhoonzero): implement GPU priority CFS scheduler from here.
 		for _, j := range sorted {
 			name := j.Config.Name
 			additional := scaleDryRun(&r, j, diff[name])
-			log.Debugf("Dry run scale job %s: current %d, additional %d, remaining resource: %v", name, diff[name], additional, r)
+			log.Debugf("Dry run scale job %s: current %d, additional %d, remaining resource: %#v", name, diff[name], additional, r)
 			diff[name] += additional
 
 			if additional != 0 {
@@ -282,7 +283,6 @@ func (a *Autoscaler) scaleAll(diff map[string]int) {
 			log.Infof("Scaling job %s, diff: %d.", name, diff[name])
 			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
 			*a.jobs[name].TrainerJob.Spec.Parallelism = target
-			// *a.jobs[name].TrainerJob.Spec.Completions = target
 			err := a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
 			if err != nil {
 				log.Errorf("Error updating trainer job: %v", err)
@@ -346,6 +346,8 @@ func (a *Autoscaler) Monitor() {
 		log.Infof("Latest cluster resource: %#v", r)
 		var js []job
 		for _, j := range a.jobs {
+			// FIXME(typhoonzero): scale jobs only when all pods are in running status.
+			// pods are pending or starting if the job is just submited or just scaled.
 			js = append(js, j)
 		}
 		diff := scaleAllDryRun(js, r)

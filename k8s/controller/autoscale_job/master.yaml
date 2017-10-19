@@ -16,6 +16,7 @@ spec:
       containers:
       - name: master
         image: paddlepaddle/paddlecloud-job
+        imagePullPolicy: Never
         ports:
         - name: master-port
           containerPort: 8080
