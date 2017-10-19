@@ -18,12 +18,13 @@ import (
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/autoscaler"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
+	"k8s.io/kubernetes/pkg/api"
 )
 
 // Cluster resprensents a Kubernetes cluster.
@@ -54,75 +55,146 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 	return err
 }
 
+func podRequestsAndLimits(pod *v1.Pod) (reqs map[v1.ResourceName]resource.Quantity, limits map[v1.ResourceName]resource.Quantity, err error) {
+	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
+	for _, container := range pod.Spec.Containers {
+		for name, quantity := range container.Resources.Requests {
+			if value, ok := reqs[name]; !ok {
+				reqs[name] = *quantity.Copy()
+			} else {
+				value.Add(quantity)
+				reqs[name] = value
+			}
+		}
+		for name, quantity := range container.Resources.Limits {
+			if value, ok := limits[name]; !ok {
+				limits[name] = *quantity.Copy()
+			} else {
+				value.Add(quantity)
+				limits[name] = value
+			}
+		}
+	}
+	// init containers define the minimum of any resource
+	for _, container := range pod.Spec.InitContainers {
+		for name, quantity := range container.Resources.Requests {
+			value, ok := reqs[name]
+			if !ok {
+				reqs[name] = *quantity.Copy()
+				continue
+			}
+			if quantity.Cmp(value) > 0 {
+				reqs[name] = *quantity.Copy()
+			}
+		}
+		for name, quantity := range container.Resources.Limits {
+			value, ok := limits[name]
+			if !ok {
+				limits[name] = *quantity.Copy()
+				continue
+			}
+			if quantity.Cmp(value) > 0 {
+				limits[name] = *quantity.Copy()
+			}
+		}
+	}
+	return
+}
+
+func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs map[v1.ResourceName]resource.Quantity, limits map[v1.ResourceName]resource.Quantity, err error) {
+	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
+	for _, pod := range podList.Items {
+		podReqs, podLimits, err := podRequestsAndLimits(&pod)
+		if err != nil {
+			return nil, nil, err
+		}
+		for podReqName, podReqValue := range podReqs {
+			if value, ok := reqs[podReqName]; !ok {
+				reqs[podReqName] = *podReqValue.Copy()
+			} else {
+				value.Add(podReqValue)
+				reqs[podReqName] = value
+			}
+		}
+		for podLimitName, podLimitValue := range podLimits {
+			if value, ok := limits[podLimitName]; !ok {
+				limits[podLimitName] = *podLimitValue.Copy()
+			} else {
+				value.Add(podLimitValue)
+				limits[podLimitName] = value
+			}
+		}
+	}
+	return
+}
+
 // SyncResource will update free and total resources in k8s cluster.
-func (c *Cluster) SyncResource() (autoscaler.ClusterResource, error) {
+func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
-		log.Errorln("Fetching node list error: ", err)
-		return autoscaler.ClusterResource{}, err
-	}
-	readyNodeCount := 0
-	totalCPU := 0.0
-	totalGPU := 0
-	totalMemory := resource.NewQuantity(0, resource.BinarySI)
-	requestedCPU := 0.0
-	requestedGPU := 0
-	requestedMemory := resource.NewQuantity(0, resource.BinarySI)
-	for _, item := range nodeList.Items {
-		for _, cond := range item.Status.Conditions {
-			if cond.Type == v1.NodeReady && cond.Status == v1.ConditionTrue {
-				readyNodeCount++
-			}
-		}
-		for resname, q := range item.Status.Allocatable {
-			if resname == v1.ResourceCPU {
-				totalCPU += float64(q.MilliValue()) / 1000
-			}
-			if resname == v1.ResourceNvidiaGPU {
-				totalGPU += int(q.Value())
-			}
-			if resname == v1.ResourceMemory {
-				totalMemory.Add(q)
-			}
-		}
-	}
-
-	namespace := "" // get pods from all namespaces.
-	podList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		log.Errorln("Fetching pods error: ", err)
 		return autoscaler.ClusterResource{}, err
 	}
 
-	for _, pod := range podList.Items {
-		for _, container := range pod.Spec.Containers {
-			q := container.Resources.Requests.Cpu()
-			requestedCPU += float64(q.MilliValue()) / 1000
+	allReqs := make(map[v1.ResourceName]resource.Quantity)
+	allLimits := make(map[v1.ResourceName]resource.Quantity)
+	var allocatable v1.ResourceList
+	for _, node := range nodeList.Items {
+		a := node.Status.Capacity
+		if len(node.Status.Allocatable) > 0 {
+			a = node.Status.Allocatable
+		}
 
-			qGPU := container.Resources.Requests.NvidiaGPU()
-			if qGPU.IsZero() {
-				qGPU = container.Resources.Limits.NvidiaGPU()
-			}
-			requestedGPU += int(qGPU.Value())
-			requestedMemory.Add(*container.Resources.Requests.Memory())
+		for key, item := range a {
+			a := allocatable[key]
+			a.Add(item)
+			allocatable[key] = a
+		}
+
+		namespace := "" // get pods from all namespaces.
+		var fieldSelector fields.Selector
+		fieldSelector, err := fields.ParseSelector("spec.nodeName=" + node.Name + ",status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
+		if err != nil {
+			return autoscaler.ClusterResource{}, err
+		}
+		nodeNonTerminatedPodsList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		if err != nil {
+			return autoscaler.ClusterResource{}, err
+		}
+
+		reqs, limits, err := getPodsTotalRequestsAndLimits(nodeNonTerminatedPodsList)
+		if err != nil {
+			return autoscaler.ClusterResource{}, err
+		}
+
+		for key, item := range reqs {
+			a := allReqs[key]
+			a.Add(item)
+			allReqs[key] = a
+		}
+
+		for key, item := range limits {
+			a := allLimits[key]
+			a.Add(item)
+			allLimits[key] = a
 		}
 	}
 
-	totalMem := totalMemory.ScaledValue(resource.Giga)
-	totalMemory.Sub(*requestedMemory)
-	freeMem := totalMemory.ScaledValue(resource.Giga)
-	r := autoscaler.ClusterResource{
-		CPUTotal:      totalCPU,
-		GPUTotal:      totalGPU,
-		NodeCount:     readyNodeCount,
-		CPUFree:       totalCPU - requestedCPU,
-		GPUFree:       totalGPU - requestedGPU,
-		MemoryTotalMi: totalMem,
-		MemoryFreeMi:  freeMem,
+	gpuReq, gpuLimit := allReqs[v1.ResourceNvidiaGPU], allLimits[v1.ResourceNvidiaGPU]
+	cpuReq, cpuLimit := allReqs[v1.ResourceCPU], allLimits[v1.ResourceCPU]
+	memoryReq, memoryLimit := allReqs[v1.ResourceMemory], allLimits[v1.ResourceMemory]
+	res = autoscaler.ClusterResource{
+		NodeCount:         len(nodeList.Items),
+		GPURequest:        int(gpuReq.Value()),
+		GPULimit:          int(gpuLimit.Value()),
+		GPUTotal:          int(allocatable.NvidiaGPU().Value()),
+		CPURequestKilo:    float64(cpuReq.ScaledValue(resource.Kilo)),
+		CPULimitKilo:      float64(cpuLimit.ScaledValue(resource.Kilo)),
+		CPUTotalKilo:      float64(allocatable.Cpu().ScaledValue(resource.Kilo)),
+		MemoryRequestMega: memoryReq.ScaledValue(resource.Mega),
+		MemoryLimitMega:   memoryLimit.ScaledValue(resource.Mega),
+		MemoryTotalMega:   allocatable.Memory().ScaledValue(resource.Mega),
 	}
 
-	log.Debugf("GPU: %d/%d, CPU: %f/%f, Mem: %d/%d Gi", r.GPUFree, r.GPUTotal,
-		r.CPUFree, r.CPUTotal, r.MemoryFreeMi, r.MemoryTotalMi)
-	return r, nil
+	return
 }
