@@ -32,7 +32,7 @@ func TestNeedGPU(t *testing.T) {
 	assert.Nil(t, err)
 
 	j.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q
+	j.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q
 	assert.True(t, j.NeedGPU())
 }
 

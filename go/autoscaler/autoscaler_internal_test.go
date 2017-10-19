@@ -53,7 +53,7 @@ func TestTrainerRequestLimit(t *testing.T) {
 		TrainerJob: &batchv1.Job{},
 	}
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q10
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q10
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -62,7 +62,7 @@ func TestTrainerRequestLimit(t *testing.T) {
 }
 
 func TestScaleDryRunSatisfied(t *testing.T) {
-	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -70,7 +70,7 @@ func TestScaleDryRunSatisfied(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 2
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -79,7 +79,7 @@ func TestScaleDryRunSatisfied(t *testing.T) {
 }
 
 func TestScaleDryRunMoreCPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 1000, CPUTotal: 1000, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -87,7 +87,7 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q0
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q0
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -96,7 +96,7 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 }
 
 func TestScaleDryRunNoMoreCPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 0, CPUTotal: 1000, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 0, CPUTotal: 1000, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -104,7 +104,7 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q0
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q0
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -113,7 +113,7 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 }
 
 func TestScaleDryRunMoreGPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 1, GPUTotal: 100, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 1, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -121,7 +121,7 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -130,7 +130,7 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 }
 
 func TestScaleDryRunNoMoreGPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 0, GPUTotal: 100, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 0, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -138,7 +138,7 @@ func TestScaleDryRunNoMoreGPU(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -159,7 +159,7 @@ func TestScaleDryRunScaleDown(t *testing.T) {
 }
 
 func TestScaleAllDryRun(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 2, GPUTotal: 100, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 2, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -167,7 +167,7 @@ func TestScaleAllDryRun(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -177,7 +177,7 @@ func TestScaleAllDryRun(t *testing.T) {
 }
 
 func TestScaleAllDryRunLessCPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 1, CPUTotal: 1000, GPUFree: 2, GPUTotal: 100, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 1, CPUTotal: 1000, GPUFree: 2, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -185,7 +185,7 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -195,7 +195,7 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 }
 
 func TestScaleAllDryRunLessGPU(t *testing.T) {
-	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 1, GPUTotal: 100, MemoryFreeGi: 100, MemoryTotalGi: 1000}
+	r := ClusterResource{CPUFree: 10, CPUTotal: 1000, GPUFree: 1, GPUTotal: 100, MemoryFreeMi: 100, MemoryTotalMi: 1000}
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
@@ -203,7 +203,7 @@ func TestScaleAllDryRunLessGPU(t *testing.T) {
 	j.Config.Spec.Trainer.MinInstance = 1
 	j.Config.Spec.Trainer.MaxInstance = 3
 	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
 	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
 	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
@@ -290,7 +290,7 @@ func TestSortedJobsGPUOnly(t *testing.T) {
 	jobs[0].Config.Spec.Trainer.MaxInstance = 2
 
 	jobs[0].Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	jobs[0].Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	jobs[0].Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 
 	jobs[1].Config = &api.TrainingJob{}
 	jobs[1].TrainerJob = &batchv1.Job{}
@@ -337,7 +337,7 @@ func TestSortedJobsWithTie(t *testing.T) {
 	jobs[0].Config.Spec.Trainer.MinInstance = 1
 	jobs[0].Config.Spec.Trainer.MaxInstance = 2
 	jobs[0].Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	jobs[0].Config.Spec.Trainer.Resources.Limits[api.GPUResourceName] = q1
+	jobs[0].Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
 
 	jobs[1].Config = &api.TrainingJob{}
 	jobs[1].TrainerJob = &batchv1.Job{}
