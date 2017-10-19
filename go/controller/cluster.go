@@ -57,19 +57,20 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 	return err
 }
 
-// IsJobAllRunning check if all the pods are in "Running" status.
-func (c Cluster) IsJobAllRunning(job *paddlejob.TrainingJob) bool {
+// JobRunning check if all the pods are in "Running" status.
+func (c Cluster) JobRunning(job *paddlejob.TrainingJob) (bool, error) {
 	k8sjob, err := c.GetTrainerJob(job)
 	if err != nil {
-		return false
+		return false, err
 	}
-	// TODO(typhoonzero): get the latest pod status
-	// and check if pod.metadata.deletion_timestamp exists for terminating job
+
+	// TODO(typhoonzero): get the latest pod status and check if
+	// pod.metadata.deletion_timestamp exists for terminating job
 	// and check not status is not running.
 	if k8sjob.Status.Active == *k8sjob.Spec.Parallelism {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
 // getPodsTotalRequestsAndLimits accumulate resource requests and limits from all pods containers.
@@ -77,8 +78,8 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, l
 	reqs, limits = v1.ResourceList{}, v1.ResourceList{}
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
-			AddResourceList(&reqs, container.Resources.Requests)
-			AddResourceList(&limits, container.Resources.Limits)
+			AddResourceList(reqs, container.Resources.Requests)
+			AddResourceList(limits, container.Resources.Limits)
 		}
 	}
 	// NOTE: Currently paddle trainer do *not* use "InitContainers", add if needed.
@@ -94,7 +95,7 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	}
 	allocatable := make(v1.ResourceList)
 	for _, node := range nodeList.Items {
-		AddResourceList(&allocatable, node.Status.Allocatable)
+		AddResourceList(allocatable, node.Status.Allocatable)
 	}
 
 	// get non-terminated pods from all namespaces all nodes.

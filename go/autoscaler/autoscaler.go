@@ -59,8 +59,8 @@ type Cluster interface {
 	// UpdateTrainerJob updates the trainer job spec.
 	UpdateTrainerJob(job *batchv1.Job) error
 
-	// IsJobAllRunning check if all the pods are in "Running" status.
-	IsJobAllRunning(job *paddlejob.TrainingJob) bool
+	// JobRunning check if all the pods are in "Running" status.
+	JobRunning(job *paddlejob.TrainingJob) (bool, error)
 }
 
 type job struct {
@@ -362,9 +362,19 @@ func (a *Autoscaler) Monitor() {
 				continue
 			}
 			j.TrainerJob = tj
-			// scale jobs only when all pods are in running status.
-			// pods are pending/starting/terminating if the job is just submited or just scaled up/down.
-			if a.cluster.IsJobAllRunning(j.Config) {
+
+			// Scale jobs only when it's running (defined
+			// by all pods are in the "running"
+			// status). Pods are
+			// pending/starting/terminating if the job is
+			// just submited or just scaled up/down.
+			running, err := a.cluster.JobRunning(j.Config)
+			if err != nil {
+				log.Errorln("Get if job is running failed:", err)
+				continue
+			}
+
+			if running {
 				js = append(js, j)
 			}
 		}

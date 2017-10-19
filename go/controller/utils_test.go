@@ -35,8 +35,13 @@ func TestAddResourceList(t *testing.T) {
 		"memory":             mem,
 		v1.ResourceNvidiaGPU: gpu,
 	}
-	AddResourceList(&a, b)
-	assert.Equal(t, a.Cpu().ScaledValue(resource.Milli), int64(400))
-	assert.Equal(t, a.Memory().ScaledValue(resource.Mega), int64(1049)) // why?
-	assert.Equal(t, a.NvidiaGPU().Value(), int64(8))
+
+	cpuExpected, _ := resource.ParseQuantity("400m")
+	memExpected, _ := resource.ParseQuantity("1000Mi")
+	gpuExpected, _ := resource.ParseQuantity("8")
+
+	AddResourceList(a, b)
+	assert.Equal(t, a.Cpu().Value(), cpuExpected.Value())
+	assert.Equal(t, a.Memory().Value(), memExpected.Value())
+	assert.Equal(t, a.NvidiaGPU().Value(), gpuExpected.Value())
 }

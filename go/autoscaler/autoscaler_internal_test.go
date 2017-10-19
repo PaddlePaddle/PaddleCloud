@@ -52,34 +52,56 @@ func makePtr(c int) *int32 {
 	return &p
 }
 
-func TestTrainerRequestLimit(t *testing.T) {
+func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, max, p int) job {
+	cr, err := resource.ParseQuantity(cpuReq)
+	if err != nil {
+		panic(err)
+	}
+	cl, err := resource.ParseQuantity(cpuLim)
+	if err != nil {
+		panic(err)
+	}
+	mr, err := resource.ParseQuantity(memReq)
+	if err != nil {
+		panic(err)
+	}
+	ml, err := resource.ParseQuantity(memLim)
+	if err != nil {
+		panic(err)
+	}
+	gl, err := resource.ParseQuantity(gpuLim)
+	if err != nil {
+		panic(err)
+	}
+
 	j := job{
 		Config:     &api.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
 	}
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q10
+	j.Config.Name = name
 	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	assert.Equal(t, int64(1000), j.TrainerCPURequestMilli())
+	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
+	j.Config.Spec.Trainer.Resources.Requests["cpu"] = cr
+	j.Config.Spec.Trainer.Resources.Limits["cpu"] = cl
+	j.Config.Spec.Trainer.Resources.Requests["memory"] = mr
+	j.Config.Spec.Trainer.Resources.Limits["memory"] = ml
+	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = gl
+	j.TrainerJob.Spec.Parallelism = makePtr(p)
+	j.Config.Spec.Trainer.MinInstance = min
+	j.Config.Spec.Trainer.MaxInstance = max
+	return j
+}
+
+func TestTrainerRequestLimit(t *testing.T) {
+	j := makeJob("name", "1k", "1k", "100Mi", "100Mi", "10", 1, 1, 1)
+	assert.Equal(t, int64(1000000), j.TrainerCPURequestMilli())
+	assert.Equal(t, int64(105), j.TrainerMemRequestMega())
 	assert.Equal(t, 10, j.TrainerGPULimit())
 }
 
 func TestScaleDryRunSatisfied(t *testing.T) {
 	r := ClusterResource{CPUTotalMilli: 2000, MemoryTotalMega: 1000}
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 2
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q100M
-	j.TrainerJob.Spec.Parallelism = makePtr(2)
+	j := makeJob("name", "1000Mi", "1000Mi", "100Mi", "100Mi", "0", 1, 2, 2)
 	assert.Equal(t, 0, scaleDryRun(&r, j, 0))
 }
 
@@ -92,18 +114,7 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
 	}
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q0
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q100M
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0))
 }
 
@@ -117,18 +128,7 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 		MemoryTotalMega:   1000,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q0
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q100M
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
 	assert.Equal(t, 0, scaleDryRun(&r, j, 0))
 }
 
@@ -144,18 +144,7 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 		GPURequest:        0,
 		GPUTotal:          10,
 	}
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0))
 }
 
@@ -172,22 +161,11 @@ func TestScaleDryRunNoMoreGPU(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
 	assert.Equal(t, 0, scaleDryRun(&r, j, 0))
 }
 
-func TestScaleDryRunScaleDown(t *testing.T) {
+func TestScaleDryRunScaleDownMoreThanExpected(t *testing.T) {
 	r := ClusterResource{
 		CPULimitMilli:     1000,
 		CPURequestMilli:   1000,
@@ -200,17 +178,11 @@ func TestScaleDryRunScaleDown(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.TrainerJob.Spec.Parallelism = makePtr(6)
+	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 6)
 	assert.Equal(t, -3, scaleDryRun(&r, j, 0))
 }
 
-func TestScaleDryRunScaleDown2(t *testing.T) {
+func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
 	r := ClusterResource{
 		CPULimitMilli:     2000,
 		CPURequestMilli:   2000,
@@ -223,13 +195,7 @@ func TestScaleDryRunScaleDown2(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.TrainerJob.Spec.Parallelism = makePtr(3)
+	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
 	assert.Equal(t, -1, scaleDryRun(&r, j, 0))
 }
 
@@ -246,16 +212,7 @@ func TestScaleDryRunNoMem(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q100M
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
 	assert.Equal(t, 0, scaleDryRun(&r, j, 0))
 }
 
@@ -268,19 +225,8 @@ func TestScaleAllDryRunNoMem(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
-	scale := scaleAllDryRun([]job{j}, r)[""]
+	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
+	scale := scaleAllDryRun([]job{j}, r)["name"]
 	assert.Equal(t, 0, scale)
 }
 
@@ -297,19 +243,8 @@ func TestScaleAllDryRun(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q100M
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
-	scale := scaleAllDryRun([]job{j}, r)[""]
+	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
+	scale := scaleAllDryRun([]job{j}, r)["name"]
 	assert.Equal(t, 2, scale)
 }
 
@@ -326,19 +261,8 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
-	scale := scaleAllDryRun([]job{j}, r)[""]
+	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
+	scale := scaleAllDryRun([]job{j}, r)["name"]
 	assert.Equal(t, 1, scale)
 }
 
@@ -355,74 +279,29 @@ func TestScaleAllDryRunLessGPU(t *testing.T) {
 		GPUTotal:          10,
 	}
 
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-	j.Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	j.Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	j.Config.Spec.Trainer.Resources.Requests["memory"] = q1
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
-	scale := scaleAllDryRun([]job{j}, r)[""]
+	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
+	scale := scaleAllDryRun([]job{j}, r)["name"]
 	assert.Equal(t, 1, scale)
 }
 
 func TestFulfillment(t *testing.T) {
-	j := job{
-		Config:     &api.TrainingJob{},
-		TrainerJob: &batchv1.Job{},
-	}
-
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 2
-	j.TrainerJob.Spec.Parallelism = makePtr(2)
+	j := makeJob("name", "1", "1", "1", "1", "1", 1, 2, 2)
 	assert.Equal(t, float64(1), j.Fulfillment())
 
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 2
-	j.TrainerJob.Spec.Parallelism = makePtr(1)
+	j = makeJob("name", "1", "1", "1", "1", "1", 1, 2, 1)
 	assert.Equal(t, float64(0), j.Fulfillment())
 
-	j.Config.Spec.Trainer.MinInstance = 1
-	j.Config.Spec.Trainer.MaxInstance = 3
-	j.TrainerJob.Spec.Parallelism = makePtr(2)
+	j = makeJob("name", "1", "1", "1", "1", "1", 1, 3, 2)
 	assert.Equal(t, float64(0.5), j.Fulfillment())
 }
 
 func TestSortedJobs(t *testing.T) {
-	jobs := make([]job, 4)
-
-	jobs[0].Config = &api.TrainingJob{}
-	jobs[0].TrainerJob = &batchv1.Job{}
-	jobs[0].Config.Name = "a"
-	jobs[0].Config.Spec.Trainer.MinInstance = 1
-	jobs[0].Config.Spec.Trainer.MaxInstance = 2
-	jobs[0].TrainerJob.Spec.Parallelism = makePtr(2)
-
-	jobs[1].Config = &api.TrainingJob{}
-	jobs[1].TrainerJob = &batchv1.Job{}
-	jobs[1].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[1].Config.Name = "b"
-	jobs[1].Config.Spec.Trainer.MinInstance = 1
-	jobs[1].Config.Spec.Trainer.MaxInstance = 20
-
-	jobs[2].Config = &api.TrainingJob{}
-	jobs[2].TrainerJob = &batchv1.Job{}
-	jobs[2].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[2].Config.Name = "c"
-	jobs[2].Config.Spec.Trainer.MinInstance = 1
-	jobs[2].Config.Spec.Trainer.MaxInstance = 10
-
-	jobs[3].Config = &api.TrainingJob{}
-	jobs[3].TrainerJob = &batchv1.Job{}
-	jobs[3].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[3].Config.Name = "d"
-	jobs[3].Config.Spec.Trainer.MinInstance = 1
-	jobs[3].Config.Spec.Trainer.MaxInstance = 1
+	jobs := []job{
+		makeJob("a", "1", "1", "1", "1", "1", 1, 2, 2),
+		makeJob("b", "1", "1", "1", "1", "1", 1, 20, 2),
+		makeJob("c", "1", "1", "1", "1", "1", 1, 10, 2),
+		makeJob("d", "1", "1", "1", "1", "1", 1, 1, 2),
+	}
 
 	expected := []string{"b", "c", "a"}
 
@@ -440,40 +319,14 @@ func TestSortedJobs(t *testing.T) {
 }
 
 func TestSortedJobsGPUOnly(t *testing.T) {
-	jobs := make([]job, 4)
-	jobs[0].Config = &api.TrainingJob{}
-	jobs[0].TrainerJob = &batchv1.Job{}
-	jobs[0].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[0].Config.Name = "a"
-	jobs[0].Config.Spec.Trainer.MinInstance = 1
-	jobs[0].Config.Spec.Trainer.MaxInstance = 2
-
-	jobs[0].Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	jobs[0].Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-
-	jobs[1].Config = &api.TrainingJob{}
-	jobs[1].TrainerJob = &batchv1.Job{}
-	jobs[1].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[1].Config.Name = "b"
-	jobs[1].Config.Spec.Trainer.MinInstance = 1
-	jobs[1].Config.Spec.Trainer.MaxInstance = 20
-
-	jobs[2].Config = &api.TrainingJob{}
-	jobs[2].TrainerJob = &batchv1.Job{}
-	jobs[2].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[2].Config.Name = "c"
-	jobs[2].Config.Spec.Trainer.MinInstance = 1
-	jobs[2].Config.Spec.Trainer.MaxInstance = 10
-
-	jobs[3].Config = &api.TrainingJob{}
-	jobs[3].TrainerJob = &batchv1.Job{}
-	jobs[3].TrainerJob.Spec.Parallelism = makePtr(2)
-	jobs[3].Config.Name = "d"
-	jobs[3].Config.Spec.Trainer.MinInstance = 1
-	jobs[3].Config.Spec.Trainer.MaxInstance = 1
+	jobs := []job{
+		makeJob("a", "1", "1", "1", "1", "1", 1, 2, 2),
+		makeJob("b", "1", "1", "1", "1", "0", 1, 20, 2),
+		makeJob("c", "1", "1", "1", "1", "0", 1, 10, 2),
+		makeJob("d", "1", "1", "1", "1", "0", 1, 1, 2),
+	}
 
 	expected := []string{"a"}
-
 	c := New(nil)
 	for _, j := range jobs {
 		c.jobs[j.Config.Name] = j
@@ -488,49 +341,12 @@ func TestSortedJobsGPUOnly(t *testing.T) {
 }
 
 func TestSortedJobsWithTie(t *testing.T) {
-	jobs := make([]job, 4)
-	jobs[0].Config = &api.TrainingJob{}
-	jobs[0].TrainerJob = &batchv1.Job{}
-	jobs[0].TrainerJob.Spec.Parallelism = makePtr(1)
-	jobs[0].Config.Name = "a"
-	jobs[0].Config.Spec.Trainer.MinInstance = 1
-	jobs[0].Config.Spec.Trainer.MaxInstance = 2
-	jobs[0].Config.Spec.Trainer.Resources.Limits = make(v1.ResourceList)
-	jobs[0].Config.Spec.Trainer.Resources.Limits[v1.ResourceNvidiaGPU] = q1
-
-	jobs[1].Config = &api.TrainingJob{}
-	jobs[1].TrainerJob = &batchv1.Job{}
-	jobs[1].TrainerJob.Spec.Parallelism = makePtr(1)
-	jobs[1].Config.Name = "b"
-	jobs[1].Config.Spec.Trainer.MinInstance = 1
-	jobs[1].Config.Spec.Trainer.MaxInstance = 2
-	jobs[1].Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	jobs[1].Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	jobs[1].Config.Spec.Trainer.Resources.Requests["memory"] = q1
-
-	jobs[2].Config = &api.TrainingJob{}
-	jobs[2].TrainerJob = &batchv1.Job{}
-	jobs[2].TrainerJob.Spec.Parallelism = makePtr(1)
-	jobs[2].Config.Name = "c"
-	jobs[2].Config.Spec.Trainer.MinInstance = 1
-	jobs[2].Config.Spec.Trainer.MaxInstance = 2
-	q, err := resource.ParseQuantity("10")
-	assert.Nil(t, err)
-	jobs[2].Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	jobs[2].Config.Spec.Trainer.Resources.Requests["cpu"] = q
-
-	jobs[3].Config = &api.TrainingJob{}
-	jobs[3].TrainerJob = &batchv1.Job{}
-	jobs[3].TrainerJob.Spec.Parallelism = makePtr(1)
-	jobs[3].Config.Name = "d"
-	jobs[3].Config.Spec.Trainer.MinInstance = 1
-	jobs[3].Config.Spec.Trainer.MaxInstance = 2
-	jobs[3].Config.Spec.Trainer.Resources.Requests = make(v1.ResourceList)
-	jobs[3].Config.Spec.Trainer.Resources.Requests["cpu"] = q1
-	q, err = resource.ParseQuantity("2")
-	assert.Nil(t, err)
-	jobs[3].Config.Spec.Trainer.Resources.Requests["memory"] = q
-
+	jobs := []job{
+		makeJob("a", "1", "0", "1", "1", "1", 1, 2, 1),
+		makeJob("b", "1", "1", "1", "1", "0", 1, 2, 1),
+		makeJob("c", "10", "10", "1", "1", "0", 1, 2, 1),
+		makeJob("d", "1", "1", "2", "2", "0", 1, 2, 1),
+	}
 	expected := []string{"b", "d", "c", "a"}
 
 	sorted := sortedJobs(jobs, elastic)
