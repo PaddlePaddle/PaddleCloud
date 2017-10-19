@@ -73,7 +73,8 @@ func (c Cluster) JobRunning(job *paddlejob.TrainingJob) (bool, error) {
 	return false, nil
 }
 
-// getPodsTotalRequestsAndLimits accumulate resource requests and limits from all pods containers.
+// getPodsTotalRequestsAndLimits accumulate resource requests and
+// limits from all pods containers.
 func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, limits v1.ResourceList, err error) {
 	reqs, limits = v1.ResourceList{}, v1.ResourceList{}
 	for _, pod := range podList.Items {
@@ -81,8 +82,12 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, l
 			AddResourceList(reqs, container.Resources.Requests)
 			AddResourceList(limits, container.Resources.Limits)
 		}
+
+		for _, container := range pod.Spec.InitContainers {
+			AddResourceList(reqs, container.Resources.Requests)
+			AddResourceList(limits, container.Resources.Limits)
+		}
 	}
-	// NOTE: Currently paddle trainer do *not* use "InitContainers", add if needed.
 	return
 }
 
@@ -98,20 +103,24 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		AddResourceList(allocatable, node.Status.Allocatable)
 	}
 
-	// get non-terminated pods from all namespaces all nodes.
-	// FIXME(typhoonzero): scan all pods is not a efficient way.
+	// Get non-terminated pods from all namespaces.
 	namespace := ""
+
+	// FIXME(typhoonzero): scan all pods is not a efficient way.
 	// NOTE: pending pods need to be caculated for scale down.
-	// NOTE: "terminating" pods' status is still running, do not scale up/down the job if job is still at last scaling process.
+	// NOTE: "terminating" pods' status is still running, do not
+	// scale up/down the job if job is still at last scaling
+	// process.
 	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
 	if err != nil {
 		return autoscaler.ClusterResource{}, err
 	}
-	// FIXME(typhoonzero): allPodList may be large
+
 	allPodsList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 	if err != nil {
 		return autoscaler.ClusterResource{}, err
 	}
+
 	allReqs, allLimits, err := getPodsTotalRequestsAndLimits(allPodsList)
 	if err != nil {
 		return autoscaler.ClusterResource{}, err
