@@ -63,6 +63,9 @@ func (c Cluster) IsJobAllRunning(job *paddlejob.TrainingJob) bool {
 	if err != nil {
 		return false
 	}
+	// TODO(typhoonzero): get the latest pod status
+	// and check if pod.metadata.deletion_timestamp exists for terminating job
+	// and check not status is not running.
 	if k8sjob.Status.Active == *k8sjob.Spec.Parallelism {
 		return true
 	}
@@ -97,6 +100,8 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	// get non-terminated pods from all namespaces all nodes.
 	// FIXME(typhoonzero): scan all pods is not a efficient way.
 	namespace := ""
+	// NOTE: pending pods need to be caculated for scale down.
+	// NOTE: "terminating" pods' status is still running, do not scale up/down the job if job is still at last scaling process.
 	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
 	if err != nil {
 		return autoscaler.ClusterResource{}, err

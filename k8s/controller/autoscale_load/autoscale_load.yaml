@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: autoscale-load
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: autoscale-load
+    spec:
+      containers:
+      - name: autoscale-load
+        image: paddlepaddle/paddlecloud-job
+        command: ["sleep", "3600"]
+        resources:
+          limits:
+            cpu: 400m
+            memory: 100Mi
+          requests:
+            cpu: 400m
+            memory: 100Mi

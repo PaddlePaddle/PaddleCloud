@@ -354,8 +354,16 @@ func (a *Autoscaler) Monitor() {
 		log.Infof("Latest cluster resource: %#v", r)
 		var js []job
 		for _, j := range a.jobs {
+			// update batchv1.job instace every sync
+			// because the resource version may be changed before scale
+			tj, err := a.cluster.GetTrainerJob(j.Config)
+			if err != nil {
+				log.Warnln("sync trainer job error: ", err)
+				continue
+			}
+			j.TrainerJob = tj
 			// scale jobs only when all pods are in running status.
-			// pods are pending or starting if the job is just submited or just scaled.
+			// pods are pending/starting/terminating if the job is just submited or just scaled up/down.
 			if a.cluster.IsJobAllRunning(j.Config) {
 				js = append(js, j)
 			}
