@@ -139,7 +139,7 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 
 	allReqs := make(map[v1.ResourceName]resource.Quantity)
 	allLimits := make(map[v1.ResourceName]resource.Quantity)
-	var allocatable v1.ResourceList
+	allocatable := make(v1.ResourceList)
 	for _, node := range nodeList.Items {
 		a := node.Status.Capacity
 		if len(node.Status.Allocatable) > 0 {
