@@ -58,19 +58,22 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 }
 
 // JobRunning check if all the pods are in "Running" status.
-func (c Cluster) JobRunning(job *paddlejob.TrainingJob) (bool, error) {
-	k8sjob, err := c.GetTrainerJob(job)
+func (c Cluster) JobRunning(job *paddlejob.TrainingJob) (total int, running int, err error) {
 	if err != nil {
-		return false, err
+		return
 	}
-
-	// TODO(typhoonzero): get the latest pod status and check if
-	// pod.metadata.deletion_timestamp exists for terminating job
-	// and check not status is not running.
-	if k8sjob.Status.Active == *k8sjob.Spec.Parallelism {
-		return true, nil
+	// get pods of the job
+	jobPods, err := c.clientset.CoreV1().
+		Pods(job.ObjectMeta.Namespace).
+		List(metav1.ListOptions{LabelSelector: "paddle-job=" + job.ObjectMeta.Name})
+	for _, pod := range jobPods.Items {
+		total++
+		// pod.ObjectMeta.DeletionTimestamp means pod is terminating
+		if pod.ObjectMeta.DeletionTimestamp == nil && pod.Status.Phase == v1.PodRunning {
+			running++
+		}
 	}
-	return false, nil
+	return
 }
 
 // getPodsTotalRequestsAndLimits accumulate resource requests and

@@ -14,6 +14,13 @@
 
 package cfs
 
+// We can import a RB Tree implementation from here in initial
+// implement, and refine it later
+
+// import (
+//   "github.com/sakeven/RbTree"
+// )
+
 // Node represent minimum cell to schedule.
 type Node interface {
 	// the mixed weight of current node.
@@ -32,6 +39,6 @@ type WeightedAccelleratorCFS interface {
 	// tranverse all the nodes and call the callback function.
 	Tranverse(callback ...func(*Node)) error
 
-	// Get one node that ready to schedule.
+	// Get one node need to schedule, which have waited long enough.
 	Get() *Node
 }

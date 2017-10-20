@@ -61,7 +61,7 @@ type Cluster interface {
 	UpdateTrainerJob(job *batchv1.Job) error
 
 	// JobRunning check if all the pods are in "Running" status.
-	JobRunning(job *paddlejob.TrainingJob) (bool, error)
+	JobRunning(job *paddlejob.TrainingJob) (int, int, error)
 }
 
 type job struct {
@@ -314,10 +314,12 @@ func (a *Autoscaler) scaleAll(diff map[string]int) {
 					continue
 				}
 				j := a.jobs[name]
+				// NOTE: only update batchv1.job from k8s api-server before updating
+				// for efficiency. Update the job resource to get latest k8s
+				// resource reversion.
 				j.TrainerJob = tj
 				a.jobs[name] = j
 				*a.jobs[name].TrainerJob.Spec.Parallelism = target
-
 				err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
 				if err != nil {
 					log.Errorf("Error updating trainer job %v, retry remaining: %d.", err, retry)
@@ -390,27 +392,18 @@ func (a *Autoscaler) Monitor() {
 		log.Infof("Latest cluster resource: %#v", r)
 		var js []job
 		for _, j := range a.jobs {
-			// update batchv1.job instace every sync
-			// because the resource version may be changed before scale
-			tj, err := a.cluster.GetTrainerJob(j.Config)
-			if err != nil {
-				log.Warnln("sync trainer job error: ", err)
-				continue
-			}
-			j.TrainerJob = tj
-
 			// Scale jobs only when it's running (defined
 			// by all pods are in the "running"
 			// status). Pods are
 			// pending/starting/terminating if the job is
 			// just submited or just scaled up/down.
-			running, err := a.cluster.JobRunning(j.Config)
+			total, running, err := a.cluster.JobRunning(j.Config)
 			if err != nil {
 				log.Errorln("Get if job is running failed:", err)
 				continue
 			}
 
-			if running {
+			if total == running {
 				js = append(js, j)
 			}
 		}
