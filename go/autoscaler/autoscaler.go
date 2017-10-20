@@ -231,6 +231,11 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		return -1
 	}
 
+	// TODO(helin): j.TrainerJob.Spec.Parallelism may not reflect
+	// the actual pod running for the trainer job. We need to
+	// count the pod manually. And calculate the additional value
+	// based on the running pod count,
+	// j.TrainerJob.Spec.Parallelism, and curDiff.
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
 
