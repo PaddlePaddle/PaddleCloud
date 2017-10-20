@@ -11,6 +11,6 @@ spec:
     spec:
       containers:
       - name: training-job-controller
-        image: typhoon1986/training-job-controller
-        imagePullPolicy: Never
+        image: helinwang/training-job-controller
+        imagePullPolicy: Always
         command: ["/controller", "-logtostderr", "-log_level", "debug"]

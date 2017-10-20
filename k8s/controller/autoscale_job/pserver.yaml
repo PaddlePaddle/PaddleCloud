@@ -12,7 +12,7 @@ spec:
       containers:
       - name: pserver
         image: paddlepaddle/paddlecloud-job
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         ports:
         - name: jobport-7164
           containerPort: 7164
