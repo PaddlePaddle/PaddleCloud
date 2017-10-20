@@ -15,6 +15,7 @@
 package autoscaler
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -166,11 +167,16 @@ type eventType int
 const (
 	add eventType = iota
 	del
+	update
 )
 
 type event struct {
 	Type eventType
 	Job  *paddlejob.TrainingJob
+}
+
+func (e event) GoString() string {
+	return fmt.Sprintf("event{type: %d, job name: %s}", e.Type, e.Job.Name)
 }
 
 // OnAdd notifies the autoscaler that a job has been added.
@@ -181,6 +187,11 @@ func (a *Autoscaler) OnAdd(trainingjob *paddlejob.TrainingJob) {
 // OnDel notifies the autoscaler that a job has been deleted.
 func (a *Autoscaler) OnDel(trainingjob *paddlejob.TrainingJob) {
 	a.eventCh <- event{Type: del, Job: trainingjob}
+}
+
+// OnUpdate notifies the autoscaler that a job has been deleted.
+func (a *Autoscaler) OnUpdate(trainingjob *paddlejob.TrainingJob) {
+	a.eventCh <- event{Type: update, Job: trainingjob}
 }
 
 // sortedJobs return the names of sorted jobs by fulfillment and
@@ -325,13 +336,15 @@ func (a *Autoscaler) Monitor() {
 		select {
 		case <-a.ticker.C:
 		case e := <-a.eventCh:
+			log.Debugf("Event: %#v", e)
 			switch e.Type {
 			case add:
+				fallthrough
+			case update:
 				// TODO(helin): schedule the training
 				// k8s Job. Currently we don't
 				// schedule the trainer job, but only
 				// scale it.
-				log.Debugln("AddJob to autoscaler: ", e.Job.ObjectMeta.Name)
 				var tj *batchv1.Job
 				var err error
 				for {
@@ -357,7 +370,6 @@ func (a *Autoscaler) Monitor() {
 				// resources (e.g., trainer Job,
 				// pserver Replica Set) when we
 				// schedules the resources.
-				log.Debugln("DelJob to autoscaler: ", e.Job.ObjectMeta.Name)
 				delete(a.jobs, e.Job.ObjectMeta.Name)
 			default:
 				log.Errorln("Unrecognized event: %v.", e)

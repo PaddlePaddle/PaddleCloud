@@ -115,6 +115,7 @@ func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 	oldjob := oldObj.(*paddlejob.TrainingJob)
 	newjob := newObj.(*paddlejob.TrainingJob)
 	log.Debugln("TrainingJob Resource updated: ", oldjob.ObjectMeta.Name, " to ", newjob.ObjectMeta.Name)
+	c.autoscaler.OnUpdate(newjob)
 }
 
 func (c *Controller) onDelete(obj interface{}) {
