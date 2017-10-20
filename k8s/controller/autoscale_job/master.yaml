@@ -12,7 +12,7 @@ spec:
       volumes:
       - name: example-workspace
         hostPath:
-          path: /Users/baidu/testjobft
+          path: /workspace
       containers:
       - name: master
         image: paddlepaddle/paddlecloud-job
