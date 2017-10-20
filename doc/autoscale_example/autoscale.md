@@ -19,7 +19,6 @@ minikube start --kubernetes-version v1.6.4
 data.
 
 ```bash
-# please ensure your workspace directory is mounted in minikube VM.
 mkdir /path/to/workspace
 cp $REPO_PATH/doc/autoscale_example/*.py /path/to/workspace
 mkdir -p /path/to/workspace/data/
