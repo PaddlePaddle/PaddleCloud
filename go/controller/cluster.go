@@ -57,8 +57,9 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 	return err
 }
 
-// JobRunning check if all the pods are in "Running" status.
-func (c Cluster) JobRunning(job *paddlejob.TrainingJob) (total int, running int, err error) {
+// JobPods returns the number total desired pods and the number of
+// running pods of a job.
+func (c Cluster) JobPods(job *paddlejob.TrainingJob) (total int, running int, err error) {
 	if err != nil {
 		return
 	}

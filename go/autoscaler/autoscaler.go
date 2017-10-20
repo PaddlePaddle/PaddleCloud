@@ -60,8 +60,9 @@ type Cluster interface {
 	// UpdateTrainerJob updates the trainer job spec.
 	UpdateTrainerJob(job *batchv1.Job) error
 
-	// JobRunning check if all the pods are in "Running" status.
-	JobRunning(job *paddlejob.TrainingJob) (int, int, error)
+	// JobPods returns the number total desired pods and the
+	// number of running pods of a job.
+	JobPods(job *paddlejob.TrainingJob) (int, int, error)
 }
 
 type job struct {
@@ -397,7 +398,7 @@ func (a *Autoscaler) Monitor() {
 			// status). Pods are
 			// pending/starting/terminating if the job is
 			// just submited or just scaled up/down.
-			total, running, err := a.cluster.JobRunning(j.Config)
+			total, running, err := a.cluster.JobPods(j.Config)
 			if err != nil {
 				log.Errorln("Get if job is running failed:", err)
 				continue
