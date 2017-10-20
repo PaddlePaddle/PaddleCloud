@@ -175,7 +175,6 @@ type event struct {
 
 // OnAdd notifies the autoscaler that a job has been added.
 func (a *Autoscaler) OnAdd(trainingjob *paddlejob.TrainingJob) {
-	log.Debugln("OnAdd, adding job to event channel...", a.eventCh)
 	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
@@ -290,10 +289,30 @@ func (a *Autoscaler) scaleAll(diff map[string]int) {
 		if diff[name] != 0 {
 			log.Infof("Scaling job %s, diff: %d.", name, diff[name])
 			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
-			*a.jobs[name].TrainerJob.Spec.Parallelism = target
-			err := a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
+
+			var err error
+			for retry := 0; retry < 3; retry++ {
+				tj, err := a.cluster.GetTrainerJob(a.jobs[name].Config)
+				if err != nil {
+					log.Warnf("sync trainer job error: %v, retry remaining: %d ", err, retry)
+					continue
+				}
+				j := a.jobs[name]
+				j.TrainerJob = tj
+				a.jobs[name] = j
+				*a.jobs[name].TrainerJob.Spec.Parallelism = target
+
+				err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
+				if err != nil {
+					log.Errorf("Error updating trainer job %v, retry remaining: %d.", err, retry)
+					continue
+				}
+
+				break
+			}
+
 			if err != nil {
-				log.Errorf("Error updating trainer job: %v", err)
+				log.Warnf("Error updating trainer job %v.", err)
 			}
 		}
 	}
