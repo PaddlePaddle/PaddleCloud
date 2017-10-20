@@ -16,7 +16,7 @@ spec:
           path: /workspace
       containers:
       - name: trainer
-        image: paddlepaddle/paddlecloud-job
+        image: helinwang/paddlecloud-job
         imagePullPolicy: Always
         command: ["paddle_k8s", "start_new_trainer"]
         volumeMounts:
