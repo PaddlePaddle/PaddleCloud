@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+metadata:
+  name: training-job.paddlepaddle.org
+description: "PaddlePaddle TrainingJob operator"
+versions:
+- name: v1

@@ -8,4 +8,7 @@ import:
   version: ^1.4.0
 - package: gopkg.in/yaml.v2
 - package: github.com/fatih/color
-
+- package: k8s.io/client-go
+  version: release-3.0
+- package: k8s.io/kubernetes
+  version: release-1.6.3
