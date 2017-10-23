@@ -213,7 +213,7 @@ nextJob:
 	return js
 }
 
-func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
+func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
 	cpuRequestMilli := j.TrainerCPURequestMilli()
@@ -227,7 +227,6 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int) (additional int) {
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 	}()
 
-	// if we are going to scale down
 	if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
 		return -1
 	}
@@ -281,16 +280,29 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 	for {
 		noChange := true
 		sorted := sortedJobs(jobs, elastic)
-		// TODO(typhoonzero): implement GPU priority CFS scheduler from here.
-		for _, j := range sorted {
+		dryRun := func(j job, scaleDirection bool) {
 			name := j.Config.Name
-			additional := scaleDryRun(&r, j, diff[name])
+			additional := scaleDryRun(&r, j, diff[name], scaleDirection)
 			log.Debugf("Dry run scale job %s: current %d, additional %d, remaining resource: %#v", name, diff[name], additional, r)
 			diff[name] += additional
 
 			if additional != 0 {
 				noChange = false
 			}
+		}
+
+		// TODO(typhoonzero): implement GPU priority CFS scheduler from here.
+
+		// scale up from the ones that need scaling up the
+		// most.
+		for _, j := range sorted {
+			dryRun(j, false)
+		}
+
+		// scale down from the ones that need scaling up the
+		// least.
+		for i := len(sorted) - 1; i >= 0; i-- {
+			dryRun(sorted[i], true)
 		}
 
 		if noChange {
