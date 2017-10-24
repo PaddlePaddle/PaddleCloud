@@ -14,6 +14,7 @@
 
 ## Before Starting The Experiment
 
+- All the demos in [book](https://github.com/PaddlePaddle/book) should be tested.
 - We will use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as the training job for the demo.
 - We have 240 CPU cores and 80 GPU cards totally.
 
