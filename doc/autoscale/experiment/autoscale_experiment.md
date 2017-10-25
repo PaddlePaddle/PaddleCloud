@@ -40,8 +40,8 @@
 
 metrics |  auto-scaling training job| general training job
 -- | -- | --
-training time | 6h | 8h
-average waiting time | 0 | 2h
+average running time | 6h | 8h
+average pending time | 0 | 2h
 CPU utils | 100% | 60%
 
 ### Hybrid Deployment with Online Serving and Offline Training Job
@@ -61,3 +61,36 @@ metrics | QPS(1w) | QPS(10w) | QPS(50w)
 Trainer Pods | 100 | 80 | 50
 Nginx Pods | 80 | 100 | 150
 CPU utils| 100% | 100% | 100%
+
+## Reproduce the experiment
+
+- Configure kubectl on your host
+- Submit the TrainingJob controller with YAML file
+    ```bash
+    > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
+    > kubectl create -f k8s/controller/trainingjob_resource.yaml
+    > kubectl create -f k8s/controller/controller.yaml
+    ```
+- Test Case1
+    1. Run the data collecting Python program.
+        ```bash
+        > cd cloud/doc/autoscale/experiment/python
+        > python main.py case1 mnist1,mnist2
+        ```
+    1. Submit two general jobs naming mnist1 and mnist2 as following,
+        maybe you would adust the resource configuration as your cluster.
+        ```bash
+        > cd cloud/demo
+        > paddlectl submit mnist1 
+        > paddlecloud submit -jobname mnist1 \
+            -cpu 8 \
+            -gpu 0 \
+            -memory 8Gi \
+            -parallelism 40 \
+            -pscpu 4 \
+            -pservers 8 \
+            -psmemory 1Gi \
+            -entry "python ./train.py train" \
+            ./recognize_digits
+        ```
+    1. You will se the time series data in the terminal
