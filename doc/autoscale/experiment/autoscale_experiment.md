@@ -1,5 +1,15 @@
 # Auto-scaling Experiment Design
 
+## Purpose
+
+- To verify effectiveness of PaddlePaddle's fault-torlerace mechanism.
+- To verify effectiveness of PaddlePaddle's auto-scaling mechanism.
+
+## Metrics
+
+- Cluster computing resource utilization.
+- Total time comsumed to complete cluster tasks
+
 ## Environment Requirement
 
 - Kubernetes cluster with 1.6.x installed.
@@ -7,10 +17,6 @@
 - At least 4 kubernetes nodes, each node should have 2 GPU cards at least.
 - Dataset prepared to multiple files with the RecordIO format.
 
-## Experiment Metric
-
-- Computing resource utils(requests / total) for the cluster.
-- A total number of the pods for all training job.
 
 ## Before Starting The Experiment
 
