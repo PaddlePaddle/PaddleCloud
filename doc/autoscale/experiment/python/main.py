@@ -18,6 +18,8 @@ def case1(c, jobs):
         if utils.is_all_jobs_finished(jobs):
             print 'Average running time:', utils.avg_running_time(jobs)
             print 'Average pending time:', utils.avg_pending_time(jobs)
+            print 'Cluster wide CPU:', c.cpu_allocatable
+            print 'Cluster wide GPU:', c.gpu_allocatable
             sys.exit(0)
 
         # TODO(Yancey1989): draw the figure with Ploter

@@ -124,7 +124,7 @@ class Collector(object):
                 job.start_time = int(time.time())
             job.status = JOB_STATUS_RUNNING
         elif 'Failed' in phases or \
-            (len(phases) == 1 and 'FINISHED' in phases):
+            (len(phases) == 1 and 'Succeeded' in phases):
             job.end_time = int(time.time())
             job.status = JOB_STATUS_FINISHED
         elif 'Pending' in phases:
