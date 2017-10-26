@@ -325,7 +325,7 @@ func (a *Autoscaler) scaleAll(diff map[string]int) {
 			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
 
 			var err error
-			for retry := 0; retry < 3; retry++ {
+			for retry := 5; retry > 0; retry-- {
 				var tj *batchv1.Job
 				// don't shadow err
 				tj, err = a.cluster.GetTrainerJob(a.jobs[name].Config)
@@ -376,17 +376,28 @@ func (a *Autoscaler) Monitor() {
 				// scale it.
 				var tj *batchv1.Job
 				var err error
-				for {
+				for retry := 5; retry > 0; retry-- {
 					tj, err = a.cluster.GetTrainerJob(e.Job)
 					if err == nil {
 						break
 					}
 
 					log.Error(
-						"Error getting the trainer k8s job, retrying soon.",
+						"Error getting the trainer k8s job, retry if have retry remaining",
 						"name", e.Job.ObjectMeta.Name,
+						"retry remaining", retry,
+						"error", err,
 					)
 					time.Sleep(3 * time.Second)
+				}
+
+				if err != nil {
+					log.Error(
+						"Error getting the trainer k8s job, skip event.",
+						"name", e.Job.ObjectMeta.Name,
+						"error", err,
+					)
+					continue
 				}
 
 				j := job{
