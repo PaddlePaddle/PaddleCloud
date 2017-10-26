@@ -5,7 +5,6 @@ import os
 import sys
 import paddle.v2 as paddle
 import paddle.v2.dataset.common as common
-from paddle.reader.creator import cloud_reader
 
 embsize = 32
 hiddensize = 256
@@ -24,15 +23,35 @@ WORD_DICT_PATH = os.path.join(common.DATA_HOME, "imikolov/word_dict.pickle")
 TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID", "-1"))
 TRAINER_COUNT = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS", "-1"))
 
-etcd_ip = os.getenv("ETCD_IP")
-etcd_endpoint = "http://" + etcd_ip + ":" + "2379"
-trainer_id = int(os.getenv("PADDLE_INIT_TRAINER_ID", "-1"))
-
 def prepare_dataset():
     word_dict = paddle.dataset.imikolov.build_dict()
     with open(WORD_DICT_PATH, "w") as fn:
         pickle.dump(word_dict, fn)
     # NOTE: convert should be done by other job.
+
+def cluster_reader_recordio(trainer_id, trainer_count):
+    '''
+        read from cloud dataset which is stored as recordio format
+        each trainer will read a subset of files of the whole dataset.
+    '''
+    import recordio
+    def reader():
+        file_list = glob.glob(TRAIN_FILES_PATH)
+        file_list.sort()
+        my_file_list = []
+        # read files for current trainer_id
+        for idx, f in enumerate(file_list):
+            if idx % trainer_count == trainer_id:
+                my_file_list.append(f)
+        for f in my_file_list:
+            print "processing ", f
+            reader = recordio.reader(f)
+            record_raw = reader.read()
+            while record_raw:
+                yield pickle.loads(record_raw)
+                record_raw = reader.read()
+            reader.close()
+    return reader
 
 def wordemb(inlayer):
     wordemb = paddle.layer.table_projection(
@@ -102,12 +121,10 @@ def main():
         regularization=paddle.optimizer.L2Regularization(8e-4))
     trainer = paddle.trainer.SGD(cost,
         parameters,
-        adam_optimizer,
-        is_local=False,
-        pserver_spec=etcd_endpoint,
-        use_etcd=True)
+        adam_optimizer)
+
     trainer.train(
-        paddle.batch(cloud_reader([TRAIN_FILES_PATH], etcd_endpoint), 32),
+        paddle.batch(cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT), 32),
         num_passes=30,
         event_handler=event_handler)
 
