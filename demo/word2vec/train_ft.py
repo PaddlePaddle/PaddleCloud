@@ -14,7 +14,7 @@ N = 5
 #       then you can use different size of embedding.
 
 # NOTE: must change this to your own username on paddlecloud.
-USERNAME = "wuyi05@baidu.com"
+USERNAME = "your-username"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
 TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "imikolov")
@@ -63,7 +63,7 @@ def cluster_reader_recordio_from_master(etcd_endpoints):
         then read from cloud storage.
     '''
     TRAIN_FILES_PATTERN = os.path.join(TRAIN_FILES_PATH, "train-*")
-    return paddle.reader.creator.cloud_reader(TRAIN_FILES_PATTERN, etcd_endpoints)
+    return paddle.reader.creator.cloud_reader([TRAIN_FILES_PATTERN], etcd_endpoints)
 
 
 def wordemb(inlayer):
