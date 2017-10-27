@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/inconshreveable/log15"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -16,14 +16,17 @@ import (
 
 func main() {
 	kubeconfig := flag.String("kubeconfig", "", "Path to a kube config. Only required if out-of-cluster.")
-	loglevel := flag.String("log_level", "info", "Log level can be debug, info, warn, error, fatal, panic.")
+	logLevel := flag.String("log_level", "info", "Log level can be debug, info, warn, error, crit.")
 	flag.Parse()
 
-	level, err := log.ParseLevel(*loglevel)
+	lvl, err := log.LvlFromString(*logLevel)
 	if err != nil {
 		panic(err)
 	}
-	log.SetLevel(level)
+
+	log.Root().SetHandler(
+		log.LvlFilterHandler(lvl, log.CallerStackHandler("%+v", log.StderrHandler)),
+	)
 
 	// Create the client config. Use kubeconfig if given, otherwise assume in-cluster.
 	config, err := buildConfig(*kubeconfig)

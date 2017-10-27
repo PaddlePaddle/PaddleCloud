@@ -24,7 +24,7 @@ import (
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	log "github.com/sirupsen/logrus"
+	log "github.com/inconshreveable/log15"
 )
 
 const (
@@ -283,7 +283,11 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 		dryRun := func(j job, scaleDirection bool) {
 			name := j.Config.Name
 			additional := scaleDryRun(&r, j, diff[name], scaleDirection)
-			log.Debugf("Dry run scale job %s: current %d, additional %d, remaining resource: %#v", name, diff[name], additional, r)
+			log.Debug(
+				"dry run scale job",
+				"name", name, "current scale difference", diff[name],
+				"scale up number of instances", additional, "cluster resource", r,
+			)
 			diff[name] += additional
 
 			if additional != 0 {
@@ -316,14 +320,18 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 func (a *Autoscaler) scaleAll(diff map[string]int) {
 	for name := range diff {
 		if diff[name] != 0 {
-			log.Infof("Scaling job %s, diff: %d.", name, diff[name])
+			log.Info("scaling job",
+				"name", name, "number of instances", diff[name])
 			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
 
 			var err error
-			for retry := 0; retry < 3; retry++ {
-				tj, err := a.cluster.GetTrainerJob(a.jobs[name].Config)
+			for retry := 5; retry > 0; retry-- {
+				var tj *batchv1.Job
+				// don't shadow err
+				tj, err = a.cluster.GetTrainerJob(a.jobs[name].Config)
 				if err != nil {
-					log.Warnf("sync trainer job error: %v, retry remaining: %d ", err, retry)
+					log.Warn("sync trainer job error",
+						"error", err, "remaining retry", retry)
 					continue
 				}
 				j := a.jobs[name]
@@ -335,7 +343,8 @@ func (a *Autoscaler) scaleAll(diff map[string]int) {
 				*a.jobs[name].TrainerJob.Spec.Parallelism = target
 				err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
 				if err != nil {
-					log.Errorf("Error updating trainer job %v, retry remaining: %d.", err, retry)
+					log.Error("error updating trainer job",
+						"error", err, "remaining retry", retry)
 					continue
 				}
 
@@ -343,7 +352,7 @@ func (a *Autoscaler) scaleAll(diff map[string]int) {
 			}
 
 			if err != nil {
-				log.Warnf("Error updating trainer job %v.", err)
+				log.Warn("Error updating trainer job", "error", err)
 			}
 		}
 	}
@@ -356,7 +365,7 @@ func (a *Autoscaler) Monitor() {
 		select {
 		case <-a.ticker.C:
 		case e := <-a.eventCh:
-			log.Debugf("Event: %#v", e)
+			log.Debug("monitor received event", "event", e)
 			switch e.Type {
 			case add:
 				fallthrough
@@ -367,17 +376,28 @@ func (a *Autoscaler) Monitor() {
 				// scale it.
 				var tj *batchv1.Job
 				var err error
-				for {
+				for retry := 5; retry > 0; retry-- {
 					tj, err = a.cluster.GetTrainerJob(e.Job)
 					if err == nil {
 						break
 					}
 
-					log.Errorln(
-						"Error getting the trainer job for %s, retrying soon.",
-						e.Job.ObjectMeta.Name,
+					log.Error(
+						"Error getting the trainer k8s job, retry if have retry remaining",
+						"name", e.Job.ObjectMeta.Name,
+						"retry remaining", retry,
+						"error", err,
 					)
 					time.Sleep(3 * time.Second)
+				}
+
+				if err != nil {
+					log.Error(
+						"Error getting the trainer k8s job, skip event.",
+						"name", e.Job.ObjectMeta.Name,
+						"error", err,
+					)
+					continue
 				}
 
 				j := job{
@@ -392,17 +412,17 @@ func (a *Autoscaler) Monitor() {
 				// schedules the resources.
 				delete(a.jobs, e.Job.ObjectMeta.Name)
 			default:
-				log.Errorln("Unrecognized event: %v.", e)
+				log.Error("unrecognized event", "event", e)
 			}
 		}
 
 		r, err := a.cluster.SyncResource()
 		if err != nil {
-			log.Errorln("error sync resource: %v", err)
+			log.Error("error sync resource", "error", err)
 			continue
 		}
 
-		log.Infof("Latest cluster resource: %#v", r)
+		log.Info("latest cluster resource", "resource", r)
 		var js []job
 		for _, j := range a.jobs {
 			// Scale jobs only when it's running (defined
@@ -412,7 +432,7 @@ func (a *Autoscaler) Monitor() {
 			// just submited or just scaled up/down.
 			total, running, err := a.cluster.JobPods(j.Config)
 			if err != nil {
-				log.Errorln("Get if job is running failed:", err)
+				log.Error("check if job is running failed", "error", err)
 				continue
 			}
 
@@ -421,7 +441,7 @@ func (a *Autoscaler) Monitor() {
 			}
 		}
 		diff := scaleAllDryRun(js, r)
-		log.Infof("Scaling plan: %v", diff)
+		log.Info("calculated scaling plan", "plan", diff)
 		a.scaleAll(diff)
 	}
 }
