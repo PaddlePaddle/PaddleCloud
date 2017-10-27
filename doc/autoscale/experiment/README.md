@@ -72,25 +72,21 @@ CPU utils| 100% | 100% | 100%
     > kubectl create -f k8s/controller/controller.yaml
     ```
 - Test Case1
-    1. Run the data collecting Python program.
+    1. Run the data collecting Python program, the following code
+        will start a foreground process and monitor the job information
         ```bash
         > cd cloud/doc/autoscale/experiment/python
-        > python main.py case1 mnist1,mnist2
+        > python main.py case1 10
         ```
-    1. Submit two general jobs naming mnist1 and mnist2 as following,
-        maybe you would adust the resource configuration as your cluster.
+    1. Open another terminal and starts 10 jobs 
         ```bash
-        > cd cloud/demo
-        > paddlectl submit mnist1 
-        > paddlecloud submit -jobname mnist1 \
-            -cpu 8 \
-            -gpu 0 \
-            -memory 8Gi \
-            -parallelism 40 \
-            -pscpu 4 \
-            -pservers 8 \
-            -psmemory 1Gi \
-            -entry "python ./train.py train" \
-            ./recognize_digits
+        > cd cloud/doc/autoscale/experiment
+        > ./control_case1.sh start 10
         ```
+    1. Clean the jobs, if all jobs are finished
+        ```bash
+        > cd cloud/doc/autoscale/experiment 
+        > ./control_case1.sh start start 10
+        ```
+
     1. You will se the time series data in the terminal

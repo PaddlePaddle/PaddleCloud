@@ -1,8 +1,10 @@
 import time
-import settings
 import collector
 import sys
 import utils
+
+JOB_NAME_PREFIX='mnist'
+COLLECTION_INTERVAL=5
 
 def case1(c, jobs):
     print 'Times\tName\tStatus\tCPU\tGPU\tPARALLELISM'
@@ -26,14 +28,15 @@ def case1(c, jobs):
 
         # TODO(Yancey1989): draw the figure with Ploter
 
-        time.sleep(settings.COLLECTION_INTERVAL)
-        times += settings.COLLECTION_INTERVAL
+        time.sleep(COLLECTION_INTERVAL)
+        times += COLLECTION_INTERVAL
 
 if __name__=="__main__":
     if len(sys.argv) != 3:
-        print 'Usage python main.py [case1|case2] [jobname1,jobname2]'
+        print 'Usage python main.py [case1|case2] <job count>'
         exit(0)
 
     c = collector.Collector()
     if sys.argv[1] == 'case1':
-        case1(c, [collector.JobInfo(name) for name in sys.argv[2].split(',')])
+        case1(c, [collector.JobInfo('%s%d' % (JOB_NAME_PREFIX, idx)) \
+            for idx in xrange(int(sys.argv[2]))])

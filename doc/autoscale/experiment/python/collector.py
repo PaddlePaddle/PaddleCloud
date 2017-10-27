@@ -24,7 +24,7 @@ class JobInfo(object):
         elif self.status == JOB_STATUS_PENDING:
             return 'PENDING'
         elif self.status == JOB_STATUS_NOT_EXISTS:
-            return 'WAITING'
+            return 'N/A'
         elif self.status == JOB_STATUS_RUNNING:
             return 'RUNNING'
 
