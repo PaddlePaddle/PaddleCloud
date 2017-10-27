@@ -7,7 +7,6 @@ def get_spec_trainer(paddlejob):
         },
         "spec": {
             "parallelism": paddlejob.parallelism,
-            "completions": paddlejob.parallelism,
             "template": {
                 "metadata":{
                     "labels": paddlejob.get_trainer_labels()
