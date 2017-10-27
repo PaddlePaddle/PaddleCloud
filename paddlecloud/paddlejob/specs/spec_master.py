@@ -1,5 +1,5 @@
 def get_spec_master(paddlejob):
-    return {
+    rs = {
         "apiVersion": "extensions/v1beta1",
         "kind": "ReplicaSet",
         "metadata":{
@@ -51,3 +51,6 @@ def get_spec_master(paddlejob):
             }
         }
     }
+    if paddlejob.registry_secret:
+        rs["spec"]["template"]["spec"].update({"imagePullSecrets": [{"name": paddlejob.registry_secret}]})
+    return rs
