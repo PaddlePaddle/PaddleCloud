@@ -78,15 +78,18 @@ CPU utils| 100% | 100% | 100%
         > cd cloud/doc/autoscale/experiment/python
         > python main.py case1 10
         ```
-    1. Open another terminal and starts 10 jobs 
+    1. Open another terminal and starts 10 general jobs 
         ```bash
         > cd cloud/doc/autoscale/experiment
         > ./control_case1.sh start 10
+        ```
+        or submit 10 fault-tolerant jobs
+        ```bash
+        > cd cloud/doc/autoscale/experiment
+        > ./control_case1.sh start 10 ON
         ```
     1. Clean the jobs, if all jobs are finished
         ```bash
         > cd cloud/doc/autoscale/experiment 
         > ./control_case1.sh start start 10
         ```
-
-    1. You will se the time series data in the terminal
