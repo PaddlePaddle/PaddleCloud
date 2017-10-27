@@ -135,7 +135,7 @@ def main():
         return im
 
     test_data = []
-    test_data.append(testing_image_path)
+    test_data.append((load_image(testing_image_path), ))
 
     # users can remove the comments and change the model name
     # with open('params_pass_50.tar', 'r') as f:
