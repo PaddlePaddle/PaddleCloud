@@ -1,4 +1,6 @@
 #!/bin/bash
+DEFAULT_JOBNAME_PREFIX="mnist"
+
 function submit_general_job() {
     paddlecloud submit -jobname $1 \
         -cpu 10 \
@@ -17,13 +19,14 @@ function submit_ft_job() {
         -cpu 10 \
         -gpu 0 \
         -memory 8Gi \
-        -parallelism 20 \
+        -parallelism 2 \
         -pscpu 6 \
         -pservers 10 \
         -psmemory 5Gi \
         -entry "python ./train_ft.py train" \
         -faulttolerant \
-        ./mnist 
+        ./mnist
+    cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$1/g" | kubectl create -f -
 }
 
 function usage() {
@@ -40,10 +43,9 @@ function start() {
     do 
         if [ "$FAULT_TOLERANT" == "ON" ]
         then
-            #submit_ft_job mnist$i $JOBS
-            echo mnist$i $JOBS
+            submit_ft_job $DEFAULT_JOBNAME_PREFIX$i $JOBS
         else
-            submit_general_job mnist$i $JOBS
+            submit_general_job $DEFAULT_JOBNAME_PREFIX$i $JOBS
         fi
         sleep 2
     done
@@ -52,8 +54,12 @@ function start() {
 function stop() {
     for ((i=0; i<$JOBS; i++))
     do
-        echo "paddlecloud kill" mnist$i
-        paddlecloud kill mnist$i
+        echo "paddlecloud kill" $DEFAULT_JOBNAME_PREFIX$i
+        paddlecloud kill $DEFAULT_JOBNAME_PREFIX$i
+        if [ "$FAULT_TOLERANT" == "ON" ]
+        then
+           cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$DEFAULT_JOBNAME_PREFIX$i/g" | kubectl delete -f - 
+        fi
         sleep 2
     done
 }
