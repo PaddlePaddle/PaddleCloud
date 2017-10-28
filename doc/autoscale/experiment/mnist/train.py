@@ -8,10 +8,8 @@ import glob
 import pickle
 
 
-# NOTE: must change this to your own username on paddlecloud.
-USERNAME = "yanxu05@baidu.com"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
-#common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
+common.DATA_HOME = "/pfs/%s/public/idl/users/dl/paddlecloud/public/dataset" % DC
 TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 TEST_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 
@@ -159,5 +157,4 @@ if __name__ == '__main__':
     if sys.argv[1] == "prepare":
         prepare_dataset()
     elif sys.argv[1] == "train":
-        prepare_dataset()
         main()

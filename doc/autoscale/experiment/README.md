@@ -65,31 +65,31 @@ CPU utils| 100% | 100% | 100%
 ## Reproduce the experiment
 
 - Configure kubectl on your host
-- Submit the TrainingJob controller with YAML file
+- Prepare
+    1. Configure kubectl 
+    1. Configure paddlectl
+    1. Submit the TrainingJob controller with YAML file
     ```bash
     > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
     > kubectl create -f k8s/controller/trainingjob_resource.yaml
     > kubectl create -f k8s/controller/controller.yaml
     ```
 - Test Case1
-    1. Run the data collecting Python program, the following code
-        will start a foreground process and monitor the job information
+    1. Run the TestCase1 for serval passes with bash scripts`./control_case.1.sh`:
         ```bash
         > cd cloud/doc/autoscale/experiment/python
-        > python main.py case1 10
+        > ./control_case1.sh --help
+        > usage: control_case1.sh <action>
+            action[required]: str[start|stop], will start or stop all the jobs.
+          env var:
+            JOB_COUNT[optional]:             int, The number of submiting jobs, defualt is 1.
+            FAULT_TOLERANT[optional]:   str[ON|OFF], whether a fault-tolerant job,default is OFF.
+            PASSES[optional]:           int, The number of run passes.
+            DETAILS[optional:           str[ON|OFF], print detail monitor information.
         ```
-    1. Open another terminal and starts 10 general jobs 
+        For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
-        > cd cloud/doc/autoscale/experiment
-        > ./control_case1.sh start 10
+            > PASSES=10 JOB_COUNT=10 ./control_case1.sh start
         ```
-        or submit 10 fault-tolerant jobs
-        ```bash
-        > cd cloud/doc/autoscale/experiment
-        > ./control_case1.sh start 10 ON
-        ```
-    1. Clean the jobs, if all jobs are finished
-        ```bash
-        > cd cloud/doc/autoscale/experiment 
-        > ./control_case1.sh start start 10
-        ```
+    1. Gernerate Experiment Report
+        After all the passes are finished, the report will generated at './out' folder.

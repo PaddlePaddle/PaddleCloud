@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import paddle.v2 as paddle
 import paddle.v2.dataset.common as common
+from paddle.v2.reader.creator import cloud_reader
 import os
 import sys
 import glob
@@ -9,9 +10,9 @@ import pickle
 
 
 # NOTE: must change this to your own username on paddlecloud.
-USERNAME = "yanxu05@baidu.com"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
-common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
+common.DATA_HOME = "/pfs/%s/public/idl/users/dl/paddlecloud/public/dataset" % DC
+DATASET_PATH = "%s/mnist/train-[0-9]*" % common.DATA_HOME
 TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 TEST_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 
@@ -26,34 +27,6 @@ def prepare_dataset():
     common.convert(TEST_FILES_PATH,
                 paddle.dataset.mnist.test(),
                 1, "test")
-
-def cluster_reader_recordio(trainer_id, trainer_count, flag):
-    '''
-        read from cloud dataset which is stored as recordio format
-        each trainer will read a subset of files of the whole dataset.
-    '''
-    import recordio
-    def reader():
-        PATTERN_STR = "%s-*" % flag
-        FILES_PATTERN = os.path.join(TRAIN_FILES_PATH, PATTERN_STR)
-        file_list = glob.glob(FILES_PATTERN)
-        file_list.sort()
-        my_file_list = []
-        # read files for current trainer_id
-        for idx, f in enumerate(file_list):
-            if idx % trainer_count == trainer_id:
-                my_file_list.append(f)
-        for f in my_file_list:
-            print "processing ", f
-            reader = recordio.reader(f)
-            record_raw = reader.read()
-            while record_raw:
-                yield pickle.loads(record_raw)
-                record_raw = reader.read()
-            reader.close()
-    return reader
-
-
 
 def softmax_regression(img):
     predict = paddle.layer.fc(
@@ -102,7 +75,7 @@ def convolutional_neural_network(img):
 def main():
     etcd_ip = os.getenv("ETCD_IP")
     etcd_endpoint = "http://" + etcd_ip + ":" + "2379"
-    paddle.init()
+    paddle.init(trainer_count=1)
 
     # define network topology
     images = paddle.layer.data(
@@ -141,17 +114,18 @@ def main():
         if isinstance(event, paddle.event.EndPass):
             result = trainer.test(
                     reader=paddle.batch(
-                    cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT, "test"),
+                        paddle.dataset.mnist.test(),
                     batch_size=2))
             print "Test with Pass %d, Cost %f, %s\n" % (
                 event.pass_id, result.cost, result.metrics)
 
     trainer.train(
         reader=paddle.batch(
-            cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT, "train"),
+            cloud_reader(
+                [DATASET_PATH], etcd_endpoint),
             batch_size=128),
         event_handler=event_handler,
-        num_passes=5)
+        num_passes=1)
 
 if __name__ == '__main__':
     usage = "python train.py [prepare|train]"

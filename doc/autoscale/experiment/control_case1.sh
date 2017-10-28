@@ -1,28 +1,36 @@
 #!/bin/bash
 DEFAULT_JOBNAME_PREFIX="mnist"
+CPU="10"
+MEMORY="8Gi"
+PSCPU="6"
+PSMEMORY="5Gi"
+JOB_COUNT=${JOB_COUNT:-1}
+FAULT_TOLERANT=${FAULT_TOLERANT:-OFF}
+PASSES=${PASSES:-1}
+DETAILS=${DETAILS:-OFF}
 
 function submit_general_job() {
     paddlecloud submit -jobname $1 \
-        -cpu 10 \
+        -cpu $CPU \
         -gpu 0 \
-        -memory 8Gi \
+        -memory $MEMORY \
         -parallelism 20 \
-        -pscpu 6 \
+        -pscpu $PSCPU \
         -pservers 10 \
-        -psmemory 5Gi \
+        -psmemory $PSMEMORY \
         -entry "python ./train.py train" \
         ./mnist
 }
 
 function submit_ft_job() {
    paddlecloud submit -jobname $1 \
-        -cpu 10 \
+        -cpu $CPU \
         -gpu 0 \
-        -memory 8Gi \
+        -memory $MEMORY \
         -parallelism 2 \
-        -pscpu 6 \
+        -pscpu $PSCPU \
         -pservers 10 \
-        -psmemory 5Gi \
+        -psmemory $PSMEMORY \
         -entry "python ./train_ft.py train" \
         -faulttolerant \
         ./mnist
@@ -30,31 +38,70 @@ function submit_ft_job() {
 }
 
 function usage() {
-    echo "usage: control_case1.sh <action> <jobs> <fault-tolerant>"
-    echo "  action[required]:         str[start|stop], will start or stop the jobs."
-    echo "  jobs[required]:           int, specify the job count that will be submited, \
-default is 1."
-    echo "  fault-tolerant[optional]  str[ON|OFF], whether submit a fault-tolerant \
-mode job, default is OFF."
+    echo "usage: control_case1.sh <action>"
+    echo "  action[required]: str[start|stop], will start or stop all the jobs."
+    echo "env var:"
+    echo "  JOB_COUNT[optional]:             int, The number of submiting jobs, defualt is 1."
+    echo "  FAULT_TOLERANT[optional]:   str[ON|OFF], whether a fault-tolerant job,\
+default is OFF."
+    echo "  PASSES[optional]:           int, The number of run passes."
+    echo "  DETAILS[optional:           str[ON|OFF], print detail monitor information."
 }
 
 function start() {
-    for ((i=0; i<$JOBS; i++)) 
-    do 
-        if [ "$FAULT_TOLERANT" == "ON" ]
-        then
-            submit_ft_job $DEFAULT_JOBNAME_PREFIX$i $JOBS
-        else
-            submit_general_job $DEFAULT_JOBNAME_PREFIX$i $JOBS
-        fi
-        sleep 2
+    echo "JOB_COUNT: "$JOB_COUNT
+    echo "FAULT_TOLERANT: "$FAULT_TOLERANT
+    echo "PASSES: "$PASSES
+    echo "DETAILS: "$DETAILS
+    # Following https://apple.stackexchange.com/a/193156,
+    # we need to set the envrionment var for MacOS
+    if [ $(uname) == "Darwin" ]
+    then
+        export PATH=/usr/local/opt/coreutils/libexec/gnubin:$PATH
+    fi
+    rm -rf ./out
+    for ((pass=0; pass<$PASSES; pass++))
+    do
+        echo "Run pass "$pass
+        PASSE_NUM=$pass FAULT_TOLERANT=$FAULT_TOLERANT JOB_COUNT=$JOB_COUNT \
+            stdbuf -oL nohup python python/main.py run_case1 &> ./experiment.log &
+
+        for ((j=0; j<$JOB_COUNT; j++)) 
+        do 
+            if [ "$FAULT_TOLERANT" == "ON" ]
+            then
+                submit_ft_job $DEFAULT_JOBNAME_PREFIX$j $JOB_COUNT
+            else
+                submit_general_job $DEFAULT_JOBNAME_PREFIX$j $JOB_COUNT
+            fi
+            sleep 2
+        done
+        # waiting for all jobs finished
+        python python/main.py wait_for_finished
+        # stop all jobs
+        stop
+        # waiting for all jobs have been cleaned
+        python python/main.py wait_for_cleaned
+        # waiting for the data collector exit
+        while true
+        do
+            FILE=./out/$DEFAULT_JOBNAME_PREFIX-pass$pass
+            if [ ! -f $FILE ]; then
+                echo "waiting for collector exit, generated file " $FILE
+                sleep 5
+            fi
+            break
+        done
     done
+    python python/main.py generate_report
+    rm -f ./out/%DEFAULT_JOBNAME_PREFIX-pass*
+    
 }
 
 function stop() {
-    for ((i=0; i<$JOBS; i++))
+    for ((i=0; i<$JOB_COUNT; i++))
     do
-        echo "paddlecloud kill" $DEFAULT_JOBNAME_PREFIX$i
+        echo "kill" $DEFAULT_JOBNAME_PREFIX$i
         paddlecloud kill $DEFAULT_JOBNAME_PREFIX$i
         if [ "$FAULT_TOLERANT" == "ON" ]
         then
@@ -64,15 +111,7 @@ function stop() {
     done
 }
 
-if [ -z $1 ] || [ -z $2 ]
-then
-    usage
-    exit 0
-fi
-
 ACTION=${1}
-JOBS=${2}
-FAULT_TOLERANT=${3:-OFF}
 
 case $ACTION in 
     start)
