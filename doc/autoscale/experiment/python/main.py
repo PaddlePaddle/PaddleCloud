@@ -6,6 +6,7 @@ import os
 
 JOB_NAME_PREFIX='mnist'
 COLLECTION_INTERVAL=5
+REPORT_SEPARATOR="|"
 JOB_COUNT = int(os.getenv("JOB_COUNT", 1))
 PASSES = int(os.getenv("PASSES", 1))
 PASSE_NUM = int(os.getenv("PASSE_NUM", 1))
@@ -26,7 +27,7 @@ class StatInfo(object):
         self._cpu_utils = cpu_utils
 
     def to_str(self):
-        return '\t'.join([
+        return REPORT_SEPARATOR.join([
             str(self._pass_num),
             str(self._average_runnint_time),
             str(self._average_pending_time),
@@ -35,7 +36,7 @@ class StatInfo(object):
 
 def load_stat_info_from_file(fn):
     with open(fn, 'r') as f:
-        d = f.read().strip().split('\t')
+        d = f.read().strip().split(REPORT_SEPARATOR)
         return StatInfo(d[0], d[1], d[2], d[3].split(','), d[4])
 
 def generate_report():
@@ -45,7 +46,7 @@ def generate_report():
     avg_running_time = 0
     avg_cpu_utils = 0.0
     with open('./out/%s.csv'%JOB_NAME_PREFIX, 'w') as f:
-        f.write('\t'.join(['PASS_NUM', 'AVG_RUNNINT_TIME', \
+        f.write(REPORT_SEPARATOR.join(['PASS_NUM', 'AVG_RUNNINT_TIME', \
             'AVG_PENDING_TIME', 'JOB_RUNNING_TIME', 'CPU_UTILS']) + '\n')
 
         for stat in stats:
@@ -56,7 +57,7 @@ def generate_report():
         avg_pending_time = int(avg_pending_time / len(stats))
         avg_running_time = int(avg_running_time / len(stats))
         avg_cpu_utils = avg_cpu_utils / len(stats)
-        f.write('\t'.join(['TOTALLY', str(avg_running_time), \
+        f.write(REPORT_SEPARATOR.join(['TOTALLY', str(avg_running_time), \
             str(avg_pending_time), 'N/A', '%0.2f' % avg_cpu_utils]) + '\n')
 
         
@@ -97,10 +98,9 @@ def case1(c):
         for job in jobs:
             c.update_job(job, times)
             if DETAILS == "ON": 
-                print '%d\t%s\t%s\t%s\t%s\t%d' % (times,\
+                print '%d\t%s\t%s\t%s\t%s\t%d' % (times, \
                     job.name, job.status_str(), c.cpu_utils(), c.gpu_utils(),\
                     job.parallelism)
-
         if utils.is_jobs_finished(jobs):
             stat = StatInfo(
                 PASSE_NUM,

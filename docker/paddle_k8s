@@ -62,15 +62,13 @@ start_new_trainer() {
   stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS} 
   export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
   export ETCD_IP="$MASTER_IP"
-  export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
 
   # NOTE: $TRAINER_PACKAGE may be large, do not copy
   export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
   cd $TRAINER_PACKAGE
 
   stdbuf -oL echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
-  $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
-  "version: " $1 
+  $PADDLE_INIT_NUM_GRADIENT_SERVERS, "version: " $1 
 
   stdbuf -oL sh -c "${ENTRY}"
   check_trainer_ret $?

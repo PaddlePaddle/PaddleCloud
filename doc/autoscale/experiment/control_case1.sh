@@ -34,6 +34,7 @@ function submit_ft_job() {
         -entry "python ./train_ft.py train" \
         -faulttolerant \
         ./mnist
+    sleep 2
     cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$1/g" | kubectl create -f -
 }
 
@@ -59,12 +60,14 @@ function start() {
     then
         export PATH=/usr/local/opt/coreutils/libexec/gnubin:$PATH
     fi
-    rm -rf ./out
+    rm -rf ./out > /dev/null
+    mkdir ./out > /dev/null
+    rm -f ./experiment.log > /dev/null
     for ((pass=0; pass<$PASSES; pass++))
     do
         echo "Run pass "$pass
         PASSE_NUM=$pass FAULT_TOLERANT=$FAULT_TOLERANT JOB_COUNT=$JOB_COUNT \
-            stdbuf -oL nohup python python/main.py run_case1 &> ./experiment.log &
+            stdbuf -oL nohup python python/main.py run_case1 &> ./out/pass$pass.log &
 
         for ((j=0; j<$JOB_COUNT; j++)) 
         do 

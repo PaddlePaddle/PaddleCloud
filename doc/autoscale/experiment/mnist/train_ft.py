@@ -16,9 +16,6 @@ DATASET_PATH = "%s/mnist/train-[0-9]*" % common.DATA_HOME
 TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 TEST_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 
-TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID", "-1"))
-TRAINER_COUNT = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS", "-1"))
-
 def prepare_dataset():
     # convert will also split the dataset by line-count
     common.convert(TRAIN_FILES_PATH,
@@ -125,16 +122,12 @@ def main():
                 [DATASET_PATH], etcd_endpoint),
             batch_size=128),
         event_handler=event_handler,
-        num_passes=1)
+        num_passes=20)
 
 if __name__ == '__main__':
     usage = "python train.py [prepare|train]"
     if len(sys.argv) != 2:
         print usage
-        exit(1)
-
-    if TRAINER_ID == -1 or TRAINER_COUNT == -1:
-        print "no cloud environ found, must run on cloud"
         exit(1)
 
     if sys.argv[1] == "prepare":

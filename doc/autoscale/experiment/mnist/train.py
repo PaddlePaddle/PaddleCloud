@@ -142,7 +142,7 @@ def main():
             cluster_reader_recordio(TRAINER_ID, NUM_GRADIENT_SERVERS, "train"),
             batch_size=128),
         event_handler=event_handler,
-        num_passes=1)
+        num_passes=20)
 
 if __name__ == '__main__':
     usage = "python train.py [prepare|train]"

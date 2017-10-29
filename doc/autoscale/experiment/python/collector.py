@@ -125,13 +125,11 @@ class Collector(object):
                     # All PaddleCloud jobs has the label key: paddle-job-*
                     if k == 'paddle-job' and v == job.name:
                         parallelism += 1
-                        if not job.submit_time:
+                        if job.submit_time == -1:
                             job.submit_time = times
                         phases.add(item.status.phase)
 
         job.parallelism = parallelism
-        if phases and not job.submit_time:
-            job.submit_time = times
 
         if len(phases) == 0:
             # The job has not been submited
@@ -139,7 +137,7 @@ class Collector(object):
         elif (len(phases) == 1 and 'Running' in phases and \
                 self.fault_tolerant == 'OFF') or \
                 ('Running' in phases and self.fault_tolerant == 'ON'):
-            if job.start_time != -1:
+            if job.start_time == -1:
                 job.start_time = times
             job.status = JOB_STATUS_RUNNING
         elif ('Failed' in phases or \
