@@ -33,7 +33,9 @@ class UniversionedAPI(object):
         "volumes": "The data volumes to mount on pod.",
         "registry_secret": "The secret for reading registry.",
         "envs": "The environment variables for all pods",
-        "etcd_image": "The etcd docker image."
+        "etcd_image": "The etcd docker image.",
+        "min_instance": "The minimum number of trainers to launch, only used for faulttolerant.",
+        "max_instance": "The maximum number of trainers to launch, only used for faulttolerant."
     }
     optional_defaults = {
         "image": "",

@@ -10,5 +10,11 @@ import:
 - package: github.com/fatih/color
 - package: k8s.io/client-go
   version: release-3.0
+  subpackages:
+  - pkg/api
 - package: k8s.io/kubernetes
   version: release-1.6.3
+- package: github.com/inconshreveable/log15
+  version: v2.13
+- package: github.com/go-stack/stack
+  version: v1.6.0
