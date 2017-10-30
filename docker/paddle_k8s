@@ -23,7 +23,8 @@ start_new_pserver() {
 start_master() {
   stdbuf -oL /usr/bin/master \
   -port=8080 \
-  -endpoints=http://127.0.0.1:2379
+  -endpoints=http://127.0.0.1:2379 \
+  -log-level=debug
 }
 
 check_failed_cnt() {
