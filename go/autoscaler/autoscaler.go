@@ -227,10 +227,6 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 	}()
 
-	if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
-		return -1
-	}
-
 	// TODO(helin): j.TrainerJob.Spec.Parallelism may not reflect
 	// the actual pod running for the trainer job. We need to
 	// count the pod manually. And calculate the additional value
@@ -238,6 +234,14 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 	// j.TrainerJob.Spec.Parallelism, and curDiff.
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
+	instanceMin := j.Config.Spec.Trainer.MinInstance
+
+	if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
+		if plannedInstance-1 >= instanceMin {
+			return -1
+		}
+		return 0
+	}
 
 	if plannedInstance >= instanceMax {
 		// Do not scale or scale down, don't need to check if
