@@ -14,40 +14,27 @@ How the effectiveness are measured.
 1. Task average pending time.
     - the less the better.
     - the less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can understand the training algorithm effectiveness.
-    - This is a common pain point with researchers with internal cloud.
+    - This is a common pain point of researchers with internal cloud.
 1. Task average execution time.
-    - the less the better
+    - the less the better.
+    - average execution time is another way of measuring computing resource utilization. the less execution time, the higher overall utilization.
+    - average execution time is also the way of measuring effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
+1. Quality of service with Hybrid cluster
+    - Check if the Machine learning process will yield resources to more important online services when QPS is getting intensive.
 
 ## Our setup
 
 - Kubernetes cluster with 1.6.x installed.
 - PaddleCloud with latest develop branch installed.
-- 240 physical nodes, 80 GPU cards.
-- Dataset converted to RecordIO format.
+- 133 physical nodes.
 - Use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as benchmark training job.
-
-## Environment Requirement
-
-## Environment Enviroment
-
-- Kubernetes v1.6 cluster with 133 nodes.
-- PaddleCloud with latest develop branch installed.
-- We will train the [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) model in the experiment.
-
-
-## Experiment Metric
-
-- Cluster overall resource utilization.
-- Average job running time.
-- Average job pending time.
-
 
 ## Test Cases
 
 ### Autoscaling on the Special Purpose Cluster
 
 All the job in the cluster will be training jobs (hence the name
-special purpose cluster).
+special purpose cluster). This case is a very typical scenario for research institutes.
 
 #### Variable
 
@@ -91,7 +78,7 @@ special purpose cluster).
 Hybrid deployment with online serving and offline training Job (hence
 the name general purpose cluster). We will deploy PaddlePaddle
 training job and [Nginx](https://www.nginx.com/resources/wiki/) web
-serving together.
+serving together. This case is a very typical scenario for large enterprises and Internet companies.
 
 #### Variable
 
@@ -185,3 +172,22 @@ serving together.
         ```
     1. Gernerate Experiment Report
         After all the passes are finished, the report will generated at './out' folder.
+
+
+## Conclusions
+
+### Resource utilization increased in both cases
+
+Utilization increased by XX% in case one, and XX% in case two
+
+### Average Pending time reduced in both cases
+
+XX% in case one and XX% in case two.
+
+### Average execution time reduced in both cases
+
+XX% in case one and XX% in case two.
+
+### Improved the service quality with Hybrid cloud
+
+As shown in test case two, Paddlepaddle yields resource to more important online services when QPS is get intensive.
