@@ -65,32 +65,31 @@ CPU utils| 100% | 100% | 100%
 ## Reproduce the experiment
 
 - Configure kubectl on your host
-- Submit the TrainingJob controller with YAML file
+- Prepare
+    1. Configure kubectl 
+    1. Configure paddlectl
+    1. Submit the TrainingJob controller with YAML file
     ```bash
     > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
     > kubectl create -f k8s/controller/trainingjob_resource.yaml
     > kubectl create -f k8s/controller/controller.yaml
     ```
 - Test Case1
-    1. Run the data collecting Python program.
+    1. Run the TestCase1 for serval passes with bash scripts`./control_case.1.sh`:
         ```bash
         > cd cloud/doc/autoscale/experiment/python
-        > python main.py case1 mnist1,mnist2
+        > ./control_case1.sh --help
+        > usage: control_case1.sh <action>
+            action[required]: str[start|stop], will start or stop all the jobs.
+          env var:
+            JOB_COUNT[optional]:             int, The number of submiting jobs, defualt is 1.
+            FAULT_TOLERANT[optional]:   str[ON|OFF], whether a fault-tolerant job,default is OFF.
+            PASSES[optional]:           int, The number of run passes.
+            DETAILS[optional:           str[ON|OFF], print detail monitor information.
         ```
-    1. Submit two general jobs naming mnist1 and mnist2 as following,
-        maybe you would adust the resource configuration as your cluster.
+        For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
-        > cd cloud/demo
-        > paddlectl submit mnist1 
-        > paddlecloud submit -jobname mnist1 \
-            -cpu 8 \
-            -gpu 0 \
-            -memory 8Gi \
-            -parallelism 40 \
-            -pscpu 4 \
-            -pservers 8 \
-            -psmemory 1Gi \
-            -entry "python ./train.py train" \
-            ./recognize_digits
+            > PASSES=10 JOB_COUNT=10 ./control_case1.sh start
         ```
-    1. You will se the time series data in the terminal
+    1. Gernerate Experiment Report
+        After all the passes are finished, the report will generated at './out' folder.

@@ -3,6 +3,7 @@ from kubernetes.client.rest import ApiException
 from pprint import pprint
 import time
 
+
 JOB_STATUS_NOT_EXISTS = 0
 JOB_STATUS_PENDING = 1
 JOB_STATUS_RUNNING = 2
@@ -13,9 +14,9 @@ class JobInfo(object):
         self.name = name
         self.started = False
         self.status = JOB_STATUS_NOT_EXISTS
-        self.submit_time = 0
-        self.start_time = 0
-        self.end_time = 0
+        self.submit_time = -1
+        self.start_time = -1
+        self.end_time = -1
         self.parallelism = 0
 
     def status_str(self):
@@ -24,7 +25,7 @@ class JobInfo(object):
         elif self.status == JOB_STATUS_PENDING:
             return 'PENDING'
         elif self.status == JOB_STATUS_NOT_EXISTS:
-            return 'WAITING'
+            return 'N/A'
         elif self.status == JOB_STATUS_RUNNING:
             return 'RUNNING'
 
@@ -33,21 +34,18 @@ class Collector(object):
     '''
     Collector monitor data from Kubernetes API
     '''
-    def __init__(self):
-        # TODO(Yancey1989): 
-        #   init kubernetes configuration 
-        #   from settings.py
+    def __init__(self, fault_tolerant):
         config.load_kube_config()
+        self.namespace = config.list_kube_config_contexts()[1]['context']['namespace']
         self.cpu_allocatable = 0
         self.gpu_allocatable = 0
         self.cpu_requests = 0
         self.gpu_requests = 0
-
+        self.fault_tolerant = fault_tolerant
         # Collect cluster wide resource
         self._init_allocatable()
 
         self._pods = []
-
     def _init_allocatable(self):
         api_instance = client.CoreV1Api()
         try: 
@@ -74,8 +72,9 @@ class Collector(object):
 
     def run_once(self):
         api_instance = client.CoreV1Api()
+        config.list_kube_config_contexts()
         try:
-            api_response = api_instance.list_pod_for_all_namespaces(pretty=True)
+            api_response = api_instance.list_namespaced_pod(namespace=self.namespace)
             self._pods = api_response.items
         except ApiException as e:
             print("Exception when calling CoreV1Api->list_pod_for_all_namespaces: %s\n" % e)
@@ -91,7 +90,7 @@ class Collector(object):
                 if requests:
                     cpu += self._real_cpu(requests.get('cpu', None))
         
-        return '%0.2f%%' % ((100.0 * cpu) / self.cpu_allocatable)
+        return '%0.2f' % ((100.0 * cpu) / self.cpu_allocatable)
 
     def gpu_utils(self):
         gpu = 0
@@ -104,7 +103,18 @@ class Collector(object):
                     gpu += int(limits.get('alpha.kubernetes.io/nvidia-gpu',0))
         if not self.gpu_allocatable:
             return '0'
-        return '%0.2f%%' % ((100.0 * gpu) / self.gpu_allocatable)
+        return '%0.2f' % ((100.0 * gpu) / self.gpu_allocatable)
+
+    def get_paddle_pods(self):
+        pods = []
+        for item in self._pods:
+            if not item.metadata.labels:
+                continue
+            for k, v in item.metadata.labels.items():
+                if k.startswith('paddle-job'):
+                    pods.append((item.metadata.name, item.status.phase))
+        return pods
+    
 
     def update_job(self, job, times):
         phases = set()
@@ -115,28 +125,24 @@ class Collector(object):
                     # All PaddleCloud jobs has the label key: paddle-job-*
                     if k == 'paddle-job' and v == job.name:
                         parallelism += 1
-                        if not job.submit_time:
+                        if job.submit_time == -1:
                             job.submit_time = times
                         phases.add(item.status.phase)
 
         job.parallelism = parallelism
-        if phases and not job.submit_time:
-            job.submit_time = times
 
         if len(phases) == 0:
             # The job has not been submited
             return
-        elif len(phases) == 1 and 'Running' in phases:
-        #elif 'Running' in phases:
-            # If all pods is Running phase, the job is running
-            # TODO(Yancey1989): If fault-tolerant job, only need 
-            # one of the Pod running
-            if not job.start_time:
+        elif (len(phases) == 1 and 'Running' in phases and \
+                self.fault_tolerant == 'OFF') or \
+                ('Running' in phases and self.fault_tolerant == 'ON'):
+            if job.start_time == -1:
                 job.start_time = times
             job.status = JOB_STATUS_RUNNING
         elif ('Failed' in phases or \
             (len(phases) == 1 and 'Succeeded' in phases)) and \
-            job.end_time == 0:
+            job.end_time == -1:
             job.end_time = times
             job.status = JOB_STATUS_FINISHED
         elif 'Pending' in phases:
