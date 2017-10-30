@@ -2,13 +2,29 @@
 
 ## Purpose
 
-- To verify effectiveness of PaddlePaddle's fault-torlerace mechanism.
-- To verify effectiveness of PaddlePaddle's auto-scaling mechanism.
+To verify effectiveness of PaddlePaddle's fault-tolerance and auto-scaling mechanism.
 
 ## Metrics
 
-- Cluster computing resource utilization.
-- Total time comsumed to complete cluster tasks
+How the effectiveness are measured.
+
+1. Cluster computing resource overall utilization.
+    - the higher the better.
+    - higher utilization means less resource are idle.
+1. Task average pending time.
+    - the less the better.
+    - the less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can understand the training algorithm effectiveness.
+    - This is a common pain point with researchers with internal cloud.
+1. Task average execution time.
+    - the less the better
+
+## Our setup
+
+- Kubernetes cluster with 1.6.x installed.
+- PaddleCloud with latest develop branch installed.
+- 240 physical nodes, 80 GPU cards.
+- Dataset converted to RecordIO format.
+- Use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as benchmark training job.
 
 ## Environment Requirement
 
