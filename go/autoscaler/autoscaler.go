@@ -236,10 +236,21 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
 	instanceMin := j.Config.Spec.Trainer.MinInstance
 
-	if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
-		if plannedInstance-1 >= instanceMin {
+	if scaleDown {
+		if plannedInstance > instanceMax {
 			return -1
 		}
+
+		if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
+			if plannedInstance > instanceMin {
+				return -1
+			}
+
+			// can not scale down further
+			return 0
+		}
+
+		// do not try to scale up
 		return 0
 	}
 
