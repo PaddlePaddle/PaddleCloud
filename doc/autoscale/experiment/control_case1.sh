@@ -18,19 +18,19 @@ function submit_ft_job() {
         -pscpu $PSCPU \
         -pservers 10 \
         -psmemory $PSMEMORY \
-        -entry "python ./train_ft.py train" \
+        -entry "sleep 180" \
         -faulttolerant \
         -image registry.baidu.com/paddlepaddle/paddlecloud-job:yx_exp \
         ./mnist
-    sleep 2
+    #-entry "python ./train_ft.py train" \
 }
 
 function usage() {
     echo "usage: control_case1.sh <action>"
     echo "  action[required]: str[start|stop], will start or stop all the jobs."
     echo "env var:"
-    echo "  JOB_COUNT[optional]:             int, The number of submiting jobs, defualt is 1."
-    echo "  AUTO_SCALING[optional]:   str[ON|OFF], whether a fault-tolerant job,\
+    echo "  JOB_COUNT[optional]:        int, The number of submiting jobs, defualt is 1."
+    echo "  AUTO_SCALING[optional]:     str[ON|OFF], whether a auto-scaling training job,\
 default is OFF."
     echo "  PASSES[optional]:           int, The number of run passes."
     echo "  DETAILS[optional:           str[ON|OFF], print detail monitor information."
@@ -65,7 +65,7 @@ function start() {
             else
                 submit_ft_job $DEFAULT_JOBNAME_PREFIX$j 20
             fi
-            sleep 2
+            sleep 5
         done
         # waiting for all jobs finished
         python python/main.py wait_for_finished

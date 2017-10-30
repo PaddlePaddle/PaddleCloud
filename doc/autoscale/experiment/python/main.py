@@ -45,7 +45,7 @@ def generate_report():
     avg_running_time = 0
     avg_cpu_utils = 0.0
     with open('./out/%s.csv'%JOB_NAME_PREFIX, 'w') as f:
-        f.write(REPORT_SEPARATOR.join(['PASS_NUM', 'AVG_RUNNINT_TIME', \
+        f.write(REPORT_SEPARATOR.join(['PASS', 'AVG_RUNNINT_TIME', \
             'AVG_PENDING_TIME', 'JOB_RUNNING_TIME', 'CPU_UTILS']) + '\n')
 
         for stat in stats:
@@ -56,7 +56,7 @@ def generate_report():
         avg_pending_time = int(avg_pending_time / len(stats))
         avg_running_time = int(avg_running_time / len(stats))
         avg_cpu_utils = avg_cpu_utils / len(stats)
-        f.write(REPORT_SEPARATOR.join(['TOTALLY', str(avg_running_time), \
+        f.write(REPORT_SEPARATOR.join(['AVG', str(avg_running_time), \
             str(avg_pending_time), 'N/A', '%0.2f' % avg_cpu_utils]) + '\n')
 
         
