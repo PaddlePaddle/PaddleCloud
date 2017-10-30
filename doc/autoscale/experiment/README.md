@@ -13,7 +13,7 @@ How the effectiveness are measured.
     - higher utilization means less resource are idle.
 1. Task average pending time.
     - the less the better.
-    - the less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can understand the training algorithm effectiveness.
+    - the less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
     - This is a common pain point of researchers with internal cloud.
 1. Task average execution time.
     - the less the better.
