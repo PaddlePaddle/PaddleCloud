@@ -57,9 +57,9 @@ check_trainer_ret() {
 start_new_trainer() {
   # FIXME(Yancey1989): use command-line interface to configure the max failed count
   check_failed_cnt ${TRAINERS}
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
+  sleep 5
   stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
-  # FIXME: use etcd lock instead of trainer id
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS} 
   export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
   export ETCD_IP="$MASTER_IP"
 
