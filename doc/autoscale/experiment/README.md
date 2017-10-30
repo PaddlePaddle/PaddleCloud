@@ -20,13 +20,13 @@
 
 ## Test Cases
 
-### Comparing the auto-scaling training job and the general training job
+### Compare The Fault-tolerant Training Job with Auto-scaling Or Not
 
-- Submit the general training job 
+- Submit the fault-tolerant training job 
     1. Submit a job(job-A), which requests 100 trainer Pods(1 CPU cores per Pod), 2 pservers and 1 master.
     1. Submit another job(job-B), which requests 200 trainer Pods(1 CPU cores per Pod), 2 pservers and 1 master.
     1. The job-B will be the pending status only if job-A finished because there are not enough CPU cores for the requests.
-- Submit the auto-scaling training job
+- Submit the fault-tolerant training job with auto-scaling
     1. Submit a job(job-A), which requests 100 trainer Pods(1 CPU core per Pod, min-instances is 50, max-instances is 500), 2 pservers and 1 master, And then job-A will be scaled up to immediately to use the maximum free resources(max 500 trainer Pods).
     1. Submit another job(job-B), which requests 200 trainer Pods(1 CPU core per Pod, min-instances is 50, max-instances is 200), 2 pservers and 1 master.
     1. Job-A will be scaled down and job-A and job-B will run in the cluster at the same time, and they will use the maximum free resources.

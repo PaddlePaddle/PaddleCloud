@@ -34,14 +34,13 @@ class Collector(object):
     '''
     Collector monitor data from Kubernetes API
     '''
-    def __init__(self, fault_tolerant):
+    def __init__(self):
         config.load_kube_config()
         self.namespace = config.list_kube_config_contexts()[1]['context']['namespace']
         self.cpu_allocatable = 0
         self.gpu_allocatable = 0
         self.cpu_requests = 0
         self.gpu_requests = 0
-        self.fault_tolerant = fault_tolerant
         # Collect cluster wide resource
         self._init_allocatable()
 
@@ -134,9 +133,7 @@ class Collector(object):
         if len(phases) == 0:
             # The job has not been submited
             return
-        elif (len(phases) == 1 and 'Running' in phases and \
-                self.fault_tolerant == 'OFF') or \
-                ('Running' in phases and self.fault_tolerant == 'ON'):
+        elif 'Running'  in phases:
             if job.start_time == -1:
                 job.start_time = times
             job.status = JOB_STATUS_RUNNING

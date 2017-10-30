@@ -11,7 +11,6 @@ JOB_COUNT = int(os.getenv("JOB_COUNT", 1))
 PASSES = int(os.getenv("PASSES", 1))
 PASSE_NUM = int(os.getenv("PASSE_NUM", 1))
 DETAILS = os.getenv("DETAILS", "ON")
-FAULT_TOLERANT = os.getenv("FAULT_TOLERANT", "OFF")
 
 class StatInfo(object):
     def __init__(self, 
@@ -129,7 +128,7 @@ if __name__=="__main__":
         usage()
         exit(0)
 
-    c = collector.Collector(FAULT_TOLERANT)
+    c = collector.Collector()
     if sys.argv[1] == 'run_case1':
         case1(c)
     elif sys.argv[1] == 'wait_for_finished':
