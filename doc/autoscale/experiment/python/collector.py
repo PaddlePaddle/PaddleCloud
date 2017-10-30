@@ -113,6 +113,16 @@ class Collector(object):
                     pods.append((item.metadata.name, item.status.phase))
         return pods
     
+    def get_running_trainers(self):
+        cnt = 0
+        for item in self._pods:
+            if not item.metadata.labels:
+                continue
+            for k, v in item.metadata.labels.items():
+                if k == 'paddle-job' and item.status.phase == 'Running':
+                    cnt += 1
+
+        return cnt
 
     def update_job(self, job, times):
         phases = set()
@@ -149,6 +159,6 @@ class Collector(object):
         for item in self._pods:
             if item.metadata.labels:
                 for k, v in item.metadata.labels.items():
-                    if k in labels and labels[v] == v:
+                    if k in labels and labels[k] == v:
                         pods += 1
         return pods

@@ -11,7 +11,7 @@ function usage() {
 }
 
 function start() {
-    PASSE_NUM=$PASS AUTO_SCALING=ON JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME\
+    PASSE_NUM=0 AUTO_SCALING=ON JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME\
             stdbuf -oL nohup python python/main.py run_case2 &> ./out/${JOB_NAME}_case2.log &
     # submit Nginx deployment
 
@@ -25,11 +25,11 @@ function start() {
         sleep 5
     sleep 5
     done
-    kubectl scale deployment/nginx --replicas=50
-    sleep 60
     kubectl scale deployment/nginx --replicas=100
     sleep 60
-    kubectl scale deployment/nginx --replicas=150
+    kubectl scale deployment/nginx --replicas=200
+    sleep 60
+    kubectl scale deployment/nginx --replicas=400
     # waiting for all jobs finished
     python python/main.py wait_for_finished
     # stop all jobs

@@ -92,14 +92,12 @@ def case2(c):
     while True:
         c.run_once()
         avg_cpu_utils += float(c.cpu_utils())
-        trainers = 0
         for job in jobs:
             c.update_job(job, times)
-            trainers += job.parallelism
-
+        running_trainers = c.get_running_trainers()
         nginx_pods = c.get_pods({'app':'nginx'})
 
-        item = CaseTwoItem(times, nginx_pods, trainers, c.cpu_utils())
+        item = CaseTwoItem(times, nginx_pods, running_trainers, c.cpu_utils())
 
         if DETAILS == "ON":
             print '|'.join(item.values())
@@ -107,11 +105,6 @@ def case2(c):
         report.append_item(item)
 
         if utils.is_jobs_finished(jobs):
-            # generate the report
-            try:
-                os.stat('./out')
-            except:
-                os.mkdir('./out')
             with open('./out/%s.csv') as f:
                 report.to_csv(f)
             break
@@ -145,12 +138,6 @@ def case1(c):
                 [str(job.end_time - job.start_time) for job in jobs],
                 '%0.2f' % ((avg_cpu_utils) / ((times / COLLECTION_INTERVAL) + 1))
             )
-            # create out folder is not exists
-            try:
-                os.stat('./out')
-            except:
-                os.mkdir('./out')
-
             with open('./out/%s-pass%d' % (JOB_NAME, PASSE_NUM), 'w') as f:
                 f.write(stat.to_str())
             break

@@ -73,27 +73,30 @@ TIME|RUNNING_TRAINERS|NGINX_PODS|CPU_UTIL
 
 ## Reproduce the experiment
 
-- Configure kubectl on your host
 - Prepare
-    1. Configure kubectl 
-    1. Configure paddlectl
-    1. Submit the TrainingJob controller with YAML file
+    1. Configure kubectl and paddlectl on your host.
+    1. Submit the TrainingJob controller with the YAML file.
     ```bash
     > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
     > kubectl create -f k8s/controller/trainingjob_resource.yaml
     > kubectl create -f k8s/controller/controller.yaml
     ```
-- Test Case1
-    1. Run the TestCase1 for serval passes with bash scripts`./control_case.1.sh`:
+- Run the Test Case
+    1. Run the TestCase1 or TestCase2 for serval passes with the bash script `./run.sh`:
         For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
         > cd cloud/doc/autoscale/experiment
-        > PASSES=5 JOB_COUNT=10 ./control_case1.sh start
+        > PASSES=5 JOB_COUNT=10 ./run.sh start case1
         ```
-        Or Submit an auto-scaline training job
+        Or submit an auto-scaline training job
         > cd cloud/doc/autoscale/experiment
         ```bash
-        > AUTO_SCALING=ON PASSES=5 JOB_COUNT=10 ./control_case1.sh start
+        > AUTO_SCALING=ON PASSES=5 JOB_COUNT=10 ./run.sh start case1
+        ```
+        Or run the TestCase2 with 5 jobs:
+        ```bash
+        > JOB_COUNT=5 ./run.sh start case2
         ```
     1. Gernerate Experiment Report
         After all the passes are finished, the report will be generated at './out' folder.
+

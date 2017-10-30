@@ -3,7 +3,7 @@ function start() {
     for ((pass=0; pass<$PASSES; pass++))
     do
         echo "Run pass "$pass
-        PASSE_NUM=$pass AUTO_SCALING=$AUTO_SCALING JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME\
+        PASSE_NUM=$pass AUTO_SCALING=$AUTO_SCALING JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME \
             stdbuf -oL nohup python python/main.py run_case1 &> ./out/pass$pass.log &
 
         for ((j=0; j<$JOB_COUNT; j++)) 
