@@ -179,7 +179,26 @@ func TestScaleDryRunScaleDownMoreThanExpected(t *testing.T) {
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 6)
-	assert.Equal(t, -3, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, -3, scaleDryRun(&r, j, 0, true))
+}
+
+func TestScaleDryRunScaleDownToMin(t *testing.T) {
+	r := ClusterResource{
+		CPULimitMilli:     5000,
+		CPURequestMilli:   5000,
+		CPUTotalMilli:     3000,
+		MemoryRequestMega: 1000,
+		MemoryLimitMega:   1000,
+		MemoryTotalMega:   1000,
+		GPULimit:          10,
+		GPURequest:        10,
+		GPUTotal:          10,
+	}
+
+	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
+	assert.Equal(t, -1, scaleDryRun(&r, j, 0, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, -1, true))
+	assert.Equal(t, 0, scaleDryRun(&r, j, -2, true))
 }
 
 func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
@@ -196,7 +215,7 @@ func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
-	assert.Equal(t, -1, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, -1, scaleDryRun(&r, j, 0, true))
 }
 
 func TestScaleDryRunNoMem(t *testing.T) {
