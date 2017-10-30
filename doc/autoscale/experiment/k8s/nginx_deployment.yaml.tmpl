@@ -1,0 +1,25 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: <nginx-replicas>
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: registry.baidu.com/paddlepaddle/nginx:1.7.9
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "3"
+            memory: "3Gi"
+          requests:
+            cpu: "3"
+            memory: "3Gi"
+      imagePullSecrets:
+      - name: job-registry-secret

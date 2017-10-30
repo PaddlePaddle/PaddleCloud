@@ -3,7 +3,6 @@ from kubernetes.client.rest import ApiException
 from pprint import pprint
 import time
 
-
 JOB_STATUS_NOT_EXISTS = 0
 JOB_STATUS_PENDING = 1
 JOB_STATUS_RUNNING = 2
@@ -144,3 +143,12 @@ class Collector(object):
             job.status = JOB_STATUS_FINISHED
         elif 'Pending' in phases:
             job.status = JOB_STATUS_PENDING
+
+    def get_pods(self, labels):
+        pods = 0
+        for item in self._pods:
+            if item.metadata.labels:
+                for k, v in item.metadata.labels.items():
+                    if k in labels and labels[v] == v:
+                        pods += 1
+        return pods

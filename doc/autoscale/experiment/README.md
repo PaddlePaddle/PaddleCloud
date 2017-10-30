@@ -62,6 +62,7 @@ In the general cluster, we will deploy some online serving such as Nginx cluster
 - Experiment metrics
     1. CPU utils for the cluster(requests / total).
     1. Trainer Pods count.
+    1. Nginx Pods count.
 - Experiment result example
 
 TIME|RUNNING_TRAINERS|NGINX_PODS|CPU_UTIL

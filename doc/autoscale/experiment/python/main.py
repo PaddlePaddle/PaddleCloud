@@ -3,10 +3,10 @@ import collector
 import sys
 import utils
 import os
-
-JOB_NAME_PREFIX='mnist'
+from case_two_report import CaseTwoItem, CaseTwoReport
 COLLECTION_INTERVAL=5
 REPORT_SEPARATOR="|"
+JOB_NAME = os.getenv("JOB_NAME", "mnist")
 JOB_COUNT = int(os.getenv("JOB_COUNT", 1))
 PASSES = int(os.getenv("PASSES", 1))
 PASSE_NUM = int(os.getenv("PASSE_NUM", 1))
@@ -39,12 +39,12 @@ def load_stat_info_from_file(fn):
         return StatInfo(d[0], d[1], d[2], d[3].split(','), d[4])
 
 def generate_report():
-    stats = [load_stat_info_from_file('./out/%s-pass%d' %(JOB_NAME_PREFIX, i) )\
+    stats = [load_stat_info_from_file('./out/%s-pass%d' %(JOB_NAME, i) )\
         for i in xrange(PASSES)]
     avg_pending_time = 0
     avg_running_time = 0
     avg_cpu_utils = 0.0
-    with open('./out/%s.csv'%JOB_NAME_PREFIX, 'w') as f:
+    with open('./out/%s.csv'%JOB_NAME, 'w') as f:
         f.write(REPORT_SEPARATOR.join(['PASS', 'AVG_RUNNINT_TIME', \
             'AVG_PENDING_TIME', 'JOB_RUNNING_TIME', 'CPU_UTILS']) + '\n')
 
@@ -61,7 +61,7 @@ def generate_report():
 
         
 def wait_for_finished(c):
-    jobs = utils.get_jobs(JOB_NAME_PREFIX, JOB_COUNT)
+    jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
     while True:
         c.run_once()
         for job in jobs:
@@ -82,13 +82,50 @@ def wait_for_cleaned(c):
         print 'Waiting for all the jobs cleaned for 5 seconds...'
         time.sleep(5)
 
+def case2(c):
+    report = CaseTwoReport()
+    avg_cpu_utils = 0.0
+    jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
+    if DETAILS == 'ON':
+        print '|'.join(report.title())
+    times = 0
+    while True:
+        c.run_once()
+        avg_cpu_utils += float(c.cpu_utils())
+        trainers = 0
+        for job in jobs:
+            c.update_job(job, times)
+            trainers += job.parallelism
+
+        nginx_pods = c.get_pods({'app':'nginx'})
+
+        item = CaseTwoItem(times, nginx_pods, trainers, c.cpu_utils())
+
+        if DETAILS == "ON":
+            print '|'.join(item.values())
+
+        report.append_item(item)
+
+        if utils.is_jobs_finished(jobs):
+            # generate the report
+            try:
+                os.stat('./out')
+            except:
+                os.mkdir('./out')
+            with open('./out/%s.csv') as f:
+                report.to_csv(f)
+            break
+
+        time.sleep(COLLECTION_INTERVAL)
+        times += COLLECTION_INTERVAL
+
 def case1(c):
     avg_running_time = 0
     avg_pending_time = 0
     avg_cpu_utils = 0.0
     if DETAILS == "ON":
         print 'Times\tName\tStatus\tCPU\tGPU\tPARALLELISM'
-    jobs = utils.get_jobs(JOB_NAME_PREFIX, JOB_COUNT)
+    jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
 
     times = 0
     while True:
@@ -114,7 +151,7 @@ def case1(c):
             except:
                 os.mkdir('./out')
 
-            with open('./out/%s-pass%d' % (JOB_NAME_PREFIX, PASSE_NUM), 'w') as f:
+            with open('./out/%s-pass%d' % (JOB_NAME, PASSE_NUM), 'w') as f:
                 f.write(stat.to_str())
             break
         time.sleep(COLLECTION_INTERVAL)
@@ -131,6 +168,8 @@ if __name__=="__main__":
     c = collector.Collector()
     if sys.argv[1] == 'run_case1':
         case1(c)
+    elif sys.argv[1] == 'run_case2':
+        case2(c)
     elif sys.argv[1] == 'wait_for_finished':
         wait_for_finished(c)
     elif sys.argv[1] == 'wait_for_cleaned':
