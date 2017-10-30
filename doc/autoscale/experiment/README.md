@@ -28,61 +28,131 @@ How the effectiveness are measured.
 
 ## Environment Requirement
 
-- Kubernetes cluster with 1.6.x installed.
+## Environment Enviroment
+
+- Kubernetes v1.6 cluster with 133 nodes.
 - PaddleCloud with latest develop branch installed.
-- At least 4 kubernetes nodes, each node should have 2 GPU cards at least.
-- Dataset prepared to multiple files with the RecordIO format.
+- We will train the [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) model in the experiment.
 
 
-## Before Starting The Experiment
+## Experiment Metric
 
-- All the demos in [book](https://github.com/PaddlePaddle/book) should be tested.
-- We will use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as the training job for the demo.
-- We have 240 CPU cores and 80 GPU cards totally.
+- Cluster overall resource utilization.
+- Average job running time.
+- Average job pending time.
+
 
 ## Test Cases
 
-### Comparing the auto-scaling training job and the general training job
+### Autoscaling on the Special Purpose Cluster
 
-- Submit the general training job 
-    1. Submit a job(job-A), which requests 100 trainer Pods(1 CPU cores per Pod), 2 pservers and 1 master.
-    1. Submit another job(job-B), which requests 200 trainer Pods(1 CPU cores per Pod), 2 pservers and 1 master.
-    1. The job-B will be the pending status only if job-A finished because there are not enough CPU cores for the requests.
-- Submit the auto-scaling training job
-    1. Submit a job(job-A), which requests 100 trainer Pods(1 CPU core per Pod, min-instances is 50, max-instances is 500), 2 pservers and 1 master, And then job-A will be scaled up to immediately to use the maximum free resources(max 500 trainer Pods).
-    1. Submit another job(job-B), which requests 200 trainer Pods(1 CPU core per Pod, min-instances is 50, max-instances is 200), 2 pservers and 1 master.
-    1. Job-A will be scaled down and job-A and job-B will run in the cluster at the same time, and they will use the maximum free resources.
+All the job in the cluster will be training jobs (hence the name
+special purpose cluster).
 
-- Experiment metrics
-    1. Compare the **CPU utils** with auto-scaling training job and general training job.
-    1. Compare the **training time** for each job.
-    1. Compare the **average waiting time** for each job. 
+#### Variable
 
-- Experiment result example:
+- Autoscaling ON/OFF.
 
-metrics |  auto-scaling training job| general training job
--- | -- | --
-average running time | 6h | 8h
-average pending time | 0 | 2h
-CPU utils | 100% | 60%
+#### Invariant
 
-### Hybrid Deployment with Online Serving and Offline Training Job
+- The number of jobs.
+- The configuration of each job.
+- The submission time for each job.
 
-In the general cluster, we will deploy some online serving such as Nginx cluster, Dataset serving such as MySQL and some offline training Job. we will deploy some Nginx Pods to simulate the production environment. 
+#### Experiment Steps
 
-- Deploy Nginx Pods in the cluster, configure HPA on Nginx Deployment.
-- Submit a training Job, which requests 100 trainer Pods(2 pservers, 1 master, min-instance=2, max-instance=100), the trainers will be scaled immediately to use the maximum free resources in the cluster.
-- Increase the QPS of the Nginx serving, the Nginx pods count will be scaled up by HPA, and the training job will be scaled down by TrainingJob controller.
-- Experiment metrics
-    1. CPU utils for the cluster(requests / total).
-    1. Trainer Pods count.
-- Experiment result example
+1. With autoscaling turned off, submit the training jobs over
+   predefined submission delay between each job.
+1. With autoscaling turned on, submit the training jobs over
+   predefined submission delay between each job.
 
-metrics | QPS(1w) | QPS(10w) | QPS(50w)
--- | -- | -- | --
-Trainer Pods | 100 | 80 | 50
-Nginx Pods | 80 | 100 | 150
-CPU utils| 100% | 100% | 100%
+
+#### Experiment Result Example:
+
+- Autoscaling OFF
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+- Autoscaling ON
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+
+### Autoscaling on the General Purpose Cluster
+
+Hybrid deployment with online serving and offline training Job (hence
+the name general purpose cluster). We will deploy PaddlePaddle
+training job and [Nginx](https://www.nginx.com/resources/wiki/) web
+serving together.
+
+#### Variable
+
+- The number of Nginx instances, changing over time, simulating the
+  real world traffic load distribution over time.
+- Autoscaling ON/OFF.
+
+#### Invariant
+
+- The number of training jobs.
+- The configuration of each training job.
+- The configuration of each Nginx job.
+- The submission time for each training job.
+
+#### Experiment Steps
+
+1. Start `N` Nginx instances to simulate the number of nginx instances
+   required for the peak time load.
+
+1. Start the training jobs.
+
+1. Decrease the Nginx instances count of `N` to `M` over time, to
+   simulate the Nginx load decreases, requiring fewer nginx instances.
+
+1. Increase the Nginx instances count of `M` to `N` over time, to
+   simulate the fully Nginx load cycle.
+
+#### Experiment Result Example:
+
+- Autoscaling OFF
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+	Time | NGINX COUNT | TRAINER COUNT | CLUSTER CPU UTILS
+	-- | -- | -- | --
+	0  | 100 | 50 | 100
+	5  | 90  | 50 | 90
+	10 | 80  | 50 | 80
+	15 | 90  | 50 | 90
+	20 | 100 | 50 | 100
+
+- Autoscaling ON
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+	Time | NGINX COUNT | TRAINER COUNT | CLUSTER CPU UTILS
+	-- | -- | -- | --
+	0  | 100 | 50 | 100
+	5  | 90  | 55 | 100
+	10 | 80  | 60 | 100
+	15 | 90  | 55 | 100
+	20 | 100 | 50 | 100
+
 
 ## Reproduce the experiment
 
