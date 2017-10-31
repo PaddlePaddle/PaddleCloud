@@ -11,24 +11,32 @@ function usage() {
 }
 
 function start() {
-    PASSE_NUM=0 AUTO_SCALING=ON JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME\
-            stdbuf -oL nohup python python/main.py run_case2 &> ./out/${JOB_NAME}_case2.log &
     # submit Nginx deployment
-
     cat k8s/nginx_deployment.yaml.tmpl | sed "s/<nginx-replicas>/$NGINX_REPLICAS/g" | kubectl create -f -
+    sleep 5
+    PASSE_NUM=0 AUTO_SCALING=$AUTO_SCALING JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME\
+            stdbuf -oL nohup python python/main.py run_case2 &> ./out/${JOB_NAME}-case2.log &
 
     # submit the auto-scaling training jobs
     for ((j=0; j<$JOB_COUNT; j++))
     do
-        submit_ft_job $JOB_NAME$j 5
-        cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$j/g" | kubectl create -f - 
-        sleep 5
+        if [ "$AUTO_SCALING" == "ON" ]
+        then
+            submit_ft_job $JOB_NAME$j 15
+            cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$j/g" | kubectl create -f - 
+        else
+            submit_ft_job $JOB_NAME$j 15
+        fi
     sleep 5
     done
-    kubectl scale deployment/nginx --replicas=100
-    sleep 60
+    kubectl scale deployment/nginx --replicas=400
+    sleep 30
     kubectl scale deployment/nginx --replicas=200
-    sleep 60
+    sleep 30
+    kubectl scale deployment/nginx --replicas=100
+    sleep 30
+    kubectl scale deployment/nginx --replicas=200
+    sleep 30
     kubectl scale deployment/nginx --replicas=400
     # waiting for all jobs finished
     python python/main.py wait_for_finished
@@ -39,13 +47,15 @@ function start() {
     # waiting for the data collector exit
     while true
     do
-        FILE=./out/$JOB_NAME.csv
+        FILE=./out/$JOB_NAME-case1-pass0.csv
         if [ ! -f $FILE ]; then
             echo "waiting for collector exit, generated file " $FILE
             sleep 5
+            continue
         fi
         break
-    done 
+    done
+    python python/main.py merge_case1_reports
 }
 
 function stop() {
@@ -53,7 +63,10 @@ function stop() {
     do
         echo "kill" $JOB_NAME$i
         paddlecloud kill $JOB_NAME$i
-        cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$i/g" | kubectl delete -f - 
+        if [ "$AUTO_SCALING" == "ON" ]
+        then
+            cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$i/g" | kubectl delete -f - 
+        fi
     done
     cat k8s/nginx_deployment.yaml.tmpl | sed "s/<nginx_replicas>/$NGINX_REPLICAS/g" | kubectl delete -f -
 }

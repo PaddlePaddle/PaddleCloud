@@ -4,8 +4,8 @@ function start() {
     do
         echo "Run pass "$pass
         PASSE_NUM=$pass AUTO_SCALING=$AUTO_SCALING JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME \
-            stdbuf -oL nohup python python/main.py run_case1 &> ./out/pass$pass.log &
-
+            stdbuf -oL nohup python python/main.py run_case1 &> ./out/${JOB_NAME}-case1-pass$pass.log &
+        sleep 5
         for ((j=0; j<$JOB_COUNT; j++)) 
         do 
             if [ "$AUTO_SCALING" == "ON" ]
@@ -13,7 +13,7 @@ function start() {
                 submit_ft_job $JOB_NAME$j 5
                 cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$j/g" | kubectl create -f -
             else
-                submit_ft_job $JOB_NAME$j 20
+                submit_ft_job $JOB_NAME$j 30
             fi
             sleep 5
         done
@@ -26,7 +26,7 @@ function start() {
         # waiting for the data collector exit
         while true
         do
-            FILE=./out/$JOB_NAME-pass$pass
+            FILE=./out/${JOB_NAME}-case1-pass$pass.csv
             if [ ! -f $FILE ]; then
                 echo "waiting for collector exit, generated file " $FILE
                 sleep 5
@@ -34,8 +34,8 @@ function start() {
             break
         done
     done
-    python python/main.py generate_report
-    rm -f ./out/%JOB_NAME-pass*
+    python python/main.py merge_case1_reports
+    rm -f ./out/${JOB_NAME}-pass*
 }
 
 function stop() {

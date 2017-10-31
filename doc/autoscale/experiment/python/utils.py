@@ -1,5 +1,5 @@
 import collector
-
+REPORT_SEPARATOR="|"
 def is_jobs_finished(jobs):
     for job in jobs:
         if job.status != collector.JOB_STATUS_FINISHED:

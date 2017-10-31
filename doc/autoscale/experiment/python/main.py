@@ -3,9 +3,10 @@ import collector
 import sys
 import utils
 import os
-from case_two_report import CaseTwoItem, CaseTwoReport
-COLLECTION_INTERVAL=5
-REPORT_SEPARATOR="|"
+from case1 import CaseOneReport, merge_case_one_reports
+from case2 import CaseTwoItem, CaseTwoReport
+COLLECTION_INTERVAL=2
+
 JOB_NAME = os.getenv("JOB_NAME", "mnist")
 JOB_COUNT = int(os.getenv("JOB_COUNT", 1))
 PASSES = int(os.getenv("PASSES", 1))
@@ -26,38 +27,12 @@ class StatInfo(object):
         self._cpu_utils = cpu_utils
 
     def to_str(self):
-        return REPORT_SEPARATOR.join([
+        return utils.REPORT_SEPARATOR.join([
             str(self._pass_num),
             str(self._average_runnint_time),
             str(self._average_pending_time),
             ','.join(self._jobs_running_time),
             str(self._cpu_utils)])
-
-def load_stat_info_from_file(fn):
-    with open(fn, 'r') as f:
-        d = f.read().strip().split(REPORT_SEPARATOR)
-        return StatInfo(d[0], d[1], d[2], d[3].split(','), d[4])
-
-def generate_report():
-    stats = [load_stat_info_from_file('./out/%s-pass%d' %(JOB_NAME, i) )\
-        for i in xrange(PASSES)]
-    avg_pending_time = 0
-    avg_running_time = 0
-    avg_cpu_utils = 0.0
-    with open('./out/%s.csv'%JOB_NAME, 'w') as f:
-        f.write(REPORT_SEPARATOR.join(['PASS', 'AVG_RUNNINT_TIME', \
-            'AVG_PENDING_TIME', 'JOB_RUNNING_TIME', 'CPU_UTILS']) + '\n')
-
-        for stat in stats:
-            f.write(stat.to_str() + '\n')
-            avg_pending_time += int(stat._average_pending_time)
-            avg_running_time += int(stat._average_runnint_time)
-            avg_cpu_utils += float(stat._cpu_utils)
-        avg_pending_time = int(avg_pending_time / len(stats))
-        avg_running_time = int(avg_running_time / len(stats))
-        avg_cpu_utils = avg_cpu_utils / len(stats)
-        f.write(REPORT_SEPARATOR.join(['AVG', str(avg_running_time), \
-            str(avg_pending_time), 'N/A', '%0.2f' % avg_cpu_utils]) + '\n')
 
         
 def wait_for_finished(c):
@@ -82,67 +57,95 @@ def wait_for_cleaned(c):
         print 'Waiting for all the jobs cleaned for 5 seconds...'
         time.sleep(5)
 
-def case2(c):
-    report = CaseTwoReport()
-    avg_cpu_utils = 0.0
+def run_case2(c):
+    r1 = CaseOneReport()
+    r2 = CaseTwoReport()
     jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
-    if DETAILS == 'ON':
-        print '|'.join(report.title())
-    times = 0
+    start = int(time.time())
+    if DETAILS:
+        print utils.REPORT_SEPARATOR.join(
+            ['TIME OFFSET', 
+            'JOB NAME:STATUS:PARALLELISM',
+            'NGINX PODS',
+            'CLUSTER CPU UTILS', 
+            'CLUSTER GPU UTILS']) 
     while True:
         c.run_once()
-        avg_cpu_utils += float(c.cpu_utils())
+        ts = int(time.time()) - start
         for job in jobs:
-            c.update_job(job, times)
+            c.update_job(job, ts)
         running_trainers = c.get_running_trainers()
-        nginx_pods = c.get_pods({'app':'nginx'})
+        nginx_pods = c.get_running_pods({'app':'nginx'})
 
-        item = CaseTwoItem(times, nginx_pods, running_trainers, c.cpu_utils())
+        item = CaseTwoItem(ts, nginx_pods, running_trainers, c)
 
-        if DETAILS == "ON":
-            print '|'.join(item.values())
-
-        report.append_item(item)
+        if DETAILS:
+            jobs_info = []
+            for job in jobs:
+                jobs_info.append(':'.join([
+                    job.name,
+                    job.status_str(),
+                    str(job.parallelism)
+                ]))
+            print utils.REPORT_SEPARATOR.join([
+                str(ts),
+                ','.join(jobs_info),
+                str(nginx_pods),
+                c.cpu_utils(),
+                c.gpu_utils()])
+        
+        r1.update_cluster_utils(c)
+        r2.append_item(item)
 
         if utils.is_jobs_finished(jobs):
-            with open('./out/%s.csv') as f:
-                report.to_csv(f)
+            print 'all jobs finihsed'
+            r1.update_jobs(jobs)
+            r1.run()
+            r2.to_csv('./out/%s-case2-result.csv' % JOB_NAME)
+            r1.to_csv('./out/%s-case1-pass%d.csv' % (JOB_NAME, PASSE_NUM))
             break
 
         time.sleep(COLLECTION_INTERVAL)
-        times += COLLECTION_INTERVAL
 
-def case1(c):
-    avg_running_time = 0
-    avg_pending_time = 0
-    avg_cpu_utils = 0.0
-    if DETAILS == "ON":
-        print 'Times\tName\tStatus\tCPU\tGPU\tPARALLELISM'
+def run_case1(c):
+    report = CaseOneReport()
     jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
+    start = int(time.time())
+    if DETAILS:
+        print utils.REPORT_SEPARATOR.join(
+            ['TIME OFFSET', 
+            'JOB NAME:STATUS:PARALLELISM', 
+            'CLUSTER CPU UTILS', 
+            'CLUSTER GPU UTILS']) 
 
-    times = 0
     while True:
+        ts = int(time.time()) - start
         c.run_once()
-        avg_cpu_utils += float(c.cpu_utils())
         for job in jobs:
-            c.update_job(job, times)
-            if DETAILS == "ON": 
-                print '%d\t%s\t%s\t%s\t%s\t%d' % (times, \
-                    job.name, job.status_str(), c.cpu_utils(), c.gpu_utils(),\
-                    job.parallelism)
+            c.update_job(job, ts)
+        report.update_cluster_utils(c) 
+
+        if DETAILS:
+            jobs_info = []
+            for job in jobs:
+                jobs_info.append(':'.join([
+                    job.name,
+                    job.status_str(),
+                    str(job.parallelism)
+                ]))
+            print utils.REPORT_SEPARATOR.join([
+                str(ts),
+                ','.join(jobs_info),
+                c.cpu_utils(),
+                c.gpu_utils()])
+
         if utils.is_jobs_finished(jobs):
-            stat = StatInfo(
-                PASSE_NUM,
-                utils.avg_running_time(jobs),
-                utils.avg_pending_time(jobs),
-                [str(job.end_time - job.start_time) for job in jobs],
-                '%0.2f' % ((avg_cpu_utils) / ((times / COLLECTION_INTERVAL) + 1))
-            )
-            with open('./out/%s-pass%d' % (JOB_NAME, PASSE_NUM), 'w') as f:
-                f.write(stat.to_str())
+            report.update_jobs(jobs)
+            report.run()
+            report.to_csv('./out/%s-case1-pass%d.csv' % (JOB_NAME, PASSE_NUM))
             break
+
         time.sleep(COLLECTION_INTERVAL)
-        times += COLLECTION_INTERVAL
 
 def usage():
     print 'Usage python main.py [run_case1|run_case2|wait_for_finished|wait_for_cleaned]'
@@ -154,14 +157,14 @@ if __name__=="__main__":
 
     c = collector.Collector()
     if sys.argv[1] == 'run_case1':
-        case1(c)
+        run_case1(c)
     elif sys.argv[1] == 'run_case2':
-        case2(c)
+        run_case2(c)
     elif sys.argv[1] == 'wait_for_finished':
         wait_for_finished(c)
     elif sys.argv[1] == 'wait_for_cleaned':
         wait_for_cleaned(c)
-    elif sys.argv[1] == 'generate_report':
-        generate_report()
+    elif sys.argv[1] == 'merge_case1_reports':
+        merge_case_one_reports(JOB_NAME, PASSES)
     else:
         usage()

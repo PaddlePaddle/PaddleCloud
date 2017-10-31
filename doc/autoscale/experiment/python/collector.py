@@ -140,7 +140,9 @@ class Collector(object):
         job.parallelism = parallelism
 
         if len(phases) == 0:
-            # The job has not been submited
+            if job.start_time != -1:
+                job.status = JOB_STATUS_FINISHED
+                job.end_time = times
             return
         elif 'Running'  in phases:
             if job.start_time == -1:
@@ -154,11 +156,13 @@ class Collector(object):
         elif 'Pending' in phases:
             job.status = JOB_STATUS_PENDING
 
-    def get_pods(self, labels):
+    def get_running_pods(self, labels):
         pods = 0
         for item in self._pods:
             if item.metadata.labels:
                 for k, v in item.metadata.labels.items():
-                    if k in labels and labels[k] == v:
+                    if k in labels and labels[k] == v and \
+                            item.status.phase == 'Running':
                         pods += 1
+
         return pods
