@@ -2,25 +2,25 @@
 
 ## Purpose
 
-To verify effectiveness of PaddlePaddle's fault-tolerance and auto-scaling mechanism.
+To verify the effectiveness of PaddlePaddle's fault-tolerance and auto-scaling mechanism.
 
 ## Metrics
 
-How the effectiveness are measured.
+How the effectiveness is measured.
 
 1. Cluster computing resource overall utilization.
     - the higher the better.
-    - higher utilization means less resource are idle.
+    - higher utilization means less resource is idle.
 1. Task average pending time.
     - the less the better.
     - the less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
-    - This is a common pain point of researchers with internal cloud.
+    - This is a common pain point of researchers with the internal cloud.
 1. Task average execution time.
     - the less the better.
     - average execution time is another way of measuring computing resource utilization. the less execution time, the higher overall utilization.
-    - average execution time is also the way of measuring effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
-1. Quality of service with Hybrid cluster
-    - Check if the Machine learning process will yield resources to more important online services when QPS is getting intensive.
+    - average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
+1. Quality of service with general purpose cluster
+    - Check if the Machine learning process will yield resources to more important online services when the load is getting intensive.
 
 ## Our setup
 
@@ -173,21 +173,20 @@ serving together. This case is a very typical scenario for large enterprises and
     1. Gernerate Experiment Report
         After all the passes are finished, the report will generated at './out' folder.
 
-
 ## Conclusions
 
-### Resource utilization increased in both cases
+### Resource utilization
 
-Utilization increased by XX% in case one, and XX% in case two
+TBD
 
-### Average Pending time reduced in both cases
+### Average Pending time
 
-XX% in case one and XX% in case two.
+TBD
 
-### Average execution time reduced in both cases
+### Average execution time
 
-XX% in case one and XX% in case two.
+TBD
 
-### Improved the service quality with Hybrid cloud
+### Improved the service quality with general purpose cluster
 
-As shown in test case two, Paddlepaddle yields resource to more important online services when QPS is get intensive.
+As shown in test case two, PaddlePaddle yields resource to more important online services when the load is getting intensive.
