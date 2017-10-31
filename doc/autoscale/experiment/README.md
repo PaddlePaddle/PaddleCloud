@@ -9,16 +9,16 @@ To verify the effectiveness of PaddlePaddle's fault-tolerance and auto-scaling m
 How the effectiveness is measured.
 
 1. Cluster computing resource overall utilization.
-    - the higher the better.
-    - higher utilization means less resource is idle.
+    - The higher the better.
+    - Higher utilization means less resource is idle.
 1. Task average pending time.
-    - the less the better.
-    - the less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
+    - The less the better.
+    - The less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
     - This is a common pain point of researchers with the internal cloud.
 1. Task average execution time.
-    - the less the better.
-    - average execution time is another way of measuring computing resource utilization. the less execution time, the higher overall utilization.
-    - average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
+    - The less the better in general.
+    - However, the average execution time is bound to increase due to prioritizing production jobs like web services, database, etc. In this case, we would say the less the average job running time increases, the better the scaler performances.
+    - Average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
 1. Quality of service with general purpose cluster
     - Check if the Machine learning process will yield resources to more important online services when the load is getting intensive.
 
