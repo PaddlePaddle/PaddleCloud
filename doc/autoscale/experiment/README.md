@@ -1,26 +1,40 @@
 # Auto-scaling Experiment Design
 
+## Purpose
 
-## Environment Enviroment
+To verify the effectiveness of PaddlePaddle's fault-tolerance and auto-scaling mechanism.
 
-- Kubernetes v1.6 cluster with 133 nodes.
+## Metrics
+
+How the effectiveness is measured.
+
+1. Cluster computing resource overall utilization.
+    - The higher the better.
+    - Higher utilization means less resource is idle. Autoscaling intended to maximize the overall cluster resource(CPU, GPU, memory) usage by ensuring resource for production level jobs/services, then fairly scale jobs that are scalable to use the resource left in the cluster.
+1. Task average pending time.
+    - The less the better.
+    - The less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
+    - This is a common pain point of researchers with the internal cloud.
+1. Task average execution time.
+    - The less the better in general.
+    - However, the average execution time is bound to increase due to prioritizing production jobs/services. In this case, we would say the less the average job running time increases, the better the scaler performances.
+    - Average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
+1. Quality of service with general purpose cluster
+    - Check if the Machine learning process will yield resources to more important online services when the load is getting intensive.
+
+## Our setup
+
+- Kubernetes cluster with 1.6.x installed.
 - PaddleCloud with latest develop branch installed.
-- We will train the [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) model in the experiment.
-
-
-## Experiment Metric
-
-- Cluster overall resource utilization.
-- Average job running time.
-- Average job pending time.
-
+- 133 physical nodes.
+- Use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as benchmark training job.
 
 ## Test Cases
 
 ### Autoscaling on the Special Purpose Cluster
 
 All the job in the cluster will be training jobs (hence the name
-special purpose cluster).
+special purpose cluster). This case is a very typical scenario for research institutes.
 
 #### Variable
 
@@ -64,7 +78,7 @@ special purpose cluster).
 Hybrid deployment with online serving and offline training Job (hence
 the name general purpose cluster). We will deploy PaddlePaddle
 training job and [Nginx](https://www.nginx.com/resources/wiki/) web
-serving together.
+serving together. This case is a very typical scenario for large enterprises and Internet companies.
 
 #### Variable
 
@@ -158,3 +172,21 @@ serving together.
         ```
     1. Gernerate Experiment Report
         After all the passes are finished, the report will generated at './out' folder.
+
+## Conclusions
+
+### Resource utilization
+
+TBD
+
+### Average Pending time
+
+TBD
+
+### Average execution time
+
+TBD
+
+### Improved the service quality with general purpose cluster
+
+As shown in test case two, PaddlePaddle yields resource to more important online services when the load is getting intensive.
