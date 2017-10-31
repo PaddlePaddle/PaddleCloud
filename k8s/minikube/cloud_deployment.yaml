@@ -12,30 +12,10 @@ spec:
       volumes:
       - name: cert-volume
         hostPath:
-          path: /Users/gongwb/pcloud/data/certs
-      - name: mysql-data
-        hostPath:
-          path: /Users/gongwb/pcloud/data/mysql
+          path: /Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/certs
       - name: settings
         hostPath:
-          path: /Users/gongwb/pcloud/data/settings.py
-      #- name: email-tmp-msg:
-      #  hostPath:
-      #    path: /home/pcloud/templates/email_confirmation_message.txt
-      #- name: email-tmp-subj:
-      #  hostPath:
-      #    path: /home/pcloud/templates/email_confirmation_subject.txt
-      #- name: homepage
-      #  hostPath:
-      #    path: /home/pcloud/templates/homepage.html
-      # - name: data-storage
-      #   cephfs:
-      #     name: cephfs
-      #     monitors: ["172.19.32.166:6789"]
-      #     path: "/"
-      #     user: "admin"
-      #     secretRef:
-      #       name: ceph-secret
+          path: /Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/settings.py
       containers:
       - name: paddle-cloud
         imagePullPolicy: Always
@@ -45,14 +25,6 @@ spec:
           mountPath: /certs
         - name: settings
           mountPath: /pcloud/paddlecloud/settings.py
-        # - name: data-storage
-        #   mountPath: /pfs
-        #- name: homepage
-        #  mountPath: /pcloud/paddlecloud/templates/homepage.html
-        #- name: email-tmp-msg:
-        #  mountPath: /pcloud/notebook/templates/account/email/email_confirmation_message.txt
-        #- name: email-tmp-subj:
-        #  mountPath: /pcloud/notebook/templates/account/email/email_confirmation_subject.txt
         ports:
         - containerPort: 8000
         env:
@@ -62,14 +34,5 @@ spec:
               fieldPath: status.podIP
         - name: PORT
           value: "8000"
-#        livenessProbe:
-#         httpGet:
-#           path: /healthz/
-#           port: 8000
-#           httpHeaders:
-#           - name: User-Agent
-#             value: kubernetes-health-check
-#         initialDelaySeconds: 3
-#         periodSeconds: 5
       nodeSelector:
         kubernetes.io/hostname: minikube
