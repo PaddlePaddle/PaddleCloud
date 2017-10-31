@@ -137,6 +137,8 @@ class JobsView(APIView):
             volumes = [],
             envs = envs,
             fault_tolerant = obj.get("faulttolerant", False),
+            min_instance = obj.get("min_instance", 1),
+            max_instance = obj.get("max_instance", 1),
             etcd_image = settings.ETCD_IMAGE,
             dc = dc
         )

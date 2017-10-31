@@ -192,7 +192,7 @@ def main():
             with open('params_pass_%d.tar' % event.pass_id, 'w') as f:
                 parameters.to_tar(f)
 
-            result = trainer.test(reader=reader, feeding=feeding)
+            result = trainer.test(reader=paddle.batch(conll05.test(), 10), feeding=feeding)
             print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
 
     trainer.train(
@@ -216,6 +216,7 @@ def main():
         output_layer=predict,
         parameters=parameters,
         input=test_data,
+        feeding=feeding,
         field='id')
     assert len(probs) == len(test_data[0][0])
     labels_reverse = {}
