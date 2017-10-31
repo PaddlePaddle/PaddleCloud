@@ -18,7 +18,7 @@ spec:
           path: "/Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/users"
       containers:
       - name: pfs
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         image: paddlepaddle/pfsserver:latest
         env:
           - name: CURRENT_DATACENTER

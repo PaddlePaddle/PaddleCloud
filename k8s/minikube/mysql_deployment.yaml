@@ -16,6 +16,7 @@ spec:
       containers:
       - name: mysql
         image: mysql:5.7
+        imagePullPolicy: IfNotPresent
         #volumeMounts:
            #- name: mysql-data
            #mountPath: /var/lib/mysql2
