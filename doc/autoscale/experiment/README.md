@@ -10,14 +10,14 @@ How the effectiveness is measured.
 
 1. Cluster computing resource overall utilization.
     - The higher the better.
-    - Higher utilization means less resource is idle.
+    - Higher utilization means less resource is idle. Autoscaling intended to maximize the overall cluster resource(CPU, GPU, memory) usage by ensuring resource for production level jobs/services, then fairly scale jobs that are scalable to use the resource left in the cluster.
 1. Task average pending time.
     - The less the better.
     - The less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
     - This is a common pain point of researchers with the internal cloud.
 1. Task average execution time.
     - The less the better in general.
-    - However, the average execution time is bound to increase due to prioritizing production jobs like web services, database, etc. In this case, we would say the less the average job running time increases, the better the scaler performances.
+    - However, the average execution time is bound to increase due to prioritizing production jobs/services. In this case, we would say the less the average job running time increases, the better the scaler performances.
     - Average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
 1. Quality of service with general purpose cluster
     - Check if the Machine learning process will yield resources to more important online services when the load is getting intensive.
