@@ -146,6 +146,7 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 	}
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, true), "should not scale up if the scale down parameter is true")
 }
 
 func TestScaleDryRunNoMoreGPU(t *testing.T) {
@@ -179,7 +180,10 @@ func TestScaleDryRunScaleDownMoreThanExpected(t *testing.T) {
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 6)
-	assert.Equal(t, -3, scaleDryRun(&r, j, 0, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, 0, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, -1, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, -2, true))
+	assert.Equal(t, 0, scaleDryRun(&r, j, -3, true))
 }
 
 func TestScaleDryRunScaleDownToMin(t *testing.T) {
@@ -216,6 +220,7 @@ func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
 	assert.Equal(t, -1, scaleDryRun(&r, j, 0, true))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, false), "should not scale down if the scale down parameter is false")
 }
 
 func TestScaleDryRunNoMem(t *testing.T) {
