@@ -1,75 +1,145 @@
 # Auto-scaling Experiment Design
 
-## Environment Requirement
+## Purpose
+
+To verify the effectiveness of PaddlePaddle's fault-tolerance and auto-scaling mechanism.
+
+## Metrics
+
+How the effectiveness is measured.
+
+1. Cluster computing resource overall utilization.
+    - The higher the better.
+    - Higher utilization means less resource is idle. Autoscaling intended to maximize the overall cluster resource(CPU, GPU, memory) usage by ensuring resource for production level jobs/services, then fairly scale jobs that are scalable to use the resource left in the cluster.
+1. Task average pending time.
+    - The less the better.
+    - The less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
+    - This is a common pain point of researchers with the internal cloud.
+1. Task average execution time.
+    - The less the better in general.
+    - However, the average execution time is bound to increase due to prioritizing production jobs/services. In this case, we would say the less the average job running time increases, the better the scaler performances.
+    - Average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
+1. Quality of service with general purpose cluster
+    - Check if the Machine learning process will yield resources to more important online services when the load is getting intensive.
+
+## Our setup
 
 - Kubernetes cluster with 1.6.x installed.
 - PaddleCloud with latest develop branch installed.
-- At least 4 kubernetes nodes, each node should have 2 GPU cards at least.
-- Dataset prepared to multiple files with the RecordIO format.
-
-## Experiment Metric
-
-- Computing resource utils(requests / total) for the cluster.
-- A total number of the pods for all training job.
-
-## Before Starting The Experiment
-
-- All the demos in [book](https://github.com/PaddlePaddle/book) should be tested.
-- We will use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as the training job for the demo.
-- We have 240 CPU cores and 80 GPU cards totally.
+- 133 physical nodes.
+- Use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as benchmark training job.
 
 ## Test Cases
 
-### Compare The Fault-tolerant Training Job with Auto-scaling Or Not
+### Autoscaling on the Special Purpose Cluster
 
-- Submit the fault-tolerant training job 
-    1. Submit 10 jobs, which have 20 parallelisms(requests 10 CPU per Pod), 10 pservers and 1 master.
-    1. The resource which the jobs requested need greater than the resource of the cluster.
-    1. Collect the time series data and the statistical result.
-- Submit the fault-tolerant training job with auto-scaling
-    1. Submit 10 jobs, which have 5 parallelisms(request 10 CPU per Pod), 10 pservers and 1 master.
-    1. Submit the TrainingJob, which have min-instance is 2 and max-instance is 20.
-    1. Collect the time series data and the statistical result.
+All the job in the cluster will be training jobs (hence the name
+special purpose cluster). This case is a very typical scenario for research institutes.
 
-- Experiment metrics
-    1. Compare the **CPU utils** with auto-scaling training job and general training job.
-    1. Compare the **running time** for each job.
-    1. Compare the **average pending time** for the jobs. 
-    1. Compare the **average running time** for the jobs 
+#### Variable
 
-- Experiment result example:
+- Autoscaling ON/OFF.
 
-PASS|AVG_RUNNINT_TIME|AVG_PENDING_TIME|JOB_RUNNING_TIME|CPU_UTILS
---- | --- | --- | --- | ---
-0|124|21|135,125,120,120,115,115,205,100,105,105|56.33
-1|134|26|130,130,125,125,120,120,225,125,125,115|56.60
-2|126|23|135,130,125,120,115,110,185,110,110,120|56.04
-3|160|10|175,210,185,130,125,125,125,220,190,120|42.59
-4|155|23|160,160,150,150,145,140,220,130,135,165|52.49
-AVG|139|20|N/A|52.81
+#### Invariant
 
-### Hybrid Deployment with Online Serving and Offline Training Job
+- The number of jobs.
+- The configuration of each job.
+- The submission time for each job.
 
-In the general cluster, we will deploy some online serving such as Nginx cluster, Dataset serving such as MySQL and some offline training Job. we will deploy some Nginx Pods to simulate the production environment. 
+#### Experiment Steps
 
-- Submit Nginx Deployment and training job
-    1. Deploy Nginx Pods in the cluster with Deployment.
-    1. Submit 5 fault-tolerant training job with auto-scaling, which have 5 parallelisms.
-    1. Submit the TrainingJob, which have min-instance is 2 and max-instance is 20.
-    1. Make the resource of Nginx and the training job full fill the cluster.
-    1. Scale up Nginx Deployment, and the parallelism of training job will be scaled down.
+1. With autoscaling turned off, submit the training jobs over
+   predefined submission delay between each job.
+1. With autoscaling turned on, submit the training jobs over
+   predefined submission delay between each job.
 
-- Experiment metrics
-    1. CPU utils for the cluster(requests / total).
-    1. Trainer Pods count.
-    1. Nginx Pods count.
-- Experiment result example
 
-TIME|RUNNING_TRAINERS|NGINX_PODS|CPU_UTIL
--- | -- | -- | --
-0|200|50|80
-100|150|120|85
-150|100|200|85
+#### Experiment Result Example:
+
+- Autoscaling OFF
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+- Autoscaling ON
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+
+### Autoscaling on the General Purpose Cluster
+
+Hybrid deployment with online serving and offline training Job (hence
+the name general purpose cluster). We will deploy PaddlePaddle
+training job and [Nginx](https://www.nginx.com/resources/wiki/) web
+serving together. This case is a very typical scenario for large enterprises and Internet companies.
+
+#### Variable
+
+- The number of Nginx instances, changing over time, simulating the
+  real world traffic load distribution over time.
+- Autoscaling ON/OFF.
+
+#### Invariant
+
+- The number of training jobs.
+- The configuration of each training job.
+- The configuration of each Nginx job.
+- The submission time for each training job.
+
+#### Experiment Steps
+
+1. Start `N` Nginx instances to simulate the number of nginx instances
+   required for the peak time load.
+
+1. Start the training jobs.
+
+1. Decrease the Nginx instances count of `N` to `M` over time, to
+   simulate the Nginx load decreases, requiring fewer nginx instances.
+
+1. Increase the Nginx instances count of `M` to `N` over time, to
+   simulate the fully Nginx load cycle.
+
+#### Experiment Result Example:
+
+- Autoscaling OFF
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+	Time | NGINX COUNT | TRAINER COUNT | CLUSTER CPU UTILS
+	-- | -- | -- | --
+	0  | 100 | 50 | 100
+	5  | 90  | 50 | 90
+	10 | 80  | 50 | 80
+	15 | 90  | 50 | 90
+	20 | 100 | 50 | 100
+
+- Autoscaling ON
+
+	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
+	--- | --- | --- | --- | ---
+	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
+	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
+	AVG|331|86|N/A|63.55
+
+	Time | NGINX COUNT | TRAINER COUNT | CLUSTER CPU UTILS
+	-- | -- | -- | --
+	0  | 100 | 50 | 100
+	5  | 90  | 55 | 100
+	10 | 80  | 60 | 100
+	15 | 90  | 55 | 100
+	20 | 100 | 50 | 100
+
 
 ## Reproduce the experiment
 
@@ -98,5 +168,22 @@ TIME|RUNNING_TRAINERS|NGINX_PODS|CPU_UTIL
         > JOB_COUNT=5 ./run.sh start case2
         ```
     1. Gernerate Experiment Report
-        After all the passes are finished, the report will be generated at './out' folder.
+        After all the passes are finished, the report will generated at './out' folder.
 
+## Conclusions
+
+### Resource utilization
+
+TBD
+
+### Average Pending time
+
+TBD
+
+### Average execution time
+
+TBD
+
+### Improved the service quality with general purpose cluster
+
+As shown in test case two, PaddlePaddle yields resource to more important online services when the load is getting intensive.
