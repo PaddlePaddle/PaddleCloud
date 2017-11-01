@@ -161,7 +161,7 @@ serving together. This case is a very typical scenario for large enterprises and
         Or submit an auto-scaline training job
         > cd cloud/doc/autoscale/experiment
         ```bash
-        > AUTO_SCALING=ON PASSES=5 JOB_COUNT=10 ./run.sh start case1
+        > AUTO_SCALING=ON PASSES=5 JOB_COUNT=40 ./run.sh start case1
         ```
         Or run the TestCase2 with 5 jobs:
         ```bash
