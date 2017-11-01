@@ -12,7 +12,7 @@ spec:
       volumes:
       - name: mysql-data
         hostPath:
-            path: "/Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/mysql"
+            path: "<yourpath>/mysql"
       containers:
       - name: mysql
         image: mysql:5.7

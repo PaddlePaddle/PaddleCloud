@@ -12,10 +12,10 @@ spec:
       volumes:
       - name: public-data-storage
         hostPath:
-          path: "/Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/public"
+          path: "<yourpath>/public"
       - name: data-storage
         hostPath:
-          path: "/Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/users"
+          path: "<yourpath>/users"
       containers:
       - name: pfs
         imagePullPolicy: IfNotPresent

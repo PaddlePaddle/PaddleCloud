@@ -13,14 +13,15 @@ DATABASES = {
         "NAME": "paddlecloud",
         'USER': 'root',
         'PASSWORD': 'root',
-        'HOST': '127.0.0.1',   # Or an IP Address that your DB is hosted on
+        'HOST': 'paddle-cloud-mysql-service',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
 }
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
-    "cloud.paddlepaddle.org",
+    "cloud.testpcloud.org",
+    "testpcloud.org"
 ]
 
 POD_IP = os.getenv("POD_IP")
@@ -243,14 +244,13 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # secret places to store ca and users keys
-CA_PATH = "/certs/ca.pem"
-CA_KEY_PATH = "/certs/ca-key.pem"
+CA_PATH = "/certs/ca.crt"
+CA_KEY_PATH = "/certs/ca.key"
 USER_CERTS_PATH="/certs"
 
 K8S_HOST = "https://%s:%s" % (os.getenv("KUBERNETES_SERVICE_HOST"),
     os.getenv("KUBERNETES_SERVICE_PORT_HTTPS"))
-# PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
-PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
+PADDLE_BOOK_IMAGE="paddlepaddle/book"
 PADDLE_BOOK_PORT=8888
 
 # ============== Datacenter Storage Config Samples ==============
@@ -272,8 +272,8 @@ PADDLE_BOOK_PORT=8888
 DATACENTERS = {
    "datacenter":{
        "fstype": "hostpath",
-       "host_path": "/tmp/%s/", # host_path % username
-       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
+       "host_path": "<yourpath>/users",
+       "mount_path": "/pfs/%s/home/%s/" # mount_path % ( dc, username )
     }
 }
 #FSTYPE_CEPHFS = "cephfs"
@@ -322,7 +322,7 @@ NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
 ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"
 
 # domains that allow notebook to enter
-NOTEBOOK_DOMAINS=["www.paddlepaddle.org"]
+NOTEBOOK_DOMAINS=["cloud.testpcloud.org", "cloud.testpcloud.com"]
 
 # GPU limit for users
 # TODO(Yancey1989): 

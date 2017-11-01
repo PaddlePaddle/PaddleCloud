@@ -22,6 +22,9 @@ English tutorials(comming soon...)
   using [Sextant](https://github.com/k8sp/sextant) or any tool you like.
 
 
+### Run on minikube
+Please see [here](https://github.com/PaddlePaddle/cloud/run_on_minikube.md)
+
 ### Run on kubernetes
 - Build Paddle Cloud Docker Image
 

@@ -12,10 +12,10 @@ spec:
       volumes:
       - name: cert-volume
         hostPath:
-          path: /Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/certs
+          path: <yourpath>/certs
       - name: settings
         hostPath:
-          path: /Users/gongwb/go/src/github.com/PaddlePaddle/minikube/pcloud/data/settings.py
+          path: <yourpath>/settings.py
       containers:
       - name: paddle-cloud
         imagePullPolicy: IfNotPresent
