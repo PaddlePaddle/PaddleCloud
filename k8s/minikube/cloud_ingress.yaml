@@ -7,7 +7,7 @@ spec:
   - host: cloud.testpcloud.org
     http:
       paths:
-      - path: /api/v1/files
+      - path: /api/v1/pfs
         backend:
           serviceName: pfs-service
           servicePort: 8080
