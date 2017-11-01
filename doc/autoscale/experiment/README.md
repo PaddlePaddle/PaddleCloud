@@ -168,31 +168,36 @@ serving together. This case is a very typical scenario for large enterprises and
         > JOB_COUNT=5 ./run.sh start case2
         ```
 	1. Get the time series data.
-	    Open another terminal and run:
-	    ```bash
-		JOB_COUNT=40 python python/main.py print_info | tee ts.txt
+		The time serise data will be appended in the file `./out/mnist-case[1|2]-pass[0-9].log`
+		as the following format:
+
+
 		```
-		The time series data is in following format:
-		```
-		0,0.00,0,40,0,0,0,0
-		0,0.00,0,40,0,0,0,0
-		0,0.00,0,40,0,0,0,0
-		1,0.00,0,40,0,0,0,0
-		1,0.00,0,40,0,0,0,0
-		1,0.00,0,40,0,0,0,0
-		1,0.00,0,40,0,0,0,0
-		1,0.00,0,40,0,0,0,0
-		2,0.00,0,40,0,0,0,0
+		0,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+		2,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+		4,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+		5,2.11,0,2,1,0,0,0,0|0|0,0.00|0.00|0.00
+		7,5.30,7,2,0,1,0,0,7|0|0,3.19|0.00|0.00
+		9,7.90,19,2,0,1,0,0,19|0|0,5.79|0.00|0.00
+		10,8.11,20,2,0,1,0,0,20|0|0,6.01|0.00|0.00
 		```
 		The meaning of each column is:
 
-		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of nginx pods
-		--|--|--|--|--|--|--|--
+		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of nginx pods|running trainers for each job |cpu utils for each job
+		--|--|--|--|--|--|--|--|--|--
 
 	1. Calculate the average wainting time, and the average running time from time series data.
-	    TODO
+		The statistical data will be generated in the file: `./out/mnist-case[1|2]-result.csv`
+		as the following format:
+		```
+		PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|AVG CLUSTER CPU UTILS
+		0|240|37|306,288,218,208,204,158,268,253,250,228,214,207,212,268,173,277,330,332,257,164|55.99
+		AVG|240|37|N/A|55.99
+		```
+
 	1. Plot from the time series data.
 	    TODO
+
     1. Gernerate Experiment Report
         After all the passes are finished, the report will generated at './out' folder.
 

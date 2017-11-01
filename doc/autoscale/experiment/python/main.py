@@ -57,45 +57,55 @@ def wait_for_cleaned(c):
         print 'Waiting for all the jobs cleaned for 5 seconds...'
         time.sleep(5)
 
-def print_info(c):
-    start = int(time.time())
-    jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
+def print_title():
+    print utils.REPORT_SEPARATOR.join(
+            ['TIME', 
+            'JOB NAME:STATUS:RUNNING TRAINERS:CPU UTILS',
+            'NGINX PODS',
+            'CLUSTER CPU UTILS', 
+            'CLUSTER GPU UTILS'])
 
-    while True:
-        now = int(time.time()) - start
-        c.run_once()
-        nginx_pods = c.get_running_pods({'app':'nginx'})
-        running_job_count = 0
-        pending_job_count = 0
-        finished_job_count = 0
-        waiting_job_count = 0
-        for job in jobs:
-            c.update_job(job, now)
-            if job.status == collector.JOB_STATUS_RUNNING:
-                running_job_count += 1
-            if job.status == collector.JOB_STATUS_PENDING:
-                pending_job_count += 1
-            if job.status == collector.JOB_STATUS_NOT_EXISTS:
-                waiting_job_count += 1
-            if job.status == collector.JOB_STATUS_FINISHED:
-                finished_job_count += 1
+def print_info(ts, c, jobs, nginx_pods):
 
-        cpu_utils = c.cpu_utils()
-        num_running_trainers = c.get_running_trainers()
-        print ",".join([str(now), cpu_utils, str(num_running_trainers), str(waiting_job_count), str(pending_job_count), str(running_job_count), str(finished_job_count), str(nginx_pods)])
+    running_job_count = 0
+    pending_job_count = 0
+    finished_job_count = 0
+    waiting_job_count = 0
+    jobs_running_trainers = []
+    jobs_cpu_utils = []
+    for job in jobs:
+        if job.status == collector.JOB_STATUS_RUNNING:
+            running_job_count += 1
+        if job.status == collector.JOB_STATUS_PENDING:
+            pending_job_count += 1
+        if job.status == collector.JOB_STATUS_NOT_EXISTS:
+            waiting_job_count += 1
+        if job.status == collector.JOB_STATUS_FINISHED:
+            finished_job_count += 1
+        jobs_running_trainers.append(str(job.running_trainers))
+        jobs_cpu_utils.append(str(job.cpu_utils))
+
+
+    print ','.join([
+        str(ts),
+        str(c.cpu_utils()),             # cluster CPU utils
+        str(c.get_running_trainers()),  # total running trainers count
+        str(waiting_job_count),
+        str(pending_job_count),
+        str(running_job_count),
+        str(finished_job_count),
+        str(nginx_pods),
+        '|'.join(jobs_running_trainers),# Running trainers count for each job, separator by '|'
+        '|'.join(jobs_cpu_utils)        # the CPU utils for each job, separator by '|' 
+
+    ])
 
 def run_case2(c):
     r1 = CaseOneReport()
     r2 = CaseTwoReport()
     jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
     start = int(time.time())
-    if DETAILS:
-        print utils.REPORT_SEPARATOR.join(
-            ['TIME OFFSET', 
-            'JOB NAME:STATUS:PARALLELISM',
-            'NGINX PODS',
-            'CLUSTER CPU UTILS', 
-            'CLUSTER GPU UTILS']) 
+
     while True:
         c.run_once()
         ts = int(time.time()) - start
@@ -108,43 +118,23 @@ def run_case2(c):
         item = CaseTwoItem(ts, nginx_pods, running_trainers, c)
 
         if DETAILS:
-            jobs_info = []
-            for job in jobs:
-                jobs_info.append(':'.join([
-                    job.name,
-                    job.status_str(),
-                    str(job.parallelism)
-                ]))
-            print utils.REPORT_SEPARATOR.join([
-                str(ts),
-                ','.join(jobs_info),
-                str(nginx_pods),
-                c.cpu_utils(),
-                c.gpu_utils()])
+            print_info(ts, c, jobs, nginx_pods)
         
         r1.update_cluster_utils(c)
         r2.append_item(item)
 
-        if utils.is_jobs_finished(jobs):
-            print 'all jobs finihsed'
+        if utils.is_jobs_killed(jobs):
             r1.update_jobs(jobs)
             r1.run()
             r2.to_csv('./out/%s-case2-result.csv' % JOB_NAME)
             r1.to_csv('./out/%s-case1-pass%d.csv' % (JOB_NAME, PASSE_NUM))
             break
 
-        time.sleep(COLLECTION_INTERVAL)
 
 def run_case1(c):
     report = CaseOneReport()
     jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
     start = int(time.time())
-    if DETAILS:
-        print utils.REPORT_SEPARATOR.join(
-            ['TIME OFFSET', 
-            'JOB NAME:STATUS:PARALLELISM', 
-            'CLUSTER CPU UTILS', 
-            'CLUSTER GPU UTILS']) 
 
     while True:
         ts = int(time.time()) - start
@@ -154,26 +144,13 @@ def run_case1(c):
         report.update_cluster_utils(c) 
 
         if DETAILS:
-            jobs_info = []
-            for job in jobs:
-                jobs_info.append(':'.join([
-                    job.name,
-                    job.status_str(),
-                    str(job.parallelism)
-                ]))
-            print utils.REPORT_SEPARATOR.join([
-                str(ts),
-                ','.join(jobs_info),
-                c.cpu_utils(),
-                c.gpu_utils()])
+            print_info(ts, c, jobs, 0)
 
-        if utils.is_jobs_finished(jobs):
+        if utils.is_jobs_killed(jobs):
             report.update_jobs(jobs)
             report.run()
             report.to_csv('./out/%s-case1-pass%d.csv' % (JOB_NAME, PASSE_NUM))
             break
-
-        time.sleep(COLLECTION_INTERVAL)
 
 def usage():
     print 'Usage python main.py [run_case1|run_case2|wait_for_finished|wait_for_cleaned]'
@@ -194,7 +171,5 @@ if __name__=="__main__":
         wait_for_cleaned(c)
     elif sys.argv[1] == 'merge_case1_reports':
         merge_case_one_reports(JOB_NAME, PASSES)
-    elif sys.argv[1] == 'print_info':
-        print_info(c)
     else:
         usage()

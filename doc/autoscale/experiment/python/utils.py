@@ -6,6 +6,12 @@ def is_jobs_finished(jobs):
             return False
     return True
 
+def is_jobs_killed(jobs):
+    for job in jobs:
+        if job.status != collector.JOB_STSTUS_KILLED:
+            return False
+    return True
+
 def avg_running_time(jobs):
     sum = 0
     for job in jobs:
