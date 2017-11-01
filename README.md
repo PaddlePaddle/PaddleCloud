@@ -23,7 +23,7 @@ English tutorials(comming soon...)
 
 
 ### Run on minikube
-Please see [here](https://github.com/PaddlePaddle/cloud/run_on_minikube.md)
+Please see [here](https://github.com/PaddlePaddle/cloud/blob/develop/doc/run_on_minikube.md)
 
 ### Run on kubernetes
 - Build Paddle Cloud Docker Image

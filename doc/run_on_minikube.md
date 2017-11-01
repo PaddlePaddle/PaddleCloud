@@ -102,10 +102,12 @@ But docker images such as `default-http-backend` can't be downloaded sometimes ,
   -  and then pull with proxy and then save to tar `docker save <docker-image-uri> > <tarname>.tar`.
   - `minikube ssh`.
   - `docker load < <tarname>.tar`.
+  
+1. I edit a file,but it not change in minikube virtual machine some times.
+Ye, it seems that minikube has a cache of files.You'd better `minikube stop` `minikube start --kubernetes-version v1.6.4` to fix it.
 
 ## TODO	
 1. The `mysql` docker runs `mysqld` under user `mysql` instead of `root`,so it's difficult to save `mysql` data to hostpath.
-1. Fix bug: `kubernetes can't mount a file use host to volume a file` on linux. 
-	
+1. Fix bug: `kubernetes can't mount a file use host to volume a file` on linux. 	
 	
 	
