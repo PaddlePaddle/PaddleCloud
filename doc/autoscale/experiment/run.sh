@@ -1,5 +1,5 @@
 #!/bin/bash
-CPU="4"
+CPU="5"
 MEMORY="8Gi"
 PSCPU="4"
 PSMEMORY="5Gi"
@@ -22,9 +22,9 @@ function submit_ft_job() {
         -pscpu $PSCPU \
         -pservers 10 \
         -psmemory $PSMEMORY \
-        -entry "sleep 300" \
+        -entry "python ./train_ft.py" \
         -faulttolerant \
-        -image registry.baidu.com/paddlepaddle/paddlecloud-job:yx_exp \
+        -image registry.baidu.com/paddlepaddle/paddlecloud-job:mnist \
         ./mnist
     #-entry "python ./train_ft.py train" \
 }

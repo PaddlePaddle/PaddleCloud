@@ -13,7 +13,7 @@ function start() {
                 submit_ft_job $JOB_NAME$j 5
                 cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$j/g" | kubectl create -f -
             else
-                submit_ft_job $JOB_NAME$j 60
+                submit_ft_job $JOB_NAME$j 20
             fi
             sleep 5
         done
@@ -35,7 +35,6 @@ function start() {
         done
     done
     python python/main.py merge_case1_reports
-    rm -f ./out/${JOB_NAME}-pass*
 }
 
 function stop() {

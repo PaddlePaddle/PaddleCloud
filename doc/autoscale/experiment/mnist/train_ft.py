@@ -9,28 +9,59 @@ import glob
 import pickle
 
 
-# NOTE: must change this to your own username on paddlecloud.
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
-common.DATA_HOME = "/pfs/%s/public/idl/users/dl/paddlecloud/public/dataset" % DC
-DATASET_PATH = "%s/mnist/train-[0-9]*" % common.DATA_HOME
-TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
-TEST_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 
-def prepare_dataset():
-    # convert will also split the dataset by line-count
-    common.convert(TRAIN_FILES_PATH,
-                paddle.dataset.mnist.train(),
-                8192, "train")
-    common.convert(TEST_FILES_PATH,
-                paddle.dataset.mnist.test(),
-                1, "test")
+DATASET_PATH = "/data/mnist/mnist-train-*"
 
 def softmax_regression(img):
     predict = paddle.layer.fc(
         input=img, size=10, act=paddle.activation.Softmax())
     return predict
+'''
+pass_num = 0
+def cloud_reader(paths, etcd_endpoints, timeout_sec=5, buf_size=64):
+    """
+    Create a data reader that yield a record one by one from
+        the paths:
+    :paths: path of recordio files, can be a string or a string list.
+    :etcd_endpoints: the endpoints for etcd cluster
+    :returns: data reader of recordio files.
 
+    ..  code-block:: python
+        from paddle.v2.reader.creator import cloud_reader
+        etcd_endpoints = "http://127.0.0.1:2379"
+        trainer.train.(
+            reader=cloud_reader(["/work/dataset/uci_housing/uci_housing*"], etcd_endpoints),
+        )
+    """
+    import os
+    import cPickle as pickle
+    import paddle.v2.master as master
+    c = master.client(etcd_endpoints, timeout_sec, buf_size)
 
+    if isinstance(paths, basestring):
+        path = [paths]
+    else:
+        path = paths
+    c.set_dataset(path)
+
+    def reader():
+        global pass_num
+        c.paddle_start_get_records(pass_num)
+        pass_num += 1
+        print 'call reader'
+        while True:
+            print 'before next record'
+            r, e = c.next_record()
+            print 'next record', r, e
+            if not r:
+                if e != -2:
+                    print "get record error: ", e
+                break
+            yield pickle.loads(r)
+
+    return reader
+'''
 def multilayer_perceptron(img):
     # The first fully-connected layer
     hidden1 = paddle.layer.fc(input=img, size=128, act=paddle.activation.Relu())
@@ -120,17 +151,9 @@ def main():
         reader=paddle.batch(
             cloud_reader(
                 [DATASET_PATH], etcd_endpoint),
-            batch_size=128),
+            batch_size=10),
         event_handler=event_handler,
-        num_passes=20)
+        num_passes=10)
 
 if __name__ == '__main__':
-    usage = "python train.py [prepare|train]"
-    if len(sys.argv) != 2:
-        print usage
-        exit(1)
-
-    if sys.argv[1] == "prepare":
-        prepare_dataset()
-    elif sys.argv[1] == "train":
-        main()
+    main()
