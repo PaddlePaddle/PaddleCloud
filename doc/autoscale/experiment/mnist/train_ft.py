@@ -17,51 +17,7 @@ def softmax_regression(img):
     predict = paddle.layer.fc(
         input=img, size=10, act=paddle.activation.Softmax())
     return predict
-'''
-pass_num = 0
-def cloud_reader(paths, etcd_endpoints, timeout_sec=5, buf_size=64):
-    """
-    Create a data reader that yield a record one by one from
-        the paths:
-    :paths: path of recordio files, can be a string or a string list.
-    :etcd_endpoints: the endpoints for etcd cluster
-    :returns: data reader of recordio files.
 
-    ..  code-block:: python
-        from paddle.v2.reader.creator import cloud_reader
-        etcd_endpoints = "http://127.0.0.1:2379"
-        trainer.train.(
-            reader=cloud_reader(["/work/dataset/uci_housing/uci_housing*"], etcd_endpoints),
-        )
-    """
-    import os
-    import cPickle as pickle
-    import paddle.v2.master as master
-    c = master.client(etcd_endpoints, timeout_sec, buf_size)
-
-    if isinstance(paths, basestring):
-        path = [paths]
-    else:
-        path = paths
-    c.set_dataset(path)
-
-    def reader():
-        global pass_num
-        c.paddle_start_get_records(pass_num)
-        pass_num += 1
-        print 'call reader'
-        while True:
-            print 'before next record'
-            r, e = c.next_record()
-            print 'next record', r, e
-            if not r:
-                if e != -2:
-                    print "get record error: ", e
-                break
-            yield pickle.loads(r)
-
-    return reader
-'''
 def multilayer_perceptron(img):
     # The first fully-connected layer
     hidden1 = paddle.layer.fc(input=img, size=128, act=paddle.activation.Relu())

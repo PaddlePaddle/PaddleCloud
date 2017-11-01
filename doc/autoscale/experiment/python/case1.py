@@ -1,12 +1,15 @@
 import utils
+import os
+
+outdir = os.environ['OUTDIR']
 
 def merge_case_one_reports(jobname, passes):
-    rs = [_load_case_one_from_file('./out/%s-case1-pass%d.csv' %(jobname, i) )\
+    rs = [_load_case_one_from_file('%s/%s-case1-pass%d.csv' %(outdir, jobname, i) )\
         for i in xrange(passes)]
     avg_pending_time = 0
     avg_running_time = 0
     avg_cpu_utils = 0.0
-    with open('./out/%s-case1-result.csv'%jobname, 'w') as f:
+    with open('%s/%s-case1-result.csv'%(outdir, jobname), 'w') as f:
         f.write(utils.REPORT_SEPARATOR.join(rs[0].title()) + '\n')
         for i in xrange(len(rs)):
             r = rs[i]

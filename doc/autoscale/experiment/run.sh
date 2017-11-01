@@ -6,12 +6,20 @@ PSMEMORY="5Gi"
 JOB_NAME=${JOB_NAME:-mnist}
 JOB_COUNT=${JOB_COUNT:-1}
 PASSES=${PASSES:-1}
-DETAILS=${DETAILS:-OFF}
+DETAILS=${DETAILS:-ON}
 NGINX_REPLICAS=${NGINX_REPLICAS:-400}
-
+AUTO_SCALING=${AUTO_SCALING:-OFF}
 
 ACTION=${1}
 CASE=${2}
+
+if [ -z "${TAG-}" ]; then
+   echo "Must provide TAG environment variable. Exiting...."
+   exit 1
+fi
+
+export OUTDIR="./out/$JOB_NAME-$AUTO_SCALING-$JOB_COUNT-$PASSES-$DETAILS-$NGINX_REPLICAS-case_$CASE-$TAG"
+echo "outputing output to folder: $OUTDIR"
 
 function submit_ft_job() {
    paddlecloud submit -jobname $1 \
@@ -46,8 +54,7 @@ function prepare() {
     then
         export PATH=/usr/local/opt/coreutils/libexec/gnubin:$PATH
     fi
-    rm -rf ./out > /dev/null
-    mkdir ./out > /dev/null
+    mkdir -p $OUTDIR > /dev/null
 }
 function usage() {
     echo "Usage: run.sh <action> <case>"

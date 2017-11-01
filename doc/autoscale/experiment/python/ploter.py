@@ -6,16 +6,6 @@ import os
 
 DATAFILEPATH = os.getenv("DATAPATH", "./ts.txt")
 
-class Ploter(object):
-    '''
-    Plot graph
-    '''
-    def __init__(self):
-        self.plt = plt
-
-    def plot(self):
-        pass
-
 if __name__ == '__main__':
     data_raw = np.rot90(np.loadtxt(DATAFILEPATH, delimiter=','))
     ax_data = data_raw[-1]
