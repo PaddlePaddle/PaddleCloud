@@ -1,7 +1,7 @@
 #!/bin/bash
-CPU="10"
+CPU="4"
 MEMORY="8Gi"
-PSCPU="6"
+PSCPU="4"
 PSMEMORY="5Gi"
 JOB_NAME=${JOB_NAME:-mnist}
 JOB_COUNT=${JOB_COUNT:-1}
@@ -13,12 +13,6 @@ NGINX_REPLICAS=${NGINX_REPLICAS:-400}
 ACTION=${1}
 CASE=${2}
 
-# job configuration
-CPU="10"
-MEMORY="8Gi"
-PSCPU="6"
-PSMEMORY="5Gi"
-
 function submit_ft_job() {
    paddlecloud submit -jobname $1 \
         -cpu $CPU \
@@ -28,7 +22,7 @@ function submit_ft_job() {
         -pscpu $PSCPU \
         -pservers 10 \
         -psmemory $PSMEMORY \
-        -entry "sleep 180" \
+        -entry "sleep 300" \
         -faulttolerant \
         -image registry.baidu.com/paddlepaddle/paddlecloud-job:yx_exp \
         ./mnist

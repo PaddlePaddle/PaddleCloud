@@ -57,6 +57,33 @@ def wait_for_cleaned(c):
         print 'Waiting for all the jobs cleaned for 5 seconds...'
         time.sleep(5)
 
+def print_info(c):
+    start = int(time.time())
+    jobs = utils.get_jobs(JOB_NAME, JOB_COUNT)
+
+    while True:
+        now = int(time.time()) - start
+        c.run_once()
+        nginx_pods = c.get_running_pods({'app':'nginx'})
+        running_job_count = 0
+        pending_job_count = 0
+        finished_job_count = 0
+        waiting_job_count = 0
+        for job in jobs:
+            c.update_job(job, now)
+            if job.status == collector.JOB_STATUS_RUNNING:
+                running_job_count += 1
+            if job.status == collector.JOB_STATUS_PENDING:
+                pending_job_count += 1
+            if job.status == collector.JOB_STATUS_NOT_EXISTS:
+                waiting_job_count += 1
+            if job.status == collector.JOB_STATUS_FINISHED:
+                finished_job_count += 1
+
+        cpu_utils = c.cpu_utils()
+        num_running_trainers = c.get_running_trainers()
+        print ",".join([str(now), cpu_utils, str(num_running_trainers), str(waiting_job_count), str(pending_job_count), str(running_job_count), str(finished_job_count), str(nginx_pods)])
+
 def run_case2(c):
     r1 = CaseOneReport()
     r2 = CaseTwoReport()
@@ -74,6 +101,7 @@ def run_case2(c):
         ts = int(time.time()) - start
         for job in jobs:
             c.update_job(job, ts)
+
         running_trainers = c.get_running_trainers()
         nginx_pods = c.get_running_pods({'app':'nginx'})
 
@@ -166,5 +194,7 @@ if __name__=="__main__":
         wait_for_cleaned(c)
     elif sys.argv[1] == 'merge_case1_reports':
         merge_case_one_reports(JOB_NAME, PASSES)
+    elif sys.argv[1] == 'print_info':
+        print_info(c)
     else:
         usage()

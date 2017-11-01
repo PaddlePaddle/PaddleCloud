@@ -156,7 +156,7 @@ serving together. This case is a very typical scenario for large enterprises and
         For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
         > cd cloud/doc/autoscale/experiment
-        > PASSES=5 JOB_COUNT=10 ./run.sh start case1
+        > AUTO_SCALING=OFF PASSES=5 JOB_COUNT=40 ./run.sh start case1
         ```
         Or submit an auto-scaline training job
         > cd cloud/doc/autoscale/experiment
@@ -167,6 +167,32 @@ serving together. This case is a very typical scenario for large enterprises and
         ```bash
         > JOB_COUNT=5 ./run.sh start case2
         ```
+	1. Get the time series data.
+	    Open another terminal and run:
+	    ```bash
+		JOB_COUNT=40 python python/main.py print_info | tee ts.txt
+		```
+		The time series data is in following format:
+		```
+		0,0.00,0,40,0,0,0,0
+		0,0.00,0,40,0,0,0,0
+		0,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		2,0.00,0,40,0,0,0,0
+		```
+		The meaning of each column is:
+
+		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of nginx pods
+		--|--|--|--|--|--|--|--
+
+	1. Calculate the average wainting time, and the average running time from time series data.
+	    TODO
+	1. Plot from the time series data.
+	    TODO
     1. Gernerate Experiment Report
         After all the passes are finished, the report will generated at './out' folder.
 

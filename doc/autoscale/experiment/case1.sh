@@ -13,7 +13,7 @@ function start() {
                 submit_ft_job $JOB_NAME$j 5
                 cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$j/g" | kubectl create -f -
             else
-                submit_ft_job $JOB_NAME$j 30
+                submit_ft_job $JOB_NAME$j 60
             fi
             sleep 5
         done
