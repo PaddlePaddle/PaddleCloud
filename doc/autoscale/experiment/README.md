@@ -143,33 +143,56 @@ serving together. This case is a very typical scenario for large enterprises and
 
 ## Reproduce the experiment
 
-- Configure kubectl on your host
 - Prepare
-    1. Configure kubectl 
-    1. Configure paddlectl
-    1. Submit the TrainingJob controller with YAML file
+    1. Configure kubectl and paddlectl on your host.
+    1. Submit the TrainingJob controller with the YAML file.
     ```bash
     > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
     > kubectl create -f k8s/controller/trainingjob_resource.yaml
     > kubectl create -f k8s/controller/controller.yaml
     ```
-- Test Case1
-    1. Run the TestCase1 for serval passes with bash scripts`./control_case.1.sh`:
-        ```bash
-        > cd cloud/doc/autoscale/experiment/python
-        > ./control_case1.sh --help
-        > usage: control_case1.sh <action>
-            action[required]: str[start|stop], will start or stop all the jobs.
-          env var:
-            JOB_COUNT[optional]:             int, The number of submiting jobs, defualt is 1.
-            FAULT_TOLERANT[optional]:   str[ON|OFF], whether a fault-tolerant job,default is OFF.
-            PASSES[optional]:           int, The number of run passes.
-            DETAILS[optional:           str[ON|OFF], print detail monitor information.
-        ```
+- Run the Test Case
+    1. Run the TestCase1 or TestCase2 for serval passes with the bash script `./run.sh`:
         For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
-            > PASSES=10 JOB_COUNT=10 ./control_case1.sh start
+        > cd cloud/doc/autoscale/experiment
+        > AUTO_SCALING=OFF PASSES=5 JOB_COUNT=40 ./run.sh start case1
         ```
+        Or submit an auto-scaline training job
+        > cd cloud/doc/autoscale/experiment
+        ```bash
+        > AUTO_SCALING=ON PASSES=5 JOB_COUNT=40 ./run.sh start case1
+        ```
+        Or run the TestCase2 with 5 jobs:
+        ```bash
+        > JOB_COUNT=5 ./run.sh start case2
+        ```
+	1. Get the time series data.
+	    Open another terminal and run:
+	    ```bash
+		JOB_COUNT=40 python python/main.py print_info | tee ts.txt
+		```
+		The time series data is in following format:
+		```
+		0,0.00,0,40,0,0,0,0
+		0,0.00,0,40,0,0,0,0
+		0,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		1,0.00,0,40,0,0,0,0
+		2,0.00,0,40,0,0,0,0
+		```
+		The meaning of each column is:
+
+		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of nginx pods
+		--|--|--|--|--|--|--|--
+
+	1. Calculate the average wainting time, and the average running time from time series data.
+	    TODO
+	1. Plot from the time series data.
+	    TODO
     1. Gernerate Experiment Report
         After all the passes are finished, the report will generated at './out' folder.
 

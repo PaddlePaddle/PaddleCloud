@@ -3,7 +3,6 @@ from kubernetes.client.rest import ApiException
 from pprint import pprint
 import time
 
-
 JOB_STATUS_NOT_EXISTS = 0
 JOB_STATUS_PENDING = 1
 JOB_STATUS_RUNNING = 2
@@ -34,14 +33,13 @@ class Collector(object):
     '''
     Collector monitor data from Kubernetes API
     '''
-    def __init__(self, fault_tolerant):
+    def __init__(self):
         config.load_kube_config()
         self.namespace = config.list_kube_config_contexts()[1]['context']['namespace']
         self.cpu_allocatable = 0
         self.gpu_allocatable = 0
         self.cpu_requests = 0
         self.gpu_requests = 0
-        self.fault_tolerant = fault_tolerant
         # Collect cluster wide resource
         self._init_allocatable()
 
@@ -115,6 +113,16 @@ class Collector(object):
                     pods.append((item.metadata.name, item.status.phase))
         return pods
     
+    def get_running_trainers(self):
+        cnt = 0
+        for item in self._pods:
+            if not item.metadata.labels:
+                continue
+            for k, v in item.metadata.labels.items():
+                if k == 'paddle-job' and item.status.phase == 'Running':
+                    cnt += 1
+
+        return cnt
 
     def update_job(self, job, times):
         phases = set()
@@ -132,11 +140,11 @@ class Collector(object):
         job.parallelism = parallelism
 
         if len(phases) == 0:
-            # The job has not been submited
+            if job.start_time != -1:
+                job.status = JOB_STATUS_FINISHED
+                job.end_time = times
             return
-        elif (len(phases) == 1 and 'Running' in phases and \
-                self.fault_tolerant == 'OFF') or \
-                ('Running' in phases and self.fault_tolerant == 'ON'):
+        elif 'Running'  in phases:
             if job.start_time == -1:
                 job.start_time = times
             job.status = JOB_STATUS_RUNNING
@@ -147,3 +155,14 @@ class Collector(object):
             job.status = JOB_STATUS_FINISHED
         elif 'Pending' in phases:
             job.status = JOB_STATUS_PENDING
+
+    def get_running_pods(self, labels):
+        pods = 0
+        for item in self._pods:
+            if item.metadata.labels:
+                for k, v in item.metadata.labels.items():
+                    if k in labels and labels[k] == v and \
+                            item.status.phase == 'Running':
+                        pods += 1
+
+        return pods
