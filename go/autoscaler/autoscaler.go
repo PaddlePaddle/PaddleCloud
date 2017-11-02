@@ -227,7 +227,6 @@ nextJob:
 
 func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
 	assignable = false
-
 	for _, idle := range r.NodesCPUIdleMilli {
 		if j.TrainerCPURequestMilli() <= idle {
 			assignable = true
@@ -240,7 +239,6 @@ func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
 
 func searchAssignableNodeByMem(r *ClusterResource, j job) (assignable bool) {
 	assignable = false
-
 	for _, idle := range r.NodesMemoryIdleMega {
 		if j.TrainerMemRequestMega() <= idle {
 			assignable = true
