@@ -97,14 +97,19 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, l
 
 func syncNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]int64, nodesMemoryIdleMega map[string]int64) (err error) {
 	for _, pod := range podList.Items {
+		nodeName := pod.Spec.NodeName
+		// if nodeName is empty, the pod is not assigned.
+		if nodeName == "" {
+			continue
+		}
 		for _, container := range pod.Spec.Containers {
-			nodesCPUIdleMilli[pod.Spec.NodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
-			nodesMemoryIdleMega[pod.Spec.NodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
+			nodesCPUIdleMilli[nodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
+			nodesMemoryIdleMega[nodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
 		}
 
 		for _, container := range pod.Spec.InitContainers {
-			nodesCPUIdleMilli[pod.Spec.NodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
-			nodesMemoryIdleMega[pod.Spec.NodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
+			nodesCPUIdleMilli[nodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
+			nodesMemoryIdleMega[nodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
 		}
 	}
 	return
