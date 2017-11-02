@@ -47,8 +47,18 @@ type ClusterResource struct {
 	MemoryLimitMega   int64
 	MemoryTotalMega   int64
 
+	NodeInfos NodeInfos
+}
+
+// NodeInfos is the information of all nodes.
+type NodeInfos struct {
 	NodesCPUIdleMilli   map[string]int64
 	NodesMemoryFreeMega map[string]int64
+}
+
+// String is the string that represents NodeInfo when printed.
+func (n NodeInfos) String() string {
+	return fmt.Sprintf("NodeInfo(%d nodes)", len(n.NodesCPUIdleMilli))
 }
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -226,7 +236,7 @@ nextJob:
 }
 
 func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
-	for _, idle := range r.NodesCPUIdleMilli {
+	for _, idle := range r.NodeInfos.NodesCPUIdleMilli {
 		if j.TrainerCPURequestMilli() <= idle {
 			return true
 		}
@@ -236,7 +246,7 @@ func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
 }
 
 func searchAssignableNodeByMem(r *ClusterResource, j job) (assignable bool) {
-	for _, idle := range r.NodesMemoryFreeMega {
+	for _, idle := range r.NodeInfos.NodesMemoryFreeMega {
 		if j.TrainerMemRequestMega() <= idle {
 			return true
 		}
