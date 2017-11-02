@@ -226,17 +226,15 @@ nextJob:
 }
 
 func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
-	log.Debug("Search assignale node...")
 	assignable = false
 
-	for name, idle := range r.NodesCPUIdleMilli {
-		log.Debug("CPU idle: ", idle, ", name: ", name)
-
+	for _, idle := range r.NodesCPUIdleMilli {
 		if j.TrainerCPURequestMilli() <= idle {
 			assignable = true
 			return
 		}
 	}
+	log.Debug("No node is assignable, job CPU is ", j.TrainerMemRequestMega())
 	return
 }
 
@@ -249,6 +247,7 @@ func searchAssignableNodeByMem(r *ClusterResource, j job) (assignable bool) {
 			return
 		}
 	}
+	log.Debug("No node is assignable, job memory is ", j.TrainerMemRequestMega())
 	return
 }
 
