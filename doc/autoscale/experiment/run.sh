@@ -18,7 +18,7 @@ if [ -z "${TAG-}" ]; then
    exit 1
 fi
 
-export OUTDIR="./out/$JOB_NAME-$AUTO_SCALING-$JOB_COUNT-$PASSES-$DETAILS-$NGINX_REPLICAS-case_$CASE-$TAG"
+export OUTDIR="./out/$CASE-$JOB_NAME-$AUTO_SCALING-$JOB_COUNT-$PASSES-$DETAILS-$NGINX_REPLICAS-$TAG"
 echo "outputing output to folder: $OUTDIR"
 
 function submit_ft_job() {
