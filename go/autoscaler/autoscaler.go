@@ -46,6 +46,9 @@ type ClusterResource struct {
 	MemoryRequestMega int64
 	MemoryLimitMega   int64
 	MemoryTotalMega   int64
+
+	NodesCPUIdleMilli   map[string]int64
+	NodesMemoryIdleMega map[string]int64
 }
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -263,6 +266,28 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 
 	if r.MemoryTotalMega-r.MemoryRequestMega <= memRequestMega {
 		// insufficient memory, do not scale
+		additional = 0
+		return
+	}
+
+	assignable := false
+
+	for name, idle := range r.NodesCPUIdleMilli {
+		log.Debug("CPU idle: ", idle, ", name: ", name)
+		if cpuRequestMilli <= idle {
+			assignable = true
+			break
+		}
+	}
+
+	for _, idle := range r.NodesMemoryIdleMega {
+		if memRequestMega <= idle {
+			assignable = true
+			break
+		}
+	}
+
+	if assignable == false {
 		additional = 0
 		return
 	}

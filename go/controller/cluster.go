@@ -95,6 +95,21 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, l
 	return
 }
 
+func asyncNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]int64, nodesMemoryIdleMega map[string]int64) (err error) {
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			nodesCPUIdleMilli[pod.Spec.NodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
+			nodesMemoryIdleMega[pod.Spec.NodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
+		}
+
+		for _, container := range pod.Spec.InitContainers {
+			nodesCPUIdleMilli[pod.Spec.NodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
+			nodesMemoryIdleMega[pod.Spec.NodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
+		}
+	}
+	return
+}
+
 // SyncResource will update free and total resources in k8s cluster.
 func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	nodes := c.clientset.CoreV1().Nodes()
@@ -103,7 +118,14 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		return autoscaler.ClusterResource{}, err
 	}
 	allocatable := make(v1.ResourceList)
+	nodesCPUIdleMilli := make(map[string]int64)
+	nodesMemoryIdleMega := make(map[string]int64)
+
 	for _, node := range nodeList.Items {
+		nodesCPUIdleMilli[node.GetObjectMeta().GetName()] =
+			node.Status.Allocatable.Cpu().ScaledValue(resource.Milli)
+		nodesMemoryIdleMega[node.GetObjectMeta().GetName()] =
+			node.Status.Allocatable.Memory().ScaledValue(resource.Mega)
 		AddResourceList(allocatable, node.Status.Allocatable)
 	}
 
@@ -130,6 +152,11 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		return autoscaler.ClusterResource{}, err
 	}
 
+	err = asyncNodesIdleResource(allPodsList, nodesCPUIdleMilli, nodesMemoryIdleMega)
+	if err != nil {
+		return autoscaler.ClusterResource{}, err
+	}
+
 	res = autoscaler.ClusterResource{
 		NodeCount:       len(nodeList.Items),
 		GPUTotal:        int(allocatable.NvidiaGPU().Value()),
@@ -143,6 +170,9 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		GPULimit:        int(allLimits.NvidiaGPU().Value()),
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
+
+		NodesCPUIdleMilli:   nodesCPUIdleMilli,
+		nodesMemoryIdleMega: nodesMemoryIdleMega,
 	}
 
 	return
