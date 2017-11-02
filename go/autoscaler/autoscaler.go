@@ -222,43 +222,7 @@ nextJob:
 	return js
 }
 
-func scaleDownDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64) (additional int) {
-	cpuRequestMilli := j.TrainerCPURequestMilli()
-	memRequestMega := j.TrainerMemRequestMega()
-	gpuLimit := j.TrainerGPULimit()
-
-	//FIXME(typhoonzero): Copied code.
-	defer func() {
-		r.GPULimit += gpuLimit * additional
-		r.CPURequestMilli += cpuRequestMilli * int64(additional)
-		r.MemoryRequestMega += memRequestMega * int64(additional)
-	}()
-
-	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
-	instanceMax := j.Config.Spec.Trainer.MaxInstance
-	instanceMin := j.Config.Spec.Trainer.MinInstance
-
-	if plannedInstance > instanceMax {
-		additional = -1
-		return
-	}
-	gpuCondition := r.GPULimit > int(float64(r.GPUTotal)*maxLoadDesired)
-	cpuCondition := r.CPURequestMilli > int64(float64(r.CPUTotalMilli)*maxLoadDesired)
-	if gpuCondition || cpuCondition {
-		if plannedInstance > instanceMin {
-			additional = -1
-			return
-		}
-
-		// can not scale down further
-		additional = 0
-		return
-	}
-	// do not try to scale up
-	return
-}
-
-func scaleUpDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64) (additional int) {
+func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
 	cpuRequestMilli := j.TrainerCPURequestMilli()
@@ -279,6 +243,31 @@ func scaleUpDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float6
 	// j.TrainerJob.Spec.Parallelism, and curDiff.
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
+	instanceMin := j.Config.Spec.Trainer.MinInstance
+
+	// TODO(typhoonzero): refine below code to remove direction
+	// ======================= scaleDown ======================
+	if scaleDown {
+		if plannedInstance > instanceMax {
+			additional = -1
+			return
+		}
+		gpuCondition := r.GPULimit > int(float64(r.GPUTotal)*maxLoadDesired)
+		cpuCondition := r.CPURequestMilli > int64(float64(r.CPUTotalMilli)*maxLoadDesired)
+		if gpuCondition || cpuCondition {
+			if plannedInstance > instanceMin {
+				additional = -1
+				return
+			}
+
+			// can not scale down further
+			additional = 0
+			return
+		}
+		// do not try to scale up
+		return
+	}
+	// ======================= scaleUp ==========================
 
 	if plannedInstance >= instanceMax {
 		// Do not scale or scale down, don't need to check if
@@ -325,12 +314,7 @@ func scaleAllDryRun(jobs []job, r ClusterResource, maxLoadDesired float64) map[s
 		sorted := sortedJobs(jobs, elastic)
 		dryRun := func(j job, isScaleDown bool) {
 			name := j.Config.Name
-			var additional int
-			if isScaleDown {
-				additional = scaleDownDryRun(&r, j, diff[name], maxLoadDesired)
-			} else {
-				additional = scaleUpDryRun(&r, j, diff[name], maxLoadDesired)
-			}
+			additional := scaleDryRun(&r, j, diff[name], maxLoadDesired, isScaleDown)
 			log.Debug(
 				"dry run scale job",
 				"name", name, "current scale difference", diff[name],
@@ -461,7 +445,6 @@ func (a *Autoscaler) Monitor() {
 			continue
 		}
 
-		log.Info("latest cluster resource", "resource", r)
 		var js []job
 		for _, j := range a.jobs {
 			// k8s job for trainers may not be created immediently
@@ -478,23 +461,22 @@ func (a *Autoscaler) Monitor() {
 				}
 				j.TrainerJob = tj
 			}
-			// Scale jobs only when it's running (defined
-			// by all pods are in the "running"
-			// status). Pods are
-			// pending/starting/terminating if the job is
-			// just submited or just scaled up/down.
+			// Scale jobs only when all pods' "Phase" are running.
+			// Pending/starting/terminating jobs are ignored.
 			total, running, err := a.cluster.JobPods(j.Config)
 			if err != nil {
 				log.Error("check if job is running failed", "error", err)
 				continue
 			}
-
 			if total == running {
 				js = append(js, j)
 			}
 		}
 		diff := scaleAllDryRun(js, r, a.maxLoadDesired)
-		log.Info("calculated scaling plan", "plan", diff)
+		if len(diff) > 0 {
+			log.Info("calculated scaling plan", "plan", diff,
+				"clusterResource", r)
+		}
 		a.scaleAll(diff)
 	}
 }
