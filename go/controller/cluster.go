@@ -95,7 +95,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, l
 	return
 }
 
-func syncNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]int64, nodesMemoryIdleMega map[string]int64) (err error) {
+func syncNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]int64, nodesMemoryFreeMega map[string]int64) (err error) {
 	for _, pod := range podList.Items {
 		nodeName := pod.Spec.NodeName
 		if nodeName == "" {
@@ -103,12 +103,12 @@ func syncNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]int
 		}
 		for _, container := range pod.Spec.Containers {
 			nodesCPUIdleMilli[nodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
-			nodesMemoryIdleMega[nodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
+			nodesMemoryFreeMega[nodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
 		}
 
 		for _, container := range pod.Spec.InitContainers {
 			nodesCPUIdleMilli[nodeName] -= container.Resources.Requests.Cpu().ScaledValue(resource.Milli)
-			nodesMemoryIdleMega[nodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
+			nodesMemoryFreeMega[nodeName] -= container.Resources.Requests.Memory().ScaledValue(resource.Mega)
 		}
 	}
 	return
@@ -123,12 +123,12 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	}
 	allocatable := make(v1.ResourceList)
 	nodesCPUIdleMilli := make(map[string]int64)
-	nodesMemoryIdleMega := make(map[string]int64)
+	nodesMemoryFreeMega := make(map[string]int64)
 
 	for _, node := range nodeList.Items {
 		nodesCPUIdleMilli[node.GetObjectMeta().GetName()] =
 			node.Status.Allocatable.Cpu().ScaledValue(resource.Milli)
-		nodesMemoryIdleMega[node.GetObjectMeta().GetName()] =
+		nodesMemoryFreeMega[node.GetObjectMeta().GetName()] =
 			node.Status.Allocatable.Memory().ScaledValue(resource.Mega)
 		AddResourceList(allocatable, node.Status.Allocatable)
 	}
@@ -156,7 +156,7 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		return autoscaler.ClusterResource{}, err
 	}
 
-	err = syncNodesIdleResource(allPodsList, nodesCPUIdleMilli, nodesMemoryIdleMega)
+	err = syncNodesIdleResource(allPodsList, nodesCPUIdleMilli, nodesMemoryFreeMega)
 	if err != nil {
 		return autoscaler.ClusterResource{}, err
 	}
