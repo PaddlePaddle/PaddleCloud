@@ -17,6 +17,8 @@ import (
 func main() {
 	kubeconfig := flag.String("kubeconfig", "", "Path to a kube config. Only required if out-of-cluster.")
 	logLevel := flag.String("log_level", "info", "Log level can be debug, info, warn, error, crit.")
+	maxLoadDesired := flag.Float64("max_load_desired", 0.9, `Keep the cluster max resource usage around 
+		this value, jobs will scale down if total request is over this level.`)
 	flag.Parse()
 
 	lvl, err := log.LvlFromString(*logLevel)
@@ -48,7 +50,10 @@ func main() {
 	}
 
 	cluster := controller.NewCluster(clientset)
-	as := autoscaler.New(cluster)
+
+	as := autoscaler.New(cluster,
+		func(as *autoscaler.Autoscaler) { as.maxLoadDesired = maxLoadDesired })
+
 	controller, err := controller.NewController(client, clientset, as)
 	if err != nil {
 		panic(err)
