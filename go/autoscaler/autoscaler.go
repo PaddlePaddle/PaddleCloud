@@ -388,48 +388,41 @@ func scaleAllDryRun(jobs []job, r ClusterResource, maxLoadDesired float64) map[s
 	return diff
 }
 
-func (a *Autoscaler) scaleAll(diff map[string]int) {
-	for name := range diff {
-		if diff[name] != 0 {
-			if a.jobs[name].TrainerJob == nil {
-				log.Info("Trainer job not found yet, will skip scaling", "name", name)
+func (a *Autoscaler) scaleAll(target map[string]int) {
+	for name := range target {
+		log.Info("scaling job",
+			"name", name, "target", target[name])
+		target := int32(target[name])
+
+		var err error
+		for retry := 5; retry > 0; retry-- {
+			var tj *batchv1.Job
+			// don't shadow err
+			tj, err = a.cluster.GetTrainerJob(a.jobs[name].Config)
+			if err != nil {
+				log.Warn("sync trainer job error",
+					"error", err, "remaining retry", retry)
+				continue
+			}
+			j := a.jobs[name]
+			// NOTE: only update batchv1.job from k8s api-server before updating
+			// for efficiency. Update the job resource to get latest k8s
+			// resource reversion.
+			j.TrainerJob = tj
+			a.jobs[name] = j
+			*a.jobs[name].TrainerJob.Spec.Parallelism = target
+			err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
+			if err != nil {
+				log.Error("error updating trainer job",
+					"error", err, "remaining retry", retry)
 				continue
 			}
 
-			log.Info("scaling job",
-				"name", name, "number of instances", diff[name])
-			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
+			break
+		}
 
-			var err error
-			for retry := 5; retry > 0; retry-- {
-				var tj *batchv1.Job
-				// don't shadow err
-				tj, err = a.cluster.GetTrainerJob(a.jobs[name].Config)
-				if err != nil {
-					log.Warn("sync trainer job error",
-						"error", err, "remaining retry", retry)
-					continue
-				}
-				j := a.jobs[name]
-				// NOTE: only update batchv1.job from k8s api-server before updating
-				// for efficiency. Update the job resource to get latest k8s
-				// resource reversion.
-				j.TrainerJob = tj
-				a.jobs[name] = j
-				*a.jobs[name].TrainerJob.Spec.Parallelism = target
-				err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
-				if err != nil {
-					log.Error("error updating trainer job",
-						"error", err, "remaining retry", retry)
-					continue
-				}
-
-				break
-			}
-
-			if err != nil {
-				log.Warn("Error updating trainer job", "error", err)
-			}
+		if err != nil {
+			log.Warn("Error updating trainer job", "error", err)
 		}
 	}
 }
@@ -491,7 +484,7 @@ func (a *Autoscaler) Monitor() {
 		log.Info("sync cluster resource done", "resource", r)
 
 		var js []job
-		for _, j := range a.jobs {
+		for key, j := range a.jobs {
 			// k8s job for trainers may not be created immediently
 			// try sync it here
 			if j.TrainerJob == nil {
@@ -505,7 +498,9 @@ func (a *Autoscaler) Monitor() {
 					continue
 				}
 				j.TrainerJob = tj
+				a.jobs[key] = j
 			}
+
 			// Scale jobs only when all pods' "Phase" are running.
 			// Pending/starting/terminating jobs are ignored.
 			total, running, err := a.cluster.JobPods(j.Config)
@@ -518,10 +513,15 @@ func (a *Autoscaler) Monitor() {
 			}
 		}
 		diff := scaleAllDryRun(js, r, a.maxLoadDesired)
-		if len(diff) > 0 {
-			log.Info("calculated scaling plan", "plan", diff,
+		target := make(map[string]int)
+		for k, v := range diff {
+			target[k] = int(*a.jobs[k].TrainerJob.Spec.Parallelism) + v
+		}
+
+		if len(target) > 0 {
+			log.Info("calculated scaling plan", "target", target,
 				"clusterResource", r)
 		}
-		a.scaleAll(diff)
+		a.scaleAll(target)
 	}
 }
