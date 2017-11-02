@@ -54,8 +54,13 @@ class CaseOneReport(object):
 
     def update_jobs(self, jobs):
         for job in jobs:
-            running_time = job.end_time - job.start_time
-            pending_time = job.start_time - job.submit_time
+            if job.start_time == -1:
+                # job always pending
+                running_time = 0
+                pending_time = job.end_time - job.submit_time
+            else:
+                running_time = job.end_time - job.start_time
+                pending_time = job.start_time - job.submit_time
             self.job_running_time.append(str(running_time))
             self.avg_running_time += running_time
             self.avg_pending_time += pending_time

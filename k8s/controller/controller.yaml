@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - name: training-job-controller
-        image: registry.baidu.com/paddlepaddle/controller:helin
+        image: registry.baidu.com/paddlepaddle/controller:yx2
         imagePullPolicy: Always
         command: ["/controller", "-logtostderr", "-log_level", "debug"]
       imagePullSecrets:

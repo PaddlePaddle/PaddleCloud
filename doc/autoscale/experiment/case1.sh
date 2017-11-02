@@ -10,15 +10,18 @@ function start() {
         do 
             if [ "$AUTO_SCALING" == "ON" ]
             then
-                submit_ft_job $JOB_NAME$j 5
+                submit_ft_job $JOB_NAME$j 2
                 cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$j/g" | kubectl create -f -
             else
-                submit_ft_job $JOB_NAME$j 20
+                submit_ft_job $JOB_NAME$j 60
             fi
-            sleep 5
+            sleep 10
         done
+
+        sleep 300
+
         # waiting for all jobs finished
-        python python/main.py wait_for_finished
+        #python python/main.py wait_for_finished
         # stop all jobs
         stop
         # waiting for all jobs have been cleaned
@@ -33,6 +36,9 @@ function start() {
             fi
             break
         done
+        # waiting for all jobs have been cleaned
+        python python/main.py wait_for_cleaned
+
     done
     python python/main.py merge_case1_reports
 }
@@ -46,6 +52,5 @@ function stop() {
         then
            cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$i/g" | kubectl delete -f - 
         fi
-        sleep 2
     done
 }

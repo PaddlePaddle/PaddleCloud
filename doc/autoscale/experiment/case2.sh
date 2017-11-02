@@ -39,19 +39,19 @@ function start() {
     sleep 60
 
     kubectl scale deployment/nginx --replicas=300
-    sleep 60
+    sleep 90
 
     kubectl scale deployment/nginx --replicas=200
-    sleep 60
+    sleep 90
 
     kubectl scale deployment/nginx --replicas=100
-    sleep 60
+    sleep 90
 
     kubectl scale deployment/nginx --replicas=200
-    sleep 60
+    sleep 90
 
     kubectl scale deployment/nginx --replicas=300
-    sleep 60
+    sleep 90
 
     kubectl scale deployment/nginx --replicas=400
     sleep 120

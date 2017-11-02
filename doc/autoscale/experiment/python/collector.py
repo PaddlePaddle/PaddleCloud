@@ -164,6 +164,8 @@ class Collector(object):
         if len(phases) == 0:
             if job.submit_time != -1:
                 job.status = JOB_STSTUS_KILLED
+                if job.end_time == -1:
+                    job.end_time = times
         elif 'Running'  in phases:
             if job.start_time == -1:
                 job.start_time = times
