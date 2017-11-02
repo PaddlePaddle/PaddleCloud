@@ -21,20 +21,38 @@ if __name__ == '__main__':
     ]
 
     plots_data = map(lambda x: { 'name': x, 'data':[] }, column_names)
+    def storeAverage (average_store, target_store) :
+        for index, row in enumerate(average_store):
+            if len(row) != 0:
+                mean = np.mean(np.array(row), axis=0)
+                target_store[index]["data"].append(mean)
+
 
     #generate plots_data
     with open(DATAFILEPATH, 'rb') as csvfile:
-        csv_reader =  csv.reader(csvfile, delimiter=',')
-        for row in csv_reader:
+        csv_reader = csv.reader(csvfile, delimiter=',')
+        #sort data by time stamp
+        sorted_csv = sorted(csv_reader, key=lambda row: int(row[0]), reverse=False)
+        previous_ts = -1
+        average_data_store = [[] for _ in range(len(column_names))]
+        for row in sorted_csv:
             for index, item in enumerate(row):
+                if index == 0:
+                    #jumped to another ts
+                    if item != previous_ts:
+                        #process previous data and append average to main store
+                        storeAverage(average_data_store, plots_data)
+                        average_data_store = [[] for _ in range(len(column_names))]
+                    previous_ts = item
                 if "|" in item:
                     item = item.split("|")
                 else:
                     item  = [item]
-                plots_data[index]['data'].append(np.array(item).astype(np.float))
+                average_data_store[index].append(np.array(item).astype(np.float))
+        storeAverage(average_data_store, plots_data)
 
     #timestamp as x axes
-    ax_data = plots_data[0]["data"]
+    ax_data = np.array(plots_data[0]["data"]).flatten()
     plots_data = plots_data[1:]
     fig, axes = plt.subplots(len(plots_data), sharex=True)
     for index, plot in enumerate(plots_data):
