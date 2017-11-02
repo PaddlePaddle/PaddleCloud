@@ -175,8 +175,10 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
-		NodesCPUIdleMilli:   nodesCPUIdleMilli,
-		NodesMemoryFreeMega: nodesMemoryFreeMega,
+		NodeInfos: autoscaler.NodeInfos{
+			NodesCPUIdleMilli:   nodesCPUIdleMilli,
+			NodesMemoryFreeMega: nodesMemoryFreeMega,
+		},
 	}
 	return
 }
