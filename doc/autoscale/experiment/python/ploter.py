@@ -6,16 +6,6 @@ import csv
 
 DATAFILEPATH = os.getenv("DATAPATH", "./ts.txt")
 
-class Ploter(object):
-    '''
-    Plot graph
-    '''
-    def __init__(self):
-        self.plt = plt
-
-    def plot(self):
-        pass
-
 if __name__ == '__main__':
     column_names = [
         "timestamp",

@@ -13,6 +13,8 @@ PASSES = int(os.getenv("PASSES", 1))
 PASSE_NUM = int(os.getenv("PASSE_NUM", 1))
 DETAILS = os.getenv("DETAILS", "ON")
 
+outdir = os.environ['OUTDIR']
+
 class StatInfo(object):
     def __init__(self, 
                  pass_num,
@@ -126,8 +128,8 @@ def run_case2(c):
         if utils.is_jobs_killed(jobs):
             r1.update_jobs(jobs)
             r1.run()
-            r2.to_csv('./out/%s-case2-result.csv' % JOB_NAME)
-            r1.to_csv('./out/%s-case1-pass%d.csv' % (JOB_NAME, PASSE_NUM))
+            r2.to_csv('%s/%s-case2-result.csv' % (outdir, JOB_NAME))
+            r1.to_csv('%s/%s-case1-pass%d.csv' % (outdir, JOB_NAME, PASSE_NUM))
             break
 
 
@@ -149,7 +151,7 @@ def run_case1(c):
         if utils.is_jobs_killed(jobs):
             report.update_jobs(jobs)
             report.run()
-            report.to_csv('./out/%s-case1-pass%d.csv' % (JOB_NAME, PASSE_NUM))
+            report.to_csv('%s/%s-case1-pass%d.csv' % (outdir, JOB_NAME, PASSE_NUM))
             break
 
 def usage():

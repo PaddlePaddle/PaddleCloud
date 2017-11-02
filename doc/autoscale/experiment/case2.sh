@@ -14,8 +14,13 @@ function start() {
     # submit Nginx deployment
     cat k8s/nginx_deployment.yaml.tmpl | sed "s/<nginx-replicas>/$NGINX_REPLICAS/g" | kubectl create -f -
     sleep 5
+    kubectl scale deployment/nginx --replicas=400
+
+    # wait for 400 nginx replicas to stabilize
+    sleep 30
+
     PASSE_NUM=0 AUTO_SCALING=$AUTO_SCALING JOB_COUNT=$JOB_COUNT JOB_NAME=$JOB_NAME\
-            stdbuf -oL nohup python python/main.py run_case2 &> ./out/${JOB_NAME}-case2.log &
+            stdbuf -oL nohup python python/main.py run_case2 &> $OUTDIR/${JOB_NAME}-case2.log &
 
     # submit the auto-scaling training jobs
     for ((j=0; j<$JOB_COUNT; j++))
@@ -29,25 +34,38 @@ function start() {
         fi
     sleep 5
     done
-    kubectl scale deployment/nginx --replicas=400
-    sleep 30
+
+    # wait for jobs to stabilize
+    sleep 60
+
+    kubectl scale deployment/nginx --replicas=300
+    sleep 60
+
     kubectl scale deployment/nginx --replicas=200
-    sleep 30
+    sleep 60
+
     kubectl scale deployment/nginx --replicas=100
-    sleep 30
+    sleep 60
+
     kubectl scale deployment/nginx --replicas=200
-    sleep 30
+    sleep 60
+
+    kubectl scale deployment/nginx --replicas=300
+    sleep 60
+
     kubectl scale deployment/nginx --replicas=400
-    # waiting for all jobs finished
-    python python/main.py wait_for_finished
+    sleep 120
+
+    # no need to wait for all training jobs to finish, since training
+    # jobs could go on for a while.
+
     # stop all jobs
     stop
-    # waiting for all jobs have been cleaned
-    python python/main.py wait_for_cleaned
+
     # waiting for the data collector exit
     while true
     do
-        FILE=./out/$JOB_NAME-case1-pass0.csv
+        FILE=$OUTDIR/$JOB_NAME-case1-pass0.csv
         if [ ! -f $FILE ]; then
             echo "waiting for collector exit, generated file " $FILE
             sleep 5
@@ -56,6 +74,9 @@ function start() {
         break
     done
     python python/main.py merge_case1_reports
+
+    # waiting for all jobs have been cleaned
+    python python/main.py wait_for_cleaned
 }
 
 function stop() {
