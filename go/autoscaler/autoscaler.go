@@ -48,7 +48,7 @@ type ClusterResource struct {
 	MemoryTotalMega   int64
 
 	NodesCPUIdleMilli   map[string]int64
-	NodesMemoryIdleMega map[string]int64
+	NodesMemoryFreeMega map[string]int64
 }
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -226,27 +226,23 @@ nextJob:
 }
 
 func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
-	assignable = false
 	for _, idle := range r.NodesCPUIdleMilli {
 		if j.TrainerCPURequestMilli() <= idle {
-			assignable = true
-			return
+			return true
 		}
 	}
 	log.Debug("No node is assignable, job CPU is ", j.TrainerMemRequestMega())
-	return
+	return false
 }
 
 func searchAssignableNodeByMem(r *ClusterResource, j job) (assignable bool) {
-	assignable = false
-	for _, idle := range r.NodesMemoryIdleMega {
+	for _, idle := range r.NodesMemoryFreeMega {
 		if j.TrainerMemRequestMega() <= idle {
-			assignable = true
-			return
+			return true
 		}
 	}
 	log.Debug("No node is assignable, job memory is ", j.TrainerMemRequestMega())
-	return
+	return false
 }
 
 func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
@@ -312,6 +308,7 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64,
 	if !searchAssignableNodeByCPU(r, j) || !searchAssignableNodeByMem(r, j) {
 		// can not find assignable node, do not scale
 		additional = 0
+		return
 	}
 
 	// NOTE: do not scale up to use full cluster resource of CPU

@@ -98,7 +98,6 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList) (reqs v1.ResourceList, l
 func syncNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]int64, nodesMemoryIdleMega map[string]int64) (err error) {
 	for _, pod := range podList.Items {
 		nodeName := pod.Spec.NodeName
-		// if nodeName is empty, the pod is not assigned.
 		if nodeName == "" {
 			continue
 		}
@@ -177,7 +176,7 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
 		NodesCPUIdleMilli:   nodesCPUIdleMilli,
-		NodesMemoryIdleMega: nodesMemoryIdleMega,
+		NodesMemoryFreeMega: nodesMemoryFreeMega,
 	}
 	return
 }
