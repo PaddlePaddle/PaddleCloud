@@ -56,7 +56,7 @@ type NodeInfos struct {
 	NodesMemoryFreeMega map[string]int64
 }
 
-// String is the string that represents NodeInfo when printed.
+// String returns the string that represents NodeInfo when printed.
 func (n NodeInfos) String() string {
 	return fmt.Sprintf("NodeInfo(%d nodes)", len(n.NodesCPUIdleMilli))
 }
@@ -391,6 +391,11 @@ func scaleAllDryRun(jobs []job, r ClusterResource, maxLoadDesired float64) map[s
 func (a *Autoscaler) scaleAll(diff map[string]int) {
 	for name := range diff {
 		if diff[name] != 0 {
+			if a.jobs[name].TrainerJob == nil {
+				log.Info("Trainer job not found yet, will skip scaling", "name", name)
+				continue
+			}
+
 			log.Info("scaling job",
 				"name", name, "number of instances", diff[name])
 			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
@@ -483,6 +488,7 @@ func (a *Autoscaler) Monitor() {
 			log.Error("error sync resource", "error", err)
 			continue
 		}
+		log.Info("sync cluster resource done", "resource", r)
 
 		var js []job
 		for _, j := range a.jobs {
