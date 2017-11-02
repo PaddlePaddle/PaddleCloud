@@ -22,6 +22,7 @@ if __name__ == '__main__':
 
     plots_data = map(lambda x: { 'name': x, 'data':[] }, column_names)
 
+    #generate plots_data
     with open(DATAFILEPATH, 'rb') as csvfile:
         csv_reader =  csv.reader(csvfile, delimiter=',')
         for row in csv_reader:
@@ -32,19 +33,18 @@ if __name__ == '__main__':
                     item  = [item]
                 plots_data[index]['data'].append(np.array(item).astype(np.float))
 
+    #timestamp as x axes
     ax_data = plots_data[0]["data"]
     plots_data = plots_data[1:]
-    feature_count = len(plots_data)
-    fig, axes = plt.subplots(feature_count, sharex=True)
+    fig, axes = plt.subplots(len(plots_data), sharex=True)
     for index, plot in enumerate(plots_data):
         ax = axes[index]
         subplots = np.rot90(plot["data"])
+        #add average line for cpu util chart
         if plot["name"] == "cpu util":
             average_arr = np.empty(len(subplots[0]))
             average_arr.fill(np.average(subplots[0]))
-            print subplots
             subplots = np.append(subplots, [average_arr], axis=0)
-            print subplots
 
         for subplot in subplots:
             ax.plot(ax_data, subplot)
