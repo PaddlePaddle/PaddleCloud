@@ -106,13 +106,21 @@ type Autoscaler struct {
 	maxLoadDesired float64
 }
 
+// WithMaxLoadDesired init with maxLoadDesired
+func WithMaxLoadDesired(maxLoadDesired float64) func(as *Autoscaler) {
+	return func(as *Autoscaler) {
+		as.maxLoadDesired = maxLoadDesired
+	}
+}
+
 // New creates a new Autoscaler.
 func New(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	c := &Autoscaler{
-		cluster: cluster,
-		ticker:  time.NewTicker(defaultLoopDur),
-		jobs:    make(map[string]job),
-		eventCh: make(chan event),
+		cluster:        cluster,
+		ticker:         time.NewTicker(defaultLoopDur),
+		jobs:           make(map[string]job),
+		eventCh:        make(chan event),
+		maxLoadDesired: 1.0,
 	}
 	for _, option := range options {
 		option(c)
@@ -215,26 +223,39 @@ nextJob:
 }
 
 func scaleDownDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64) (additional int) {
+	cpuRequestMilli := j.TrainerCPURequestMilli()
+	memRequestMega := j.TrainerMemRequestMega()
+	gpuLimit := j.TrainerGPULimit()
+
+	//FIXME(typhoonzero): Copied code.
+	defer func() {
+		r.GPULimit += gpuLimit * additional
+		r.CPURequestMilli += cpuRequestMilli * int64(additional)
+		r.MemoryRequestMega += memRequestMega * int64(additional)
+	}()
+
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
 	instanceMin := j.Config.Spec.Trainer.MinInstance
 
 	if plannedInstance > instanceMax {
-		return -1
+		additional = -1
+		return
 	}
 	gpuCondition := r.GPULimit > int(float64(r.GPUTotal)*maxLoadDesired)
 	cpuCondition := r.CPURequestMilli > int64(float64(r.CPUTotalMilli)*maxLoadDesired)
 	if gpuCondition || cpuCondition {
 		if plannedInstance > instanceMin {
-			return -1
+			additional = -1
+			return
 		}
 
 		// can not scale down further
-		return 0
+		additional = 0
+		return
 	}
-
 	// do not try to scale up
-	return 0
+	return
 }
 
 func scaleUpDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64) (additional int) {

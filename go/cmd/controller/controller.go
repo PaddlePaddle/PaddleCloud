@@ -52,7 +52,7 @@ func main() {
 	cluster := controller.NewCluster(clientset)
 
 	as := autoscaler.New(cluster,
-		func(as *autoscaler.Autoscaler) { as.maxLoadDesired = maxLoadDesired })
+		autoscaler.WithMaxLoadDesired(*maxLoadDesired))
 
 	controller, err := controller.NewController(client, clientset, as)
 	if err != nil {
