@@ -105,6 +105,11 @@ func TestScaleDryRunSatisfied(t *testing.T) {
 	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false))
 }
 
+var allIdleNodeInfos = NodeInfos{
+	NodesCPUIdleMilli:   map[string]int64{"": 99999},
+	NodesMemoryFreeMega: map[string]int64{"": 99999},
+}
+
 func TestScaleDryRunMoreCPU(t *testing.T) {
 	r := ClusterResource{
 		CPULimitMilli:     100,
@@ -113,6 +118,7 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 		MemoryRequestMega: 100,
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
+		NodeInfos:         allIdleNodeInfos,
 	}
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0, 1.0, false))
@@ -126,6 +132,7 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 		MemoryRequestMega: 100,
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
@@ -143,6 +150,7 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0, 1.0, false))
@@ -160,6 +168,7 @@ func TestScaleDryRunNoMoreGPU(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
@@ -197,6 +206,7 @@ func TestScaleDryRunScaleDownToMin(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
@@ -216,6 +226,7 @@ func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
@@ -234,6 +245,7 @@ func TestScaleDryRunNoMem(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
@@ -247,6 +259,7 @@ func TestScaleAllDryRunNoMem(t *testing.T) {
 		MemoryLimitMega:   1000,
 		MemoryTotalMega:   1000,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
@@ -265,6 +278,7 @@ func TestScaleAllDryRun(t *testing.T) {
 		GPULimit:          8,
 		GPURequest:        8,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
@@ -283,6 +297,7 @@ func TestScaleAllDryRunNotFull(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
@@ -301,6 +316,7 @@ func TestScaleAllDryRunDownNotFull(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 3)
@@ -319,6 +335,7 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 		GPULimit:          8,
 		GPURequest:        8,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
@@ -337,6 +354,7 @@ func TestScaleAllDryRunLessGPU(t *testing.T) {
 		GPULimit:          9,
 		GPURequest:        9,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
