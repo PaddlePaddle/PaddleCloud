@@ -122,7 +122,7 @@ def main():
                 [DATASET_PATH], etcd_endpoint),
             batch_size=128),
         event_handler=event_handler,
-        num_passes=20)
+        num_passes=120)
 
 if __name__ == '__main__':
     usage = "python train.py [prepare|train]"
