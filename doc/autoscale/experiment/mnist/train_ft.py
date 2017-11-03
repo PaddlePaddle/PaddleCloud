@@ -109,7 +109,7 @@ def main():
                 [DATASET_PATH], etcd_endpoint),
             batch_size=10),
         event_handler=event_handler,
-        num_passes=30)
+        num_passes=120)
 
 if __name__ == '__main__':
     main()
