@@ -143,8 +143,11 @@ if __name__ == '__main__':
     standard_time_of_event = int(data_csvs[0]['time_of_event'])
     print "standard time of event", standard_time_of_event
     for index, data_csv in enumerate(data_csvs):
-        time_offset = int(data_csv['time_of_event']) - standard_time_of_event
-        print "time offset", time_offset
+        # time_offset = int(data_csv['time_of_event']) - standard_time_of_event
+        # print "time offset", time_offset
+
+        # disable time_offset
+        time_offset = 0
         data_corrected[index] = [[str(int(x[0])-time_offset)] + x[1:] for x in data_csv['data']]
 
     data_plot = merge_data(data_corrected)
