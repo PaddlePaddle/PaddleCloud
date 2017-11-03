@@ -52,5 +52,6 @@ function stop() {
         then
            cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$i/g" | kubectl delete -f - 
         fi
+        sleep 1
     done
 }

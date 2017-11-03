@@ -30,9 +30,9 @@ function submit_ft_job() {
         -pscpu $PSCPU \
         -pservers 10 \
         -psmemory $PSMEMORY \
-        -entry "python ./train_ft.py" \
+        -entry "python /root/train_ft.py" \
         -faulttolerant \
-        -image registry.baidu.com/paddlepaddle/paddlecloud-job:mnist \
+        -image registry.baidu.com/paddlepaddle/paddlecloud-job:mnist2 \
         ./mnist
     #-entry "python ./train_ft.py train" \
 }
