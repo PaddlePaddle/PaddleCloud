@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.ticker as mticker
 import os
 import csv
+import glob
 
-DATAFILEPATH = os.getenv("DATAPATH", "./ts.txt,./ts1.txt")
+DATA_PATHS = os.getenv("DATA_PATHS")
 CASEID = os.getenv("CASE", "1")
 DATA_MAX = int(os.getenv("DATA_MAX", "9999999"))
 
@@ -108,7 +109,7 @@ if __name__ == '__main__':
 
     # read csv files
     data_csvs = []
-    datafiles = DATAFILEPATH.split(",")
+    datafiles =  datafiles = glob.glob(DATA_PATHS)
     for filepath in datafiles:
         with open(filepath, "rb") as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
