@@ -5,9 +5,10 @@ import os
 import csv
 import glob
 
-DATA_PATHS = os.getenv("DATA_PATHS")
+DATA_PATHS = os.getenv("DATA_PATHS", "../out1/case1-mnist-OFF*/*.log")
 CASEID = os.getenv("CASE", "1")
-DATA_MAX = int(os.getenv("DATA_MAX", "9999999"))
+DATA_MAX = int(os.getenv("DATA_MAX", "550"))
+PNGPATH = os.getenv("PNGPATH", "./")
 
 def clean_data(data):
     new_data = []
@@ -107,9 +108,39 @@ if __name__ == '__main__':
         "cpu utils for each job"
     ]
 
+    # y axes limits for case 1 and 2
+    ylims = {
+        "1": #CASEID
+        [
+            0, #timestamp, not used
+            100,
+            360,
+            20,
+            20,
+            20,
+            20,
+            0,
+            80,
+            30 #cpu utils for each job. To be decided
+        ],
+        "2": 
+        [
+            0, #timestamp, not used
+            100,
+            300,
+            20,
+            20,
+            20,
+            20,
+            0,
+            60,
+            50 #cpu utils for each job. To be decided
+        ]
+    }
+
     # read csv files
     data_csvs = []
-    datafiles =  datafiles = glob.glob(DATA_PATHS)
+    datafiles = glob.glob(DATA_PATHS)
     for filepath in datafiles:
         with open(filepath, "rb") as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
@@ -164,21 +195,32 @@ if __name__ == '__main__':
             plot_data[col_idx].append(v)
 
     ax_data = np.array(plot_data[0])
-    fig, axes = plt.subplots(len(plot_data)-1, sharex=True)
+    _, axes = plt.subplots(len(plot_data)-1, sharex=True)
 
     #create charts
     for index, plot in enumerate(plot_data):
         if index == 0:
             continue
-
+        
         plot = np.array(plot)
         name = column_names[index]
+        ymax = ylims[CASEID][index]
+        ymax = ymax if ymax >0 else 1
+
         ax = axes[index-1]
         ax.plot(ax_data, plot)
         
-        ax.set_ylim(bottom=0)
+        ax.set_ylim((0, ymax))
         ax.yaxis.set_major_locator(mticker.MaxNLocator(4, integer=True))
         ax.set_title(name)
+
+        fig = plt.figure(name)
+        png_ax = plt.gca()
+        png_ax.set_title(name)
+        png_ax.set_ylim((0, ymax))
+        plt.plot(ax_data, plot)
+        plt.savefig(PNGPATH + name + ".png")
+        plt.close(fig)
 
     plt.subplots_adjust(left=0.07, bottom=0.11, right=0.96, top=0.93, wspace=0.2, hspace=0.57)
     plt.show()
