@@ -3,8 +3,8 @@
 ### Preprocess
 
 ```bash
-$ cd $REPO/doc/autoscale/experiment/result/plot
-$ ./preprocess.sh `ls ../*/*.log`
+$ cd $REPO/doc/autoscale/experiment/result
+$ ./preprocess.sh `ls */*.log`
 ```
 
 ### Plot Experiment Result Graphs
@@ -13,7 +13,7 @@ $ ./preprocess.sh `ls ../*/*.log`
 
 1. Run the command below:
    ```bash
-   go run plot.go -pattern '../*/*.log.csv'
+   go run plot/plot.go -pattern '*/*.log.csv'
    ```
 
    The experiment result graphs will be generated in the current folder.
