@@ -47,11 +47,12 @@ function stop() {
     for ((i=0; i<$JOB_COUNT; i++))
     do
         echo "kill" $JOB_NAME$i
-        paddlecloud kill $JOB_NAME$i
         if [ "$AUTO_SCALING" == "ON" ]
         then
            cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$i/g" | kubectl delete -f - 
         fi
+        sleep 2
+        paddlecloud kill $JOB_NAME$i
         sleep 1
     done
 }
