@@ -2,7 +2,7 @@
 
 ## Purpose
 
-To verify the effectiveness of PaddlePaddle's fault-tolerance and auto-scaling mechanism.
+To verify the effectiveness of PaddlePaddle's auto-scaling mechanism.
 
 ## Metrics
 
@@ -10,31 +10,37 @@ How the effectiveness is measured.
 
 1. Cluster computing resource overall utilization.
     - The higher the better.
-    - Higher utilization means less resource is idle. Autoscaling intended to maximize the overall cluster resource(CPU, GPU, memory) usage by ensuring resource for production level jobs/services, then fairly scale jobs that are scalable to use the resource left in the cluster.
+    - Higher utilization means less resource is idle. Autoscaling
+      intended to maximize the overall cluster resource(CPU, GPU,
+      memory) usage by ensuring resource for production level
+      jobs/services, then fairly scale jobs that are scalable to use
+      the resource left in the cluster.
 1. Task average pending time.
     - The less the better.
-    - The less pending time the earlier developers and researchers can start seeing the training cost curve, and the better they can verify the training algorithm effectiveness.
-    - This is a common pain point of researchers with the internal cloud.
-1. Task average execution time.
-    - The less the better in general.
-    - However, the average execution time is bound to increase due to prioritizing production jobs/services. In this case, we would say the less the average job running time increases, the better the scaler performances.
-    - Average execution time is also the way of measuring the effectiveness of fault-tolerance. If the fault-tolerance is not working properly, the training job will simply fail or finish with significantly longer duration.
-1. Quality of service with general purpose cluster
-    - Check if the Machine learning process will yield resources to more important online services when the load is getting intensive.
+    - The less pending time the earlier developers and researchers can
+      start seeing the training cost curve, and the better they can
+      verify the training algorithm effectiveness.
+    - This is a common pain point for researchers with the internal
+      cloud.
+1. Quality of service of the online services.
+    - Check if the Machine learning process will yield resources to
+      more important online services when the load is getting
+      intensive.
 
 ## Our setup
 
-- Kubernetes cluster with 1.6.x installed.
-- PaddleCloud with latest develop branch installed.
-- 133 physical nodes.
-- Use [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) as benchmark training job.
+- The Kubernetes cluster with 1.6.2 installed, with 133 physical nodes.
+- PaddleCloud with the latest develop branch installed.
+- [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) is
+  the benchmark training job.
 
 ## Test Cases
 
 ### Autoscaling on the Special Purpose Cluster
 
 All the job in the cluster will be training jobs (hence the name
-special purpose cluster). This case is a very typical scenario for research institutes.
+special purpose cluster). This case is a very typical scenario for
+research institutes.
 
 #### Variable
 
@@ -43,18 +49,21 @@ special purpose cluster). This case is a very typical scenario for research inst
 #### Invariant
 
 - The number of jobs.
-- The configuration of each job.
-- The submission time for each job.
+- The resource configuration of each job, other than:
+  1. each autoscaling job asks for 2 - 60 trainers, and
+  1. each non-autoscaling job asks for 60 trainers.
+- The submission time of each job.
+
 
 #### Experiment Steps
 
-1. With autoscaling turned off, submit the training jobs over
-   predefined submission delay between each job.
-1. With autoscaling turned on, submit the training jobs over
-   predefined submission delay between each job.
+1. With autoscaling turned off, submit the training jobs with 10
+   seconds delay between each job.
+1. With autoscaling turned on, submit the training jobs with 10
+   seconds delay between each job.
 
 
-#### Experiment Result Example:
+#### Experiment Result
 
 - Autoscaling OFF
 
@@ -78,7 +87,8 @@ special purpose cluster). This case is a very typical scenario for research inst
 Hybrid deployment with online serving and offline training Job (hence
 the name general purpose cluster). We will deploy PaddlePaddle
 training job and [Nginx](https://www.nginx.com/resources/wiki/) web
-serving together. This case is a very typical scenario for large enterprises and Internet companies.
+serving together. This case is a very typical scenario for large
+enterprises and internet companies.
 
 #### Variable
 
@@ -89,61 +99,84 @@ serving together. This case is a very typical scenario for large enterprises and
 #### Invariant
 
 - The number of training jobs.
-- The configuration of each training job.
-- The configuration of each Nginx job.
+- The configuration of each training job, other than:
+  1. each autoscaling job asks for 2 - 60 trainers, and
+  1. each non-autoscaling job asks for 60 trainers.
 - The submission time for each training job.
+- The configuration of each Nginx job.
 
 #### Experiment Steps
 
-1. Start `N` Nginx instances to simulate the number of nginx instances
+1. Start 400 Nginx instances to simulate the number of nginx instances
    required for the peak time load.
 
 1. Start the training jobs.
 
-1. Decrease the Nginx instances count of `N` to `M` over time, to
+1. Decrease the Nginx instance count of 400 to 100 over time, to
    simulate the Nginx load decreases, requiring fewer nginx instances.
 
-1. Increase the Nginx instances count of `M` to `N` over time, to
-   simulate the fully Nginx load cycle.
+1. Increase the Nginx instances count of 400 to 100 over time, to
+   simulate the full Nginx load cycle.
 
-#### Experiment Result Example:
+#### Experiment Result
 
-- Autoscaling OFF
-
-	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
-	--- | --- | --- | --- | ---
-	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
-	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
-	AVG|331|86|N/A|63.55
-
-	Time | NGINX COUNT | TRAINER COUNT | CLUSTER CPU UTILS
-	-- | -- | -- | --
-	0  | 100 | 50 | 100
-	5  | 90  | 50 | 90
-	10 | 80  | 50 | 80
-	15 | 90  | 50 | 90
-	20 | 100 | 50 | 100
+<img src="./result/case2_nginx.png" />
+<img src="./result/case2_util.png" />
 
 - Autoscaling ON
 
-	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
-	--- | --- | --- | --- | ---
-	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
-	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
-	AVG|331|86|N/A|63.55
+	PASS|AVG PENDING TIME|CLUSTER CPU UTILS
+	--- | --- | ---
+	0|33|83.7926
+	1|38|83.0557
+	2|29|82.8201
+	3|22|84.3083
+	4|62|82.8449
+	5|21|83.2045
+	6|70|83.0649
+	7|69|83.8079
+	8|101|83.5989
+	9|70|83.7494
+	AVG|53.55|83.4247
 
-	Time | NGINX COUNT | TRAINER COUNT | CLUSTER CPU UTILS
-	-- | -- | -- | --
-	0  | 100 | 50 | 100
-	5  | 90  | 55 | 100
-	10 | 80  | 60 | 100
-	15 | 90  | 55 | 100
-	20 | 100 | 50 | 100
+- Autoscaling OFF
+
+	PASS|AVG PENDING TIME|CLUSTER CPU UTILS
+	--- | --- | ---
+	0|1|62.3651
+	1|0|61.7813
+	2|1|61.6985
+	3|0|61.4403
+	4|2|61.8323
+	5|3|61.7459
+	6|2|61.5679
+	7|2|62.1981
+	8|3|61.9676
+	9|1|62.0316
+	AVG|1.5|61.8629
 
 
-## Reproduce the experiment
+## Conclusions
 
-- Prepare
+### Resource utilization
+
+TBD
+
+### Average Pending time
+
+TBD
+
+### Average execution time
+
+TBD
+
+### Improved the service quality with general purpose cluster
+
+As shown in test case two, PaddlePaddle yields resource to more important online services when the load is getting intensive.
+
+## Reproducing the Experiment
+
+- Preparation
     1. Configure kubectl and paddlectl on your host.
     1. Submit the TrainingJob controller with the YAML file.
     ```bash
@@ -156,16 +189,16 @@ serving together. This case is a very typical scenario for large enterprises and
         For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
         > cd cloud/doc/autoscale/experiment
-        > TAG=round_1 AUTO_SCALING=OFF PASSES=5 JOB_COUNT=20 ./run.sh start case1
+        > TAG=round_1 AUTO_SCALING=OFF PASSES=1 JOB_COUNT=20 ./run.sh start case1
         ```
         Or submit an auto-scaline training job
         > cd cloud/doc/autoscale/experiment
         ```bash
-        > TAG=round_1 AUTO_SCALING=ON PASSES=5 JOB_COUNT=20 ./run.sh start case1
+        > TAG=round_1 AUTO_SCALING=ON PASSES=1 JOB_COUNT=20 ./run.sh start case1
         ```
         Or run the TestCase2 with 5 jobs:
         ```bash
-        > TAG=round_1 AUTO_SCALING=ON JOB_COUNT=5 ./run.sh start case2
+        > TAG=round_1 AUTO_SCALING=ON JOB_COUNT=6 ./run.sh start case2
         ```
 		
 		Note: the the test output will be written to different folders
@@ -174,9 +207,9 @@ serving together. This case is a very typical scenario for large enterprises and
         multiple round of data:
 		
 		```
-		> for i in `seq 1 2`; do echo pass $i; TAG=round_$i JOB_COUNT=5 ./run.sh start case2; done
+		> for i in `seq 1 2`; do echo pass $i; TAG=round_$i JOB_COUNT=6 ./run.sh start case2; done
 		pass 1
-		outputing output to folder: ./out/mnist-OFF-5-1-ON-400-case_case2-round_1
+		outputing output to folder: ./out/mnist-OFF-6-1-ON-400-case_case2-round_1
 		```
 
 	1. Get the time series data.
@@ -213,29 +246,4 @@ serving together. This case is a very typical scenario for large enterprises and
 		```
 
 	1. Plot from the time series data.
-	    ```
-		cd python
-	    cat ../out/case1-mnist-OFF-20-1-ON-400-round_2/mnist-case1-pass0.log  |awk -F, '{print $1","$2","$3","$4","$5","$6","$7","$8}>ts.txt
-		DATAPATH=ts.txt python ploter.py
-		```
-
-    1. Gernerate Experiment Report
-        After all the passes are finished, the report will generated at `./out/*` folder.
-
-## Conclusions
-
-### Resource utilization
-
-TBD
-
-### Average Pending time
-
-TBD
-
-### Average execution time
-
-TBD
-
-### Improved the service quality with general purpose cluster
-
-As shown in test case two, PaddlePaddle yields resource to more important online services when the load is getting intensive.
+	    Please see [here](./result/README.md)
