@@ -2,6 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: training-job-controller
+  namespace: paddlecloud
 spec:
   replicas: 1
   template:
@@ -11,6 +12,8 @@ spec:
     spec:
       containers:
       - name: training-job-controller
-        image: helinwang/training-job-controller
+        image: registry.baidu.com/paddlepaddle/controller:yx2
         imagePullPolicy: Always
         command: ["/controller", "-logtostderr", "-log_level", "debug"]
+      imagePullSecrets:
+      - name: regsecret

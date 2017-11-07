@@ -9,27 +9,14 @@ import glob
 import pickle
 
 
-# NOTE: must change this to your own username on paddlecloud.
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
-common.DATA_HOME = "/pfs/%s/public/idl/users/dl/paddlecloud/public/dataset" % DC
-DATASET_PATH = "%s/mnist/train-[0-9]*" % common.DATA_HOME
-TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
-TEST_FILES_PATH = os.path.join(common.DATA_HOME, "mnist")
 
-def prepare_dataset():
-    # convert will also split the dataset by line-count
-    common.convert(TRAIN_FILES_PATH,
-                paddle.dataset.mnist.train(),
-                8192, "train")
-    common.convert(TEST_FILES_PATH,
-                paddle.dataset.mnist.test(),
-                1, "test")
+DATASET_PATH = "/data/mnist/mnist-train-*"
 
 def softmax_regression(img):
     predict = paddle.layer.fc(
         input=img, size=10, act=paddle.activation.Softmax())
     return predict
-
 
 def multilayer_perceptron(img):
     # The first fully-connected layer
@@ -120,17 +107,9 @@ def main():
         reader=paddle.batch(
             cloud_reader(
                 [DATASET_PATH], etcd_endpoint),
-            batch_size=128),
+            batch_size=10),
         event_handler=event_handler,
-        num_passes=20)
+        num_passes=120)
 
 if __name__ == '__main__':
-    usage = "python train.py [prepare|train]"
-    if len(sys.argv) != 2:
-        print usage
-        exit(1)
-
-    if sys.argv[1] == "prepare":
-        prepare_dataset()
-    elif sys.argv[1] == "train":
-        main()
+    main()

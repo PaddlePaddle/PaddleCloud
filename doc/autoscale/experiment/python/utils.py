@@ -1,8 +1,14 @@
 import collector
-
+REPORT_SEPARATOR="|"
 def is_jobs_finished(jobs):
     for job in jobs:
         if job.status != collector.JOB_STATUS_FINISHED:
+            return False
+    return True
+
+def is_jobs_killed(jobs):
+    for job in jobs:
+        if job.status != collector.JOB_STSTUS_KILLED:
             return False
     return True
 
