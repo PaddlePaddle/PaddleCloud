@@ -121,7 +121,17 @@ enterprises and internet companies.
 #### Experiment Result
 
 <img src="./result/case2_nginx.png" />
+
+The above graph shows the number of nginx instances changing over
+time, simulation a typical online cluster usage. The dotted line is
+for non-autoscaling experiment passes, the full line is for
+autoscaling experiment passes.
+
 <img src="./result/case2_util.png" />
+
+The above graph shows when autoscaling is turned on, the cluster util
+is kept high even though the online nginx service is scaled down.
+
 
 - Autoscaling ON
 
