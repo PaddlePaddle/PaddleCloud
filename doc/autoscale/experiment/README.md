@@ -143,35 +143,84 @@ serving together. This case is a very typical scenario for large enterprises and
 
 ## Reproduce the experiment
 
-- Configure kubectl on your host
 - Prepare
-    1. Configure kubectl 
-    1. Configure paddlectl
-    1. Submit the TrainingJob controller with YAML file
+    1. Configure kubectl and paddlectl on your host.
+    1. Submit the TrainingJob controller with the YAML file.
     ```bash
     > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
     > kubectl create -f k8s/controller/trainingjob_resource.yaml
     > kubectl create -f k8s/controller/controller.yaml
     ```
-- Test Case1
-    1. Run the TestCase1 for serval passes with bash scripts`./control_case.1.sh`:
-        ```bash
-        > cd cloud/doc/autoscale/experiment/python
-        > ./control_case1.sh --help
-        > usage: control_case1.sh <action>
-            action[required]: str[start|stop], will start or stop all the jobs.
-          env var:
-            JOB_COUNT[optional]:             int, The number of submiting jobs, defualt is 1.
-            FAULT_TOLERANT[optional]:   str[ON|OFF], whether a fault-tolerant job,default is OFF.
-            PASSES[optional]:           int, The number of run passes.
-            DETAILS[optional:           str[ON|OFF], print detail monitor information.
-        ```
+- Run the Test Case
+    1. Run the TestCase1 or TestCase2 for serval passes with the bash script `./run.sh`:
         For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
-            > PASSES=10 JOB_COUNT=10 ./control_case1.sh start
+        > cd cloud/doc/autoscale/experiment
+        > TAG=round_1 AUTO_SCALING=OFF PASSES=5 JOB_COUNT=20 ./run.sh start case1
         ```
+        Or submit an auto-scaline training job
+        > cd cloud/doc/autoscale/experiment
+        ```bash
+        > TAG=round_1 AUTO_SCALING=ON PASSES=5 JOB_COUNT=20 ./run.sh start case1
+        ```
+        Or run the TestCase2 with 5 jobs:
+        ```bash
+        > TAG=round_1 AUTO_SCALING=ON JOB_COUNT=5 ./run.sh start case2
+        ```
+		
+		Note: the the test output will be written to different folders
+        (the folder name is generated based on the test
+        configuration), so it's ok to run the tests in a loop to get
+        multiple round of data:
+		
+		```
+		> for i in `seq 1 2`; do echo pass $i; TAG=round_$i JOB_COUNT=5 ./run.sh start case2; done
+		pass 1
+		outputing output to folder: ./out/mnist-OFF-5-1-ON-400-case_case2-round_1
+		```
+
+	1. Get the time series data.
+	
+		The time serise data will be appended in the file
+        `./out/*/mnist-case[1|2]-pass[0-9].log`, the content of `*`
+        depends on the test case config, and will be printed in the
+        beginning.
+		
+		as the following format:
+
+
+		```
+		0,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+		2,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+		4,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+		5,2.11,0,2,1,0,0,0,0|0|0,0.00|0.00|0.00
+		7,5.30,7,2,0,1,0,0,7|0|0,3.19|0.00|0.00
+		9,7.90,19,2,0,1,0,0,19|0|0,5.79|0.00|0.00
+		10,8.11,20,2,0,1,0,0,20|0|0,6.01|0.00|0.00
+		```
+		The meaning of each column is:
+
+		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of nginx pods|running trainers for each job |cpu utils for each job
+		--|--|--|--|--|--|--|--|--|--
+
+	1. Calculate the average wainting time, and the average running time from time series data.
+		The statistical data will be generated in the file: `./out/*/mnist-case[1|2]-result.csv`
+		as the following format:
+		```
+		PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|AVG CLUSTER CPU UTILS
+		0|240|37|306,288,218,208,204,158,268,253,250,228,214,207,212,268,173,277,330,332,257,164|55.99
+		AVG|240|37|N/A|55.99
+		```
+
+	1. Plot from the time series data.
+	    ```
+		cd python
+	    cat ../out/case1-mnist-OFF-20-1-ON-400-round_2/mnist-case1-pass0.log  |awk -F, '{print $1","$2","$3","$4","$5","$6","$7","$8}>ts.txt
+		DATAPATH=ts.txt python ploter.py
+		```
+
     1. Gernerate Experiment Report
-        After all the passes are finished, the report will generated at './out' folder.
+        After all the passes are finished, the report will generated at `./out/*` folder.
 
 ## Conclusions
 
