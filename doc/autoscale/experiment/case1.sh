@@ -15,7 +15,7 @@ function start() {
             else
                 submit_ft_job $JOB_NAME$j 60
             fi
-            sleep 5
+            sleep 10
         done
 
         sleep 300
