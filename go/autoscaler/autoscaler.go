@@ -75,7 +75,7 @@ type Cluster interface {
 
 	// JobPods returns the number total desired pods and the
 	// number of running pods of a job.
-	JobPods(job *paddlejob.TrainingJob) (int, int, error)
+	JobPods(job *paddlejob.TrainingJob) (total, running, pending int, err error)
 }
 
 type job struct {
@@ -474,6 +474,36 @@ func (a *Autoscaler) Monitor() {
 		}
 		log.Info("sync cluster resource done", "resource", r)
 
+		havePending := false
+		for key, j := range a.jobs {
+			// k8s job for trainers may not be created immediently
+			// try sync it here
+			if j.TrainerJob == nil {
+				tj, err := a.cluster.GetTrainerJob(j.Config)
+				if err != nil {
+					log.Error(
+						"Error getting the trainer k8s job, will sync later.",
+						"name", j.Config.ObjectMeta.Name,
+						"error", err,
+					)
+					continue
+				}
+				j.TrainerJob = tj
+				a.jobs[key] = j
+			}
+
+			total, _, pending, err := a.cluster.JobPods(j.Config)
+			if err != nil {
+				log.Error("check if job is running failed", "error", err)
+				continue
+			}
+
+			if total == pending {
+				havePending = true
+				break
+			}
+		}
+
 		var js []job
 		for key, j := range a.jobs {
 			// k8s job for trainers may not be created immediently
@@ -492,14 +522,23 @@ func (a *Autoscaler) Monitor() {
 				a.jobs[key] = j
 			}
 
-			// Scale jobs only when all pods' "Phase" are running.
-			// Pending/starting/terminating jobs are ignored.
-			total, running, err := a.cluster.JobPods(j.Config)
+			total, running, pending, err := a.cluster.JobPods(j.Config)
 			if err != nil {
 				log.Error("check if job is running failed", "error", err)
 				continue
 			}
-			if total == running {
+
+			log.Info(
+				"job info",
+				"name", key,
+				"running", running,
+				"pending", pending,
+				"total", total,
+			)
+
+			// Scale jobs only when all pods' "Phase" are
+			// running, or some job is pending.
+			if total == running || havePending {
 				js = append(js, j)
 			}
 		}

@@ -59,7 +59,7 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 
 // JobPods returns the number total desired pods and the number of
 // running pods of a job.
-func (c Cluster) JobPods(job *paddlejob.TrainingJob) (total int, running int, err error) {
+func (c Cluster) JobPods(job *paddlejob.TrainingJob) (total, running, pending int, err error) {
 	if err != nil {
 		return
 	}
@@ -72,6 +72,9 @@ func (c Cluster) JobPods(job *paddlejob.TrainingJob) (total int, running int, er
 		// pod.ObjectMeta.DeletionTimestamp means pod is terminating
 		if pod.ObjectMeta.DeletionTimestamp == nil && pod.Status.Phase == v1.PodRunning {
 			running++
+		}
+		if pod.ObjectMeta.DeletionTimestamp == nil && pod.Status.Phase == v1.PodPending {
+			pending++
 		}
 	}
 	return
