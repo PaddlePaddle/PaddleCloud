@@ -4,7 +4,7 @@
 
 ```bash
 $ cd $REPO/doc/autoscale/experiment/result
-$ ./preprocess.sh `ls */*.log`
+$ ./plot/preprocess.sh `ls */*.log`
 ```
 
 ### Plot Experiment Result Graphs
