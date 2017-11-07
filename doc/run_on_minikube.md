@@ -17,7 +17,7 @@ This documentation shows how to run PaddleCloud on minikube.
     If you can't connect to minikube distribution server,add https_proxy like that:
     
     ```bash
-    https_proxy=<your's> minikube start --kubernetes-version v1.6.4
+    https_proxy=https://YOURPROXY:PORT minikube start --kubernetes-version v1.6.4
     ```
 1. Enable ingress addon:
 
@@ -30,10 +30,10 @@ This documentation shows how to run PaddleCloud on minikube.
 	```
 	mkdir <yourpath>
 	```  
-	Minikube mount `$Home` path default,and you'd better to create path under it or you may find that it can't be changed in minikube virtual mathine or in kubertes pod.
+	Since Minikube mounts `$Home` path by default, we recommend creating the path under `$Home` which offers the flexibility of switching between directories in your deployment without stopping the MiniKube and mounting another one.
 	
 1. Copy `ca` and generate `admin` certificate：    
-	(We must use `ca` under `~/.minikube` instead of under `~/.minikube/certs`.)
+	(We must use `ca` under `~/.minikube` rather than `~/.minikube/certs`.)
 	
 	```
 	mkdir <yourpath>/certs && cd <yourpath>/certs
@@ -45,7 +45,7 @@ This documentation shows how to run PaddleCloud on minikube.
 	cp ~/.minikube/ca.key .		
 	```
 	
-1. Copy and configure paddlecloud configures:
+1. Copy and update paddlecloud configurations::
 
 	```
 	git clone https://github.com/PaddlePaddle/cloud 
@@ -65,14 +65,14 @@ This documentation shows how to run PaddleCloud on minikube.
 	kubectl create -f pfs_service.yaml
 	kubectl create -f cloud_deployment.yaml
 	```
-1. Type `$(minikube ip)` into browser,and sign up a user.
+1. open `cloud.testpcloud.org` in your browser and sign up a user.
 1. Edit `~/.paddle/config` like this:
 
 ```
 datacenters:
 - name: testpcloud
-  username: g1@163.com
-  password: 1
+  username: <username>
+  password: <password>
   endpoint: http://cloud.testpcloud.org
 current-datacenter: testpcloud
 ```
@@ -81,33 +81,19 @@ You can use PaddleCloud command line now.
 
 
 ## FAQ
-1. We can't get anything when we type `$(minikube ip)` into browser.
-You can use `minikube get po --all-namespaces` to check it,it should like:
-
-```
-NAMESPACE     NAME                                         READY     STATUS    RESTARTS   AGE
-default       paddle-cloud-3328278932-pqtf0                1/1       Running   5          3h
-default       paddle-cloud-mysql-2598050360-rdzpr          1/1       Running   4          3h
-g1-163-com    cloud-notebook-deployment-2982752518-6gr0m   0/1       Pending   0          3h
-kube-system   default-http-backend-cwqd4                   1/1       Running   4          4h
-kube-system   kube-addon-manager-minikube                  1/1       Running   4          4h
-kube-system   kube-dns-4149932207-0clkw                    3/3       Running   12         4h
-kube-system   kubernetes-dashboard-tqrd7                   1/1       Running   4          4h
-kube-system   nginx-ingress-controller-gxgl8               1/1       Running   4          4h
-```
-
-But docker images such as `default-http-backend` can't be downloaded sometimes , you can use 
-
-  -  `kubectrl describe po name --namespace=kube-system` to get docker image uri.
-  -  and then pull with proxy and then save to tar `docker save <docker-image-uri> > <tarname>.tar`.
-  - `minikube ssh`.
-  - `docker load < <tarname>.tar`.
+1. We can't get anything when we open `cloud.testpcloud.org` in browser.  
+   One possible cause is: `default-http-backend` is not ready yet. Run `minikube get po --all-namespaces` to check its status.
+If it's stuck at pulling the image, one alternative is to manually download the image and load it with minikube's docker.
+  - run `kubectrl describe po name --namespace=kube-system` to get docker image uri.
+  - `docker save <docker-image-uri> > <tarname>.tar` to save the image to a tar file. You may need to use proxy with this step.
+  - `minikube ssh` to login to Minikube's command line.
+  - `docker load < <tarname>.tar` to load the image to Kubenetes' local docker image repo.
   
-1. I edit a file,but it not change in minikube virtual machine some times.
-Ye, it seems that minikube has a cache of files.You'd better `minikube stop` `minikube start --kubernetes-version v1.6.4` to fix it.
+1. I edited a file in host file system, but it remained unchanged in Minikube virtual machine sometimes.  
+    That might be due to the files cache mechanism of Minikube. You can try to restart the Minikube with `minikube stop` `minikube start --kubernetes-version v1.6.4` to fix it.
 
 ## TODO	
 1. The `mysql` docker runs `mysqld` under user `mysql` instead of `root`,so it's difficult to save `mysql` data to hostpath.
-1. Fix bug: `kubernetes can't mount a file use host to volume a file` on linux. 	
+1. Fix bug: `Kubernetes can't mount the volume with hostpath to a single file` on linux. 	
 	
 	
