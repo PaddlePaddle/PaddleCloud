@@ -15,7 +15,7 @@ function start() {
             else
                 submit_ft_job $JOB_NAME$j 60
             fi
-            sleep 10
+            sleep 5
         done
 
         sleep 300
@@ -51,8 +51,7 @@ function stop() {
         then
            cat k8s/trainingjob.yaml.tmpl | sed "s/<jobname>/$JOB_NAME$i/g" | kubectl delete -f - 
         fi
-        sleep 2
         paddlecloud kill $JOB_NAME$i
-        sleep 1
     done
+    kubectl delete pod `kubectl get pods | grep -v Terminating| awk '{print $1}'`
 }
