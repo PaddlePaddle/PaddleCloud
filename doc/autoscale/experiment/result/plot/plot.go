@@ -277,10 +277,10 @@ func main() {
 		panic(err)
 	}
 	p.Title.Text = "Case 1 Cluster Utilization"
-	p.X.Label.Text = "Timestamp"
+	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
-	p.Y.Label.Text = "Utilization Percentage"
+	p.Y.Label.Text = "CPU utilization (percentage)"
 	p.Y.Min = 0
 	p.Y.Max = 100
 	p.Add(plotter.NewGrid())
@@ -291,10 +291,10 @@ func main() {
 		panic(err)
 	}
 	p.Title.Text = "Case 2 Cluster Utilization"
-	p.X.Label.Text = "Timestamp"
+	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
-	p.Y.Label.Text = "Utilization Percentage"
+	p.Y.Label.Text = "CPU utilization (percentage)"
 	p.Y.Min = 0
 	p.Y.Max = 100
 	p.Add(plotter.NewGrid())
@@ -304,11 +304,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 1 Pending Job Count"
-	p.X.Label.Text = "Timestamp"
+	p.Title.Text = "Case 1 Number of Pending Jobs"
+	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
-	p.Y.Label.Text = "Number of Pending Jobs"
+	p.Y.Label.Text = "number of pending jobs"
 	p.Y.Min = 0
 	p.Y.Max = 16
 	p.Add(plotter.NewGrid())
@@ -318,11 +318,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 2 Pending Job Count"
-	p.X.Label.Text = "Timestamp"
+	p.Title.Text = "Case 2 Number of Pending Jobs"
+	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
-	p.Y.Label.Text = "Number of Pending Jobs"
+	p.Y.Label.Text = "number of pending jobs"
 	p.Y.Min = 0
 	p.Y.Max = 4
 	p.Add(plotter.NewGrid())
@@ -332,11 +332,11 @@ func main() {
 		panic(err)
 	}
 
-	p.Title.Text = "Case 2 Nginx Count"
-	p.X.Label.Text = "Timestamp"
+	p.Title.Text = "Case 2 Number of Nginx Pods"
+	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
-	p.Y.Label.Text = "Number of Nginx Pods"
+	p.Y.Label.Text = "number of nginx pods"
 	p.Y.Min = 0
 	p.Y.Max = 420
 	p.Add(plotter.NewGrid())
