@@ -69,10 +69,10 @@ research institutes.
 
 <img src="./result/case1_pending.png" />
 
-In the above graph, the dotted line is for non-autoscaling experiment
-passes, the full line is for autoscaling experiment passes. We can see
-that the pending job counts for the autoscaling jobs are significantly
-lower than the non-autoscaling jobs.
+In the above graph, the dashed line is for non-autoscaling experiment
+passes, the solid line is for autoscaling experiment passes. We can
+see that the pending job counts for the autoscaling jobs are
+significantly lower than the non-autoscaling jobs.
 
 <img src="./result/case1_util.png" />
 
@@ -157,7 +157,7 @@ enterprises and internet companies.
 1. Decrease the Nginx instance count of 400 to 100 over time, to
    simulate the Nginx load decreases, requiring fewer Nginx instances.
 
-1. Increase the Nginx instances count of 400 to 100 over time, to
+1. Increase the Nginx instances count of 100 to 400 over time, to
    simulate the full Nginx load cycle.
 
 #### Experiment Result
@@ -221,6 +221,13 @@ scaled down.
 You might have noticed the hike of average pending time. The reason
 behind this is the mechanism of gradually deployment of tasks to
 minimize the impact to online services.
+
+##### Data Log
+
+Every number and plot in the report is calculated from the experiment
+data. You can find the calculation programs and raw
+data
+[here](https://github.com/PaddlePaddle/cloud/tree/develop/doc/autoscale/experiment/result)
 
 ## Conclusions
 
