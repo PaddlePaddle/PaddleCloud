@@ -79,7 +79,7 @@ significantly lower than the non-autoscaling jobs while still remain the CPU uti
 
 Non-autoscaling's pending job count is climbing after 100s of the experiment and stick at 14 till the end. That means the cluster's resource is exhausted when 6 jobs are running, newly submitted jobs have to wait. Meanwhile in autoscaling experiment, even when resources are exhausted, newly submitted job can still start, because autoscaler scaled existing job down to make room for it.
 
-The reason you see ridges in the graph is: jobs are not deployed in one shot,
+The reason you see ridges in the graph is: jobs are not deployed in one shot,
 there is a 10s delay between jobs' submission, it will take some time for the job to be actually created. The time in non-autoscaling experiment is simply Kubernetes job launching time; While the time in autoscaling experiment case is auto-scaler killing other PaddlePaddle pods and Kubernetes job launching time.
 
 Also above graph, we can see after the utilization stabilizes, the
