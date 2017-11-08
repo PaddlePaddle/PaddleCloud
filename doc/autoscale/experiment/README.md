@@ -222,6 +222,13 @@ You might have noticed the hike of average pending time. The reason
 behind this is the mechanism of gradually deployment of tasks to
 minimize the impact to online services.
 
+##### Data Log
+
+Every number and plot in the report is calculated from the experiment
+data. You can find the calculation programs and raw
+data
+[here](https://github.com/PaddlePaddle/cloud/tree/develop/doc/autoscale/experiment/result)
+
 ## Conclusions
 
 ### Resource utilization
