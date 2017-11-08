@@ -157,7 +157,7 @@ enterprises and internet companies.
 1. Decrease the Nginx instance count of 400 to 100 over time, to
    simulate the Nginx load decreases, requiring fewer Nginx instances.
 
-1. Increase the Nginx instances count of 400 to 100 over time, to
+1. Increase the Nginx instances count of 100 to 400 over time, to
    simulate the full Nginx load cycle.
 
 #### Experiment Result
