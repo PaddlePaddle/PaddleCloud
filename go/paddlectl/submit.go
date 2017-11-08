@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
-	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/api/unversioned"
 
+	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -52,7 +54,7 @@ type SubmitCmd struct {
 	MinInstance   int  `json:"minInstance"`
 
 	// TODO: init config in memory.
-	KubeConfig string `json:"kubeconfig"`
+	//KubeConfig string `json:"kubeconfig"`
 	//JobYaml    string `json:"jobyaml"`
 }
 
@@ -70,9 +72,82 @@ func (*SubmitCmd) Usage() string {
 `
 }
 
+func (p *SubmitCmd) getTrainer() *paddlejob.TrainerSpec {
+	return &paddlejob.TrainerSpec{
+		Entrypoint: p.Entry,
+		// FIXME:(gongwb) workspace
+		//Workspace:   p.Workspace,
+		MinInstance: p.MinInstance,
+		MaxInstance: p.MaxInstance,
+		Resources: v1.ResourceRequirements{
+			Limits: v1.ResourceList{
+				"cpu":    strconv.Itoa(p.CPU),
+				"memory": p.Memory,
+			},
+			Requests: v1.ResourceList{
+				"cpu":    strconv.Itoa(p.CPU),
+				"memory": p.Memory,
+			},
+		},
+	}
+}
+
+func (p *SubmitCmd) getPserver() *paddlejob.PserverSpec {
+	return &paddlejob.PserverSpec{
+		// TODO:Pserver can be auto-scaled?
+		MinInstance: p.Pservers,
+		MaxInstance: p.Pservers,
+		Resources: v1.ResourceRequirements{
+			Limits: v1.ResourceList{
+				"cpu":    strconv.Itoa(p.PSCPU),
+				"memory": p.PSMemory,
+			},
+			Requests: v1.ResourceList{
+				"cpu":    strconv.Itoa(p.PSCPU),
+				"memory": p.PSMemory,
+			},
+		},
+	}
+}
+
+func (p *SubmitCmd) getMaster() *paddlejob.MasterSpec {
+	return &paddlejob.MasterSpec{}
+}
+
+// GetTrainingJob get's paddlejob.TrainingJob struct filed by Submitcmd paramters.
+func (p *SubmitCmd) GetTrainingJob() paddlejob.TrainingJob {
+	return paddlejob.TrainingJob{
+		metav1.TypeMeta{
+			Kind:       "TrainingJob",
+			APIVersion: "paddlepaddle.org/v1",
+		},
+		metav1.ObjectMeta{
+			Name:      p.Jobname,
+			Namespace: Config.ActiveConfig.Username,
+		},
+		// General job attributes.
+		paddlejob.TrainingJobSpec{
+			Image: p.Image,
+
+			// TODO: init them
+			//Port:              p.Port,
+			//PortsNum:          p.PortNum,
+			//PortsNumForSparse: p.PortsNumForSparse,
+
+			FaultTolerant: p.FaultTolerant,
+			Passes:        p.Passes,
+			// Job components.
+			Trainer: p.getTrainer(),
+			Pserver: p.getPserver(),
+			Master:  p.getMaster(),
+		},
+		paddlejob.TrainingJobStatus{},
+	}
+}
+
 // SetFlags registers subcommands flags.
 func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.KubeConfig, "kubeconfig", "", "Kubernetes config.")
+	//f.StringVar(&p.KubeConfig, "kubeconfig", "", "Kubernetes config.")
 	//f.StringVar(&p.yaml, "yaml", "", "Job's yaml.")
 	f.StringVar(&p.Jobname, "jobname", "paddle-cluster-job", "Cluster job name.")
 	f.IntVar(&p.Parallelism, "parallelism", 1, "Number of parrallel trainers. Defaults to 1.")
@@ -85,7 +160,7 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.Entry, "entry", "", "Command of starting trainer process. Defaults to paddle train")
 	f.StringVar(&p.Topology, "topology", "", "Will Be Deprecated .py file contains paddle v1 job configs")
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
-	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
+	f.StringVar(&p.Image, "image", "paddlepaddle/paddlecloud-job", "Runtime Docker image for the job")
 	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
 	f.IntVar(&p.MinInstance, "min_instance", 1, "The minimum number of trainers"+
 		"only used fo faulttolerant. Default to 1.")
@@ -154,14 +229,37 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
 
-	kubclient, err := kubeClient(s.args.KubeConfig)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Connect to kubernets error: %v", err)
-		return err
-	}
+	kubeconfig := "/Users/gongwb/.kube/config"
+	resource := "training-job.paddlepaddle.org"
+	namespace := "gongweibao-baidu-com"
+	apiversion := "v1"
+	client, clientset := createClient(kubeconfig)
+	//ensureNamespace(clientset, namespace)
+	ensureTPR(clientset, resource, namespace, apiversion)
+	createDemo(client)
+	/*
+		fmt.Println("kubeconfig:%v resource:%v, namespace:%v apiversion:%v",
+			kubeconfig, resource, namespace, apiversion)
+	*/
 
-	// TODO:unmarshel yaml and check job.
-	// TODO: parse to corresponding yaml and create TPR with kubernetes API.
+	/*
+		job := paddlejob.TrainingJob{}
+		// TODO:unmarshel yaml and check job.
+		if err := parser.Validate(&job); err != nil {
+			fmt.Printf("valid arguments error: %v\n", err)
+			return err
+		}
+
+		// TODO: parse to corresponding yaml and create TPR with kubernetes API.
+		var parser controller.DefaultJobParser
+		master := parser.ParseToMaster(&job)
+		if err != nil {
+			fmt.Printf("create error: %v\n", err)
+			return err
+		}
+
+		fmt.Printf("result:%v err:%v\n", result, err)
+	*/
 	return nil
 }
 func checkJobName(jobName string) error {
@@ -173,29 +271,31 @@ func checkJobName(jobName string) error {
 }
 
 func checkJob(nameSpace, jobName string, client *rest.RESTClient) error {
-	type DemoSpec struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-	}
-	type Demo struct {
-		unversioned.TypeMeta `json:",inline"`
-		api.ObjectMeta       `json:"metadata,omitempty"`
+	/*
+		type DemoSpec struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		}
+		type Demo struct {
+			unversioned.TypeMeta `json:",inline"`
+			api.ObjectMeta       `json:"metadata,omitempty"`
 
-		Spec DemoSpec `json:"spec"`
-	}
+			Spec DemoSpec `json:"spec"`
+		}
 
-	demo := Demo{
-		Spec: DemoSpec{
-			Name:        jobName,
-			Description: "Description for " + jobName + ".",
-		},
-	}
-	// TODO: check jobName not exists.
-	err := client.Get().
-		Resource("TrainJob").
-		Namespace(nameSpace).
-		Name(jobName).
-		Do().Into(demo)
+		demo := Demo{
+			Spec: DemoSpec{
+				Name:        jobName,
+				Description: "Description for " + jobName + ".",
+			},
+		}
+		// TODO: check jobName not exists.
+		err := client.Get().
+			Resource("TrainJob").
+			Namespace(nameSpace).
+			Name(jobName).
+			Do().Into(demo)
+	*/
 	return nil
 
 }
