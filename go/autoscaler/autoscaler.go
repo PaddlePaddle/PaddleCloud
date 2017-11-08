@@ -75,7 +75,7 @@ type Cluster interface {
 
 	// JobPods returns the number total desired pods and the
 	// number of running pods of a job.
-	JobPods(job *paddlejob.TrainingJob) (int, int, error)
+	JobPods(job *paddlejob.TrainingJob) (total, running, pending int, err error)
 }
 
 type job struct {
@@ -235,24 +235,14 @@ nextJob:
 	return js
 }
 
-func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
-	for _, idle := range r.NodeInfos.NodesCPUIdleMilli {
-		if j.TrainerCPURequestMilli() <= idle {
-			return true
+func searchAssignableNode(r *ClusterResource, j job) (nodeName string) {
+	for name, idle := range r.NodeInfos.NodesCPUIdleMilli {
+		if j.TrainerCPURequestMilli() <= idle &&
+			j.TrainerMemRequestMega() <= r.NodeInfos.NodesMemoryFreeMega[name] {
+			return name
 		}
 	}
-	log.Debug("No node is assignable, job CPU is ", j.TrainerMemRequestMega())
-	return false
-}
-
-func searchAssignableNodeByMem(r *ClusterResource, j job) (assignable bool) {
-	for _, idle := range r.NodeInfos.NodesMemoryFreeMega {
-		if j.TrainerMemRequestMega() <= idle {
-			return true
-		}
-	}
-	log.Debug("No node is assignable, job memory is ", j.TrainerMemRequestMega())
-	return false
+	return ""
 }
 
 func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
@@ -261,12 +251,16 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64,
 	cpuRequestMilli := j.TrainerCPURequestMilli()
 	memRequestMega := j.TrainerMemRequestMega()
 	gpuLimit := j.TrainerGPULimit()
-
+	nodeName := ""
 	// Adjust resource upon return.
 	defer func() {
 		r.GPULimit += gpuLimit * additional
 		r.CPURequestMilli += cpuRequestMilli * int64(additional)
 		r.MemoryRequestMega += memRequestMega * int64(additional)
+		if nodeName != "" {
+			r.NodeInfos.NodesCPUIdleMilli[nodeName] += cpuRequestMilli * int64(additional)
+			r.NodeInfos.NodesMemoryFreeMega[nodeName] += memRequestMega * int64(additional)
+		}
 	}()
 
 	// TODO(helin): j.TrainerJob.Spec.Parallelism may not reflect
@@ -314,9 +308,7 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64,
 		additional = 0
 		return
 	}
-
-	if !searchAssignableNodeByCPU(r, j) || !searchAssignableNodeByMem(r, j) {
-		// can not find assignable node, do not scale
+	if nodeName = searchAssignableNode(r, j); nodeName == "" {
 		additional = 0
 		return
 	}
@@ -459,7 +451,6 @@ func (a *Autoscaler) Monitor() {
 					a.jobs[e.Job.ObjectMeta.Name] = j
 					continue
 				}
-
 				j := job{
 					Config:     e.Job,
 					TrainerJob: tj,
@@ -483,6 +474,36 @@ func (a *Autoscaler) Monitor() {
 		}
 		log.Info("sync cluster resource done", "resource", r)
 
+		havePending := false
+		for key, j := range a.jobs {
+			// k8s job for trainers may not be created immediently
+			// try sync it here
+			if j.TrainerJob == nil {
+				tj, err := a.cluster.GetTrainerJob(j.Config)
+				if err != nil {
+					log.Error(
+						"Error getting the trainer k8s job, will sync later.",
+						"name", j.Config.ObjectMeta.Name,
+						"error", err,
+					)
+					continue
+				}
+				j.TrainerJob = tj
+				a.jobs[key] = j
+			}
+
+			total, _, pending, err := a.cluster.JobPods(j.Config)
+			if err != nil {
+				log.Error("check if job is running failed", "error", err)
+				continue
+			}
+
+			if total == pending {
+				havePending = true
+				break
+			}
+		}
+
 		var js []job
 		for key, j := range a.jobs {
 			// k8s job for trainers may not be created immediently
@@ -501,14 +522,23 @@ func (a *Autoscaler) Monitor() {
 				a.jobs[key] = j
 			}
 
-			// Scale jobs only when all pods' "Phase" are running.
-			// Pending/starting/terminating jobs are ignored.
-			total, running, err := a.cluster.JobPods(j.Config)
+			total, running, pending, err := a.cluster.JobPods(j.Config)
 			if err != nil {
 				log.Error("check if job is running failed", "error", err)
 				continue
 			}
-			if total == running {
+
+			log.Info(
+				"job info",
+				"name", key,
+				"running", running,
+				"pending", pending,
+				"total", total,
+			)
+
+			// Scale jobs only when all pods' "Phase" are
+			// running, or some job is pending.
+			if total == running || havePending {
 				js = append(js, j)
 			}
 		}

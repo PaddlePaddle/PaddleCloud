@@ -106,8 +106,8 @@ func TestScaleDryRunSatisfied(t *testing.T) {
 }
 
 var allIdleNodeInfos = NodeInfos{
-	NodesCPUIdleMilli:   map[string]int64{"": 99999},
-	NodesMemoryFreeMega: map[string]int64{"": 99999},
+	NodesCPUIdleMilli:   map[string]int64{"node0": 99999},
+	NodesMemoryFreeMega: map[string]int64{"node0": 99999},
 }
 
 func TestScaleDryRunMoreCPU(t *testing.T) {
