@@ -4,7 +4,7 @@
 
 ```bash
 $ cd $REPO/doc/autoscale/experiment/result
-$ ./preprocess.sh `ls */*.log`
+$ ./plot/preprocess.sh `ls */*.log`
 ```
 
 ### Plot Experiment Result Graphs
@@ -18,3 +18,9 @@ $ ./preprocess.sh `ls */*.log`
 
    The experiment result graphs will be generated in the current folder.
 
+### Calculate Result Report
+
+Run the command below:
+```bash
+./calculate_result.sh
+```
