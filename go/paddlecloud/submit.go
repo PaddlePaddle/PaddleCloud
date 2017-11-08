@@ -44,6 +44,8 @@ type SubmitCmd struct {
 	// Alpha features:
 	// TODO: separate API versions
 	FaultTolerant bool `json:"faulttolerant"`
+	MaxInstance   int  `json:"maxInstance"`
+	MinInstance   int  `json:"minInstance"`
 }
 
 // Name is subcommands name.
@@ -75,6 +77,10 @@ func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.Passes, "passes", 1, "Pass count for training job")
 	f.StringVar(&p.Image, "image", "", "Runtime Docker image for the job")
 	f.StringVar(&p.Registry, "registry", "", "Registry secret name for the runtime Docker image")
+	f.IntVar(&p.MinInstance, "min_instance", 1, "The minimum number of trainers"+
+		"only used fo faulttolerant. Default to 1.")
+	f.IntVar(&p.MaxInstance, "max_instance", 1, "The minimum number of trainers,"+
+		"only used for faulttolerant, Default to 1.")
 	f.BoolVar(&p.FaultTolerant, "faulttolerant", false, "if true, use new fault-tolerant pservers")
 }
 

@@ -1,8 +1,14 @@
 import collector
-
-def is_all_jobs_finished(jobs):
+REPORT_SEPARATOR="|"
+def is_jobs_finished(jobs):
     for job in jobs:
         if job.status != collector.JOB_STATUS_FINISHED:
+            return False
+    return True
+
+def is_jobs_killed(jobs):
+    for job in jobs:
+        if job.status != collector.JOB_STSTUS_KILLED:
             return False
     return True
 
@@ -16,4 +22,8 @@ def avg_pending_time(jobs):
     sum = 0
     for job in jobs:
         sum += job.start_time - job.submit_time
-    return sum * 1.0 / len(jobs)
+    return sum  / len(jobs)
+
+def get_jobs(jobname_prefix, jobs):
+    return [collector.JobInfo('%s%d' % (jobname_prefix, idx)) \
+            for idx in xrange(jobs)]

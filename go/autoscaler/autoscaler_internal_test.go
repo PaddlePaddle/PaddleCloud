@@ -102,7 +102,12 @@ func TestTrainerRequestLimit(t *testing.T) {
 func TestScaleDryRunSatisfied(t *testing.T) {
 	r := ClusterResource{CPUTotalMilli: 2000, MemoryTotalMega: 1000}
 	j := makeJob("name", "1000Mi", "1000Mi", "100Mi", "100Mi", "0", 1, 2, 2)
-	assert.Equal(t, 0, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false))
+}
+
+var allIdleNodeInfos = NodeInfos{
+	NodesCPUIdleMilli:   map[string]int64{"": 99999},
+	NodesMemoryFreeMega: map[string]int64{"": 99999},
 }
 
 func TestScaleDryRunMoreCPU(t *testing.T) {
@@ -113,9 +118,10 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 		MemoryRequestMega: 100,
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
+		NodeInfos:         allIdleNodeInfos,
 	}
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
-	assert.Equal(t, 1, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 1, scaleDryRun(&r, j, 0, 1.0, false))
 }
 
 func TestScaleDryRunNoMoreCPU(t *testing.T) {
@@ -126,10 +132,11 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 		MemoryRequestMega: 100,
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
-	assert.Equal(t, 0, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false))
 }
 
 func TestScaleDryRunMoreGPU(t *testing.T) {
@@ -143,9 +150,11 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
-	assert.Equal(t, 1, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 1, scaleDryRun(&r, j, 0, 1.0, false))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, true), "should not scale up if the scale down parameter is true")
 }
 
 func TestScaleDryRunNoMoreGPU(t *testing.T) {
@@ -159,10 +168,11 @@ func TestScaleDryRunNoMoreGPU(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
-	assert.Equal(t, 0, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false))
 }
 
 func TestScaleDryRunScaleDownMoreThanExpected(t *testing.T) {
@@ -179,7 +189,30 @@ func TestScaleDryRunScaleDownMoreThanExpected(t *testing.T) {
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 6)
-	assert.Equal(t, -3, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, -1, scaleDryRun(&r, j, 0, 1.0, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, -1, 1.0, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, -2, 1.0, true))
+	assert.Equal(t, 0, scaleDryRun(&r, j, -3, 1.0, true))
+}
+
+func TestScaleDryRunScaleDownToMin(t *testing.T) {
+	r := ClusterResource{
+		CPULimitMilli:     5000,
+		CPURequestMilli:   5000,
+		CPUTotalMilli:     3000,
+		MemoryRequestMega: 1000,
+		MemoryLimitMega:   1000,
+		MemoryTotalMega:   1000,
+		GPULimit:          10,
+		GPURequest:        10,
+		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
+	}
+
+	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
+	assert.Equal(t, -1, scaleDryRun(&r, j, 0, 1.0, true))
+	assert.Equal(t, -1, scaleDryRun(&r, j, -1, 1.0, true))
+	assert.Equal(t, 0, scaleDryRun(&r, j, -2, 1.0, true))
 }
 
 func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
@@ -193,10 +226,12 @@ func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
-	assert.Equal(t, -1, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, -1, scaleDryRun(&r, j, 0, 1.0, true))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false), "should not scale down if the scale down parameter is false")
 }
 
 func TestScaleDryRunNoMem(t *testing.T) {
@@ -210,10 +245,11 @@ func TestScaleDryRunNoMem(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
-	assert.Equal(t, 0, scaleDryRun(&r, j, 0, false))
+	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false))
 }
 
 func TestScaleAllDryRunNoMem(t *testing.T) {
@@ -223,10 +259,11 @@ func TestScaleAllDryRunNoMem(t *testing.T) {
 		MemoryLimitMega:   1000,
 		MemoryTotalMega:   1000,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r)["name"]
+	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
 	assert.Equal(t, 0, scale)
 }
 
@@ -241,11 +278,50 @@ func TestScaleAllDryRun(t *testing.T) {
 		GPULimit:          8,
 		GPURequest:        8,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r)["name"]
+	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
 	assert.Equal(t, 2, scale)
+}
+
+func TestScaleAllDryRunNotFull(t *testing.T) {
+	r := ClusterResource{
+		CPULimitMilli:     1000,
+		CPURequestMilli:   1000,
+		CPUTotalMilli:     3000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          0,
+		GPURequest:        0,
+		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
+	}
+
+	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
+	scale := scaleAllDryRun([]job{j}, r, 0.8)["name"]
+	assert.Equal(t, 1, scale)
+}
+
+func TestScaleAllDryRunDownNotFull(t *testing.T) {
+	r := ClusterResource{
+		CPULimitMilli:     3000,
+		CPURequestMilli:   3000,
+		CPUTotalMilli:     3000,
+		MemoryRequestMega: 100,
+		MemoryLimitMega:   100,
+		MemoryTotalMega:   1000,
+		GPULimit:          0,
+		GPURequest:        0,
+		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
+	}
+
+	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 3)
+	scale := scaleAllDryRun([]job{j}, r, 0.8)["name"]
+	assert.Equal(t, -1, scale)
 }
 
 func TestScaleAllDryRunLessCPU(t *testing.T) {
@@ -259,10 +335,11 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 		GPULimit:          8,
 		GPURequest:        8,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r)["name"]
+	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
 	assert.Equal(t, 1, scale)
 }
 
@@ -277,10 +354,11 @@ func TestScaleAllDryRunLessGPU(t *testing.T) {
 		GPULimit:          9,
 		GPURequest:        9,
 		GPUTotal:          10,
+		NodeInfos:         allIdleNodeInfos,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r)["name"]
+	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
 	assert.Equal(t, 1, scale)
 }
 

@@ -46,6 +46,19 @@ type ClusterResource struct {
 	MemoryRequestMega int64
 	MemoryLimitMega   int64
 	MemoryTotalMega   int64
+
+	NodeInfos NodeInfos
+}
+
+// NodeInfos is the information of all nodes.
+type NodeInfos struct {
+	NodesCPUIdleMilli   map[string]int64
+	NodesMemoryFreeMega map[string]int64
+}
+
+// String returns the string that represents NodeInfo when printed.
+func (n NodeInfos) String() string {
+	return fmt.Sprintf("NodeInfo(%d nodes)", len(n.NodesCPUIdleMilli))
 }
 
 // Cluster represents the cluster managment system such as Kubernetes.
@@ -99,19 +112,28 @@ func (j job) Fulfillment() float64 {
 
 // Autoscaler launches and scales the training jobs.
 type Autoscaler struct {
-	ticker  *time.Ticker
-	cluster Cluster
-	jobs    map[string]job
-	eventCh chan event
+	ticker         *time.Ticker
+	cluster        Cluster
+	jobs           map[string]job
+	eventCh        chan event
+	maxLoadDesired float64
+}
+
+// WithMaxLoadDesired init with maxLoadDesired
+func WithMaxLoadDesired(maxLoadDesired float64) func(as *Autoscaler) {
+	return func(as *Autoscaler) {
+		as.maxLoadDesired = maxLoadDesired
+	}
 }
 
 // New creates a new Autoscaler.
 func New(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	c := &Autoscaler{
-		cluster: cluster,
-		ticker:  time.NewTicker(defaultLoopDur),
-		jobs:    make(map[string]job),
-		eventCh: make(chan event),
+		cluster:        cluster,
+		ticker:         time.NewTicker(defaultLoopDur),
+		jobs:           make(map[string]job),
+		eventCh:        make(chan event),
+		maxLoadDesired: 1.0,
 	}
 	for _, option := range options {
 		option(c)
@@ -213,7 +235,27 @@ nextJob:
 	return js
 }
 
-func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additional int) {
+func searchAssignableNodeByCPU(r *ClusterResource, j job) (assignable bool) {
+	for _, idle := range r.NodeInfos.NodesCPUIdleMilli {
+		if j.TrainerCPURequestMilli() <= idle {
+			return true
+		}
+	}
+	log.Debug("No node is assignable, job CPU is ", j.TrainerMemRequestMega())
+	return false
+}
+
+func searchAssignableNodeByMem(r *ClusterResource, j job) (assignable bool) {
+	for _, idle := range r.NodeInfos.NodesMemoryFreeMega {
+		if j.TrainerMemRequestMega() <= idle {
+			return true
+		}
+	}
+	log.Debug("No node is assignable, job memory is ", j.TrainerMemRequestMega())
+	return false
+}
+
+func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
 	cpuRequestMilli := j.TrainerCPURequestMilli()
@@ -227,10 +269,6 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 	}()
 
-	if r.GPULimit > r.GPUTotal || r.CPURequestMilli > r.CPUTotalMilli {
-		return -1
-	}
-
 	// TODO(helin): j.TrainerJob.Spec.Parallelism may not reflect
 	// the actual pod running for the trainer job. We need to
 	// count the pod manually. And calculate the additional value
@@ -238,6 +276,31 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 	// j.TrainerJob.Spec.Parallelism, and curDiff.
 	plannedInstance := int(*j.TrainerJob.Spec.Parallelism) + curDiff
 	instanceMax := j.Config.Spec.Trainer.MaxInstance
+	instanceMin := j.Config.Spec.Trainer.MinInstance
+
+	// TODO(typhoonzero): refine below code to remove direction
+	// ======================= scaleDown ======================
+	if scaleDown {
+		if plannedInstance > instanceMax {
+			additional = -1
+			return
+		}
+		gpuCondition := r.GPULimit > int(float64(r.GPUTotal)*maxLoadDesired)
+		cpuCondition := r.CPURequestMilli > int64(float64(r.CPUTotalMilli)*maxLoadDesired)
+		if gpuCondition || cpuCondition {
+			if plannedInstance > instanceMin {
+				additional = -1
+				return
+			}
+
+			// can not scale down further
+			additional = 0
+			return
+		}
+		// do not try to scale up
+		return
+	}
+	// ======================= scaleUp ==========================
 
 	if plannedInstance >= instanceMax {
 		// Do not scale or scale down, don't need to check if
@@ -252,7 +315,15 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 		return
 	}
 
-	if r.CPUTotalMilli-r.CPURequestMilli >= cpuRequestMilli {
+	if !searchAssignableNodeByCPU(r, j) || !searchAssignableNodeByMem(r, j) {
+		// can not find assignable node, do not scale
+		additional = 0
+		return
+	}
+
+	// NOTE: do not scale up to use full cluster resource of CPU
+	//       but we do scale up for GPU.
+	if int64(float64(r.CPUTotalMilli)*maxLoadDesired)-r.CPURequestMilli >= cpuRequestMilli {
 		additionalCPUInstance = 1
 	}
 
@@ -274,15 +345,15 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, scaleDown bool) (additi
 	return
 }
 
-func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
+func scaleAllDryRun(jobs []job, r ClusterResource, maxLoadDesired float64) map[string]int {
 	// Iteratively calculate scaling diff until nothing changes.
 	diff := make(map[string]int)
 	for {
 		noChange := true
 		sorted := sortedJobs(jobs, elastic)
-		dryRun := func(j job, scaleDirection bool) {
+		dryRun := func(j job, isScaleDown bool) {
 			name := j.Config.Name
-			additional := scaleDryRun(&r, j, diff[name], scaleDirection)
+			additional := scaleDryRun(&r, j, diff[name], maxLoadDesired, isScaleDown)
 			log.Debug(
 				"dry run scale job",
 				"name", name, "current scale difference", diff[name],
@@ -317,43 +388,41 @@ func scaleAllDryRun(jobs []job, r ClusterResource) map[string]int {
 	return diff
 }
 
-func (a *Autoscaler) scaleAll(diff map[string]int) {
-	for name := range diff {
-		if diff[name] != 0 {
-			log.Info("scaling job",
-				"name", name, "number of instances", diff[name])
-			target := *a.jobs[name].TrainerJob.Spec.Parallelism + int32(diff[name])
+func (a *Autoscaler) scaleAll(target map[string]int) {
+	for name := range target {
+		log.Info("scaling job",
+			"name", name, "target", target[name])
+		target := int32(target[name])
 
-			var err error
-			for retry := 5; retry > 0; retry-- {
-				var tj *batchv1.Job
-				// don't shadow err
-				tj, err = a.cluster.GetTrainerJob(a.jobs[name].Config)
-				if err != nil {
-					log.Warn("sync trainer job error",
-						"error", err, "remaining retry", retry)
-					continue
-				}
-				j := a.jobs[name]
-				// NOTE: only update batchv1.job from k8s api-server before updating
-				// for efficiency. Update the job resource to get latest k8s
-				// resource reversion.
-				j.TrainerJob = tj
-				a.jobs[name] = j
-				*a.jobs[name].TrainerJob.Spec.Parallelism = target
-				err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
-				if err != nil {
-					log.Error("error updating trainer job",
-						"error", err, "remaining retry", retry)
-					continue
-				}
-
-				break
-			}
-
+		var err error
+		for retry := 5; retry > 0; retry-- {
+			var tj *batchv1.Job
+			// don't shadow err
+			tj, err = a.cluster.GetTrainerJob(a.jobs[name].Config)
 			if err != nil {
-				log.Warn("Error updating trainer job", "error", err)
+				log.Warn("sync trainer job error",
+					"error", err, "remaining retry", retry)
+				continue
 			}
+			j := a.jobs[name]
+			// NOTE: only update batchv1.job from k8s api-server before updating
+			// for efficiency. Update the job resource to get latest k8s
+			// resource reversion.
+			j.TrainerJob = tj
+			a.jobs[name] = j
+			*a.jobs[name].TrainerJob.Spec.Parallelism = target
+			err = a.cluster.UpdateTrainerJob(a.jobs[name].TrainerJob)
+			if err != nil {
+				log.Error("error updating trainer job",
+					"error", err, "remaining retry", retry)
+				continue
+			}
+
+			break
+		}
+
+		if err != nil {
+			log.Warn("Error updating trainer job", "error", err)
 		}
 	}
 }
@@ -376,27 +445,18 @@ func (a *Autoscaler) Monitor() {
 				// scale it.
 				var tj *batchv1.Job
 				var err error
-				for retry := 5; retry > 0; retry-- {
-					tj, err = a.cluster.GetTrainerJob(e.Job)
-					if err == nil {
-						break
-					}
-
-					log.Error(
-						"Error getting the trainer k8s job, retry if have retry remaining",
-						"name", e.Job.ObjectMeta.Name,
-						"retry remaining", retry,
-						"error", err,
-					)
-					time.Sleep(3 * time.Second)
-				}
-
+				tj, err = a.cluster.GetTrainerJob(e.Job)
 				if err != nil {
 					log.Error(
-						"Error getting the trainer k8s job, skip event.",
+						"Error getting the trainer k8s job, will sync later.",
 						"name", e.Job.ObjectMeta.Name,
 						"error", err,
 					)
+					j := job{
+						Config:     e.Job,
+						TrainerJob: nil,
+					}
+					a.jobs[e.Job.ObjectMeta.Name] = j
 					continue
 				}
 
@@ -421,27 +481,47 @@ func (a *Autoscaler) Monitor() {
 			log.Error("error sync resource", "error", err)
 			continue
 		}
+		log.Info("sync cluster resource done", "resource", r)
 
-		log.Info("latest cluster resource", "resource", r)
 		var js []job
-		for _, j := range a.jobs {
-			// Scale jobs only when it's running (defined
-			// by all pods are in the "running"
-			// status). Pods are
-			// pending/starting/terminating if the job is
-			// just submited or just scaled up/down.
+		for key, j := range a.jobs {
+			// k8s job for trainers may not be created immediently
+			// try sync it here
+			if j.TrainerJob == nil {
+				tj, err := a.cluster.GetTrainerJob(j.Config)
+				if err != nil {
+					log.Error(
+						"Error getting the trainer k8s job, will sync later.",
+						"name", j.Config.ObjectMeta.Name,
+						"error", err,
+					)
+					continue
+				}
+				j.TrainerJob = tj
+				a.jobs[key] = j
+			}
+
+			// Scale jobs only when all pods' "Phase" are running.
+			// Pending/starting/terminating jobs are ignored.
 			total, running, err := a.cluster.JobPods(j.Config)
 			if err != nil {
 				log.Error("check if job is running failed", "error", err)
 				continue
 			}
-
 			if total == running {
 				js = append(js, j)
 			}
 		}
-		diff := scaleAllDryRun(js, r)
-		log.Info("calculated scaling plan", "plan", diff)
-		a.scaleAll(diff)
+		diff := scaleAllDryRun(js, r, a.maxLoadDesired)
+		target := make(map[string]int)
+		for k, v := range diff {
+			target[k] = int(*a.jobs[k].TrainerJob.Spec.Parallelism) + v
+		}
+
+		if len(target) > 0 {
+			log.Info("calculated scaling plan", "target", target,
+				"clusterResource", r)
+		}
+		a.scaleAll(target)
 	}
 }
