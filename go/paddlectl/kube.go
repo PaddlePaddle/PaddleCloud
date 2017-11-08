@@ -2,6 +2,7 @@ package paddlectl
 
 import (
 	"fmt"
+	"strings"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -86,6 +87,50 @@ func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion 
 	}
 }
 
+func createTrainingJob(restClient *rest.RESTClient, job *paddlejob.TrainingJob) error {
+	var result paddlejob.TrainingJob
+	err := restClient.Post().
+		Resource("TrainingJob").
+		Namespace("gongweibao-baidu-com").
+		Body(job).
+		Do().Into(&result)
+
+	/*
+		err := restClient.
+			Post().
+			Body(job).
+			Do().
+			Into(&result)
+	*/
+
+	if err != nil {
+		fmt.Printf("can't create TrainningJob: %s\n", job)
+		fmt.Printf("restClient: %v\n", restClient)
+		fmt.Printf("error: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+/*
+def name_escape(name):
+    """
+        Escape name to a safe string of kubernetes namespace
+    """
+    safe_name = name.replace("@", "-")
+    safe_name = safe_name.replace(".", "-")
+    safe_name = safe_name.replace("_", "-")
+    return safe_name
+*/
+func nameEscape(name string) string {
+	name = strings.Replace(name, "@", "-", -1)
+	name = strings.Replace(name, ".", "-", -1)
+	name = strings.Replace(name, "_", "-", -1)
+	fmt.Println(name)
+	return name
+}
+
 func createDemo(restClient *rest.RESTClient) error {
 	var example paddlejob.TrainingJob
 	var result paddlejob.TrainingJob
@@ -101,59 +146,5 @@ func createDemo(restClient *rest.RESTClient) error {
 		return err
 	}
 
-	return nil
-}
-
-func createMaster(client *rest.RESTClient,
-	resource, namespace, jobName string, job *paddlejob.TrainingJob) error {
-	/*
-		err = client.Post().
-			Resource(Resource).
-			Namespace(namespace).
-			Body(example).
-			Do().Into(&job)
-
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("CREATED: %#v\n", result)
-
-			err := tprclient.Get().
-				Resource(resource).
-				Namespace(namespace).
-				Name(jobName).
-				Do().Into(&example)
-
-				if err != nil {
-					if errors.IsNotFound(err) {
-						// Create an instance of our TPR
-						example := &Example{
-							Metadata: metav1.ObjectMeta{
-								Name: "example1",
-							},
-							Spec: ExampleSpec{
-								Foo: "hello",
-								Bar: true,
-							},
-						}
-
-						var result Example
-						err = tprclient.Post().
-							Resource("examples").
-							Namespace(api.NamespaceDefault).
-							Body(example).
-							Do().Into(&result)
-
-						if err != nil {
-							panic(err)
-						}
-						fmt.Printf("CREATED: %#v\n", result)
-					} else {
-						panic(err)
-					}
-				} else {
-					fmt.Printf("GET: %#v\n", example)
-				}
-	*/
 	return nil
 }
