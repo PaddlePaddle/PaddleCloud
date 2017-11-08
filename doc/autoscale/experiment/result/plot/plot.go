@@ -237,7 +237,7 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 				panic(err)
 			}
 			legendLine.LineStyle.Width = vg.Points(1)
-			legendLine.LineStyle.Color = colorful.HappyColor()
+			legendLine.LineStyle.Color = color.Black
 			legendLine.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
 			p.Legend.Add(fmt.Sprintf("autoscaling-on"), legendLine)
 		}
@@ -263,7 +263,7 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 				panic(err)
 			}
 			legendLine.LineStyle.Width = vg.Points(1)
-			legendLine.LineStyle.Color = getOffColor()
+			legendLine.LineStyle.Color = color.Black
 			p.Legend.Add(fmt.Sprintf("autoscaling-off"), legendLine)
 		}
 
