@@ -107,13 +107,13 @@ enterprises and internet companies.
 
 #### Experiment Steps
 
-1. Start 400 Nginx instances to simulate the number of nginx instances
+1. Start 400 Nginx instances to simulate the number of Nginx instances
    required for the peak time load.
 
 1. Start the training jobs.
 
 1. Decrease the Nginx instance count of 400 to 100 over time, to
-   simulate the Nginx load decreases, requiring fewer nginx instances.
+   simulate the Nginx load decreases, requiring fewer Nginx instances.
 
 1. Increase the Nginx instances count of 400 to 100 over time, to
    simulate the full Nginx load cycle.
@@ -122,15 +122,15 @@ enterprises and internet companies.
 
 <img src="./result/case2_nginx.png" />
 
-The above graph shows the number of nginx instances changing over
-time, simulation a typical online cluster usage. The dotted line is
-for non-autoscaling experiment passes, the full line is for
+The above graph shows the number of Nginx instances changing over
+time, simulation a typical online cluster usage. The dashed line is
+for non-autoscaling experiment passes, the solid line is for
 autoscaling experiment passes.
 
 <img src="./result/case2_util.png" />
 
 The above graph shows when autoscaling is turned on, the cluster util
-is kept high even though the online nginx service is scaled down.
+is kept high even though the online Nginx service is scaled down.
 
 
 - Autoscaling ON
@@ -165,24 +165,22 @@ is kept high even though the online nginx service is scaled down.
 	9|1|62.0316
 	AVG|1.5|61.8629
 
+You might have noticed the hike of average pending time. The reason behind this is the mechanism of gradually deployment of tasks to minimize the impact to online services.
 
 ## Conclusions
 
 ### Resource utilization
 
-TBD
+As shown in Case 2 in a general purpose cluster, the CPU utilization increased by 34.8% on average; During off-peak time, the CPU utilization even surged by 77.8%.
+Clearly, the compute resource reservoir in cluster prepared for rainy day is no longer necessary, because now your machine learning tasks are running in the very reservoir. When situation is getting tough, machine learning tasks will size itself down without fault and give resources back automatically.
 
 ### Average Pending time
 
-TBD
-
-### Average execution time
-
-TBD
+As showing in case 1 in a special purpose cluster, the average pending time reduced by XX% on average. Which means researchers are able to verify their algorithms XX% earlier than competitors.
 
 ### Improved the service quality with general purpose cluster
 
-As shown in test case two, PaddlePaddle yields resource to more important online services when the load is getting intensive.
+As shown in test case 2, PaddlePaddle yields resource to more important online services when the load is getting intensive.
 
 ## Reproducing the Experiment
 
@@ -201,7 +199,7 @@ As shown in test case two, PaddlePaddle yields resource to more important online
         > cd cloud/doc/autoscale/experiment
         > TAG=round_1 AUTO_SCALING=OFF PASSES=1 JOB_COUNT=20 ./run.sh start case1
         ```
-        Or submit an auto-scaline training job
+        Or submit an auto-scaling training job
         > cd cloud/doc/autoscale/experiment
         ```bash
         > TAG=round_1 AUTO_SCALING=ON PASSES=1 JOB_COUNT=20 ./run.sh start case1
@@ -224,7 +222,7 @@ As shown in test case two, PaddlePaddle yields resource to more important online
 
 	1. Get the time series data.
 	
-		The time serise data will be appended in the file
+		The time series data will be appended in the file
         `./out/*/mnist-case[1|2]-pass[0-9].log`, the content of `*`
         depends on the test case config, and will be printed in the
         beginning.
@@ -243,10 +241,10 @@ As shown in test case two, PaddlePaddle yields resource to more important online
 		```
 		The meaning of each column is:
 
-		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of nginx pods|running trainers for each job |cpu utils for each job
+		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of Nginx pods|running trainers for each job |cpu utils for each job
 		--|--|--|--|--|--|--|--|--|--
 
-	1. Calculate the average wainting time, and the average running time from time series data.
+	1. Calculate the average waiting time, and the average running time from time series data.
 		The statistical data will be generated in the file: `./out/*/mnist-case[1|2]-result.csv`
 		as the following format:
 		```
