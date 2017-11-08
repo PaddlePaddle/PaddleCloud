@@ -8,7 +8,7 @@ To verify the effectiveness of PaddlePaddle's auto-scaling mechanism.
 
 How the effectiveness is measured.
 
-1. Cluster computing resource overall utilization.
+1. Cluster computing resource utilization.
     - The higher the better.
     - Higher utilization means less resource is idle. Autoscaling
       intended to maximize the overall cluster resource(CPU, GPU,
@@ -29,10 +29,11 @@ How the effectiveness is measured.
 
 ## Our setup
 
-- The Kubernetes cluster with 1.6.2 installed, with 133 physical nodes.
+- The Kubernetes cluster with v1.6.2 installed, with 133 physical
+  nodes.
 - PaddleCloud with the latest develop branch installed.
-- [recognize_digits](https://github.com/PaddlePaddle/cloud/tree/develop/demo/recognize_digits) is
-  the benchmark training job.
+- [recognize_digits](./mnist/train_ft.py) is the neural networks model
+  used in the experiment.
 
 ## Test Cases
 
@@ -49,7 +50,7 @@ research institutes.
 #### Invariant
 
 - The number of jobs.
-- The resource configuration of each job, other than:
+- The configurations of each job are the same, except:
   1. each autoscaling job asks for 2 - 60 trainers, and
   1. each non-autoscaling job asks for 60 trainers.
 - The submission time of each job.
@@ -57,9 +58,10 @@ research institutes.
 
 #### Experiment Steps
 
-1. With autoscaling turned off, submit the training jobs with 10
-   seconds delay between each job.
+
 1. With autoscaling turned on, submit the training jobs with 10
+   seconds delay between each job.
+1. With autoscaling turned off, submit the training jobs with 10
    seconds delay between each job.
 
 
@@ -141,7 +143,7 @@ enterprises and internet companies.
 #### Invariant
 
 - The number of training jobs.
-- The configuration of each training job, other than:
+- The configurations of each training job are the same, except:
   1. each autoscaling job asks for 2 - 60 trainers, and
   1. each non-autoscaling job asks for 60 trainers.
 - The submission time for each training job.
@@ -149,8 +151,8 @@ enterprises and internet companies.
 
 #### Experiment Steps
 
-1. Start 400 Nginx instances to simulate the number of Nginx instances
-   required for the peak time load.
+1. With autoscaling turned on, start 400 Nginx instances to simulate
+   the number of Nginx instances required for the peak time load.
 
 1. Start the training jobs.
 
@@ -159,6 +161,8 @@ enterprises and internet companies.
 
 1. Increase the Nginx instances count of 100 to 400 over time, to
    simulate the full Nginx load cycle.
+
+1. Repeat the above steps with autoscaling turned off.
 
 #### Experiment Result
 
@@ -224,8 +228,8 @@ minimize the impact to online services.
 
 ##### Data Log
 
-Every number and plot in the report is calculated from the experiment
-data. You can find the calculation programs and raw
+Every number and plot in the report is calculated from the raw
+data. You can find the calculation programs and the raw
 data
 [here](https://github.com/PaddlePaddle/cloud/tree/develop/doc/autoscale/experiment/result)
 
