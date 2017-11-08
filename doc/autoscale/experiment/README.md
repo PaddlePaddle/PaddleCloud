@@ -69,10 +69,10 @@ research institutes.
 
 <img src="./result/case1_pending.png" />
 
-In the above graph, the dotted line is for non-autoscaling experiment
-passes, the full line is for autoscaling experiment passes. We can see
-that the pending job counts for the autoscaling jobs are significantly
-lower than the non-autoscaling jobs.
+In the above graph, the dashed line is for non-autoscaling experiment
+passes, the solid line is for autoscaling experiment passes. We can
+see that the pending job counts for the autoscaling jobs are
+significantly lower than the non-autoscaling jobs.
 
 <img src="./result/case1_util.png" />
 
