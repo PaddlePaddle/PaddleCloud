@@ -378,7 +378,7 @@ func main() {
 	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
-	p.Y.Label.Text = "number of running trainer"
+	p.Y.Label.Text = "number of trainer pods"
 	p.Y.Min = 0
 	p.Y.Max = 300
 	p.Add(plotter.NewGrid())
