@@ -65,6 +65,8 @@ research institutes.
 
 #### Experiment Result
 
+##### Graphs
+
 <img src="./result/case1_pending.png" />
 
 In the above graph, the dotted line is for non-autoscaling experiment
@@ -85,8 +87,9 @@ free up resources for the new incoming jobs, and
    of the numbers of trainer, pserver, master pods. The computation
    resources for each node are fragmented differently, leading to the
    utilization around 88% for non-autoscaling jobs vs around 86% for
-   autoscaling jobs.
+   autoscaling jobs when stabilized.
 
+##### Metrics
 
 - Autoscaling ON
 
@@ -159,6 +162,8 @@ enterprises and internet companies.
 
 #### Experiment Result
 
+##### Graphs
+
 <img src="./result/case2_nginx.png" />
 
 The above graph shows the number of Nginx instances changing over
@@ -168,9 +173,12 @@ autoscaling experiment passes.
 
 <img src="./result/case2_util.png" />
 
-The above graph shows when autoscaling is turned on, the cluster util
-is kept high even though the online Nginx service is scaled down.
+The above graph shows when autoscaling is turned on, the cluster
+utilization is kept high even though the online Nginx service is
+scaled down.
 
+
+##### Metrics
 
 - Autoscaling ON
 
@@ -213,18 +221,18 @@ minimize the impact to online services.
 ### Resource utilization
 
 As shown in Case 2 in a general purpose cluster, the CPU utilization
-increased by 34.8% on average; During off-peak time, the CPU
+increased by 34.8% on average; During the off-peak time, the CPU
 utilization even surged by 77.8%.
 
-Clearly, the compute resource reservoir in cluster prepared for rainy
-day is no longer necessary, because now your machine learning tasks
-are running in the very reservoir. When situation is getting tough,
-machine learning tasks will size itself down without fault and give
-resources back automatically.
+Clearly, the computing resource reservoir in cluster prepared for a
+rainy day is no longer necessary, because now your machine learning
+tasks are running in the very reservoir. When the situation is getting
+tough, machine learning tasks will size itself down without fault and
+give resources back automatically.
 
 ### Average Pending time
 
-As showing in case 1 in a special purpose cluster, the average pending
+As shown in case 1 in a special purpose cluster, the average pending
 time reduced by XX% on average.
 
 ### Improved the service quality with general purpose cluster
@@ -285,9 +293,9 @@ Please see [here](./result/README.md)
 
 #### Raw Data Format
 	
-The time series data will be appended in the file
+The time series data will be appended to the file
 `./out/*/mnist-case[1|2]-pass[0-9].log`, the content of `*` depends on
-the test case config, and will be printed in the beginning.
+the test case config and will be printed in the beginning.
 		
 as the following format:
 
