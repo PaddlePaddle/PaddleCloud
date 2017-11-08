@@ -1,4 +1,4 @@
-# Auto-scaling Experiment Design
+# Auto-scaling Experiment
 
 ## Purpose
 
@@ -65,22 +65,61 @@ research institutes.
 
 #### Experiment Result
 
-- Autoscaling OFF
+<img src="./result/case1_pending.png" />
 
-	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
-	--- | --- | --- | --- | ---
-	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
-	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
-	AVG|331|86|N/A|63.55
+In the above graph, the dotted line is for non-autoscaling experiment
+passes, the full line is for autoscaling experiment passes. We can see
+that the pending job counts for the autoscaling jobs are significantly
+lower than the non-autoscaling jobs.
+
+<img src="./result/case1_util.png" />
+
+In the above graph, we can see after the utilization stabilizes, the
+cluster utilization of autoscaling jobs are slightly lower than the
+non-autoscaling jobs. We think this is due to:
+
+1. the computation resources wasted when the autoscaler is trying to
+free up resources for the new incoming jobs, and
+
+1. autoscaling and non-autoscaling jobs have different distributions
+   of the numbers of trainer, pserver, master pods. The computation
+   resources for each node are fragmented differently, leading to the
+   utilization around 88% for non-autoscaling jobs vs around 86% for
+   autoscaling jobs.
+
 
 - Autoscaling ON
 
-	PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|CLUSTER CPU UTILS
-	--- | --- | --- | --- | ---
-	0|379|102|415,365,380,375,350,365,495,365,345,335|63.38
-	1|322|85|375,315,395,310,280,330,380,270,285,280|65.05
-	AVG|331|86|N/A|63.55
+	PASS|AVG PENDING TIME|CLUSTER CPU UTILS
+	---|---|---
+	0|24|	75.5646
+	1|59|	75.9876
+	2|31|	75.0465
+	3|63|	76.0976
+	4|32|	76.6245
+	5|85|	76.1902
+	6|67|	76.3599
+	7|45|	77.8456
+	8|38|	76.8869
+	9|28|	76.7175
+	AVG|42.9091	76.3321
 
+
+- Autoscaling OFF
+
+	PASS|AVG PENDING TIME|CLUSTER CPU UTILS
+	---|---|---
+	0|319|	76.2028
+	1|305|	75.8829
+	2|295|	79.8287
+	3|309|	75.0948
+	4|315|	75.5644
+	5|319|	75.2832
+	6|298|	75.3558
+	7|311|	75.578
+	8|316|	76.9651
+	9|298|	75.8706
+	AVG|280.455	76.1626
 
 ### Autoscaling on the General Purpose Cluster
 
@@ -185,15 +224,16 @@ As shown in test case 2, PaddlePaddle yields resource to more important online s
 
 ## Reproducing the Experiment
 
-- Preparation
-    1. Configure kubectl and paddlectl on your host.
-    1. Submit the TrainingJob controller with the YAML file.
-    ```bash
-    > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
-    > kubectl create -f k8s/controller/trainingjob_resource.yaml
-    > kubectl create -f k8s/controller/controller.yaml
-    ```
-- Run the Test Case
+### Preparation
+1. Configure kubectl and paddlectl on your host.
+1. Submit the TrainingJob controller with the YAML file.
+```bash
+> git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
+> kubectl create -f k8s/controller/trainingjob_resource.yaml
+> kubectl create -f k8s/controller/controller.yaml
+```
+
+### Run the Test Case
     1. Run the TestCase1 or TestCase2 for serval passes with the bash script `./run.sh`:
         For example, run TestCase1 for 10 passes and 10 jobs:
         ```bash
@@ -254,5 +294,5 @@ As shown in test case 2, PaddlePaddle yields resource to more important online s
 		AVG|240|37|N/A|55.99
 		```
 
-	1. Plot from the time series data.
+	1. Plot from the time series data, and generate result report.
 	    Please see [here](./result/README.md)
