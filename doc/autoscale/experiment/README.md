@@ -2,38 +2,38 @@
 
 ## Purpose
 
-To verify the effectiveness of PaddlePaddle's auto-scaling mechanism.
+To verify the value of PaddlePaddle's auto-scaling mechanism.
 
 ## Metrics
 
-How the effectiveness is measured.
-
 1. Cluster computing resource utilization.
-    - The higher the better.
+    - Expecting higher resource utilization.
     - Higher utilization means less resource is idle. Autoscaling
       intended to maximize the overall cluster resource(CPU, GPU,
       memory) usage by ensuring resource for production level
       jobs/services, then fairly scale jobs that are scalable to use
       the resource left in the cluster.
-1. Task average pending time.
-    - The less the better.
+    - In this experiment, we are focusing on CPU's utilization.
+1. Training Job average pending time.
+    - Expecting less pending time.
+    - Long pending time is a common pain point for researchers with the internal
+      cluster.
     - The less pending time the earlier developers and researchers can
       start seeing the training cost curve, and the better they can
       verify the training algorithm effectiveness.
-    - This is a common pain point for researchers with the internal
-      cloud.
+    - In this experiment, we will verify if auto-scaler will kill existing
+PaddlePaddle training process to make room for newly submitted jobs.
 1. Quality of service of the online services.
-    - Check if the Machine learning process will yield resources to
-      more important online services when the load is getting
-      intensive.
+    - When PaddlePaddle jobs are deployed along with online services, check if 
+PaddlePaddle training job will yield resources to more important online services
+ when the load is getting intensive.
 
 ## Our setup
 
 - The Kubernetes cluster with v1.6.2 installed, with 133 physical
   nodes.
 - PaddleCloud with the latest develop branch installed.
-- [recognize_digits](./mnist/train_ft.py) is the neural networks model
-  used in the experiment.
+- A medium sized neural networks model is used in the experiment.
 
 ## Test Cases
 
@@ -60,30 +60,34 @@ research institutes.
 
 
 1. With autoscaling turned on, submit the training jobs with 10
-   seconds delay between each job.
+   seconds delay between each job, 20 jobs in total. Repeat the experiment for 10 passes.
 1. With autoscaling turned off, submit the training jobs with 10
-   seconds delay between each job.
+   seconds delay between each job, 20 jobs in total. Repeat the experiment for 10 passes.
 
 
 #### Experiment Result
 
 ##### Graphs
 
-<img src="./result/case1_pending.png" />
+<img src="./result/case1.png" />
 
-In the above graph, the dashed line is for non-autoscaling experiment
-passes, the solid line is for autoscaling experiment passes. We can
-see that the pending job counts for the autoscaling jobs are
-significantly lower than the non-autoscaling jobs.
+In the above graph, the solid line is for non-autoscaling experiment
+passes, the dashed line is for autoscaling experiment passes. 
 
-<img src="./result/case1_util.png" />
+We can see that the pending job counts for the autoscaling jobs are
+significantly lower than the non-autoscaling jobs while still remain the CPU utilization high.
 
-In the above graph, we can see after the utilization stabilizes, the
+Non-autoscaling's pending job count is climbing after 100s of the experiment and stick at 14 till the end. That means the cluster's resource is exhausted when 6 jobs are running, newly submitted jobs have to wait. Meanwhile in autoscaling experiment, even when resources are exhausted, newly submitted job can still start, because autoscaler scaled existing job down to make room for it.
+
+The reason you see ridges in the graph is: jobs are not deployed in one shot,
+there is a 10s delay between jobs' submission, it will take some time for the job to be actually created. The time in non-autoscaling experiment is simply Kubernetes job launching time; While the time in autoscaling experiment case is auto-scaler killing other PaddlePaddle pods and Kubernetes job launching time.
+
+Also above graph, we can see after the utilization stabilizes, the
 cluster utilization of autoscaling jobs are slightly lower than the
 non-autoscaling jobs. We think this is due to:
 
 1. the computation resources wasted when the autoscaler is trying to
-free up resources for the new incoming jobs, and
+free up resources for the new incoming jobs.
 
 1. autoscaling and non-autoscaling jobs have different distributions
    of the numbers of trainer, pserver, master pods. The computation
@@ -162,22 +166,23 @@ enterprises and internet companies.
 1. Increase the Nginx instances count of 100 to 400 over time, to
    simulate the full Nginx load cycle.
 
+1. Repeat the experiment for 10 passes.
+
 1. Repeat the above steps with autoscaling turned off.
 
 #### Experiment Result
 
 ##### Graphs
 
-<img src="./result/case2_nginx.png" />
+<img src="./result/case2.png" />
 
-The above graph shows the number of Nginx instances changing over
-time, simulation a typical online cluster usage. The dashed line is
-for non-autoscaling experiment passes, the solid line is for
+The solid line is for non-autoscaling experiment passes, the dashed line is for
 autoscaling experiment passes.
 
-<img src="./result/case2_util.png" />
+The above graph shows the number of Nginx instances changing over
+time, simulating a typical online cluster usage. Meanwhile when auto-scaling is enabled, the PaddlePaddle job trainer pods count is changing along in a opposite trend.
 
-The above graph shows when autoscaling is turned on, the cluster
+Also when autoscaling is turned on, the cluster
 utilization is kept high even though the online Nginx service is
 scaled down.
 
@@ -242,9 +247,7 @@ increased by 34.8% (`(83.4247-61.8629)/61.8629`) on average; During
 the off-peak time, the CPU utilization even surged by 76.7%
 (`(79.3505-44.9134)/44.9134`).
 
-Clearly, the computing resource reservoir in cluster prepared for a
-rainy day is no longer necessary, because now your machine learning
-tasks are running in the very reservoir. When the situation is getting
+Clearly, now your PaddlePaddle machine learning jobs is running in the computing resource reservoir prepared for the rainy day. When the situation is getting
 tough, machine learning tasks will size itself down without fault and
 give resources back automatically.
 
