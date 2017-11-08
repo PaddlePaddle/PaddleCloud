@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"image/color"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,6 +15,8 @@ import (
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot/vg/draw"
+	"gonum.org/v1/plot/vg/vgimg"
 
 	"github.com/lucasb-eyer/go-colorful"
 )
@@ -204,7 +208,7 @@ func nginxCount(c jobCase) plotter.XYs {
 	return r
 }
 
-func draw(p *plot.Plot, output string, caseOn, caseOff []jobCase, pre present) {
+func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 	pts := casesToPoints(pre, caseOn)
 	for i := range pts {
 		l, err := plotter.NewLine(pts[i])
@@ -215,7 +219,17 @@ func draw(p *plot.Plot, output string, caseOn, caseOff []jobCase, pre present) {
 		l.LineStyle.Color = colorful.HappyColor()
 
 		p.Add(l)
-		p.Legend.Add(fmt.Sprintf("on-%d", i), l)
+
+		if i == 0 {
+			legendLine, err := plotter.NewLine(pts[i])
+			if err != nil {
+				panic(err)
+			}
+			legendLine.LineStyle.Width = vg.Points(1)
+			legendLine.LineStyle.Color = color.Black
+			p.Legend.Add(fmt.Sprintf("autoscaling-on"), legendLine)
+			p.Legend.Top = true
+		}
 		if err != nil {
 			panic(err)
 		}
@@ -232,15 +246,22 @@ func draw(p *plot.Plot, output string, caseOn, caseOff []jobCase, pre present) {
 		l.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
 
 		p.Add(l)
-		p.Legend.Add(fmt.Sprintf("off-%d", i), l)
+
+		if i == 0 {
+			legendLine, err := plotter.NewLine(pts[i])
+			if err != nil {
+				panic(err)
+			}
+			legendLine.LineStyle.Width = vg.Points(1)
+			legendLine.LineStyle.Color = color.Black
+			legendLine.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
+			p.Legend.Add(fmt.Sprintf("autoscaling-off"), legendLine)
+			p.Legend.Top = true
+		}
+
 		if err != nil {
 			panic(err)
 		}
-	}
-
-	// Save the plot to a PNG file.
-	if err := p.Save(8*vg.Inch, 4*vg.Inch, output); err != nil {
-		panic(err)
 	}
 }
 
@@ -272,7 +293,24 @@ func main() {
 		cases[j] = append(cases[j], c)
 	}
 
+	plots := make([][]*plot.Plot, 2)
+
 	p, err := plot.New()
+	if err != nil {
+		panic(err)
+	}
+	p.Title.Text = "Case 1 Number of Pending Jobs"
+	p.X.Label.Text = "time (s)"
+	p.X.Min = 0
+	p.X.Max = 600
+	p.Y.Label.Text = "number of pending jobs"
+	p.Y.Min = 0
+	p.Y.Max = 16
+	p.Add(plotter.NewGrid())
+	doPlot(p, cases[case1On], cases[case1Off], pendingJobs)
+	plots[0] = []*plot.Plot{p}
+
+	p, err = plot.New()
 	if err != nil {
 		panic(err)
 	}
@@ -284,7 +322,30 @@ func main() {
 	p.Y.Min = 0
 	p.Y.Max = 100
 	p.Add(plotter.NewGrid())
-	draw(p, "case1_util.png", cases[case1On], cases[case1Off], clusterUtil)
+	doPlot(p, cases[case1On], cases[case1Off], clusterUtil)
+	plots[1] = []*plot.Plot{p}
+
+	img := vgimg.New(8*vg.Inch, 8*vg.Inch)
+	dc := draw.New(img)
+	t := draw.Tiles{
+		Rows: 2,
+		Cols: 1,
+	}
+	canvases := plot.Align(plots, t, dc)
+	plots[0][0].Draw(canvases[0][0])
+	plots[1][0].Draw(canvases[1][0])
+
+	w, err := os.Create("case1.png")
+	if err != nil {
+		panic(err)
+	}
+
+	png := vgimg.PngCanvas{Canvas: img}
+	_, err = png.WriteTo(w)
+	if err != nil {
+		panic(err)
+	}
+	w.Close()
 
 	p, err = plot.New()
 	if err != nil {
@@ -298,21 +359,8 @@ func main() {
 	p.Y.Min = 0
 	p.Y.Max = 100
 	p.Add(plotter.NewGrid())
-	draw(p, "case2_util.png", cases[case2On], cases[case2Off], clusterUtil)
-
-	p, err = plot.New()
-	if err != nil {
-		panic(err)
-	}
-	p.Title.Text = "Case 1 Number of Pending Jobs"
-	p.X.Label.Text = "time (s)"
-	p.X.Min = 0
-	p.X.Max = 600
-	p.Y.Label.Text = "number of pending jobs"
-	p.Y.Min = 0
-	p.Y.Max = 16
-	p.Add(plotter.NewGrid())
-	draw(p, "case1_pending.png", cases[case1On], cases[case1Off], pendingJobs)
+	doPlot(p, cases[case2On], cases[case2Off], clusterUtil)
+	plots[0] = []*plot.Plot{p}
 
 	p, err = plot.New()
 	if err != nil {
@@ -326,12 +374,12 @@ func main() {
 	p.Y.Min = 0
 	p.Y.Max = 4
 	p.Add(plotter.NewGrid())
-	draw(p, "case2_pending.png", cases[case2On], cases[case2Off], pendingJobs)
+	doPlot(p, cases[case2On], cases[case2Off], pendingJobs)
+
 	p, err = plot.New()
 	if err != nil {
 		panic(err)
 	}
-
 	p.Title.Text = "Case 2 Number of Nginx Pods"
 	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
@@ -340,5 +388,28 @@ func main() {
 	p.Y.Min = 0
 	p.Y.Max = 420
 	p.Add(plotter.NewGrid())
-	draw(p, "case2_nginx.png", cases[case2On], cases[case2Off], nginxCount)
+	doPlot(p, cases[case2On], cases[case2Off], nginxCount)
+	plots[0] = []*plot.Plot{p}
+
+	img = vgimg.New(8*vg.Inch, 8*vg.Inch)
+	dc = draw.New(img)
+	t = draw.Tiles{
+		Rows: 2,
+		Cols: 1,
+	}
+	canvases = plot.Align(plots, t, dc)
+	plots[0][0].Draw(canvases[0][0])
+	plots[1][0].Draw(canvases[1][0])
+
+	w, err = os.Create("case2.png")
+	if err != nil {
+		panic(err)
+	}
+
+	png = vgimg.PngCanvas{Canvas: img}
+	_, err = png.WriteTo(w)
+	if err != nil {
+		panic(err)
+	}
+	w.Close()
 }
