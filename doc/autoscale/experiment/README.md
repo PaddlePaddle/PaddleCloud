@@ -204,29 +204,41 @@ is kept high even though the online Nginx service is scaled down.
 	9|1|62.0316
 	AVG|1.5|61.8629
 
-You might have noticed the hike of average pending time. The reason behind this is the mechanism of gradually deployment of tasks to minimize the impact to online services.
+You might have noticed the hike of average pending time. The reason
+behind this is the mechanism of gradually deployment of tasks to
+minimize the impact to online services.
 
 ## Conclusions
 
 ### Resource utilization
 
-As shown in Case 2 in a general purpose cluster, the CPU utilization increased by 34.8% on average; During off-peak time, the CPU utilization even surged by 77.8%.
+As shown in Case 2 in a general purpose cluster, the CPU utilization
+increased by 34.8% on average; During off-peak time, the CPU
+utilization even surged by 77.8%.
 
-Clearly, the compute resource reservoir in cluster prepared for rainy day is no longer necessary, because now your machine learning tasks are running in the very reservoir. When situation is getting tough, machine learning tasks will size itself down without fault and give resources back automatically.
+Clearly, the compute resource reservoir in cluster prepared for rainy
+day is no longer necessary, because now your machine learning tasks
+are running in the very reservoir. When situation is getting tough,
+machine learning tasks will size itself down without fault and give
+resources back automatically.
 
 ### Average Pending time
 
-As showing in case 1 in a special purpose cluster, the average pending time reduced by XX% on average.
+As showing in case 1 in a special purpose cluster, the average pending
+time reduced by XX% on average.
 
 ### Improved the service quality with general purpose cluster
 
-As shown in test case 2, PaddlePaddle yields resource to more important online services when the load is getting intensive.
+As shown in test case 2, PaddlePaddle yields resource to more
+important online services when the load is getting intensive.
 
 ## Reproducing the Experiment
 
 ### Preparation
+
 1. Configure kubectl and paddlectl on your host.
 1. Submit the TrainingJob controller with the YAML file.
+
 ```bash
 > git clone https://github.com/PaddlePaddle/cloud.git && cd cloud
 > kubectl create -f k8s/controller/trainingjob_resource.yaml
@@ -234,65 +246,62 @@ As shown in test case 2, PaddlePaddle yields resource to more important online s
 ```
 
 ### Run the Test Case
-    1. Run the TestCase1 or TestCase2 for serval passes with the bash script `./run.sh`:
-        For example, run TestCase1 for 10 passes and 10 jobs:
-        ```bash
-        > cd cloud/doc/autoscale/experiment
-        > TAG=round_1 AUTO_SCALING=OFF PASSES=1 JOB_COUNT=20 ./run.sh start case1
-        ```
-        Or submit an auto-scaling training job
-        > cd cloud/doc/autoscale/experiment
-        ```bash
-        > TAG=round_1 AUTO_SCALING=ON PASSES=1 JOB_COUNT=20 ./run.sh start case1
-        ```
-        Or run the TestCase2 with 5 jobs:
-        ```bash
-        > TAG=round_1 AUTO_SCALING=ON JOB_COUNT=6 ./run.sh start case2
-        ```
-		
-		Note: the the test output will be written to different folders
-        (the folder name is generated based on the test
-        configuration), so it's ok to run the tests in a loop to get
-        multiple round of data:
-		
-		```
-		> for i in `seq 1 2`; do echo pass $i; TAG=round_$i JOB_COUNT=6 ./run.sh start case2; done
-		pass 1
-		outputing output to folder: ./out/mnist-OFF-6-1-ON-400-case_case2-round_1
-		```
 
-	1. Get the time series data.
+Run the TestCase1 or TestCase2 for serval passes with the bash script
+`./run.sh`:
+
+For example, run TestCase1 for 10 passes and 10 jobs:
+```bash
+> cd cloud/doc/autoscale/experiment
+> TAG=round_1 AUTO_SCALING=OFF PASSES=1 JOB_COUNT=20 ./run.sh start case1
+```
+
+Or submit an auto-scaling training job
+
+```bash
+> cd cloud/doc/autoscale/experiment
+> TAG=round_1 AUTO_SCALING=ON PASSES=1 JOB_COUNT=20 ./run.sh start case1
+```
+
+Or run the TestCase2 with 5 jobs:
+```bash
+> TAG=round_1 AUTO_SCALING=ON JOB_COUNT=6 ./run.sh start case2
+```
+		
+Note: the the test output will be written to different folders (the
+folder name is generated based on the test configuration), so it's ok
+to run the tests in a loop to get multiple round of data:
+
+```
+> for i in `seq 1 2`; do echo pass $i; TAG=round_$i JOB_COUNT=6 ./run.sh start case2; done
+pass 1
+outputing output to folder: ./out/mnist-OFF-6-1-ON-400-case_case2-round_1
+```
+
+
+### Plot Data and Generate Report
+
+Please see [here](./result/README.md)
+
+#### Raw Data Format
 	
-		The time series data will be appended in the file
-        `./out/*/mnist-case[1|2]-pass[0-9].log`, the content of `*`
-        depends on the test case config, and will be printed in the
-        beginning.
+The time series data will be appended in the file
+`./out/*/mnist-case[1|2]-pass[0-9].log`, the content of `*` depends on
+the test case config, and will be printed in the beginning.
 		
-		as the following format:
+as the following format:
 
+```
+0,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+2,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+4,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
+5,2.11,0,2,1,0,0,0,0|0|0,0.00|0.00|0.00
+7,5.30,7,2,0,1,0,0,7|0|0,3.19|0.00|0.00
+9,7.90,19,2,0,1,0,0,19|0|0,5.79|0.00|0.00
+10,8.11,20,2,0,1,0,0,20|0|0,6.01|0.00|0.00
+```
 
-		```
-		0,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
-		2,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
-		4,2.11,0,3,0,0,0,0,0|0|0,0.00|0.00|0.00
-		5,2.11,0,2,1,0,0,0,0|0|0,0.00|0.00|0.00
-		7,5.30,7,2,0,1,0,0,7|0|0,3.19|0.00|0.00
-		9,7.90,19,2,0,1,0,0,19|0|0,5.79|0.00|0.00
-		10,8.11,20,2,0,1,0,0,20|0|0,6.01|0.00|0.00
-		```
-		The meaning of each column is:
+The meaning of each column is:
 
-		timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of Nginx pods|running trainers for each job |cpu utils for each job
-		--|--|--|--|--|--|--|--|--|--
-
-	1. Calculate the average waiting time, and the average running time from time series data.
-		The statistical data will be generated in the file: `./out/*/mnist-case[1|2]-result.csv`
-		as the following format:
-		```
-		PASS|AVG RUNNING TIME|AVG PENDING TIME|JOB RUNNING TIME|AVG CLUSTER CPU UTILS
-		0|240|37|306,288,218,208,204,158,268,253,250,228,214,207,212,268,173,277,330,332,257,164|55.99
-		AVG|240|37|N/A|55.99
-		```
-
-	1. Plot from the time series data, and generate result report.
-	    Please see [here](./result/README.md)
+timestamp|total cpu util|# of running trainer|# of not exist jobs|# of pending jobs|# of running jobs|# of done jobs|# of Nginx pods|running trainers for each job |cpu utils for each job
+--|--|--|--|--|--|--|--|--|--
