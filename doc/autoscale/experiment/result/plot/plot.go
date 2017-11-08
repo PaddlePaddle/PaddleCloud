@@ -227,6 +227,7 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 		}
 		l.LineStyle.Width = vg.Points(1)
 		l.LineStyle.Color = colorful.HappyColor()
+		l.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
 
 		p.Add(l)
 
@@ -237,6 +238,7 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 			}
 			legendLine.LineStyle.Width = vg.Points(1)
 			legendLine.LineStyle.Color = color.Black
+			legendLine.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
 			p.Legend.Add(fmt.Sprintf("autoscaling-on"), legendLine)
 		}
 		if err != nil {
@@ -251,8 +253,7 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 			panic(err)
 		}
 		l.LineStyle.Width = vg.Points(1)
-		l.LineStyle.Color = colorful.WarmColor()
-		l.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
+		l.LineStyle.Color = getOffColor()
 
 		p.Add(l)
 
@@ -263,7 +264,6 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 			}
 			legendLine.LineStyle.Width = vg.Points(1)
 			legendLine.LineStyle.Color = color.Black
-			legendLine.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
 			p.Legend.Add(fmt.Sprintf("autoscaling-off"), legendLine)
 		}
 
@@ -271,6 +271,12 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 			panic(err)
 		}
 	}
+}
+
+func getOffColor() color.Color {
+	c := colorful.HappyColor()
+	r, g, b := c.RGB255()
+	return color.NRGBA{r, g, b, 0x7f}
 }
 
 var (
@@ -308,7 +314,6 @@ func main() {
 		panic(err)
 	}
 	p.Title.Text = "Case 1"
-	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "number of pending jobs"
@@ -323,7 +328,6 @@ func main() {
 		panic(err)
 	}
 
-	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "CPU utilization (percentage)"
@@ -332,6 +336,7 @@ func main() {
 	p.Add(plotter.NewGrid())
 	doPlot(p, cases[case1On], cases[case1Off], clusterUtil)
 	plots[1] = []*plot.Plot{p}
+	p.X.Label.Text = "time (s)"
 
 	img := vgimg.New(8*vg.Inch, 8*2/3*vg.Inch)
 	dc := draw.New(img)
@@ -361,7 +366,6 @@ func main() {
 		panic(err)
 	}
 	p.Title.Text = "Case 2"
-	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "number of Nginx pods"
@@ -375,7 +379,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.X.Label.Text = "time (s)"
+
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "number of trainer pods"
