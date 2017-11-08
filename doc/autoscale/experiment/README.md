@@ -172,11 +172,12 @@ You might have noticed the hike of average pending time. The reason behind this 
 ### Resource utilization
 
 As shown in Case 2 in a general purpose cluster, the CPU utilization increased by 34.8% on average; During off-peak time, the CPU utilization even surged by 77.8%.
+
 Clearly, the compute resource reservoir in cluster prepared for rainy day is no longer necessary, because now your machine learning tasks are running in the very reservoir. When situation is getting tough, machine learning tasks will size itself down without fault and give resources back automatically.
 
 ### Average Pending time
 
-As showing in case 1 in a special purpose cluster, the average pending time reduced by XX% on average. Which means researchers are able to verify their algorithms XX% earlier than competitors.
+As showing in case 1 in a special purpose cluster, the average pending time reduced by XX% on average.
 
 ### Improved the service quality with general purpose cluster
 
