@@ -102,7 +102,7 @@ free up resources for the new incoming jobs, and
 	7|45|	77.8456
 	8|38|	76.8869
 	9|28|	76.7175
-	AVG|42.9091	76.3321
+	AVG|42.9091|	76.3321
 
 
 - Autoscaling OFF
@@ -119,7 +119,7 @@ free up resources for the new incoming jobs, and
 	7|311|	75.578
 	8|316|	76.9651
 	9|298|	75.8706
-	AVG|280.455	76.1626
+	AVG|280.455|	76.1626
 
 ### Autoscaling on the General Purpose Cluster
 
