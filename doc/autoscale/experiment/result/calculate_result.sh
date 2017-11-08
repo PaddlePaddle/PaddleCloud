@@ -37,3 +37,14 @@ echo 'PASS|AVG PENDING TIME|CLUSTER CPU UTILS'
 echo '---|---|---'
 paste /tmp/pending_off.txt /tmp/cpu_off.txt
 
+for i in `seq 0 9`; do cat case2-mnist-OFF-6-1-ON-400-round_*/mnist-case2.log |awk -F, '{if ($1>=300 && $1<=370) {a=a+$2; b=b+1}} END {print a/b}'; done > /tmp/off-peak-util-off.txt
+for i in `seq 0 9`; do cat case2-mnist-ON-6-1-ON-400-round_*/mnist-case2.log |awk -F, '{if ($1>=300 && $1<=370) {a=a+$2; b=b+1}} END {print a/b}'; done > /tmp/off-peak-util-on.txt
+echo
+echo "# case 2 autoscaling on, average util during off-peak time"
+echo "Off-peak (300s - 370s) average cluster utilization:"
+cat /tmp/off-peak-util-on.txt | awk '{a+=$1; b+=1} END {print a/b}'
+
+echo
+echo "# case 2 autoscaling off, average util during off-peak time"
+echo "Off-peak (300s - 370s) average cluster utilization:"
+cat /tmp/off-peak-util-off.txt | awk '{a+=$1; b+=1} END {print a/b}'

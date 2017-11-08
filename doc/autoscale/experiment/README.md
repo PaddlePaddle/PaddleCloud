@@ -196,6 +196,9 @@ scaled down.
 	9|70|83.7494
 	AVG|53.55|83.4247
 
+	Off-peak (300s - 370s) average cluster utilization:
+	79.3505
+
 - Autoscaling OFF
 
 	PASS|AVG PENDING TIME|CLUSTER CPU UTILS
@@ -212,6 +215,9 @@ scaled down.
 	9|1|62.0316
 	AVG|1.5|61.8629
 
+	Off-peak (300s - 370s) average cluster utilization:
+	44.9134
+
 You might have noticed the hike of average pending time. The reason
 behind this is the mechanism of gradually deployment of tasks to
 minimize the impact to online services.
@@ -221,8 +227,9 @@ minimize the impact to online services.
 ### Resource utilization
 
 As shown in Case 2 in a general purpose cluster, the CPU utilization
-increased by 34.8% on average; During the off-peak time, the CPU
-utilization even surged by 77.8%.
+increased by 34.8% (`(83.4247-61.8629)/61.8629`) on average; During
+the off-peak time, the CPU utilization even surged by 76.7%
+(`(79.3505-44.9134)/44.9134`).
 
 Clearly, the computing resource reservoir in cluster prepared for a
 rainy day is no longer necessary, because now your machine learning
@@ -233,7 +240,7 @@ give resources back automatically.
 ### Average Pending time
 
 As shown in case 1 in a special purpose cluster, the average pending
-time reduced by XX% on average.
+time reduced by 84.7% (`(280.455-42.9091)/280.455`) on average.
 
 ### Improved the service quality with general purpose cluster
 
