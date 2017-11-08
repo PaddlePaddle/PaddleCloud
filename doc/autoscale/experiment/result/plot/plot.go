@@ -178,6 +178,16 @@ func casesToPoints(p present, c []jobCase) []plotter.XYs {
 	return r
 }
 
+func runningTrainerCount(c jobCase) plotter.XYs {
+	r := make(plotter.XYs, len(c))
+	for i, row := range c {
+		r[i].X = float64(row.timestamp)
+		r[i].Y = float64(row.runningTrainerCount)
+	}
+
+	return r
+}
+
 func clusterUtil(c jobCase) plotter.XYs {
 	r := make(plotter.XYs, len(c))
 	for i, row := range c {
@@ -228,7 +238,6 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 			legendLine.LineStyle.Width = vg.Points(1)
 			legendLine.LineStyle.Color = color.Black
 			p.Legend.Add(fmt.Sprintf("autoscaling-on"), legendLine)
-			p.Legend.Top = true
 		}
 		if err != nil {
 			panic(err)
@@ -256,7 +265,6 @@ func doPlot(p *plot.Plot, caseOn, caseOff []jobCase, pre present) {
 			legendLine.LineStyle.Color = color.Black
 			legendLine.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)}
 			p.Legend.Add(fmt.Sprintf("autoscaling-off"), legendLine)
-			p.Legend.Top = true
 		}
 
 		if err != nil {
@@ -299,7 +307,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 1 Number of Pending Jobs"
+	p.Title.Text = "Case 1"
 	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
@@ -314,7 +322,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 1 Cluster Utilization"
+
 	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
@@ -325,7 +333,7 @@ func main() {
 	doPlot(p, cases[case1On], cases[case1Off], clusterUtil)
 	plots[1] = []*plot.Plot{p}
 
-	img := vgimg.New(8*vg.Inch, 8*vg.Inch)
+	img := vgimg.New(8*vg.Inch, 8*2/3*vg.Inch)
 	dc := draw.New(img)
 	t := draw.Tiles{
 		Rows: 2,
@@ -340,6 +348,7 @@ func main() {
 		panic(err)
 	}
 
+	plots = make([][]*plot.Plot, 3)
 	png := vgimg.PngCanvas{Canvas: img}
 	_, err = png.WriteTo(w)
 	if err != nil {
@@ -351,7 +360,35 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 2 Cluster Utilization"
+	p.Title.Text = "Case 2"
+	p.X.Label.Text = "time (s)"
+	p.X.Min = 0
+	p.X.Max = 600
+	p.Y.Label.Text = "number of Nginx pods"
+	p.Y.Min = 0
+	p.Y.Max = 420
+	p.Add(plotter.NewGrid())
+	doPlot(p, cases[case2On], cases[case2Off], nginxCount)
+	plots[0] = []*plot.Plot{p}
+
+	p, err = plot.New()
+	if err != nil {
+		panic(err)
+	}
+	p.X.Label.Text = "time (s)"
+	p.X.Min = 0
+	p.X.Max = 600
+	p.Y.Label.Text = "number of running trainer"
+	p.Y.Min = 0
+	p.Y.Max = 300
+	p.Add(plotter.NewGrid())
+	doPlot(p, cases[case2On], cases[case2Off], runningTrainerCount)
+	plots[1] = []*plot.Plot{p}
+
+	p, err = plot.New()
+	if err != nil {
+		panic(err)
+	}
 	p.X.Label.Text = "time (s)"
 	p.X.Min = 0
 	p.X.Max = 600
@@ -360,46 +397,18 @@ func main() {
 	p.Y.Max = 100
 	p.Add(plotter.NewGrid())
 	doPlot(p, cases[case2On], cases[case2Off], clusterUtil)
-	plots[0] = []*plot.Plot{p}
-
-	p, err = plot.New()
-	if err != nil {
-		panic(err)
-	}
-	p.Title.Text = "Case 2 Number of Pending Jobs"
-	p.X.Label.Text = "time (s)"
-	p.X.Min = 0
-	p.X.Max = 600
-	p.Y.Label.Text = "number of pending jobs"
-	p.Y.Min = 0
-	p.Y.Max = 4
-	p.Add(plotter.NewGrid())
-	doPlot(p, cases[case2On], cases[case2Off], pendingJobs)
-
-	p, err = plot.New()
-	if err != nil {
-		panic(err)
-	}
-	p.Title.Text = "Case 2 Number of Nginx Pods"
-	p.X.Label.Text = "time (s)"
-	p.X.Min = 0
-	p.X.Max = 600
-	p.Y.Label.Text = "number of nginx pods"
-	p.Y.Min = 0
-	p.Y.Max = 420
-	p.Add(plotter.NewGrid())
-	doPlot(p, cases[case2On], cases[case2Off], nginxCount)
-	plots[0] = []*plot.Plot{p}
+	plots[2] = []*plot.Plot{p}
 
 	img = vgimg.New(8*vg.Inch, 8*vg.Inch)
 	dc = draw.New(img)
 	t = draw.Tiles{
-		Rows: 2,
+		Rows: 3,
 		Cols: 1,
 	}
 	canvases = plot.Align(plots, t, dc)
 	plots[0][0].Draw(canvases[0][0])
 	plots[1][0].Draw(canvases[1][0])
+	plots[2][0].Draw(canvases[2][0])
 
 	w, err = os.Create("case2.png")
 	if err != nil {
