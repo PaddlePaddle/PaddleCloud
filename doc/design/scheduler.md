@@ -156,6 +156,18 @@ We **don't** put jobs into several queues, like "RUNNING", "TODO", "DONE". Only
 **one** queue is used for indexing jobs. Jobs that have not started, consumes
 no resource.
 
+### Scheduling Intervals And Freezing Window
+
+Scheduling operations are triggered:
+
+- Every 5 seconds
+- Or by controller event: adding, updating, deleting Of `TrainingJob`
+
+Speaking of "fair", if we do scaling operations very fast, every jobs' trainer
+the count will be constantly in flux, and that's what we don't want. We introduce
+configurable `FreezingWindow` for every `TrainingJob`, in that time window,
+the job should not take any scaling operations to minimize the cost introduced
+by scaling the job.
 
 ## References
 
