@@ -336,7 +336,9 @@ func main() {
 	p.Add(plotter.NewGrid())
 	doPlot(p, cases[case1On], cases[case1Off], clusterUtil)
 	plots[1] = []*plot.Plot{p}
-	p.X.Label.Text = "time (s)"
+	p.X.Label.Text = `time (s)
+each line is one pass of the experiment, 20 passes total
+`
 
 	img := vgimg.New(8*vg.Inch, 8*2/3*vg.Inch)
 	dc := draw.New(img)
@@ -393,7 +395,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.X.Label.Text = "time (s)"
+	p.X.Label.Text = `time (s)
+each line is one pass of the experiment, 20 passes total
+`
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "CPU utilization (percentage)"
