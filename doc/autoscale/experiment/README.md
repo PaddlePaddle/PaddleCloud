@@ -13,7 +13,7 @@ To verify the value of PaddlePaddle's auto-scaling mechanism.
       memory) usage by ensuring resource for production level
       jobs/services, then fairly scale jobs that are scalable to use
       the resource left in the cluster.
-    - In this experiment, we are focusing on CPU's utilization.
+    - In this experiment, we are focusing on CPU utilization.
 1. Training Job average pending time.
     - Expecting less pending time.
     - Long pending time is a common pain point for researchers with the internal
@@ -75,9 +75,9 @@ In the above graph, the solid line is for non-autoscaling experiment
 passes, the dashed line is for autoscaling experiment passes. 
 
 We can see that the pending job counts for the autoscaling jobs are
-significantly lower than the non-autoscaling jobs while still remain the CPU utilization high.
+significantly lower than the non-autoscaling jobs while still remain high CPU utilization.
 
-Non-autoscaling's pending job count is climbing after 100s of the experiment and stick at 14 till the end. That means the cluster's resource is exhausted when 6 jobs are running, newly submitted jobs have to wait. Meanwhile in autoscaling experiment, even when resources are exhausted, newly submitted job can still start, because autoscaler scaled existing job down to make room for it.
+Non-autoscaling's pending job count is climbing after 100s of the experiment and stick at 14 until the end. That means the cluster's resource is exhausted when 6 jobs are running, newly submitted jobs have to wait. Meanwhile in autoscaling experiment, even when resources are exhausted, a newly submitted job can still start, because autoscaler scaled existing job down to make room for it.
 
 The reason you see ridges in the graph is: jobs are not deployed in one shot,
 there is a 10s delay between jobs' submission, it will take some time for the job to be actually created. The time in non-autoscaling experiment is simply Kubernetes job launching time; While the time in autoscaling experiment case is auto-scaler killing other PaddlePaddle pods and Kubernetes job launching time.
@@ -180,11 +180,13 @@ The solid line is for non-autoscaling experiment passes, the dashed line is for
 autoscaling experiment passes.
 
 The above graph shows the number of Nginx instances changing over
-time, simulating a typical online cluster usage. Meanwhile when auto-scaling is enabled, the PaddlePaddle job trainer pods count is changing along in a opposite trend.
+time, simulating a typical online cluster usage. Meanwhile, when auto-scaling is enabled, the PaddlePaddle job trainer pods count is changing along in the opposite trend.
 
 Also when autoscaling is turned on, the cluster
 utilization is kept high even though the online Nginx service is
 scaled down.
+
+You might have noticed the Nginx pods count curve with autoscaling-on is not as sharp as the one with autoscaling-off, especially when Nginx is trying to increase its pods. This is where we still need to improve the performance of the auto-scaler.
 
 
 ##### Metrics
@@ -247,7 +249,7 @@ increased by 34.8% (`(83.4247-61.8629)/61.8629`) on average; During
 the off-peak time, the CPU utilization even surged by 76.7%
 (`(79.3505-44.9134)/44.9134`).
 
-Clearly, now your PaddlePaddle machine learning jobs is running in the computing resource reservoir prepared for the rainy day. When the situation is getting
+Clearly, now your PaddlePaddle machine learning jobs are running in the computing resource reservoir prepared for the rainy day. When the situation is getting
 tough, machine learning tasks will size itself down without fault and
 give resources back automatically.
 
