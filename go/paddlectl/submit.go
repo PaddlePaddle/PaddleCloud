@@ -6,11 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 
 	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/rest"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
@@ -31,7 +29,6 @@ var Config = config.ParseDefaultConfig()
 type SubmitCmd struct {
 	Jobname    string `json:"name"`
 	Jobpackage string `json:"jobPackage"`
-	//Parallelism int    `json:"parallelism"`
 	CPU        int    `json:"cpu"`
 	GPU        int    `json:"gpu"`
 	Memory     string `json:"memory"`
@@ -53,8 +50,10 @@ type SubmitCmd struct {
 	MaxInstance   int  `json:"maxInstance"`
 	MinInstance   int  `json:"minInstance"`
 
-	// TODO: init config in memory.
-	//KubeConfig string `json:"kubeconfig"`
+	// TODO(gongwb): init config in memory.
+	KubeConfig string `json:"kubeconfig"`
+
+	// TODO(gongwb): create from yaml.
 	//JobYaml    string `json:"jobyaml"`
 }
 
@@ -119,12 +118,12 @@ func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
 
 	t := paddlejob.TrainingJob{
 		metav1.TypeMeta{
-		//Kind:       "TrainingJob",
-		//APIVersion: "paddlepaddle.org/v1",
+			Kind:       "TrainingJob",
+			APIVersion: "paddlepaddle.org/v1",
 		},
 		metav1.ObjectMeta{
-			Name: p.Jobname,
-			//Namespace: nameEscape(Config.ActiveConfig.Username),
+			Name:      p.Jobname,
+			Namespace: nameEscape(Config.ActiveConfig.Username),
 		},
 
 		// General job attributes.
@@ -154,10 +153,8 @@ func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
 
 // SetFlags registers subcommands flags.
 func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
-	//f.StringVar(&p.KubeConfig, "kubeconfig", "", "Kubernetes config.")
-	//f.StringVar(&p.yaml, "yaml", "", "Job's yaml.")
+	f.StringVar(&p.KubeConfig, "kubeconfig", "", "Kubernetes config.")
 	f.StringVar(&p.Jobname, "jobname", "paddle-cluster-job", "Cluster job name.")
-	//f.IntVar(&p.Parallelism, "parallelism", 1, "Number of parrallel trainers. Defaults to 1.")
 	f.IntVar(&p.CPU, "cpu", 1, "CPU resource each trainer will use. Defaults to 1.")
 	f.IntVar(&p.GPU, "gpu", 0, "GPU resource each trainer will use. Defaults to 0.")
 	f.StringVar(&p.Memory, "memory", "1Gi", " Memory resource each trainer will use. Defaults to 1Gi.")
@@ -182,21 +179,16 @@ func (p *SubmitCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		f.Usage()
 		return subcommands.ExitFailure
 	}
-	// default pservers count equals to trainers count.
-	/*
-		if p.Pservers == 0 {
-			p.Pservers = p.Parallelism
-		}
-	*/
+
 	p.Jobpackage = f.Arg(0)
 	p.Datacenter = Config.ActiveConfig.Name
 
 	s := NewSubmitter(p)
-	errS := s.Submit(f.Arg(0), p.Jobname)
-	if errS != nil {
-		fmt.Fprintf(os.Stderr, "error submiting job: %v\n", errS)
+	if err := s.Submit(f.Arg(0), p.Jobname); err != nil {
+		fmt.Fprintf(os.Stderr, "error submiting job: %v\n", err)
 		return subcommands.ExitFailure
 	}
+
 	fmt.Printf("%s submited.\n", p.Jobname)
 	return subcommands.ExitSuccess
 }
@@ -212,8 +204,34 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 	return &s
 }
 
-func putFiles(jobPackage string, dest string) error {
+// putFiles puts files to pfs and
+// if jobPackage is not a local dir, skip uploading package.
+func putFiles(jobPackage, jobName string) error {
+	_, pkgerr := os.Stat(jobPackage)
+	if pkgerr == nil {
+		// FIXME: upload job package to paddle cloud.
+		//dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
+		//if !strings.HasSuffix(jobPackage, "/") {
+		//		jobPackage = jobPackage + "/"
+		//}
+		//err := putFiles(jobPackage, dest)
+		//if err != nil {
+		//	return err
+		//}
+	} else if os.IsNotExist(pkgerr) {
+		return fmt.Errorf("stat jobpackage '%s' error: %v", jobPackage, pkgerr)
+	}
+
 	return nil
+}
+
+func (s *Submitter) getKubeConfig() (string, error) {
+	kubeconfig := s.args.KubeConfig
+	if _, err := os.Stat(kubeconfig); err != nil {
+		return "", fmt.Errorf("can't access kubeconfig '%s' error: %v", kubeconfig, err)
+	}
+
+	return kubeconfig, nil
 }
 
 // Submit current job.
@@ -222,31 +240,27 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	// if jobPackage is not a local dir, skip uploading package.
-	_, pkgerr := os.Stat(jobPackage)
-	if pkgerr == nil {
-		dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
-		if !strings.HasSuffix(jobPackage, "/") {
-			jobPackage = jobPackage + "/"
-		}
-		// FIXME: upload job package to paddle cloud.
-		err := putFiles(jobPackage, dest)
-		if err != nil {
-			return err
-		}
-	} else if os.IsNotExist(pkgerr) {
-		glog.Warning("jobpackage not a local dir, skip upload.")
+	if err := putFiles(jobPackage, jobName); err != nil {
+		return err
 	}
 
-	kubeconfig := "/Users/gongwb/.kube/config"
-	resource := "training-job.paddlepaddle.org"
-	apiversion := "v1"
-	namespace := nameEscape(Config.ActiveConfig.Username)
-	client, clientset := createClient(kubeconfig)
-	//ensureNamespace(clientset, namespace)
-	ensureTPR(clientset, resource, namespace, apiversion)
+	kubeconfig, err := s.getKubeConfig()
+	if err != nil {
+		return err
+	}
 
-	if err := createTrainingJob(client, s.args.GetTrainingJob()); err != nil {
+	namespace := nameEscape(Config.ActiveConfig.Username)
+
+	client, clientset, err := createClient(kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	if err := ensureNamespace(clientset, namespace); err != nil {
+		return err
+	}
+
+	if err := createTrainingJob(client, namespace, s.args.GetTrainingJob()); err != nil {
 		return err
 	}
 
@@ -258,34 +272,4 @@ func checkJobName(jobName string) error {
 	}
 
 	return nil
-}
-
-func checkJob(nameSpace, jobName string, client *rest.RESTClient) error {
-	/*
-		type DemoSpec struct {
-			Name        string `json:"name"`
-			Description string `json:"description"`
-		}
-		type Demo struct {
-			unversioned.TypeMeta `json:",inline"`
-			api.ObjectMeta       `json:"metadata,omitempty"`
-
-			Spec DemoSpec `json:"spec"`
-		}
-
-		demo := Demo{
-			Spec: DemoSpec{
-				Name:        jobName,
-				Description: "Description for " + jobName + ".",
-			},
-		}
-		// TODO(gongwb): check jobName not exists.
-		err := client.Get().
-			Resource("TrainJob").
-			Namespace(nameSpace).
-			Name(jobName).
-			Do().Into(demo)
-	*/
-	return nil
-
 }

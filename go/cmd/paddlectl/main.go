@@ -14,7 +14,7 @@ func main() {
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&paddlectl.SubmitCmd{}, "")
 
-	// TODO: add these commands.
+	// TODO(gongwb): add these commands.
 	// subcommands.Register(&paddlecloud.LogsCommand{}, "")
 	// subcommands.Register(&paddlecloud.GetCommand{}, "")
 	// subcommands.Register(&paddlecloud.KillCommand{}, "")

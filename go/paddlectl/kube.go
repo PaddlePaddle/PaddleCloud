@@ -2,13 +2,13 @@ package paddlectl
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/rest"
@@ -19,39 +19,32 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 	return clientcmd.BuildConfigFromFlags("", kubeconfig)
 }
 
-func createClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset) {
+func createClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset, error) {
 	config, err := buildConfig(kubeconfig)
 	if err != nil {
-		panic(err)
+		return nil, nil, fmt.Errorf("init from config '%s' error: %v", kubeconfig, err)
 	}
-
-	// setup some optional configuration
-	// paddlejob.ConfigureClient(config)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err)
+		return nil, nil, fmt.Errorf("create clientset from config '%s' error: %v", kubeconfig, err)
 	}
 
-	var tprconfig *rest.Config
-	tprconfig = config
-	paddlejob.ConfigureClient(tprconfig)
+	paddlejob.ConfigureClient(config)
 
-	client, err := rest.RESTClientFor(tprconfig)
+	client, err := rest.RESTClientFor(config)
 	if err != nil {
-		panic(err)
+		return nil, nil, fmt.Errorf("create rest client from config '%s' error: %v", kubeconfig, err)
 	}
 
-	return client, clientset
+	return client, clientset, nil
 }
 func ensureNamespace(clientset *kubernetes.Clientset, namespace string) error {
 	n := v1.Namespace{}
 	n.SetName(namespace)
 
-	if _, err := clientset.Namespaces().Create(&n); err != nil &&
-		!errors.IsAlreadyExists(err) {
-		fmt.Printf("create namespace %s error: %v\n", namespace, err)
-		return err
+	if _, err := clientset.Namespaces().Get(namespace, metav1.GetOptions{}); err != nil {
+		return fmt.Errorf("get namespace '%s' error:%v", namespace, err)
 	}
 
 	return nil
@@ -76,13 +69,11 @@ func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion 
 				},
 				Description: "PaddlePaddle TrainingJob operator",
 			}
-			// TODO: need namespace?
-			//tpr.SetNamespace(namespace)
-			result, err := clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
+
+			_, err := clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("CREATED: %#v\nFROM: %#v\n", result, tpr)
 		} else {
 			panic(err)
 		}
@@ -91,75 +82,25 @@ func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion 
 	}
 }
 
-func createTrainingJob(restClient *rest.RESTClient, job *paddlejob.TrainingJob) error {
+func createTrainingJob(restClient *rest.RESTClient, namespace string, job *paddlejob.TrainingJob) error {
 	var result paddlejob.TrainingJob
 	err := restClient.Post().
 		Resource("trainingjobs").
-		Namespace(api.NamespaceDefault).
+		Namespace(namespace).
 		Body(job).
 		Do().Into(&result)
 
-	/*
-		var example paddlejob.TrainingJob
-		err := restClient.Get().
-			Resource("TrainingJobs").
-			Namespace(api.NamespaceDefault).
-			Name("example1").
-			Do().Into(&example)
-		if err != nil {
-			fmt.Printf("get error :%v\n", err)
-		}
-
-		var result paddlejob.TrainingJob
-		err = restClient.Post().
-			Resource("TrainingJobs").
-			Namespace(api.NamespaceDefault).
-			Body(job).
-			Do().Into(&result)
-	*/
-
 	if err != nil {
-		fmt.Printf("can't create TrainningJob: %s\n", job)
-		fmt.Printf("restClient: %v\n", restClient)
-		fmt.Printf("error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "can't create TPR extenion TrainningJob: %s\n", job)
 		return err
 	}
 
 	return nil
 }
 
-/*
-def name_escape(name):
-    """
-        Escape name to a safe string of kubernetes namespace
-    """
-    safe_name = name.replace("@", "-")
-    safe_name = safe_name.replace(".", "-")
-    safe_name = safe_name.replace("_", "-")
-    return safe_name
-*/
 func nameEscape(name string) string {
 	name = strings.Replace(name, "@", "-", -1)
 	name = strings.Replace(name, ".", "-", -1)
 	name = strings.Replace(name, "_", "-", -1)
-	fmt.Println(name)
 	return name
-}
-
-func createDemo(restClient *rest.RESTClient) error {
-	var example paddlejob.TrainingJob
-	var result paddlejob.TrainingJob
-
-	err := restClient.Post().
-		Resource("TrainingJob").
-		Namespace(api.NamespaceDefault).
-		Body(example).
-		Do().Into(&result)
-	fmt.Printf("create 1\n")
-	if err != nil {
-		fmt.Printf("create demo error: %v\n", err)
-		return err
-	}
-
-	return nil
 }
