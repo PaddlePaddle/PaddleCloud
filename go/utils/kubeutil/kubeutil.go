@@ -1,4 +1,4 @@
-package paddlectl
+package kubeutil
 
 import (
 	"fmt"
@@ -19,7 +19,8 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 	return clientcmd.BuildConfigFromFlags("", kubeconfig)
 }
 
-func createClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset, error) {
+// CreateClient creates ClientSet and rest.RESTClient used by client.
+func CreateClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset, error) {
 	config, err := buildConfig(kubeconfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("init from config '%s' error: %v", kubeconfig, err)
@@ -39,7 +40,9 @@ func createClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset, e
 
 	return client, clientset, nil
 }
-func ensureNamespace(clientset *kubernetes.Clientset, namespace string) error {
+
+// FindNamespace finds whether a namespace exists.
+func FindNamespace(clientset *kubernetes.Clientset, namespace string) error {
 	n := v1.Namespace{}
 	n.SetName(namespace)
 
@@ -50,8 +53,9 @@ func ensureNamespace(clientset *kubernetes.Clientset, namespace string) error {
 	return nil
 }
 
-func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion string) {
-	tpr, err := clientset.ExtensionsV1beta1().ThirdPartyResources().Get(resource, metav1.GetOptions{})
+// EnsureTPR ensure a TPR should exists and create it if not.
+func EnsureTPR(clientset *kubernetes.Clientset, resourceName, apiversion string) error {
+	tpr, err := clientset.ExtensionsV1beta1().ThirdPartyResources().Get(resourceName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			tpr := &v1beta1.ThirdPartyResource{
@@ -61,7 +65,7 @@ func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion 
 				},
 
 				ObjectMeta: metav1.ObjectMeta{
-					Name: resource,
+					Name: resourceName,
 				},
 
 				Versions: []v1beta1.APIVersion{
@@ -72,17 +76,20 @@ func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion 
 
 			_, err := clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 			if err != nil {
-				panic(err)
+				return err
 			}
 		} else {
-			panic(err)
+			return err
 		}
 	} else {
 		fmt.Printf("SKIPPING: already exists %#v\n", tpr)
 	}
+
+	return nil
 }
 
-func createTrainingJob(restClient *rest.RESTClient, namespace string, job *paddlejob.TrainingJob) error {
+// CreateTrainingJob try to create a training-job under namespace.
+func CreateTrainingJob(restClient *rest.RESTClient, namespace string, job *paddlejob.TrainingJob) error {
 	var result paddlejob.TrainingJob
 	err := restClient.Post().
 		Resource("trainingjobs").
@@ -98,7 +105,8 @@ func createTrainingJob(restClient *rest.RESTClient, namespace string, job *paddl
 	return nil
 }
 
-func nameEscape(name string) string {
+// NameEscape replace characters not supported by Kubernetes.
+func NameEscape(name string) string {
 	name = strings.Replace(name, "@", "-", -1)
 	name = strings.Replace(name, ".", "-", -1)
 	name = strings.Replace(name, "_", "-", -1)

@@ -12,6 +12,7 @@ import (
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
+	kubeutil "github.com/PaddlePaddle/cloud/go/utils/kubeutil"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
@@ -22,7 +23,7 @@ const (
 	invalidJobName = "jobname can not contain '.' or '_'"
 )
 
-// Config is global config object for paddlecloud commandline
+// Config is global config object for paddlectl commandline
 var Config = config.ParseDefaultConfig()
 
 // SubmitCmd define the subcommand of submitting paddle training jobs.
@@ -123,7 +124,7 @@ func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
 		},
 		metav1.ObjectMeta{
 			Name:      p.Jobname,
-			Namespace: nameEscape(Config.ActiveConfig.Username),
+			Namespace: kubeutil.NameEscape(Config.ActiveConfig.Username),
 		},
 
 		// General job attributes.
@@ -249,18 +250,17 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	namespace := nameEscape(Config.ActiveConfig.Username)
-
-	client, clientset, err := createClient(kubeconfig)
+	client, clientset, err := kubeutil.CreateClient(kubeconfig)
 	if err != nil {
 		return err
 	}
 
-	if err := ensureNamespace(clientset, namespace); err != nil {
+	namespace := kubeutil.NameEscape(Config.ActiveConfig.Username)
+	if err := kubeutil.FindNamespace(clientset, namespace); err != nil {
 		return err
 	}
 
-	if err := createTrainingJob(client, namespace, s.args.GetTrainingJob()); err != nil {
+	if err := kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob()); err != nil {
 		return err
 	}
 
