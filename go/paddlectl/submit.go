@@ -55,7 +55,6 @@ type SubmitCmd struct {
 	KubeConfig string `json:"kubeconfig"`
 
 	// TODO(gongwb): create from yaml.
-	//JobYaml    string `json:"jobyaml"`
 }
 
 // Name is subcommands name.
@@ -76,7 +75,7 @@ func (p *SubmitCmd) getTrainer() *paddlejob.TrainerSpec {
 	return &paddlejob.TrainerSpec{
 		Entrypoint: p.Entry,
 		// FIXME(gongwb): workspace
-		//Workspace:   p.Workspace,
+
 		MinInstance: p.MinInstance,
 		MaxInstance: p.MaxInstance,
 		Resources: v1.ResourceRequirements{
@@ -132,9 +131,6 @@ func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
 			Image: p.Image,
 
 			// TODO(gongwb): init them?
-			//Port:              p.Port,
-			//PortsNum:          p.PortNum,
-			//PortsNumForSparse: p.PortsNumForSparse,
 
 			FaultTolerant: p.FaultTolerant,
 			Passes:        p.Passes,
@@ -211,14 +207,6 @@ func putFiles(jobPackage, jobName string) error {
 	_, pkgerr := os.Stat(jobPackage)
 	if pkgerr == nil {
 		// FIXME: upload job package to paddle cloud.
-		//dest := path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
-		//if !strings.HasSuffix(jobPackage, "/") {
-		//		jobPackage = jobPackage + "/"
-		//}
-		//err := putFiles(jobPackage, dest)
-		//if err != nil {
-		//	return err
-		//}
 	} else if os.IsNotExist(pkgerr) {
 		return fmt.Errorf("stat jobpackage '%s' error: %v", jobPackage, pkgerr)
 	}
