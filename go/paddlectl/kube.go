@@ -26,14 +26,18 @@ func createClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset) {
 	}
 
 	// setup some optional configuration
-	paddlejob.ConfigureClient(config)
+	// paddlejob.ConfigureClient(config)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err)
 	}
 
-	client, err := rest.RESTClientFor(config)
+	var tprconfig *rest.Config
+	tprconfig = config
+	paddlejob.ConfigureClient(tprconfig)
+
+	client, err := rest.RESTClientFor(tprconfig)
 	if err != nil {
 		panic(err)
 	}
@@ -90,17 +94,28 @@ func ensureTPR(clientset *kubernetes.Clientset, resource, namespace, apiversion 
 func createTrainingJob(restClient *rest.RESTClient, job *paddlejob.TrainingJob) error {
 	var result paddlejob.TrainingJob
 	err := restClient.Post().
-		Resource("TrainingJob").
-		Namespace("gongweibao-baidu-com").
+		Resource("trainingjobs").
+		Namespace(api.NamespaceDefault).
 		Body(job).
 		Do().Into(&result)
 
 	/*
-		err := restClient.
-			Post().
+		var example paddlejob.TrainingJob
+		err := restClient.Get().
+			Resource("TrainingJobs").
+			Namespace(api.NamespaceDefault).
+			Name("example1").
+			Do().Into(&example)
+		if err != nil {
+			fmt.Printf("get error :%v\n", err)
+		}
+
+		var result paddlejob.TrainingJob
+		err = restClient.Post().
+			Resource("TrainingJobs").
+			Namespace(api.NamespaceDefault).
 			Body(job).
-			Do().
-			Into(&result)
+			Do().Into(&result)
 	*/
 
 	if err != nil {

@@ -116,14 +116,15 @@ func (p *SubmitCmd) getMaster() *paddlejob.MasterSpec {
 
 // GetTrainingJob get's paddlejob.TrainingJob struct filed by Submitcmd paramters.
 func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
+
 	t := paddlejob.TrainingJob{
 		metav1.TypeMeta{
-			Kind:       "TrainingJob",
-			APIVersion: "paddlepaddle.org/v1",
+		//Kind:       "TrainingJob",
+		//APIVersion: "paddlepaddle.org/v1",
 		},
 		metav1.ObjectMeta{
-			Name:      p.Jobname,
-			Namespace: nameEscape(Config.ActiveConfig.Username),
+			Name: p.Jobname,
+			//Namespace: nameEscape(Config.ActiveConfig.Username),
 		},
 
 		// General job attributes.
