@@ -313,7 +313,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 1"
+	p.Title.Text = "Compare the pending jobs and CPU utilization when the cluster is full"
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "number of pending jobs"
@@ -367,7 +367,7 @@ each line is one pass of the experiment, 20 passes total
 	if err != nil {
 		panic(err)
 	}
-	p.Title.Text = "Case 2"
+	p.Title.Text = "Compare the change of trainer count and CPU utilization when Nginx pod count changes"
 	p.X.Min = 0
 	p.X.Max = 600
 	p.Y.Label.Text = "number of Nginx pods"
