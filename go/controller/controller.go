@@ -37,18 +37,17 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	"github.com/PaddlePaddle/cloud/go/autoscaler"
 )
 
 // Controller for dispatching TrainingJob resource.
 type Controller struct {
 	client     *rest.RESTClient
 	clientset  *kubernetes.Clientset
-	autoscaler *autoscaler.Autoscaler
+	autoscaler *Autoscaler
 }
 
 // NewController construct a new Controller struct
-func NewController(c *rest.RESTClient, cs *kubernetes.Clientset, as *autoscaler.Autoscaler) (*Controller, error) {
+func NewController(c *rest.RESTClient, cs *kubernetes.Clientset, as *Autoscaler) (*Controller, error) {
 	return &Controller{
 		client:     c,
 		clientset:  cs,
