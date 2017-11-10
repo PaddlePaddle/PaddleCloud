@@ -55,6 +55,8 @@ spec:
 package api
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 )
@@ -160,4 +162,9 @@ func (s *TrainingJob) GPU() int {
 	}
 
 	return int(gpu)
+}
+
+func (s *TrainingJob) String() string {
+	b, _ := json.MarshalIndent(s, "", "   ")
+	return string(b[:])
 }
