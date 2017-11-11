@@ -6,31 +6,31 @@ To verify the value of PaddlePaddle's auto-scaling mechanism.
 
 ## Metrics
 
-1. Cluster computing resource utilization.
+1. Cluster computational resource utilization.
     - Expecting higher resource utilization.
-    - Higher utilization means less resource is idle. Autoscaling
+    - Higher utilization means lesser resources are idle. Autoscaling is
       intended to maximize the overall cluster resource(CPU, GPU,
-      memory) usage by ensuring resource for production level
-      jobs/services, then fairly scale jobs that are scalable to use
-      the resource left in the cluster.
+      memory) usage by ensuring resources for production level
+      jobs/services, followed by fair scaling of jobs that are scalable to use
+      the resources left in the cluster.
     - In this experiment, we are focusing on CPU utilization.
-1. Training Job average pending time.
-    - Expecting less pending time.
+1. Average pending time for training jobs.
+    - Expecting lesser pending time.
     - Long pending time is a common pain point for researchers with the internal
       cluster.
-    - The less pending time the earlier developers and researchers can
-      start seeing the training cost curve, and the better they can
-      verify the training algorithm effectiveness.
-    - In this experiment, we will verify if auto-scaler will kill existing
-PaddlePaddle training process to make room for newly submitted jobs.
-1. Quality of service of the online services.
-    - When PaddlePaddle jobs are deployed along with online services, check if 
-PaddlePaddle training job will yield resources to more important online services
- when the load is getting intensive.
+    - The lesser the pending time, the earlier developers and researchers can
+      start seeing the training cost graphs, and the better they can
+      verify the effectiveness of the training algorithm.
+    - In this experiment, we will verify if the auto-scaler will kill existing
+PaddlePaddle training processes to make room for newly submitted jobs.
+1. Quality of service of online services.
+    - When PaddlePaddle jobs are deployed along with online services, we check whether 
+PaddlePaddle training jobs will yield resources to more important online services
+ when the load gets intensive.
 
 ## Our setup
 
-- The Kubernetes cluster with v1.6.2 installed, with 133 physical
+- Kubernetes cluster with v1.6.2 installed, with 133 physical
   nodes.
 - PaddleCloud with the latest develop branch installed.
 - A medium sized neural networks model is used in the experiment.
@@ -39,9 +39,9 @@ PaddlePaddle training job will yield resources to more important online services
 
 ### Autoscaling on the Special Purpose Cluster
 
-All the job in the cluster will be training jobs (hence the name
+All the jobs in the cluster will be training jobs (hence the name,
 special purpose cluster). This case is a very typical scenario for
-research institutes.
+research labs.
 
 #### Variable
 
@@ -50,7 +50,7 @@ research institutes.
 #### Invariant
 
 - The number of jobs.
-- The configurations of each job are the same, except:
+- The configurations for each job are the same, except:
   1. each autoscaling job asks for 2 - 60 trainers, and
   1. each non-autoscaling job asks for 60 trainers.
 - The submission time of each job.
@@ -65,7 +65,7 @@ research institutes.
    seconds delay between each job, 20 jobs in total. Repeat the experiment for 10 passes.
 
 
-#### Experiment Result
+#### Experiment Results
 
 ##### Graphs
 
@@ -75,23 +75,23 @@ In the above graph, the solid line is for non-autoscaling experiment
 passes, the dashed line is for autoscaling experiment passes. 
 
 We can see that the pending job counts for the autoscaling jobs are
-significantly lower than the non-autoscaling jobs while still remain high CPU utilization.
+significantly lower than the non-autoscaling jobs while still maintaining high CPU utilization.
 
-Non-autoscaling's pending job count is climbing after 100s of the experiment and stick at 14 until the end. That means the cluster's resource is exhausted when 6 jobs are running, newly submitted jobs have to wait. Meanwhile in autoscaling experiment, even when resources are exhausted, a newly submitted job can still start, because autoscaler scaled existing job down to make room for it.
+The pending job count for non-autoscaling increases after 100 seconds of the experiment and plateaus at 14 until the end. This means that the cluster's resource have exhausted when 6 jobs are running, hence newly submitted jobs have to wait. Meanwhile in autoscaling experiment, even when resources are exhausted, a newly submitted job can still start, because autoscaler scales existing job down to make room for the new jobs.
 
-The reason you see ridges in the graph is: jobs are not deployed in one shot,
-there is a 10s delay between jobs' submission, it will take some time for the job to be actually created. The time in non-autoscaling experiment is simply Kubernetes job launching time; While the time in autoscaling experiment case is auto-scaler killing other PaddlePaddle pods and Kubernetes job launching time.
+The reason we see ridges in the graph is because jobs are not deployed in one shot,
+there is a 10s delay between job submissions. Hence, it will take some time for the job to be actually created. The time in non-autoscaling experiment is simply Kubernetes' job launching time; while the time in autoscaling experiment case is auto-scaler killing other PaddlePaddle pods and Kubernetes job launching time.
 
-Also above graph, we can see after the utilization stabilizes, the
-cluster utilization of autoscaling jobs are slightly lower than the
-non-autoscaling jobs. We think this is due to:
+Also in the above graph, we can see that after the utilization stabilizes, the
+cluster utilization of autoscaling jobs is slightly lower than the
+non-autoscaling jobs. We think this is because of two reasons:
 
-1. the computation resources wasted when the autoscaler is trying to
-free up resources for the new incoming jobs.
+1. Computation resources are wasted when autoscaler is trying to
+free up resources for new incoming jobs.
 
-1. autoscaling and non-autoscaling jobs have different distributions
-   of the numbers of trainer, pserver, master pods. The computation
-   resources for each node are fragmented differently, leading to the
+1. Autoscaling and non-autoscaling jobs have different distributions
+   of the numbers of trainer, pserver and master pods. The computation
+   resources for each node are fragmented differently, leading to a
    utilization around 88% for non-autoscaling jobs vs around 86% for
    autoscaling jobs when stabilized.
 
@@ -132,9 +132,9 @@ free up resources for the new incoming jobs.
 
 ### Autoscaling on the General Purpose Cluster
 
-Hybrid deployment with online serving and offline training Job (hence
-the name general purpose cluster). We will deploy PaddlePaddle
-training job and [Nginx](https://www.nginx.com/resources/wiki/) web
+Hybrid deployment with online serving and offline training job (hence
+the name, general purpose cluster). We will deploy PaddlePaddle
+training jobs and [Nginx](https://www.nginx.com/resources/wiki/) web
 serving together. This case is a very typical scenario for large
 enterprises and internet companies.
 
@@ -147,7 +147,7 @@ enterprises and internet companies.
 #### Invariant
 
 - The number of training jobs.
-- The configurations of each training job are the same, except:
+- The configurations for each training job are the same, except:
   1. each autoscaling job asks for 2 - 60 trainers, and
   1. each non-autoscaling job asks for 60 trainers.
 - The submission time for each training job.
@@ -160,11 +160,11 @@ enterprises and internet companies.
 
 1. Start the training jobs.
 
-1. Decrease the Nginx instance count of 400 to 100 over time, to
-   simulate the Nginx load decreases, requiring fewer Nginx instances.
+1. Decrease the Nginx instance count of 400 to 100 over time. This
+   simulates Nginx load decreases, requiring fewer Nginx instances.
 
-1. Increase the Nginx instances count of 100 to 400 over time, to
-   simulate the full Nginx load cycle.
+1. Increase the Nginx instances count of 100 to 400 over time. This
+   simulates the full Nginx load cycle.
 
 1. Repeat the experiment for 10 passes.
 
@@ -176,7 +176,7 @@ enterprises and internet companies.
 
 <img src="./result/case2.png" />
 
-The solid line is for non-autoscaling experiment passes, the dashed line is for
+The solid line is for non-autoscaling experiment passes and the dashed line is for
 autoscaling experiment passes.
 
 The above graph shows the number of Nginx instances changing over
@@ -186,7 +186,7 @@ Also when autoscaling is turned on, the cluster
 utilization is kept high even though the online Nginx service is
 scaled down.
 
-You might have noticed the Nginx pods count curve with autoscaling-on is not as sharp as the one with autoscaling-off, especially when Nginx is trying to increase its pods. This is where we still need to improve the performance of the auto-scaler.
+We notice that Nginx pods count curve with autoscaling-on is not as sharp as the one with autoscaling-off, especially when Nginx is trying to increase its pods. This is where we still need to improve the performance of the auto-scaler.
 
 
 ##### Metrics
@@ -229,14 +229,14 @@ You might have noticed the Nginx pods count curve with autoscaling-on is not as 
 	Off-peak (300s - 370s) average cluster utilization:
 	44.9134
 
-You might have noticed the hike of average pending time. The reason
-behind this is the mechanism of gradually deployment of tasks to
+We also notice the increase in average pending time. The reason
+behind this is the mechanism of gradual deployment of tasks to
 minimize the impact to online services.
 
 ##### Data Log
 
-Every number and plot in the report is calculated from the raw
-data. You can find the calculation programs and the raw
+Every number and plot in the report is calculated from raw
+data. You can find the calculation programs and raw
 data
 [here](https://github.com/PaddlePaddle/cloud/tree/develop/doc/autoscale/experiment/result)
 
@@ -249,8 +249,8 @@ increased by 34.8% (`(83.4247-61.8629)/61.8629`) on average; During
 the off-peak time, the CPU utilization even surged by 76.7%
 (`(79.3505-44.9134)/44.9134`).
 
-Clearly, now your PaddlePaddle machine learning jobs are running in the computing resource reservoir prepared for the rainy day. When the situation is getting
-tough, machine learning tasks will size itself down without fault and
+Clearly, now PaddlePaddle machine learning jobs are running in the computing resource reservoir prepared for the rainy day. When the situation is getting
+tough, machine learning tasks will size down themselves without fault and
 give resources back automatically.
 
 ### Average Pending time
@@ -258,7 +258,7 @@ give resources back automatically.
 As shown in case 1 in a special purpose cluster, the average pending
 time reduced by 84.7% (`(280.455-42.9091)/280.455`) on average.
 
-### Improved the service quality with general purpose cluster
+### Improvement of service quality with general purpose cluster
 
 As shown in test case 2, PaddlePaddle yields resource to more
 important online services when the load is getting intensive.
@@ -299,7 +299,7 @@ Or run the TestCase2 with 5 jobs:
 > TAG=round_1 AUTO_SCALING=ON JOB_COUNT=6 ./run.sh start case2
 ```
 		
-Note: the the test output will be written to different folders (the
+Note: the test output will be written to different folders (the
 folder name is generated based on the test configuration), so it's ok
 to run the tests in a loop to get multiple round of data:
 
@@ -312,7 +312,7 @@ outputing output to folder: ./out/mnist-OFF-6-1-ON-400-case_case2-round_1
 
 ### Plot Data and Generate Report
 
-Please see [here](./result/README.md)
+Please refer to the [README](./result/README.md).
 
 #### Raw Data Format
 	
