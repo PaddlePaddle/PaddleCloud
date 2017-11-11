@@ -36,7 +36,7 @@ We need to develop our own solution for autoscaling.
 
 We will build
 an [Operator](https://coreos.com/blog/introducing-operators.html) that
-do the autoscaling. To be more precise, we will create
+will do autoscaling. To be more precise, we will create
 a
 [custom Kubernetes Resource](https://kubernetes.io/docs/concepts/api-extension/custom-resources/) and
 a
@@ -100,7 +100,7 @@ The training job controller will create and continuously scale the
 number of trainers and the number of pservers between the
 corresponding `min-instance` and `max-instance`.
 
-Since the `master` server is necessary only when the trainer is using
+Since the `master` server is required only when the trainer is using
 `paddle.v2.reader.creator.cloud_reader`, The `master` spec is
 optional: the master server will be created only when configured.
 
@@ -108,11 +108,11 @@ The training job custom resource can be created with: `kubectl create
 -f training_job.yaml`.
 
 The custom resource will only be saved on Kuberentes, we will need a
-custom controller that operate on it.
+custom controller that operates on it.
 
 ### Training Job Controller
 
-The training job controller run as a Pod. It has the global view of
+The training job controller runs as a Pod. It has the global view of
 the computation resources. It watches the training job resources and
 schedules and scales the training jobs using the Kuberenetes API.
 
@@ -144,7 +144,7 @@ training_job_controller.yaml`
 
 ### Training Job Resource
 
-The training job resource is a custom resource, there are two ways of
+The training job resource is a custom resource. There are two ways of
 implementing custom resources:
 
 - [Custom Resource Definition (CRD)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/),
@@ -218,7 +218,7 @@ requests value will be used as tiebreakers in decreasing importance.
 
 An available GPU resource will be assigned to the least fulfilled job
 unless that job is already fulfilled (with a fulfillment score of
-`1.0`). A GPU resource will be take away from the most fulfilled job
+`1.0`). A GPU resource will be taken away from the most fulfilled job
 when there is another GPU job's `min-instance` is not satisfied
 (unless the most fulfilled job's `cur-instance` equals to
 `min-instance`). When the most fulfilled job's `cur-instance` equals
@@ -243,12 +243,12 @@ tiebreakers in decreasing importance.
 
 The available CPU and Mem resource will be assigned to the least
 fulfilled job unless that job is already fulfilled (with a fulfillment
-score of `1.0`). The CPU and Mem resource will be take away from the
+score of `1.0`). The CPU and Mem resource will be taken away from the
 most fulfilled job when there is another job's `min-instance` is not
 satisfied (unless the most fulfilled job's `cur-instance` equals to
 `min-instance`). When the most fulfilled job's `cur-instance` equals
 to `min-instance`, no training job will be scaled down, but the job
-will be still scheduled optimistically.
+will still be scheduled optimistically.
 
 ## References
 
