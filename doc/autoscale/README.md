@@ -1,4 +1,4 @@
-# Design Doc: Horizontal Autoscaling
+# Design Doc: Elastic Deep Learning
 
 ## Background
 
@@ -6,11 +6,11 @@ A PaddlePaddle training job contains several trainer instances,
 several parameter server instances, and one master instance. We would
 like to automatically scale the number of training instances and the
 number of parameter server instances to fully utilize the cluster's
-computation resources.
+computation resources. We call this Elastic Deep Learning.
 
-Currently, we will only support horizontal trainer
-autoscaling. Parameter server horizontal autoscaling will be supported
-in the near future. This design doc considers both of them.
+Currently, we will only support trainer autoscaling. Parameter server
+autoscaling will be supported in the near future. This design doc
+considers both of them.
 
 [Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is
 an autoscaling solution provided by Kuberentes, but it's not suitable
