@@ -10,7 +10,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	"github.com/PaddlePaddle/cloud/go/autoscaler"
 	"github.com/PaddlePaddle/cloud/go/controller"
 )
 
@@ -51,8 +50,8 @@ func main() {
 
 	cluster := controller.NewCluster(clientset)
 
-	as := autoscaler.New(cluster,
-		autoscaler.WithMaxLoadDesired(*maxLoadDesired))
+	as := controller.New(cluster,
+		controller.WithMaxLoadDesired(*maxLoadDesired))
 
 	controller, err := controller.NewController(client, clientset, as)
 	if err != nil {

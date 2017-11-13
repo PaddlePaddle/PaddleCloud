@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	"github.com/PaddlePaddle/cloud/go/autoscaler"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -118,11 +117,11 @@ func updateNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]i
 }
 
 // SyncResource will update free and total resources in k8s cluster.
-func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
+func (c *Cluster) SyncResource() (res ClusterResource, err error) {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
-		return autoscaler.ClusterResource{}, err
+		return ClusterResource{}, err
 	}
 	allocatable := make(v1.ResourceList)
 	nodesCPUIdleMilli := make(map[string]int64)
@@ -146,25 +145,25 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 	// process.
 	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
 	if err != nil {
-		return autoscaler.ClusterResource{}, err
+		return ClusterResource{}, err
 	}
 
 	allPodsList, err := c.clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 	if err != nil {
-		return autoscaler.ClusterResource{}, err
+		return ClusterResource{}, err
 	}
 
 	allReqs, allLimits, err := getPodsTotalRequestsAndLimits(allPodsList)
 	if err != nil {
-		return autoscaler.ClusterResource{}, err
+		return ClusterResource{}, err
 	}
 
 	err = updateNodesIdleResource(allPodsList, nodesCPUIdleMilli, nodesMemoryFreeMega)
 	if err != nil {
-		return autoscaler.ClusterResource{}, err
+		return ClusterResource{}, err
 	}
 
-	res = autoscaler.ClusterResource{
+	res = ClusterResource{
 		NodeCount:       len(nodeList.Items),
 		GPUTotal:        int(allocatable.NvidiaGPU().Value()),
 		CPUTotalMilli:   allocatable.Cpu().ScaledValue(resource.Milli),
@@ -178,7 +177,7 @@ func (c *Cluster) SyncResource() (res autoscaler.ClusterResource, err error) {
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
-		NodeInfos: autoscaler.NodeInfos{
+		NodeInfos: NodeInfos{
 			NodesCPUIdleMilli:   nodesCPUIdleMilli,
 			NodesMemoryFreeMega: nodesMemoryFreeMega,
 		},

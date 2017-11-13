@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
 	 limitations under the License. */
 
-package autoscaler
+package controller
 
 import (
 	"fmt"
@@ -61,23 +61,6 @@ func (n NodeInfos) String() string {
 	return fmt.Sprintf("NodeInfo(%d nodes)", len(n.NodesCPUIdleMilli))
 }
 
-// Cluster represents the cluster managment system such as Kubernetes.
-type Cluster interface {
-	// SyncResource will sync resource values with the cluster.
-	// should call this function in every tick.
-	SyncResource() (ClusterResource, error)
-
-	// GetTrainerJob gets the trainer job spec.
-	GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error)
-
-	// UpdateTrainerJob updates the trainer job spec.
-	UpdateTrainerJob(job *batchv1.Job) error
-
-	// JobPods returns the number total desired pods and the
-	// number of running pods of a job.
-	JobPods(job *paddlejob.TrainingJob) (total, running, pending int, err error)
-}
-
 type job struct {
 	Config     *paddlejob.TrainingJob
 	TrainerJob *batchv1.Job
@@ -113,7 +96,7 @@ func (j job) Fulfillment() float64 {
 // Autoscaler launches and scales the training jobs.
 type Autoscaler struct {
 	ticker         *time.Ticker
-	cluster        Cluster
+	cluster        *Cluster
 	jobs           map[string]job
 	eventCh        chan event
 	maxLoadDesired float64
@@ -127,7 +110,7 @@ func WithMaxLoadDesired(maxLoadDesired float64) func(as *Autoscaler) {
 }
 
 // New creates a new Autoscaler.
-func New(cluster Cluster, options ...func(*Autoscaler)) *Autoscaler {
+func New(cluster *Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	c := &Autoscaler{
 		cluster:        cluster,
 		ticker:         time.NewTicker(defaultLoopDur),
