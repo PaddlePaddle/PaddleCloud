@@ -106,8 +106,8 @@ func (c *Controller) onAdd(obj interface{}) {
 	c.autoscaler.OnAdd(job)
 	// TODO: if we need to create training job instance by the resource,
 	//       you should add the following code:
-	// var parser DefaultJobParser
-	// c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(parser.ParseToPserver(job))
+	var parser DefaultJobParser
+	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(parser.ParseToPserver(job))
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {

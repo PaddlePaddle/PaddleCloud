@@ -109,6 +109,56 @@ func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.R
 
 // ParseToTrainer parse TrainingJob to a kubernetes job resource.
 func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.Job {
+	if job.Spec.FaultTolerant {
+		command = []string{"paddle_k8s", "start_trainer"}
+	} else {
+		command = []string{"paddle_k8s", "start_new_trainer"}
+	}
+
+	j := batchv1.Job{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Job",
+			APIVersion: "batch/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      job.ObjectMeta.Jobname + "-trainer",
+			Namespace: job.ObjectMeta.Namespace,
+		},
+		Spec: batchv1.JobSpec{
+			Parallelism: &t.MinInstance,
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: batchv1.ObjectMeta{
+					Labels: map[string]string{"paddle-job-tainer": job.ObjectMeta.Name},
+				},
+				Spec: v1.PodSpec{
+					Voumes: []v1.Volume{
+						Name: job.ObjectMeta.Name + "trainer-workspace",
+						VolumeSource: v1.VolumeSource{
+							HostPath: v1.HostPathVolumeSource{
+								//Path: job.Spec.Trainer.Workspace,
+								Path: "/workspace",
+							},
+						},
+					},
+					Containers: []v1.Container{
+						v1.Container{
+							Name:            job.ObjectMeta.Name,
+							Image:           job.Spec.Image,
+							ImagePullPolicy: "Always",
+							Command:         command,
+							volumeMounts: v1.VolumeMount{
+								Name:      job.ObjectMeta.Name + "trainer-workspace",
+								MountPath: "/workspace",
+							},
+							Ports:     podPorts(job),
+							Env:       podEnv(job),
+							Resources: job.Spec.Trainer.Resources,
+						},
+					},
+				},
+			},
+		},
+	}
 	// TODO: create job.
 	return &batchv1.Job{}
 }
