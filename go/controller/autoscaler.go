@@ -420,6 +420,7 @@ func (a *Autoscaler) Monitor() {
 				// scale it.
 				var tj *batchv1.Job
 				var err error
+				log.Debug("trainerjob:%s\n", e.Job)
 				tj, err = a.cluster.GetTrainerJob(e.Job)
 				if err != nil {
 					log.Error(

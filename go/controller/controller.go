@@ -26,6 +26,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 
 	log "github.com/inconshreveable/log15"
 
@@ -104,10 +105,33 @@ func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debug("TrainingJob resource added", "name", job.ObjectMeta.Name)
 	c.autoscaler.OnAdd(job)
-	// TODO: if we need to create training job instance by the resource,
-	//       you should add the following code:
+
+	// TODO(gongwb):open it when all are ready.
+	// All-are-ready means:
+	//  create trainjob from paddlectl
+	//  scheduler can schedule trainjobs
 	var parser DefaultJobParser
-	c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(parser.ParseToPserver(job))
+	p := parser.ParseToPserver(job)
+	t := parser.ParseToTrainer(job)
+	m := parser.ParseToMaster(job)
+
+	b, _ := json.MarshalIndent(p, "", "   ")
+	log.Debug("create pserver:" + string(b[:]))
+
+	b, _ = json.MarshalIndent(t, "", "   ")
+	log.Debug("create trainer-job:" + string(b[:]))
+
+	b, _ = json.MarshalIndent(m, "", "   ")
+	log.Debug("create master:" + string(b[:]))
+
+	// TODO(gongwb): create them
+	//   just like:
+	//  namespace := job.ObjectMeta.Namespace
+	//  _, err := c.clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(p)
+	//	if err != nil {
+	//		b, _ := json.MarshalIndent(p, "", "   ")
+	//      log.Debug("create pserver:%s\terror: %v", string(b[:]), err)
+	//	}
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
