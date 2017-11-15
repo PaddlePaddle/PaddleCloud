@@ -263,12 +263,9 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	if err := kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob()); err != nil {
-		return err
-	}
-
-	return nil
+	return kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob())
 }
+
 func checkJobName(jobName string) error {
 	if strings.Contains(jobName, "_") || strings.Contains(jobName, ".") {
 		return errors.New(invalidJobName)
