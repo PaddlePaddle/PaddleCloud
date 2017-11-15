@@ -111,7 +111,7 @@ func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.R
 // ParseToTrainer parse TrainingJob to a kubernetes job resource.
 func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.Job {
 	replicas := int32(job.Spec.Trainer.MinInstance)
-	command := make([]string, 2, 2)
+	command := make([]string, 2)
 	if job.Spec.FaultTolerant {
 		command = []string{"paddle_k8s", "start_trainer"}
 	} else {
