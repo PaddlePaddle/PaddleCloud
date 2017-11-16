@@ -1,7 +1,6 @@
 # Run PaddleCloud on your local machine
 
 This documentation shows how to run PaddleCloud on minikube.   
-(This surports only mac now.On unbuntu-16.04,we met a bug of kubernetes when we use `hostpath` to volume a file.)
 
 ## Prerequisites
 
@@ -30,7 +29,13 @@ This documentation shows how to run PaddleCloud on minikube.
 	```
 	mkdir <yourpath>
 	```  
+	- mac  
 	Since Minikube mounts `$Home` path by default, we recommend creating the path under `$Home` which offers the flexibility of switching between directories in your deployment without stopping the MiniKube and mounting another one.
+	- linux  
+	Mount path manually:  
+	```
+	minikube mount <yourpath>:<yourpath>
+	```
 	
 1. Copy `ca` and generate `admin` certificate：    
 	(We must use `ca` under `~/.minikube` rather than `~/.minikube/certs`.)
@@ -93,7 +98,5 @@ If it's stuck at pulling the image, one alternative is to manually download the 
     That might be due to the files cache mechanism of Minikube. You can try to restart the Minikube with `minikube stop` `minikube start --kubernetes-version v1.6.4` to fix it.
 
 ## TODO	
-1. The `mysql` docker runs `mysqld` under user `mysql` instead of `root`,so it's difficult to save `mysql` data to hostpath.
-1. Fix bug: `Kubernetes can't mount the volume with hostpath to a single file` on linux. 	
-	
+1. The `mysql` docker runs `mysqld` under user `mysql` instead of `root`,so it's difficult to save `mysql` data to hostpath.	
 	
