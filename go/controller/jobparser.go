@@ -27,6 +27,10 @@ import (
 	v1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
+const (
+	imagePullPolicy = "Always"
+)
+
 // JobParser is a interface can parse "TrainingJob" to
 // ReplicaSet and job.
 type JobParser interface {
@@ -139,7 +143,7 @@ func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.J
 						v1.Container{
 							Name:            "trainer",
 							Image:           job.Spec.Image,
-							ImagePullPolicy: "Always",
+							ImagePullPolicy: imagePullPolicy,
 							Command:         command,
 							VolumeMounts:    podVolumeMounts(job),
 							Ports:           podPorts(job),
@@ -180,7 +184,7 @@ func getEtcdPodSpec(job *paddlejob.TrainingJob) *v1.Container {
 	return &v1.Container{
 		Name:            "etcd",
 		Image:           "quay.io/coreos/etcd:v3.2.1",
-		ImagePullPolicy: "Always",
+		ImagePullPolicy: imagePullPolicy,
 		// TODO(gongwb): etcd ports?
 		Env:     podEnv(job),
 		Command: command,
@@ -215,7 +219,7 @@ func (p *DefaultJobParser) ParseToMaster(job *paddlejob.TrainingJob) *v1beta1.Re
 						v1.Container{
 							Name:            "master",
 							Image:           job.Spec.Image,
-							ImagePullPolicy: "Always",
+							ImagePullPolicy: imagePullPolicy,
 							Ports:           masterPorts(job),
 							// TODO(gongwb):master env
 							Command:      command,
@@ -297,9 +301,7 @@ func podEnv(job *paddlejob.TrainingJob) []v1.EnvVar {
 		v1.EnvVar{Name: "PADDLE_INIT_NUM_GRADIENT_SERVERS", Value: strconv.Itoa(job.Spec.Trainer.MinInstance)},
 		v1.EnvVar{Name: "PADDLE_INIT_NUM_PASSES", Value: strconv.Itoa(job.Spec.Passes)},
 		v1.EnvVar{Name: "PADDLE_INIT_USE_GPU", Value: needGPU},
-
-		// FIXME(gongwb): LD_LIBRARY_PATH?
-		v1.EnvVar{Name: "LD_LIBRARY_PATH", Value: job.Spec.Trainer.Entrypoint},
+		v1.EnvVar{Name: "LD_LIBRARY_PATH", Value: "/usr/local/cuda/lib64"},
 		v1.EnvVar{Name: "NAMESPACE", ValueFrom: &v1.EnvVarSource{
 			FieldRef: &v1.ObjectFieldSelector{
 				FieldPath: "metadata.namespace",
@@ -317,6 +319,7 @@ func podVolumes(job *paddlejob.TrainingJob) []v1.Volume {
 	return []v1.Volume{
 		v1.Volume{
 			Name: job.ObjectMeta.Name + "-workspace",
+			// TODO(gongwb): add support to ceph fs and mount public path.
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
 					Path: job.Spec.Trainer.Workspace,
