@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"k8s.io/client-go/pkg/api/v1"
@@ -73,9 +74,8 @@ func (*SubmitCmd) Usage() string {
 
 func (p *SubmitCmd) getTrainer() *paddlejob.TrainerSpec {
 	return &paddlejob.TrainerSpec{
-		Entrypoint: p.Entry,
-		// FIXME(gongwb): workspace
-
+		Entrypoint:  p.Entry,
+		Workspace:   getJobPfsPath(p.Jobpackage, p.Jobname),
 		MinInstance: p.MinInstance,
 		MaxInstance: p.MaxInstance,
 		Resources: v1.ResourceRequirements{
@@ -115,7 +115,6 @@ func (p *SubmitCmd) getMaster() *paddlejob.MasterSpec {
 
 // GetTrainingJob get's paddlejob.TrainingJob struct filed by Submitcmd paramters.
 func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
-
 	t := paddlejob.TrainingJob{
 		metav1.TypeMeta{
 			Kind:       "TrainingJob",
@@ -201,14 +200,30 @@ func NewSubmitter(cmd *SubmitCmd) *Submitter {
 	return &s
 }
 
+func getJobPfsPath(jobPackage, jobName string) string {
+	_, err := os.Stat(jobPackage)
+	if os.IsNotExist(err) {
+		return jobPackage
+	}
+
+	return path.Join("/pfs", Config.ActiveConfig.Name, "home", Config.ActiveConfig.Username, "jobs", jobName)
+}
+
 // putFiles puts files to pfs and
 // if jobPackage is not a local dir, skip uploading package.
-func putFiles(jobPackage, jobName string) error {
+func putFilesToPfs(jobPackage, jobName string) error {
 	_, pkgerr := os.Stat(jobPackage)
 	if pkgerr == nil {
-		// FIXME: upload job package to paddle cloud.
+		dest := getJobPfsPath(jobPackage, jobName)
+		if !strings.HasSuffix(jobPackage, "/") {
+			jobPackage = jobPackage + "/"
+		}
+		err := putFiles(jobPackage, dest)
+		if err != nil {
+			return err
+		}
 	} else if os.IsNotExist(pkgerr) {
-		return fmt.Errorf("stat jobpackage '%s' error: %v", jobPackage, pkgerr)
+		glog.Warning("jobpackage not a local dir, skip upload.")
 	}
 
 	return nil
@@ -229,7 +244,7 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	if err := putFiles(jobPackage, jobName); err != nil {
+	if err := putFilesToPfs(jobPackage, jobName); err != nil {
 		return err
 	}
 
@@ -248,12 +263,9 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	if err := kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob()); err != nil {
-		return err
-	}
-
-	return nil
+	return kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob())
 }
+
 func checkJobName(jobName string) error {
 	if strings.Contains(jobName, "_") || strings.Contains(jobName, ".") {
 		return errors.New(invalidJobName)

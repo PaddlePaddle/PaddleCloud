@@ -14,14 +14,8 @@ func main() {
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&paddlectl.SubmitCmd{}, "")
 
-	// TODO(gongwb): add these commands.
-	// subcommands.Register(&paddlecloud.LogsCommand{}, "")
-	// subcommands.Register(&paddlecloud.GetCommand{}, "")
-	// subcommands.Register(&paddlecloud.KillCommand{}, "")
-	// subcommands.Register(&paddlecloud.SimpleFileCmd{}, "")
-	// subcommands.Register(&paddlecloud.RegistryCmd{}, "")
-	// subcommands.Register(&paddlecloud.DeleteCommand{}, "")
-	// subcommands.Register(&paddlecloud.PublishCmd{}, "")
+	// TODO(gongwb): add more commands.
+	subcommands.Register(&paddlectl.SimpleFileCmd{}, "")
 
 	flag.Parse()
 	ctx := context.Background()
