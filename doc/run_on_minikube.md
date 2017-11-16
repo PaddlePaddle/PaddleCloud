@@ -1,6 +1,6 @@
-# Run PaddleCloud on your local machine
+# Run PaddlePaddle Cloud on your local machine
 
-This documentation shows how to run PaddleCloud on minikube.   
+This documentation shows how to run PaddlePaddle Cloud on minikube.   
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ This documentation shows how to run PaddleCloud on minikube.
 	cp ~/.minikube/ca.key .		
 	```
 	
-1. Copy and update paddlecloud configurations::
+1. Copy and update PaddlePaddle Cloud configurations::
 
 	```
 	git clone https://github.com/PaddlePaddle/cloud 
@@ -82,7 +82,7 @@ datacenters:
 current-datacenter: testpcloud
 ```
 
-You can use PaddleCloud command line now.
+You can use PaddlePaddle Cloud command line now.
 
 
 ## FAQ
