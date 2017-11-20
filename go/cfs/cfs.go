@@ -21,24 +21,60 @@ package cfs
 //   "github.com/sakeven/RbTree"
 // )
 
-// Node represent minimum cell to schedule.
-type Node interface {
-	// the mixed weight of current node.
-	Weight() float64
+// PrioLevel is enum type indicating priority levels.
+type PrioLevel int
 
-	// get the object to be scheduled.
+const (
+	// Experiement priority level
+	Experiement PrioLevel = 0
+	// Offline job
+	Offline = 3
+	// Normal jobs
+	Normal = 7
+	// Production level job
+	Production = 11
+)
+
+// Node is the atimic schedule unit for the scheduler.
+type Node interface {
+	// GetPrio returns the current priority level.
+	GetPrio() PrioLevel
+	// SetPrio set the node priority level directly.
+	SetPrio(prio PrioLevel)
+
+	// MaxInstances returns the desired max parallelism of the job.
+	MaxInstances() int
+	// MinInstances returns the minimal parallelism the job can be running.
+	MinInstances() int
+	// ResourceScore returns resource score of a single pod. It's
+	// caculated by sum(weight*ResourceValue).
+	ResourceScore() int64
+
+	// Expected returns expected parallelism (how much pods) to run for
+	// current scheduling step.
+	Expected() int64
+	// Running returns the current parrallelism of the node.
+	// If Running == 0 means the job is waiting for resources.
+	Running() int64
+
+	// Obj returns inner scheduling unit.
 	Obj() *interface{}
 }
 
-// WeightedAccelleratorCFS is a scheduler to schedule jobs/processes to use
+// GpuPriorityCFS is a scheduler to schedule jobs/processes to use
 // multiple kind of processers, like both CPU and GPU, or mix with FPGA etc.
-type WeightedAccelleratorCFS interface {
+type GpuPriorityCFS interface {
+	// AddNode insert new node to the scheduler.
 	AddNode(node *Node) error
+	// DelNode remove the completed node from scheduler.
 	DelNode(node *Node) error
+	// GetLeftMost return the smallest valued node in the scheduler's tree.
+	GetLeftMost() *Node
+	// GetRightMost return the maximum valued node in the scheduler's tree.
+	GetRightMost() *Node
+	// Len return number of nodes in the scheduler.
+	Len() int
 
-	// tranverse all the nodes and call the callback function.
+	// Tranverse go thought every nodes in the scheduler.
 	Tranverse(callback ...func(*Node)) error
-
-	// Get one node need to schedule, which have waited long enough.
-	Get() *Node
 }
