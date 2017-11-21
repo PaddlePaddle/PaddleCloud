@@ -137,7 +137,7 @@ class K8sProvider:
 
         # add Nvidia lib volume if training with GPU
         if paddlejob.gpu > 0:
-            volumes.append(volume.get_volume_config(
+            paddlejob.volumes.append(volume.get_volume_config(
                 fstype = settings.FSTYPE_HOSTPATH,
                 name = "nvidia-libs",
                 mount_path = "/usr/local/nvidia/lib64",
