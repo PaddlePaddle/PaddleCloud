@@ -21,7 +21,9 @@ from notebook.models import FilePublish
 import uuid
 from cloudprovider.k8s_provider import K8sProvider
 from paddle_job import PaddleJob
-
+from django.http import StreamingHttpResponse
+from wsgiref.util import FileWrapper
+import mimetypes
 
 def file_publish_view(request):
     """
@@ -42,7 +44,9 @@ def file_publish_view(request):
     logging.info("downloading file from: %s, record(%s)", real_path, record.path)
 
     # mimetype is replaced by content_type for django 1.7
-    response = HttpResponse(open(real_path), content_type='application/force-download') 
+    chunk_size = 8192
+    response = StreamingHttpResponse(FileWrapper(open(real_path, 'rb'), chunk_size),
+                           content_type=mimetypes.guess_type(real_path)[0])
     response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(record.path)
     # It's usually a good idea to set the 'Content-Length' header too.
     # You can also set any other required headers: Cache-Control, etc.
