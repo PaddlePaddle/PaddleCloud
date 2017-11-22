@@ -21,7 +21,7 @@ Port-manager对kubernetes apiserver进行watch与list。对于需要使用HostNe
 1. 这些真需要port-manager分配端口的任务，应该在分配完`host port`后才进行调度，执行任务流程。
     
     
-对于问题1，Port-manager应该不作用于所有使用HostNetwork的job,rc,rs等资源（因为有些用户自己指定了端口）。所以，port-manager可以使用kubernetes的[annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)功能来确定一个任务是否需要进行端口分配。对于需要使用port-manager来进行宿主机端口分配的replica set，job等，可在其metadata中增加使用port-manager的annotations。
+对于问题1，Port-manager应该不作用于所有使用HostNetwork的job,rc,rs等资源（因为有些用户自己指定了端口）。所以，port-manager可以使用kubernetes的[annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)功能来确定一个任务是否需要进行端口分配。对于需要使用port-manager来进行宿主机端口分配的replica set，job等，可在其metadata中增加使用port-manager的annotations。
 
 例如：
 
