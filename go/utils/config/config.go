@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 
 	"github.com/PaddlePaddle/cloud/go/utils/pathutil"
 	"github.com/golang/glog"
@@ -48,6 +49,12 @@ func ParseConfig(configFile string) *SubmitConfig {
 			glog.Errorf("load config %s error: %v\n", configFile, yamlErr)
 			return nil
 		}
+
+		var re = regexp.MustCompile(`(/|\\)*$`)
+		for _, t := range config.DC {
+			t.Endpoint = re.ReplaceAllString(t.EndPoint, "")
+		}
+
 		// put active config
 		config.ActiveConfig = nil
 		for _, item := range config.DC {
