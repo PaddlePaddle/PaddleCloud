@@ -2,7 +2,9 @@ package config
 
 import (
 	"io/ioutil"
+	"net/url"
 	"path/filepath"
+	"regexp"
 
 	"github.com/PaddlePaddle/cloud/go/utils/pathutil"
 	"github.com/golang/glog"
@@ -37,6 +39,15 @@ func ParseDefaultConfig() *SubmitConfig {
 	return ParseConfig(DefaultConfigFile())
 }
 
+func isValidURL(toTest string) bool {
+	_, err := url.ParseRequestURI(toTest)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 // ParseConfig parse paddlecloud config to a struct
 func ParseConfig(configFile string) *SubmitConfig {
 	// ------------------- load paddle config -------------------
@@ -48,6 +59,16 @@ func ParseConfig(configFile string) *SubmitConfig {
 			glog.Errorf("load config %s error: %v\n", configFile, yamlErr)
 			return nil
 		}
+
+		var re = regexp.MustCompile(`(/|\\)*$`)
+		for _, t := range config.DC {
+			if !isValidURL(t.Endpoint) {
+				glog.Errorf("DC:%v Endpoint:%v is not a valid URL\n", config.DC, t.Endpoint)
+				return nil
+			}
+			t.Endpoint = re.ReplaceAllString(t.Endpoint, "")
+		}
+
 		// put active config
 		config.ActiveConfig = nil
 		for _, item := range config.DC {
