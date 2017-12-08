@@ -3,9 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	log "github.com/inconshreveable/log15"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -31,13 +36,14 @@ func main() {
 	}
 
 	// setup some optional configuration
-	// paddlejob.ConfigureClient(config)
+	configureClient(config)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err)
 	}
 
+	fmt.Printf("%v\n", config)
 	client, err := rest.RESTClientFor(config)
 	if err != nil {
 		panic(err)
@@ -58,4 +64,16 @@ func buildConfig(kubeconfig string) (*rest.Config, error) {
 		return clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 	return rest.InClusterConfig()
+}
+
+func configureClient(config *rest.Config) {
+	groupversion := schema.GroupVersion{
+		Group:   "batch",
+		Version: "v1",
+	}
+
+	config.GroupVersion = &groupversion
+	config.APIPath = "/apis"
+	config.ContentType = runtime.ContentTypeJSON
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: api.Codecs}
 }

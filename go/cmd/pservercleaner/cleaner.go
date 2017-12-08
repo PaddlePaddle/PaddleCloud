@@ -59,7 +59,7 @@ func NewCleaner(c *rest.RESTClient, cs *kubernetes.Clientset) *Cleaner {
 func (c *Cleaner) startWatch(ctx context.Context) error {
 	source := cache.NewListWatchFromClient(
 		c.client,
-		"jobs",
+		"Jobs",
 		api.NamespaceAll,
 		fields.Everything())
 
