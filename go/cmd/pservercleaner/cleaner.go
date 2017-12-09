@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
@@ -20,19 +21,21 @@ type eventType int
 const (
 	add eventType = iota
 	del
-	complete
+	update
 )
 
 type event struct {
 	Type eventType
-	//Job  *paddlejob.TrainingJob
+	Job  interface{}
 }
+
+// Cleaner is a struct to clean pserver.
 type Cleaner struct {
 	client    *rest.RESTClient
 	clientset *kubernetes.Clientset
 	ticker    *time.Ticker
 	eventCh   chan event
-	jobs      map[string]string
+	jobs      map[types.UID]batchv1.Job
 }
 
 /*
@@ -47,12 +50,14 @@ func (c *Cleaner) getTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error
 }
 */
 
+// NewCleaner gets cleaner struct.
 func NewCleaner(c *rest.RESTClient, cs *kubernetes.Clientset) *Cleaner {
 	return &Cleaner{
 		client:    c,
 		clientset: cs,
 		ticker:    time.NewTicker(time.Second * 5),
 		eventCh:   make(chan event),
+		jobs:      make(map[types.UID]batchv1.Job),
 	}
 }
 
@@ -75,6 +80,7 @@ func (c *Cleaner) startWatch(ctx context.Context) error {
 		// TrainingJob custom resource event handlers.
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    c.onAdd,
+			UpdateFunc: c.onUpdate,
 			DeleteFunc: c.onDel,
 		})
 
@@ -95,38 +101,57 @@ func (c *Cleaner) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-// OnAdd notifies the autoscaler that a job has been added.
 func (c *Cleaner) onAdd(obj interface{}) {
-	c.eventCh <- event{Type: add}
+	c.eventCh <- event{Type: add, Job: obj}
 }
 
-// OnDel notifies the autoscaler that a job has been deleted.
 func (c *Cleaner) onDel(obj interface{}) {
-	c.eventCh <- event{Type: del}
+	c.eventCh <- event{Type: del, Job: obj}
 }
 
-// Monitor monitors the cluster resources and training jobs in a loop,
-// scales the training jobs according to the cluster resource.
+func (c *Cleaner) onUpdate(oldObj, newObj interface{}) {
+	c.eventCh <- event{Type: update, Job: newObj}
+}
+
+func (c *Cleaner) delPserver() {
+}
+
+func (c *Cleaner) delMaster() {
+}
+
+func (c *Cleaner) clean(j *batchv1.Job) {
+}
+
+// Monitor monitors the cluster resource.
 func (c *Cleaner) Monitor() {
 	for {
 		select {
 		case <-c.ticker.C:
 		case e := <-c.eventCh:
-			log.Debug("monitor received event", "event", e)
+			log.Info("get e:", e)
 			switch e.Type {
 			case add:
-				//var tj *batchv1.Job
-				//var err error
-				//c.jobs[e.Job.ObjectMeta.Name] = e.Job.ObjectMeta.Name
-				fmt.Println("add %v", e)
+				j := e.Job.(*batchv1.Job)
+				log.Info(fmt.Sprintf("add jobs namespace:%v name:%v uid:%v",
+					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
+				//c.jobs[j.UID] = *j
+			case update:
+				// get complete
+				j := e.Job.(*batchv1.Job)
+
+				if j.Status.CompletionTime == nil {
+					log.Info(fmt.Sprintf("update jobs namespace:%v name:%v uid:%v",
+						j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
+					return
+				}
+
+				log.Info(fmt.Sprintf("complete jobs namespace:%v name:%v uid:%v",
+					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
 			case del:
-				// TODO(helin): delete all created
-				// resources (e.g., trainer Job,
-				// pserver Replica Set) when we
-				// schedules the resources.
-				//delete(a.jobs, e.Job.ObjectMeta.Name)
-				fmt.Println("delete %v", e)
-			//case complete:?
+				j := e.Job.(*batchv1.Job)
+				log.Info(fmt.Sprintf("delete jobs namespace:%v name:%v uid:%v",
+					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
+				//delete(c.jobs, j.UID)
 			default:
 				log.Error("unrecognized event", "event", e)
 			}
