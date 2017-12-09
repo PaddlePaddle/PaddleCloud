@@ -39,18 +39,6 @@ type Cleaner struct {
 	jobs      map[types.UID]*batchv1.Job
 }
 
-/*
-// GetTrainerJob gets the trainer job spec.
-func (c *Cleaner) getTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error) {
-	namespace := job.ObjectMeta.Namespace
-	jobname := job.ObjectMeta.Name
-	return c.clientset.
-		BatchV1().
-		Jobs(namespace).
-		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
-}
-*/
-
 // NewCleaner gets cleaner struct.
 func NewCleaner(c *rest.RESTClient, cs *kubernetes.Clientset) *Cleaner {
 	return &Cleaner{
@@ -79,7 +67,6 @@ func (c *Cleaner) startWatch(ctx context.Context) error {
 		// disable the resync.
 		0,
 
-		// TrainingJob custom resource event handlers.
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    c.onAdd,
 			UpdateFunc: c.onUpdate,
@@ -174,14 +161,6 @@ func (c *Cleaner) cleanupPserver(namespace, jobname string) {
 	log.Info(fmt.Sprintf("delete pserver pods namespace:%s jobname:%s", namespace, jobname))
 }
 
-/*
-func (c *Cleaner) cleanMaster(namespace, jobname) {
-	cleanupReplicaSets(c.clientset, namespace,
-		metav1.ListOptions{LabelSelector: "paddle-job-master=" + jobname})
-	log.Info(fmt.Sprintf("delete master replicaset namespace:%s jobname:%s", label, namespace, jobname))
-}
-*/
-
 func (c *Cleaner) cleanup(j *batchv1.Job) {
 	jobname := getTrainerJobName(j)
 	if jobname == "" {
@@ -189,16 +168,7 @@ func (c *Cleaner) cleanup(j *batchv1.Job) {
 	}
 
 	c.cleanupPserver(j.ObjectMeta.Namespace, jobname)
-	//c.delMaster(namespace, jobname, "paddle-job-master")
 }
-
-/*
-func (c *Cleaner) cleanMaster(namespace, jobname) {
-	cleanupReplicaSets(c.clientset, namespace,
-		metav1.ListOptions{LabelSelector: "paddle-job-master=" + jobname})
-	log.Info(fmt.Sprintf("delete master replicaset namespace:%s jobname:%s", label, namespace, jobname))
-}
-*/
 
 // Monitor monitors the cluster paddle-job resource.
 func (c *Cleaner) Monitor() {
