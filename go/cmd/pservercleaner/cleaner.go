@@ -35,7 +35,7 @@ type Cleaner struct {
 	clientset *kubernetes.Clientset
 	ticker    *time.Ticker
 	eventCh   chan event
-	jobs      map[types.UID]batchv1.Job
+	jobs      map[types.UID]*batchv1.Job
 }
 
 /*
@@ -57,7 +57,7 @@ func NewCleaner(c *rest.RESTClient, cs *kubernetes.Clientset) *Cleaner {
 		clientset: cs,
 		ticker:    time.NewTicker(time.Second * 5),
 		eventCh:   make(chan event),
-		jobs:      make(map[types.UID]batchv1.Job),
+		jobs:      make(map[types.UID]*batchv1.Job),
 	}
 }
 
@@ -113,45 +113,77 @@ func (c *Cleaner) onUpdate(oldObj, newObj interface{}) {
 	c.eventCh <- event{Type: update, Job: newObj}
 }
 
-func (c *Cleaner) delPserver() {
+func getTrainerJobName(j *batchv1.Job) string {
+	m := j.ObjectMeta.Labels
+	if val, ok := m["paddle-job"]; ok {
+		return val
+	}
+
+	return ""
 }
 
-func (c *Cleaner) delMaster() {
+func (c *Cleaner) delPserver(j *batchv1.Job) {
+	// del resource
+	// del pod
+}
+
+func (c *Cleaner) delMaster(j *batchv1.Job) {
+	// del resource
+	// del pod
 }
 
 func (c *Cleaner) clean(j *batchv1.Job) {
+	jobname := getTrainerJobName(j)
+	if jobname == "" {
+		return
+	}
+
+	c.delPserver(j)
+	c.delMaster(j)
 }
 
-// Monitor monitors the cluster resource.
+// Monitor monitors the cluster paddle-job resource.
 func (c *Cleaner) Monitor() {
 	for {
 		select {
 		case <-c.ticker.C:
 		case e := <-c.eventCh:
-			log.Info("get e:", e)
 			switch e.Type {
 			case add:
 				j := e.Job.(*batchv1.Job)
 				log.Info(fmt.Sprintf("add jobs namespace:%v name:%v uid:%v",
 					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
-				//c.jobs[j.UID] = *j
-			case update:
-				// get complete
+				c.jobs[j.UID] = j
+			case update: // process only complation
 				j := e.Job.(*batchv1.Job)
 
+				// not complete
 				if j.Status.CompletionTime == nil {
-					log.Info(fmt.Sprintf("update jobs namespace:%v name:%v uid:%v",
-						j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
-					return
+					break
+				}
+
+				// completed already
+				if _, ok := c.jobs[j.UID]; !ok {
+					break
 				}
 
 				log.Info(fmt.Sprintf("complete jobs namespace:%v name:%v uid:%v",
 					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
+
+				c.clean(j)
+				delete(c.jobs, j.UID)
 			case del:
 				j := e.Job.(*batchv1.Job)
 				log.Info(fmt.Sprintf("delete jobs namespace:%v name:%v uid:%v",
 					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
-				//delete(c.jobs, j.UID)
+
+				// deleted already
+				if _, ok := c.jobs[j.UID]; !ok {
+					break
+				}
+
+				c.clean(j)
+				delete(c.jobs, j.UID)
 			default:
 				log.Error("unrecognized event", "event", e)
 			}
