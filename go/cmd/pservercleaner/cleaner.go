@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -62,6 +63,7 @@ func NewCleaner(c *rest.RESTClient, cs *kubernetes.Clientset) *Cleaner {
 }
 
 func (c *Cleaner) startWatch(ctx context.Context) error {
+	// TODO(gongwb): filer only paddle-job
 	source := cache.NewListWatchFromClient(
 		c.client,
 		"Jobs",
@@ -122,25 +124,81 @@ func getTrainerJobName(j *batchv1.Job) string {
 	return ""
 }
 
-func (c *Cleaner) delPserver(j *batchv1.Job) {
-	// del resource
-	// del pod
+func cleanupReplicaSets(client *kubernetes.Clientset,
+	namespace string, l metav1.ListOptions) error {
+	rsList, err := client.ExtensionsV1beta1().ReplicaSets(namespace).List(l)
+	if err != nil {
+		return err
+	}
+
+	for _, rs := range rsList.Items {
+		err := client.ExtensionsV1beta1().ReplicaSets(namespace).Delete(rs.ObjectMeta.Name, nil)
+		if err != nil {
+			log.Error(fmt.Sprintf("delete rs namespace:%v  rsname:%v err:%v", namespace, rs.Name, err))
+		}
+
+		log.Info(fmt.Sprintf("delete rs namespace:%v  rsname:%v", namespace, rs.Name))
+
+	}
+	return nil
 }
 
-func (c *Cleaner) delMaster(j *batchv1.Job) {
-	// del resource
-	// del pod
+func cleanupPods(client *kubernetes.Clientset,
+	namespace string, l metav1.ListOptions) error {
+	podList, err := client.CoreV1().Pods(namespace).List(l)
+	if err != nil {
+		return err
+	}
+
+	for _, pod := range podList.Items {
+		err := client.CoreV1().Pods(namespace).Delete(pod.ObjectMeta.Name, nil)
+		if err != nil {
+			log.Error(fmt.Sprintf("delete pod namespace:%v  podname:%v err:%v", namespace, pod.Name, err))
+		}
+
+		log.Info(fmt.Sprintf("delete pod namespace:%v  podname:%v", namespace, pod.Name))
+	}
+	return nil
 }
 
-func (c *Cleaner) clean(j *batchv1.Job) {
+func (c *Cleaner) cleanupPserver(namespace, jobname string) {
+	cleanupReplicaSets(c.clientset, namespace,
+		metav1.ListOptions{LabelSelector: "paddle-job-pserver=" + jobname})
+	log.Info(fmt.Sprintf("delete pserver replicaset namespace:%s jobname:%s", namespace, jobname))
+
+	// wait to delete replicaset
+	time.Sleep(1 * time.Second)
+
+	cleanupPods(c.clientset, namespace,
+		metav1.ListOptions{LabelSelector: "paddle-job-pserver=" + jobname})
+	log.Info(fmt.Sprintf("delete pserver pods namespace:%s jobname:%s", namespace, jobname))
+}
+
+/*
+func (c *Cleaner) cleanMaster(namespace, jobname) {
+	cleanupReplicaSets(c.clientset, namespace,
+		metav1.ListOptions{LabelSelector: "paddle-job-master=" + jobname})
+	log.Info(fmt.Sprintf("delete master replicaset namespace:%s jobname:%s", label, namespace, jobname))
+}
+*/
+
+func (c *Cleaner) cleanup(j *batchv1.Job) {
 	jobname := getTrainerJobName(j)
 	if jobname == "" {
 		return
 	}
 
-	c.delPserver(j)
-	c.delMaster(j)
+	c.cleanupPserver(j.ObjectMeta.Namespace, jobname)
+	//c.delMaster(namespace, jobname, "paddle-job-master")
 }
+
+/*
+func (c *Cleaner) cleanMaster(namespace, jobname) {
+	cleanupReplicaSets(c.clientset, namespace,
+		metav1.ListOptions{LabelSelector: "paddle-job-master=" + jobname})
+	log.Info(fmt.Sprintf("delete master replicaset namespace:%s jobname:%s", label, namespace, jobname))
+}
+*/
 
 // Monitor monitors the cluster paddle-job resource.
 func (c *Cleaner) Monitor() {
@@ -151,6 +209,11 @@ func (c *Cleaner) Monitor() {
 			switch e.Type {
 			case add:
 				j := e.Job.(*batchv1.Job)
+				// get only paddle-job, it's not the best method.
+				if getTrainerJobName(j) == "" {
+					break
+				}
+
 				log.Info(fmt.Sprintf("add jobs namespace:%v name:%v uid:%v",
 					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
 				c.jobs[j.UID] = j
@@ -162,7 +225,7 @@ func (c *Cleaner) Monitor() {
 					break
 				}
 
-				// completed already
+				// if not in controll or completed already
 				if _, ok := c.jobs[j.UID]; !ok {
 					break
 				}
@@ -170,7 +233,7 @@ func (c *Cleaner) Monitor() {
 				log.Info(fmt.Sprintf("complete jobs namespace:%v name:%v uid:%v",
 					j.ObjectMeta.Namespace, j.ObjectMeta.Name, j.ObjectMeta.UID))
 
-				c.clean(j)
+				c.cleanup(j)
 				delete(c.jobs, j.UID)
 			case del:
 				j := e.Job.(*batchv1.Job)
@@ -182,7 +245,7 @@ func (c *Cleaner) Monitor() {
 					break
 				}
 
-				c.clean(j)
+				c.cleanup(j)
 				delete(c.jobs, j.UID)
 			default:
 				log.Error("unrecognized event", "event", e)
