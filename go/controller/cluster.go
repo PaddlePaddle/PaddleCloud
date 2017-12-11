@@ -18,12 +18,14 @@ import (
 	"fmt"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	log "github.com/inconshreveable/log15"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/api"
 )
 
@@ -183,4 +185,69 @@ func (c *Cluster) SyncResource() (res ClusterResource, err error) {
 		},
 	}
 	return
+}
+
+// CreateJobs create a Job.
+func (c *Cluster) CreateJobs(j *batchv1.Job) (*batchv1.Job, error) {
+	return c.clientset.
+		BatchV1().
+		Jobs(j.ObjectMeta.Namespace).
+		Create(j)
+}
+
+// CreateReplicaSets creates a ReplicaSet.
+func (c *Cluster) CreateReplicaSets(r *v1beta1.ReplicaSet) (*v1beta1.ReplicaSet, error) {
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(r.ObjectMeta.Namespace).
+		Create(r)
+}
+
+// DeleteReplicaSetsByUID deletes a ReplicaSet by UID.
+func (c *Cluster) DeleteReplicaSetsByUID(r *v1beta1.ReplicaSet) error {
+	options := metav1.DeleteOptions{
+		Preconditions: &metav1.Preconditions{
+			UID: &r.ObjectMeta.UID,
+		},
+	}
+
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(r.ObjectMeta.Namespace).
+		Delete(r.ObjectMeta.Name, &options)
+}
+
+// DeleteJobs deletes a Job by name.
+func (c *Cluster) DeleteJobs(namespace, name string) error {
+	return c.clientset.
+		BatchV1().
+		Jobs(namespace).
+		Delete(name, nil)
+}
+
+// DeleteReplicaSets delete ReplicaSet by name.
+func (c *Cluster) DeleteReplicaSets(namespace, name string) error {
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(namespace).
+		Delete(name, nil)
+}
+
+// CleanupPods cleans Pods under namespace and listoptions.
+func (c *Cluster) CleanupPods(namespace string, l metav1.ListOptions) error {
+	podList, err := c.clientset.CoreV1().Pods(namespace).List(l)
+	if err != nil {
+		return err
+	}
+
+	for _, pod := range podList.Items {
+		err := c.clientset.CoreV1().Pods(namespace).Delete(pod.ObjectMeta.Name, nil)
+		if err != nil {
+			return fmt.Errorf("delete pod namespace:%v podname:%v err:%v",
+				namespace, pod.Name, err)
+		}
+
+		log.Info(fmt.Sprintf("delete pod namespace:%v  podname:%v", namespace, pod.Name))
+	}
+	return nil
 }
