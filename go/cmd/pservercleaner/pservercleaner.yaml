@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pservercleaner
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: pservercleaner
+    spec:
+      containers:
+      - name: pservercleaner
+        image: paddlepaddle/pservercleaner
+        imagePullPolicy: Never
+        command: ["pservercleaner"]
