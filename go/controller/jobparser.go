@@ -162,12 +162,12 @@ func masterResource(job *paddlejob.TrainingJob) *v1.ResourceRequirements {
 	// TODO(gongwb): config master resource?
 	return &v1.ResourceRequirements{
 		Limits: v1.ResourceList{
-			"cpu":    *apiresource.NewQuantity(int64(1), apiresource.DecimalSI),
-			"memory": apiresource.MustParse("500Mi"),
-		},
-		Requests: v1.ResourceList{
 			"cpu":    *apiresource.NewQuantity(int64(2), apiresource.DecimalSI),
 			"memory": apiresource.MustParse("1Gi"),
+		},
+		Requests: v1.ResourceList{
+			"cpu":    *apiresource.NewQuantity(int64(1), apiresource.DecimalSI),
+			"memory": apiresource.MustParse("500Mi"),
 		},
 	}
 }

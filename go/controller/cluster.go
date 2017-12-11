@@ -195,12 +195,29 @@ func (c *Cluster) CreateJobs(j *batchv1.Job) (*batchv1.Job, error) {
 		Create(j)
 }
 
+// ListJobs list all Jobs under namespace with ListOptions.
+func (c *Cluster) ListJobs(namespace string, l metav1.ListOptions) (*v1.JobList, error) {
+	return c.clientset.
+		BatchV1().
+		Jobs(j.ObjectMeta.Namespace).
+		List(l)
+}
+
 // CreateReplicaSets creates a ReplicaSet.
 func (c *Cluster) CreateReplicaSets(r *v1beta1.ReplicaSet) (*v1beta1.ReplicaSet, error) {
 	return c.clientset.
 		ExtensionsV1beta1().
 		ReplicaSets(r.ObjectMeta.Namespace).
 		Create(r)
+}
+
+// ListReplicaSets list all ReplicaSets under namespace with ListOptions.
+func (c *Cluster) ListReplicaSets(namespace string,
+	l metav1.ListOptions) (*v1beta1.ReplicaSetList, error) {
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(r.ObjectMeta.Namespace).
+		List(l)
 }
 
 // DeleteReplicaSetsByUID deletes a ReplicaSet by UID.

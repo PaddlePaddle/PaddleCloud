@@ -63,7 +63,7 @@ func (c *Controller) Run(ctx context.Context) error {
 		return err
 	}
 
-	go c.autoscaler.Monitor()
+	go c.autoscaler.Monitor2()
 
 	<-ctx.Done()
 	return ctx.Err()
@@ -104,7 +104,7 @@ func (c *Controller) startWatch(ctx context.Context) error {
 func (c *Controller) onAdd(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debug("TrainingJob resource added", "name", job.ObjectMeta.Name)
-	//c.autoscaler.OnAdd(job)
+	c.autoscaler.OnAdd(job)
 
 	// TODO(gongwb):open it when all are ready.
 	// All-are-ready means:
@@ -134,11 +134,11 @@ func (c *Controller) onUpdate(oldObj, newObj interface{}) {
 	oldjob := oldObj.(*paddlejob.TrainingJob)
 	newjob := newObj.(*paddlejob.TrainingJob)
 	log.Debug("TrainingJob resource updated", "old name", oldjob.ObjectMeta.Name, "new name", newjob.ObjectMeta.Name)
-	//c.autoscaler.OnUpdate(newjob)
+	c.autoscaler.OnUpdate(newjob)
 }
 
 func (c *Controller) onDelete(obj interface{}) {
 	job := obj.(*paddlejob.TrainingJob)
 	log.Debug("TrainingJob resource deleted", "name", job.ObjectMeta.Name)
-	//c.autoscaler.OnDel(job)
+	c.autoscaler.OnDel(job)
 }
