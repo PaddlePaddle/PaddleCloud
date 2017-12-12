@@ -63,7 +63,7 @@ func (c *Controller) Run(ctx context.Context) error {
 		return err
 	}
 
-	go c.autoscaler.Monitor2()
+	go c.autoscaler.Monitor()
 
 	<-ctx.Done()
 	return ctx.Err()
@@ -125,9 +125,6 @@ func (c *Controller) onAdd(obj interface{}) {
 	log.Debug("create master:" + string(b))
 
 	// TODO(gongwb): create them
-	cluster := NewCluster(c.clientset)
-	jober := NewTrainingJober(cluster)
-	jober.Ensure(job)
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
