@@ -15,7 +15,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -82,8 +81,6 @@ func (c *TrainingJober) cleanupTrainer(namespace, jobname string) error {
 func (c *TrainingJober) createMaster(job *paddlejob.TrainingJob) error {
 	var parser DefaultJobParser
 	m := parser.ParseToMaster(job)
-	b, _ := json.MarshalIndent(m, "", "   ")
-	log.Info("create master:" + string(b))
 
 	_, err := c.cluster.CreateReplicaSet(m)
 	if err != nil {
@@ -99,8 +96,6 @@ func (c *TrainingJober) createMaster(job *paddlejob.TrainingJob) error {
 func (c *TrainingJober) createPserver(job *paddlejob.TrainingJob) error {
 	var parser DefaultJobParser
 	p := parser.ParseToPserver(job)
-	b, _ := json.MarshalIndent(p, "", "   ")
-	log.Info("create pserver:" + string(b))
 
 	_, err := c.cluster.CreateReplicaSet(p)
 	if err != nil {
@@ -115,8 +110,6 @@ func (c *TrainingJober) createPserver(job *paddlejob.TrainingJob) error {
 func (c *TrainingJober) createTrainer(job *paddlejob.TrainingJob) error {
 	var parser DefaultJobParser
 	t := parser.ParseToTrainer(job)
-	b, _ := json.MarshalIndent(t, "", "   ")
-	log.Info("create trainer:" + string(b))
 
 	_, err := c.cluster.CreateJob(t)
 	if err != nil {
