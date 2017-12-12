@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	log "github.com/inconshreveable/log15"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -187,44 +186,37 @@ func (c *Cluster) SyncResource() (res ClusterResource, err error) {
 	return
 }
 
-// CreateJobs create a Job.
-func (c *Cluster) CreateJobs(j *batchv1.Job) (*batchv1.Job, error) {
+// CreateJob creates a Job.
+func (c *Cluster) CreateJob(j *batchv1.Job) (*batchv1.Job, error) {
 	return c.clientset.
 		BatchV1().
 		Jobs(j.ObjectMeta.Namespace).
 		Create(j)
 }
 
-// ListJobs list all Jobs under namespace with ListOptions.
-func (c *Cluster) ListJobs(namespace string, l metav1.ListOptions) (*v1.JobList, error) {
-	return c.clientset.
-		BatchV1().
-		Jobs(j.ObjectMeta.Namespace).
-		List(l)
-}
-
-// CreateReplicaSets creates a ReplicaSet.
-func (c *Cluster) CreateReplicaSets(r *v1beta1.ReplicaSet) (*v1beta1.ReplicaSet, error) {
+// CreateReplicaSet creates a ReplicaSet.
+func (c *Cluster) CreateReplicaSet(r *v1beta1.ReplicaSet) (*v1beta1.ReplicaSet, error) {
 	return c.clientset.
 		ExtensionsV1beta1().
 		ReplicaSets(r.ObjectMeta.Namespace).
 		Create(r)
 }
 
-// ListReplicaSets list all ReplicaSets under namespace with ListOptions.
-func (c *Cluster) ListReplicaSets(namespace string,
-	l metav1.ListOptions) (*v1beta1.ReplicaSetList, error) {
+// GetReplicaSet gets a ReplicaSet.
+func (c *Cluster) GetReplicaSet(namespace, name string) (*v1beta1.ReplicaSet, error) {
 	return c.clientset.
 		ExtensionsV1beta1().
-		ReplicaSets(r.ObjectMeta.Namespace).
-		List(l)
+		ReplicaSets(namespace).
+		Get(name, nil)
 }
 
+/*
 // DeleteReplicaSetsByUID deletes a ReplicaSet by UID.
-func (c *Cluster) DeleteReplicaSetsByUID(r *v1beta1.ReplicaSet) error {
+func (c *Cluster) DeleteReplicaSetByUID(r *v1beta1.ReplicaSet) error {
 	options := metav1.DeleteOptions{
 		Preconditions: &metav1.Preconditions{
-			UID: &r.ObjectMeta.UID,
+			UID:               &r.ObjectMeta.UID,
+			PropagationPolicy: &metav1.DeletePropagationBackground,
 		},
 	}
 
@@ -233,38 +225,27 @@ func (c *Cluster) DeleteReplicaSetsByUID(r *v1beta1.ReplicaSet) error {
 		ReplicaSets(r.ObjectMeta.Namespace).
 		Delete(r.ObjectMeta.Name, &options)
 }
+*/
 
-// DeleteJobs deletes a Job by name.
-func (c *Cluster) DeleteJobs(namespace, name string) error {
+// DeleteTrainerJob deletes a trainerjob and their pods.
+// see: https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/
+func (c *Cluster) DeleteTrainerJob(namespace, name string) error {
+	options := metav1.DeleteOptions{
+		PropagationPolicy: &metav1.DeletePropagationBackground,
+	}
 	return c.clientset.
 		BatchV1().
 		Jobs(namespace).
-		Delete(name, nil)
+		Delete(name, &options)
 }
 
-// DeleteReplicaSets delete ReplicaSet by name.
-func (c *Cluster) DeleteReplicaSets(namespace, name string) error {
+// DeleteReplicaSet delete a ReplicaSet and their pods.
+func (c *Cluster) DeleteReplicaSet(namespace, name string) error {
+	options := metav1.DeleteOptions{
+		PropagationPolicy: &metav1.DeletePropagationBackground,
+	}
 	return c.clientset.
 		ExtensionsV1beta1().
 		ReplicaSets(namespace).
-		Delete(name, nil)
-}
-
-// CleanupPods cleans Pods under namespace and listoptions.
-func (c *Cluster) CleanupPods(namespace string, l metav1.ListOptions) error {
-	podList, err := c.clientset.CoreV1().Pods(namespace).List(l)
-	if err != nil {
-		return err
-	}
-
-	for _, pod := range podList.Items {
-		err := c.clientset.CoreV1().Pods(namespace).Delete(pod.ObjectMeta.Name, nil)
-		if err != nil {
-			return fmt.Errorf("delete pod namespace:%v podname:%v err:%v",
-				namespace, pod.Name, err)
-		}
-
-		log.Info(fmt.Sprintf("delete pod namespace:%v  podname:%v", namespace, pod.Name))
-	}
-	return nil
+		Delete(name, &options)
 }
