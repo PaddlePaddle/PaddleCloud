@@ -50,6 +50,14 @@ func (c Cluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error)
 		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
 }
 
+// GetTrainerJobByName gets the trainer job spec.
+func (c Cluster) GetTrainerJobByName(namespace, name string) (*batchv1.Job, error) {
+	return c.clientset.
+		BatchV1().
+		Jobs(namespace).
+		Get((name), metav1.GetOptions{})
+}
+
 // UpdateTrainerJob updates the trainer job spec
 // this will do the actual scale up/down.
 func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
@@ -207,31 +215,15 @@ func (c *Cluster) GetReplicaSet(namespace, name string) (*v1beta1.ReplicaSet, er
 	return c.clientset.
 		ExtensionsV1beta1().
 		ReplicaSets(namespace).
-		Get(name, nil)
+		Get(name, metav1.GetOptions{})
 }
-
-/*
-// DeleteReplicaSetsByUID deletes a ReplicaSet by UID.
-func (c *Cluster) DeleteReplicaSetByUID(r *v1beta1.ReplicaSet) error {
-	options := metav1.DeleteOptions{
-		Preconditions: &metav1.Preconditions{
-			UID:               &r.ObjectMeta.UID,
-			PropagationPolicy: &metav1.DeletePropagationBackground,
-		},
-	}
-
-	return c.clientset.
-		ExtensionsV1beta1().
-		ReplicaSets(r.ObjectMeta.Namespace).
-		Delete(r.ObjectMeta.Name, &options)
-}
-*/
 
 // DeleteTrainerJob deletes a trainerjob and their pods.
 // see: https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/
 func (c *Cluster) DeleteTrainerJob(namespace, name string) error {
+	deletePolicy := metav1.DeletePropagationForeground
 	options := metav1.DeleteOptions{
-		PropagationPolicy: &metav1.DeletePropagationBackground,
+		PropagationPolicy: &deletePolicy,
 	}
 	return c.clientset.
 		BatchV1().
@@ -241,8 +233,9 @@ func (c *Cluster) DeleteTrainerJob(namespace, name string) error {
 
 // DeleteReplicaSet delete a ReplicaSet and their pods.
 func (c *Cluster) DeleteReplicaSet(namespace, name string) error {
+	deletePolicy := metav1.DeletePropagationForeground
 	options := metav1.DeleteOptions{
-		PropagationPolicy: &metav1.DeletePropagationBackground,
+		PropagationPolicy: &deletePolicy,
 	}
 	return c.clientset.
 		ExtensionsV1beta1().

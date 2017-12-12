@@ -25,7 +25,7 @@ import (
 
 const (
 	defaultLoopNum = 3
-	defaultLoopDur = 1 * time.Second
+	defaultDur     = 1 * time.Second
 )
 
 // TrainingJober mananges TraingJobs.
@@ -53,7 +53,7 @@ func (c *TrainingJober) cleanupPserver(namespace, jobname string) error {
 	return nil
 }
 
-func (c *TrainingJober) cleanupPserver(namespace, jobname string) error {
+func (c *TrainingJober) cleanupMaster(namespace, jobname string) error {
 	name := jobname + "-master"
 	err := c.cluster.DeleteReplicaSet(namespace, name)
 	if err != nil {
@@ -66,11 +66,11 @@ func (c *TrainingJober) cleanupPserver(namespace, jobname string) error {
 	return nil
 }
 
-func (c *TrainingJober) cleanupTrainer(namespace, jobname string) {
+func (c *TrainingJober) cleanupTrainer(namespace, jobname string) error {
 	name := jobname + "-trainer"
 	err := c.cluster.DeleteTrainerJob(namespace, name)
 	if err != nil {
-		return fmt.Errorf("delete trainerjob namespace:%s name:%s error:%v",
+		return fmt.Errorf("delete trainerjob namespace:%v name:%v error:%v",
 			namespace, name, err)
 	}
 
@@ -87,9 +87,9 @@ func (c *TrainingJober) createMaster(job *paddlejob.TrainingJob) error {
 
 	_, err := c.cluster.CreateReplicaSet(m)
 	if err != nil {
-		e := fmt.Sprintf("create master namespace:%v  name:%v error:%v",
+		e := fmt.Errorf("create master namespace:%v  name:%v error:%v",
 			job.ObjectMeta.Namespace, job.ObjectMeta.Name, err)
-		log.Error(e)
+		log.Error(e.Error())
 		return e
 	}
 
@@ -102,11 +102,11 @@ func (c *TrainingJober) createPserver(job *paddlejob.TrainingJob) error {
 	b, _ := json.MarshalIndent(p, "", "   ")
 	log.Info("create pserver:" + string(b))
 
-	_, err := c.cluster.CreateReplicaSets(p)
+	_, err := c.cluster.CreateReplicaSet(p)
 	if err != nil {
-		e := fmt.Sprintf("create pserver namespace:%v  name:%v error:%v",
+		e := fmt.Errorf("create pserver namespace:%v  name:%v error:%v",
 			job.ObjectMeta.Namespace, job.ObjectMeta.Name, err)
-		log.Error(e)
+		log.Error(e.Error())
 		return e
 	}
 	return nil
@@ -118,11 +118,11 @@ func (c *TrainingJober) createTrainer(job *paddlejob.TrainingJob) error {
 	b, _ := json.MarshalIndent(t, "", "   ")
 	log.Info("create trainer:" + string(b))
 
-	_, err := c.cluster.CreateJobs(t)
+	_, err := c.cluster.CreateJob(t)
 	if err != nil {
-		e := fmt.Sprintf("create trainerjob namespace:%v  name:%v error:%v",
+		e := fmt.Errorf("create trainerjob namespace:%v  name:%v error:%v",
 			job.ObjectMeta.Namespace, job.ObjectMeta.Name, err)
-		log.Error(e)
+		log.Error(e.Error())
 		return e
 	}
 
@@ -135,7 +135,7 @@ func (c *TrainingJober) Complete(job *paddlejob.TrainingJob) {
 		job.ObjectMeta.Name)
 
 	c.cleanupMaster(job.ObjectMeta.Namespace,
-		job.ObjectMeta.name)
+		job.ObjectMeta.Name)
 }
 
 // Destroy destroys resource and pods.
@@ -152,16 +152,16 @@ func (c *TrainingJober) checkAndCreate(job *paddlejob.TrainingJob) error {
 	pname := job.ObjectMeta.Name + "-pserver"
 	namespace := job.ObjectMeta.Namespace
 
-	t, terr := c.cluster.GetTrainerJob(namespace, tname)
-	m, merr := c.cluster.GetReplicaSet(job.ObjectMeta.Namesapce, mname)
-	p, perr := c.cluster.GetReplicaSet(job.ObjectMeta.Namesapce, pname)
+	t, terr := c.cluster.GetTrainerJobByName(namespace, tname)
+	m, merr := c.cluster.GetReplicaSet(namespace, mname)
+	p, perr := c.cluster.GetReplicaSet(namespace, pname)
 
 	if terr != nil ||
 		merr != nil ||
 		perr != nil {
 		err := fmt.Errorf("trainerjob_err:%v master_err:%v pserver_err:%v",
 			terr, merr, perr)
-		log.Error(err)
+		log.Error(err.Error())
 		return err
 	}
 
@@ -191,13 +191,13 @@ func (c *TrainingJober) checkAndCreate(job *paddlejob.TrainingJob) error {
 
 // Ensure try to make sure trainer, pserver, master exists.
 func (c *TrainingJober) Ensure(job *paddlejob.TrainingJob) error {
-	err := nil
+	var err error
 	for i := 0; i < defaultLoopNum; i++ {
 		err = c.checkAndCreate(job)
 		if err == nil {
 			return nil
 		}
-		time.Sleep(defaultLoopDur)
+		time.Sleep(defaultDur)
 	}
 
 	return err

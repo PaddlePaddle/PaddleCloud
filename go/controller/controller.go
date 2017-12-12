@@ -127,7 +127,7 @@ func (c *Controller) onAdd(obj interface{}) {
 	// TODO(gongwb): create them
 	cluster := NewCluster(c.clientset)
 	jober := NewTrainingJober(cluster)
-	jober.Create(job)
+	jober.Ensure(job)
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
