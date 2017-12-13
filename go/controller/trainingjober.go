@@ -167,12 +167,23 @@ func (c *TrainingJober) checkAndCreate(job *paddlejob.TrainingJob) error {
 
 	if t == nil {
 		if err := c.createTrainer(job); err != nil {
+			if m == nil {
+				c.cleanupMaster(namespace, mname)
+			}
 			return fmt.Errorf("namespace:%v create trainer:%v error:%v",
 				namespace, tname, err)
 		}
 	}
 
 	if p == nil {
+		if m == nil {
+			c.cleanupMaster(namespace, mname)
+		}
+
+		if t == nil {
+			c.cleanupTrainer(namespace, pname)
+		}
+
 		if err := c.createPserver(job); err != nil {
 			return fmt.Errorf("namespace:%v create pserver:%v error:%v",
 				namespace, pname, err)
