@@ -52,9 +52,6 @@ type SubmitCmd struct {
 	MaxInstance   int  `json:"maxInstance"`
 	MinInstance   int  `json:"minInstance"`
 
-	// TODO(gongwb): init config in memory.
-	KubeConfig string `json:"kubeconfig"`
-
 	// TODO(gongwb): create from yaml.
 }
 
@@ -229,15 +226,6 @@ func putFilesToPfs(jobPackage, jobName string) error {
 	return nil
 }
 
-func (s *Submitter) getKubeConfig() (string, error) {
-	kubeconfig := s.args.KubeConfig
-	if _, err := os.Stat(kubeconfig); err != nil {
-		return "", fmt.Errorf("can't access kubeconfig '%s' error: %v", kubeconfig, err)
-	}
-
-	return kubeconfig, nil
-}
-
 // Submit current job.
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	if err := checkJobName(jobName); err != nil {
@@ -248,22 +236,8 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	kubeconfig, err := s.getKubeConfig()
-	if err != nil {
-		return err
-	}
-
-	client, clientset, err := kubeutil.CreateClient(kubeconfig)
-	if err != nil {
-		return err
-	}
-
-	namespace := kubeutil.NameEscape(Config.ActiveConfig.Username)
-	if err := kubeutil.FindNamespace(clientset, namespace); err != nil {
-		return err
-	}
-
-	return kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob())
+	log.Info(err)
+	return nil
 }
 
 func checkJobName(jobName string) error {
