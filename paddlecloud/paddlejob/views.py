@@ -77,6 +77,98 @@ class FilePublishAPIView(APIView):
         publish_record.save()
         return Response({"url": publish_url})
 
+def get_paddlejob(request):
+    username = request.user.username
+    obj = json.loads(request.body)
+    topology = obj.get("topology", "")
+    entry = obj.get("entry", "")
+    if not topology and not entry:
+        return utils.simple_response(500, "no topology or entry specified")
+    if not obj.get("datacenter"):
+        return utils.simple_response(500, "no datacenter specified")
+    cfgs = {}
+    dc = obj.get("datacenter")
+    # jobPackage validation: startwith /pfs
+    # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
+    job_name = obj.get("name", "paddle-cluster-job")
+    package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+
+    logging.info("current package: %s", package_in_pod)
+    # package must be ready before submit a job
+    package_path_4test = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
+    if not os.path.exists(package_path_4test):
+        package_path_4test = package_in_pod.replace("/pfs/%s/home/%s"%(dc, username), settings.STORAGE_PATH)
+        if not os.path.exists(package_path_4test):
+            return utils.error_message_response("package not exist in cloud: %s"%package_path_4test)
+    logging.info("current package in pod: %s", package_path_4test)
+
+    envs = {}
+    envs.update({"PADDLE_CLOUD_CURRENT_DATACENTER": dc})
+    envs.update({"PADDLE_CLOUD_USERNAME": username})
+    create_trainingjobs=obj.get("create_trainingjobs", False)
+    # ===================== create PaddleJob instance ======================
+    paddle_job = PaddleJob(
+        name = job_name,
+        job_package = package_in_pod,
+        parallelism = obj.get("parallelism", 1),
+        cpu = obj.get("cpu", 1),
+        memory = obj.get("memory", "1Gi"),
+        pservers = obj.get("pservers", 1),
+        pscpu = obj.get("pscpu", 1),
+        psmemory = obj.get("psmemory", "1Gi"),
+        topology = topology,
+        entry = entry,
+        gpu = obj.get("gpu", 0),
+        image = obj.get("image", None),
+        passes = obj.get("passes", 1),
+        registry_secret = obj.get("registry", None),
+        volumes = [],
+        envs = envs,
+        fault_tolerant = obj.get("faulttolerant", False),
+        min_instance = obj.get("min_instance", 1),
+        max_instance = obj.get("max_instance", 1),
+        etcd_image = settings.ETCD_IMAGE,
+        dc = dc,
+        create_trainingjobs=create_traningjobs
+    )
+
+    return paddle_job
+
+
+class TrainingjobsView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None):
+        username = request.user.username
+        p = K8sProvider()
+        ret_dict = p.get_trainingjobs(username)
+        return Response(ret_dict)
+
+    def post(self, request, format=None):
+        """
+        Submit a trainingjobs.
+        """
+        job = get_paddlejob(request)
+        p = K8sProvider()
+        try:
+            p.submit_trainingjobs(job, username)
+        except Exception, e:
+            return utils.error_message_response(str(e))
+
+        return utils.simple_response(200, "")
+
+    def delete(self, request, format=None):
+        """
+        Kill a trainingjobs.
+        """
+        username = request.user.username
+        obj = json.loads(request.body)
+        jobname = obj.get("jobname")
+
+        p = K8sProvider()
+        retcode, status = p.delete_trainingjobs(jobname, username)
+        return utils.simple_response(retcode, "\n".join(status))
+
 
 class JobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -91,61 +183,11 @@ class JobsView(APIView):
         """
         Submit the PaddlePaddle job
         """
-        username = request.user.username
-        obj = json.loads(request.body)
-        topology = obj.get("topology", "")
-        entry = obj.get("entry", "")
-        if not topology and not entry:
-            return utils.simple_response(500, "no topology or entry specified")
-        if not obj.get("datacenter"):
-            return utils.simple_response(500, "no datacenter specified")
-        cfgs = {}
-        dc = obj.get("datacenter")
-        # jobPackage validation: startwith /pfs
-        # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
-        job_name = obj.get("name", "paddle-cluster-job")
-        package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
-
-        logging.info("current package: %s", package_in_pod)
-        # package must be ready before submit a job
-        package_path_4test = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
-        if not os.path.exists(package_path_4test):
-            package_path_4test = package_in_pod.replace("/pfs/%s/home/%s"%(dc, username), settings.STORAGE_PATH)
-            if not os.path.exists(package_path_4test):
-                return utils.error_message_response("package not exist in cloud: %s"%package_path_4test)
-        logging.info("current package in pod: %s", package_path_4test)
-
-        envs = {}
-        envs.update({"PADDLE_CLOUD_CURRENT_DATACENTER": dc})
-        envs.update({"PADDLE_CLOUD_USERNAME": username})
-        # ===================== create PaddleJob instance ======================
-        paddle_job = PaddleJob(
-            name = job_name,
-            job_package = package_in_pod,
-            parallelism = obj.get("parallelism", 1),
-            cpu = obj.get("cpu", 1),
-            memory = obj.get("memory", "1Gi"),
-            pservers = obj.get("pservers", 1),
-            pscpu = obj.get("pscpu", 1),
-            psmemory = obj.get("psmemory", "1Gi"),
-            topology = topology,
-            entry = entry,
-            gpu = obj.get("gpu", 0),
-            image = obj.get("image", None),
-            passes = obj.get("passes", 1),
-            registry_secret = obj.get("registry", None),
-            volumes = [],
-            envs = envs,
-            fault_tolerant = obj.get("faulttolerant", False),
-            min_instance = obj.get("min_instance", 1),
-            max_instance = obj.get("max_instance", 1),
-            etcd_image = settings.ETCD_IMAGE,
-            dc = dc
-        )
         # ========== submit master ReplicaSet if using fault_tolerant feature ==
+        job = get_paddlejob(request)
         p = K8sProvider()
         try:
-            p.submit_job(paddle_job, username)
+            p.submit_job(job, username)
         except Exception, e:
             return utils.error_message_response(str(e))
 

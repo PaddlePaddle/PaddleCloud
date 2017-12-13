@@ -91,7 +91,7 @@ class K8sProvider:
                 pass
         paddlejob.volumes = volumes
 
-    def submit_job(self, paddlejob, username):
+    def _valid_and_fill(self, paddlejob, username):
         namespace = utils.email_escape(username)
         api_client = utils.get_user_api_client(username)
         self.__setup_volumes(paddlejob, username)
@@ -143,6 +143,12 @@ class K8sProvider:
                 mount_path = "/usr/local/nvidia/lib64",
                 host_path = settings.NVIDIA_LIB_PATH
             ))
+
+    def submit_job(self, paddlejob, username):
+        self.valid_and_fill(paddlejob, username)
+
+        namespace = utils.email_escape(username)
+        api_client = utils.get_user_api_client(username)
         # ========== submit master ReplicaSet if using fault_tolerant feature ==
         # FIXME: alpha features in separate module
         if paddlejob.fault_tolerant:
@@ -170,6 +176,23 @@ class K8sProvider:
             logging.error("error submitting trainer job: %s" % traceback.format_exc())
             raise e
         return ret
+
+    def submit_trainingjobs(self, paddlejob, username):
+        self._valid_and_fill(paddlejob, username)
+
+        api_client = utils.get_user_api_client(username)
+        resp = api_client.ExtensionsV1beta1Api().\
+            create_third_party_resource(body=spec.get_trainingjob(paddlejob))
+
+        print("ThirdPartyResource created")
+        print(str(resp))
+    
+    def delete_trainingjobs(self, paddlejob, username):
+        api_client = utils.get_user_api_client(username)
+        resp = api_client.ExtensionsV1beta1Api().\
+            delete_third_party_resource("TrainingJobs", body=kubernetes.client.V1DeleteOptions())
+        print("ThirdPartyResource delete")
+        print(str(resp))
 
     def delete_job(self, jobname, username):
         namespace = utils.email_escape(username)
@@ -253,6 +276,7 @@ class K8sProvider:
         else:
             retcode = 200
         return retcode, delete_status
+
 
     def get_pservers(self, username):
         namespace = utils.email_escape(username)

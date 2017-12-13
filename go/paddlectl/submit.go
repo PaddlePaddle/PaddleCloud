@@ -10,16 +10,10 @@ import (
 	"path"
 	"strings"
 
-	"k8s.io/client-go/pkg/api/v1"
-
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
-	kubeutil "github.com/PaddlePaddle/cloud/go/utils/kubeutil"
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
-	apiresource "k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -70,81 +64,6 @@ func (*SubmitCmd) Usage() string {
 	Submit job to PaddlePaddle Cloud.
 	Options:
 `
-}
-
-func (p *SubmitCmd) getTrainer() *paddlejob.TrainerSpec {
-	return &paddlejob.TrainerSpec{
-		Entrypoint:  p.Entry,
-		Workspace:   getJobPfsPath(p.Jobpackage, p.Jobname),
-		MinInstance: p.MinInstance,
-		MaxInstance: p.MaxInstance,
-		Resources: v1.ResourceRequirements{
-			Limits: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.CPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.Memory),
-			},
-			Requests: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.CPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.Memory),
-			},
-		},
-	}
-}
-
-func (p *SubmitCmd) getPserver() *paddlejob.PserverSpec {
-	return &paddlejob.PserverSpec{
-		// TODO(gongwb):Pserver can be auto-scaled?
-		MinInstance: p.Pservers,
-		MaxInstance: p.Pservers,
-		Resources: v1.ResourceRequirements{
-			Limits: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.PSCPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.PSMemory),
-			},
-			Requests: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.PSCPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.PSMemory),
-			},
-		},
-	}
-}
-
-func (p *SubmitCmd) getMaster() *paddlejob.MasterSpec {
-	return &paddlejob.MasterSpec{}
-}
-
-// GetTrainingJob get's paddlejob.TrainingJob struct filed by Submitcmd paramters.
-func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
-	t := paddlejob.TrainingJob{
-		metav1.TypeMeta{
-			Kind:       "TrainingJob",
-			APIVersion: "paddlepaddle.org/v1",
-		},
-		metav1.ObjectMeta{
-			Name:      p.Jobname,
-			Namespace: kubeutil.NameEscape(Config.ActiveConfig.Username),
-		},
-
-		// General job attributes.
-		paddlejob.TrainingJobSpec{
-			Image: p.Image,
-
-			// TODO(gongwb): init them?
-
-			FaultTolerant: p.FaultTolerant,
-			Passes:        p.Passes,
-
-			Trainer: *p.getTrainer(),
-			Pserver: *p.getPserver(),
-			Master:  *p.getMaster(),
-		},
-		paddlejob.TrainingJobStatus{},
-	}
-
-	if glog.V(3) {
-		glog.Infof("GetTrainingJob: %s\n", t)
-	}
-	return &t
 }
 
 // SetFlags registers subcommands flags.
