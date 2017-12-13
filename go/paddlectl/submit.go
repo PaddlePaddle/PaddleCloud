@@ -2,6 +2,7 @@ package paddlectl
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	kubeutil "github.com/PaddlePaddle/cloud/go/utils/kubeutil"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
@@ -21,7 +23,8 @@ import (
 )
 
 const (
-	invalidJobName = "jobname can not contain '.' or '_'"
+	invalidJobName   = "jobname can not contain '.' or '_'"
+	trainingjobsPath = "/api/v1/trainingjobs"
 )
 
 // Config is global config object for paddlectl commandline
@@ -226,6 +229,32 @@ func putFilesToPfs(jobPackage, jobName string) error {
 	return nil
 }
 
+func (s *Submitter) createJobs() error {
+	jsonString, err := json.Marshal(s.args)
+	if err != nil {
+		return err
+	}
+
+	apiPath := jsonString, Config.ActiveConfig.Endpoint + trainingjobsPath
+	respBody, err := restclient.PostCall(apiPath, jsonString)
+	if err != nil {
+		return err
+	}
+	var respObj interface{}
+	if err = json.Unmarshal(respBody, &respObj); err != nil {
+		return err
+	}
+
+	// FIXME: Return an error if error message is not empty. Use response code instead.
+	errMsg := respObj.(map[string]interface{})["msg"].(string)
+	if len(errMsg) > 0 {
+		return errors.New(errMsg)
+	}
+
+	glog.Infof("Submitting job: %s\n", s.args.Jobname)
+	return nil
+}
+
 // Submit current job.
 func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	if err := checkJobName(jobName); err != nil {
@@ -236,8 +265,8 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	log.Info(err)
-	return nil
+	// 2. call paddlecloud server to create TPR TraningJobs.
+	return createJobs()
 }
 
 func checkJobName(jobName string) error {
