@@ -181,7 +181,7 @@ func (c *TrainingJober) checkAndCreate(job *paddlejob.TrainingJob) error {
 		}
 
 		if t == nil {
-			c.cleanupTrainer(namespace, pname)
+			c.cleanupTrainer(namespace, tname)
 		}
 
 		if err := c.createPserver(job); err != nil {
