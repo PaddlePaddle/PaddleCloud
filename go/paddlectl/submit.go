@@ -183,7 +183,6 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	// 2. call paddlecloud server to create TPR TraningJobs.
 	return s.createJobs()
 }
 
