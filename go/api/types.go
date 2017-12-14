@@ -78,12 +78,14 @@ type TrainingJob struct {
 // +k8s:deepcopy-gen=true
 type TrainingJobSpec struct {
 	// General job attributes.
-	Image             string `json:"image,omitempty"`
-	Port              int    `json:"port,omitempty"`
-	PortsNum          int    `json:"ports_num,omitempty"`
-	PortsNumForSparse int    `json:"ports_num_for_sparse,omitempty"`
-	FaultTolerant     bool   `json:"fault_tolerant,omitempty"`
-	Passes            int    `json:"passes,omitempty"`
+	Image             string           `json:"image,omitempty"`
+	Port              int              `json:"port,omitempty"`
+	PortsNum          int              `json:"ports_num,omitempty"`
+	PortsNumForSparse int              `json:"ports_num_for_sparse,omitempty"`
+	FaultTolerant     bool             `json:"fault_tolerant,omitempty"`
+	Passes            int              `json:"passes,omitempty"`
+	Volumes           []v1.Volume      `json:volumes`
+	VolumeMounts      []v1.VolumeMount `json:VolumeMounts`
 	// Job components.
 	Trainer TrainerSpec `json:"trainer"`
 	Pserver PserverSpec `json:"pserver"`
