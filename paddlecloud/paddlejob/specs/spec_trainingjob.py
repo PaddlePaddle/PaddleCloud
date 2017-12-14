@@ -1,7 +1,10 @@
+import spec_trainer
+import spec_pserver
+import spec_master
 def get_trainingjob(paddlejob):
-    trainer = get_spec_trainer(paddlejob)
-    pserver = get_spec_pserver(paddlejob)
-    master  = get_spec_master(paddlejob)
+    trainer = spec_trainer.get_spec_trainer(paddlejob)
+    pserver = spec_pserver.get_spec_pserver(paddlejob)
+    master  = spec_master.get_spec_master(paddlejob)
 
     spec = {
         "apiVersion": "paddlepaddle.org/v1",
@@ -11,8 +14,8 @@ def get_trainingjob(paddlejob):
         },
         "spec": {
             "image": paddlejob.image,
-            "port": paddlejob.port,
-            "ports_num_for_sparse": paddlejob.ports_num_for_sparse,
+            #"port": paddlejob.port,
+            #"ports_num_for_sparse": paddlejob.ports_num_for_sparse,
             "fault_tolerant": paddlejob.fault_tolerant,
             "trainer": trainer["spec"],
             "pservser": pserver["spec"],

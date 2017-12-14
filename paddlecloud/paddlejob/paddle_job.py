@@ -193,5 +193,5 @@ class PaddleJob(object):
     def new_trainer_job(self):
         return spec_trainer.get_spec_trainer(self)
     
-    def new_traingjobs(self):
+    def new_trainingjobs(self):
         return spec_trainingjob.get_trainingjob(self)

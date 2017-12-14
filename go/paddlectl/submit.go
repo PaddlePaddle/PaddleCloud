@@ -18,7 +18,7 @@ import (
 
 const (
 	invalidJobName   = "jobname can not contain '.' or '_'"
-	trainingjobsPath = "/api/v1/trainingjobs"
+	trainingjobsPath = "/api/v1/trainingjobs/"
 )
 
 // Config is global config object for paddlectl commandline

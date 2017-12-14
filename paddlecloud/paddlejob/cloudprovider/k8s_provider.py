@@ -10,6 +10,7 @@ import traceback
 
 import utils
 import volume
+import json
 
 # FIXME(typhoonzero): need a base class to define the interfaces?
 class K8sProvider:
@@ -181,19 +182,32 @@ class K8sProvider:
             raise e
         return ret
 
+    def _create_traingingjobs(self, body, username):
+        namespace = utils.email_escape(username)
+        api_client = utils.get_user_api_client(username)
+        resource_path = '/apis/paddlepaddle.org/v1/namespaces/' + namespace + '/trainingjobs'
+        header_params = {}
+        header_params['Accept'] = api_client.select_header_accept(['application/json'])
+        header_params['Content-Type'] = api_client.select_header_content_type(['*/*'])
+
+        (resp, code, header) = api_client.call_api(
+                resource_path, 'POST', {'namespace': namespace}, {}, header_params, body, [], _preload_content=False)
+
+        return json.loads(resp.data.decode('utf-8'))
+
     def submit_trainingjobs(self, paddlejob, username):
         self._valid_and_fill(paddlejob, username)
 
-        api_client = utils.get_user_api_client(username)
-        resp = api_client.ExtensionsV1beta1Api().\
-            create_third_party_resource(body=spec.get_trainingjob(paddlejob))
+        job = paddlejob.new_trainingjobs()
+        logging.info(json.dumps(job, indent=4, sort_keys=True))
 
-        print("ThirdPartyResource created")
-        print(str(resp))
+        resp = self._create_traingingjobs(job, username)
+
+        logging.info(str(resp))
     
     def delete_trainingjobs(self, paddlejob, username):
         api_client = utils.get_user_api_client(username)
-        resp = api_client.ExtensionsV1beta1Api().\
+        resp = client.ExtensionsV1beta1Api().\
             delete_third_party_resource("TrainingJobs", body=kubernetes.client.V1DeleteOptions())
         print("ThirdPartyResource delete")
         print(str(resp))
