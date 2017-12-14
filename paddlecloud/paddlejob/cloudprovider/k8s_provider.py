@@ -104,8 +104,6 @@ class K8sProvider:
             else:
                 paddlejob.image = settings.JOB_DOCKER_IMAGE["image"]
 
-        logging.info("valid_and_fill: paddle_image")
-
         # jobPackage validation: startwith /pfs
         # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
         package_in_pod = os.path.join("/pfs/%s/home/%s"%(paddlejob.dc, username), "jobs", paddlejob.name)
@@ -199,8 +197,6 @@ class K8sProvider:
         self._valid_and_fill(paddlejob, username)
 
         job = paddlejob.new_trainingjobs()
-        logging.info(json.dumps(job, indent=4, sort_keys=True))
-
         resp = self._create_traingingjobs(job, username)
 
         logging.info(str(resp))

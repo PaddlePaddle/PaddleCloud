@@ -272,7 +272,7 @@ PADDLE_BOOK_PORT=8888
 DATACENTERS = {
    "testpcloud":{
        "fstype": "hostpath",
-       "host_path": "/Users/gongwb/pcloud/users/%s",
+       "host_path": "<yourpath>/%s",
        "mount_path": "/pfs/%s/home/%s/" # mount_path % ( dc, username )
     }
 }

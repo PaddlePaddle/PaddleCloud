@@ -187,7 +187,6 @@ class JobsView(APIView):
         username = request.user.username
         job = get_paddlejob(request)
         p = K8sProvider()
-        logging.info("before submit_job")
         try:
             p.submit_job(job, username)
         except Exception, e:
@@ -267,7 +266,6 @@ class SimpleFileView(APIView):
         returns error_msg. error_msg will be empty if there's no error.
         """
         path_parts = file_path.split(os.path.sep)
-        #logging.info("path_parts:", path_parts)
 
         assert(path_parts[1]=="pfs")
         assert(path_parts[2] in settings.DATACENTERS.keys())
@@ -275,7 +273,6 @@ class SimpleFileView(APIView):
         assert(path_parts[4] == request.user.username)
 
         server_file = os.path.join(settings.STORAGE_PATH, request.user.username, *path_parts[5:])
-        #logging.info("server_file:", server_file)
 
         return server_file
 
@@ -323,8 +320,6 @@ class SimpleFileView(APIView):
                 if not data:
                     break
                 fn.write(data)
-
-        logging.info("post")
 
         return Response({"msg": ""})
 
