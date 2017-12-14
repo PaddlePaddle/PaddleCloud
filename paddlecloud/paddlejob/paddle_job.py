@@ -2,7 +2,7 @@ import kubernetes
 from kubernetes import client, config
 import os
 
-from specs import spec_master, spec_pserver, spec_trainer
+from specs import spec_master, spec_pserver, spec_trainer, spec_trainingjob
 
 DEFAULT_PADDLE_PORT=7164
 DEFAULT_MASTER_PORT=8080
@@ -192,3 +192,6 @@ class PaddleJob(object):
 
     def new_trainer_job(self):
         return spec_trainer.get_spec_trainer(self)
+    
+    def new_traingjobs(self):
+        return spec_trainingjob.get_trainingjob(self)

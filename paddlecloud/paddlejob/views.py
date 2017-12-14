@@ -105,7 +105,6 @@ def get_paddlejob(request):
     envs = {}
     envs.update({"PADDLE_CLOUD_CURRENT_DATACENTER": dc})
     envs.update({"PADDLE_CLOUD_USERNAME": username})
-    create_trainingjobs=obj.get("create_trainingjobs", False)
     # ===================== create PaddleJob instance ======================
     paddle_job = PaddleJob(
         name = job_name,
@@ -128,14 +127,14 @@ def get_paddlejob(request):
         min_instance = obj.get("min_instance", 1),
         max_instance = obj.get("max_instance", 1),
         etcd_image = settings.ETCD_IMAGE,
-        dc = dc,
-        create_trainingjobs=create_traningjobs
+        dc = dc
     )
 
+    logging.info("return paddlejob")
     return paddle_job
 
 
-class TrainingjobsView(APIView):
+class TrainingJobsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, format=None):
@@ -148,6 +147,7 @@ class TrainingjobsView(APIView):
         """
         Submit a trainingjobs.
         """
+        username = request.user.username
         job = get_paddlejob(request)
         p = K8sProvider()
         try:
@@ -184,8 +184,10 @@ class JobsView(APIView):
         Submit the PaddlePaddle job
         """
         # ========== submit master ReplicaSet if using fault_tolerant feature ==
+        username = request.user.username
         job = get_paddlejob(request)
         p = K8sProvider()
+        logging.info("before submit_job")
         try:
             p.submit_job(job, username)
         except Exception, e:
@@ -265,6 +267,7 @@ class SimpleFileView(APIView):
         returns error_msg. error_msg will be empty if there's no error.
         """
         path_parts = file_path.split(os.path.sep)
+        #logging.info("path_parts:", path_parts)
 
         assert(path_parts[1]=="pfs")
         assert(path_parts[2] in settings.DATACENTERS.keys())
@@ -272,6 +275,7 @@ class SimpleFileView(APIView):
         assert(path_parts[4] == request.user.username)
 
         server_file = os.path.join(settings.STORAGE_PATH, request.user.username, *path_parts[5:])
+        #logging.info("server_file:", server_file)
 
         return server_file
 
@@ -319,6 +323,8 @@ class SimpleFileView(APIView):
                 if not data:
                     break
                 fn.write(data)
+
+        logging.info("post")
 
         return Response({"msg": ""})
 

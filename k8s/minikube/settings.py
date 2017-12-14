@@ -195,7 +195,7 @@ LOGGING = {
     },
     "handlers": {
         "mail_admins": {
-            "level": "ERROR",
+            "level": "INFO",
             "filters": ["require_debug_false"],
             "class": "django.utils.log.AdminEmailHandler"
         },
@@ -208,12 +208,12 @@ LOGGING = {
     "loggers": {
         "": {
             "handlers": ["stdout"],
-            "level": "ERROR",
+            "level": "INFO",
             "propagate": True,
         },
         "django.request": {
             "handlers": ["mail_admins"],
-            "level": "ERROR",
+            "level": "INFO",
             "propagate": True,
         },
     }
@@ -270,14 +270,14 @@ PADDLE_BOOK_PORT=8888
 #}
 #for HostPath example:
 DATACENTERS = {
-   "datacenter":{
+   "testpcloud":{
        "fstype": "hostpath",
-       "host_path": "<yourpath>/users",
+       "host_path": "/Users/gongwb/pcloud/users/%s",
        "mount_path": "/pfs/%s/home/%s/" # mount_path % ( dc, username )
     }
 }
-#FSTYPE_CEPHFS = "cephfs"
-#FSTYPE_HOSTPATH = "hostpath"
+FSTYPE_CEPHFS = "cephfs"
+FSTYPE_HOSTPATH = "hostpath"
 #DATACENTERS = {
 #    "meiyan":{
 #        "fstype": FSTYPE_CEPHFS,

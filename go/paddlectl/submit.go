@@ -68,7 +68,6 @@ func (*SubmitCmd) Usage() string {
 
 // SetFlags registers subcommands flags.
 func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.KubeConfig, "kubeconfig", "", "Kubernetes config.")
 	f.StringVar(&p.Jobname, "jobname", "paddle-cluster-job", "Cluster job name.")
 	f.IntVar(&p.CPU, "cpu", 1, "CPU resource each trainer will use. Defaults to 1.")
 	f.IntVar(&p.GPU, "gpu", 0, "GPU resource each trainer will use. Defaults to 0.")
@@ -154,7 +153,7 @@ func (s *Submitter) createJobs() error {
 		return err
 	}
 
-	apiPath := jsonString, Config.ActiveConfig.Endpoint + trainingjobsPath
+	apiPath := Config.ActiveConfig.Endpoint + trainingjobsPath
 	respBody, err := restclient.PostCall(apiPath, jsonString)
 	if err != nil {
 		return err
@@ -185,7 +184,7 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 	}
 
 	// 2. call paddlecloud server to create TPR TraningJobs.
-	return createJobs()
+	return s.createJobs()
 }
 
 func checkJobName(jobName string) error {

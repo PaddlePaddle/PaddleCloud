@@ -102,18 +102,22 @@ class K8sProvider:
                 paddlejob.image = settings.JOB_DOCKER_IMAGE["image_gpu"]
             else:
                 paddlejob.image = settings.JOB_DOCKER_IMAGE["image"]
+
+        logging.info("valid_and_fill: paddle_image")
+
         # jobPackage validation: startwith /pfs
         # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
         package_in_pod = os.path.join("/pfs/%s/home/%s"%(paddlejob.dc, username), "jobs", paddlejob.name)
 
-        logging.info("current package: %s", package_in_pod)
+        logging.info("valid_and_fill: current package: %s", package_in_pod)
         # package must be ready before submit a job
         current_package_path = package_in_pod.replace("/pfs/%s/home"%paddlejob.dc, settings.STORAGE_PATH)
         if not os.path.exists(current_package_path):
             current_package_path = package_in_pod.replace("/pfs/%s/home/%s"%(paddlejob.dc, username), settings.STORAGE_PATH)
             if not os.path.exists(current_package_path):
                 raise Exception("package not exist in cloud: %s"%current_package_path)
-        logging.info("current package in pod: %s", current_package_path)
+        logging.info("valid_and_fill: current package in pod: %s", current_package_path)
+
         # GPU quota management
         # TODO(Yancey1989) We should move this to Kubernetes
         if 'GPU_QUOTA' in dir(settings) and int(paddlejob.gpu) > 0:
@@ -145,7 +149,7 @@ class K8sProvider:
             ))
 
     def submit_job(self, paddlejob, username):
-        self.valid_and_fill(paddlejob, username)
+        self._valid_and_fill(paddlejob, username)
 
         namespace = utils.email_escape(username)
         api_client = utils.get_user_api_client(username)
