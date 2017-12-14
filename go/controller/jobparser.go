@@ -94,8 +94,7 @@ func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.R
 					Labels: map[string]string{"paddle-job-pserver": job.ObjectMeta.Name},
 				},
 				Spec: v1.PodSpec{
-					// TODO: setup pserver volumes on cloud.
-					Volumes: podVolumes(job),
+					Volumes: job.Spec.Volumes,
 					Containers: []v1.Container{
 						v1.Container{
 							Name:      "pserver",
@@ -138,14 +137,14 @@ func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.J
 					Labels: map[string]string{"paddle-job": job.ObjectMeta.Name},
 				},
 				Spec: v1.PodSpec{
-					Volumes: podVolumes(job),
+					Volumes: job.Spec.Volumes,
 					Containers: []v1.Container{
 						v1.Container{
 							Name:            "trainer",
 							Image:           job.Spec.Image,
 							ImagePullPolicy: imagePullPolicy,
 							Command:         command,
-							VolumeMounts:    podVolumeMounts(job),
+							VolumeMounts:    job.Spec.VolumeMounts,
 							Ports:           podPorts(job),
 							Env:             podEnv(job),
 							Resources:       job.Spec.Trainer.Resources,
@@ -162,12 +161,12 @@ func masterResource(job *paddlejob.TrainingJob) *v1.ResourceRequirements {
 	// TODO(gongwb): config master resource?
 	return &v1.ResourceRequirements{
 		Limits: v1.ResourceList{
-			"cpu":    *apiresource.NewQuantity(int64(1), apiresource.DecimalSI),
-			"memory": apiresource.MustParse("500Mi"),
-		},
-		Requests: v1.ResourceList{
 			"cpu":    *apiresource.NewQuantity(int64(2), apiresource.DecimalSI),
 			"memory": apiresource.MustParse("1Gi"),
+		},
+		Requests: v1.ResourceList{
+			"cpu":    *apiresource.NewQuantity(int64(1), apiresource.DecimalSI),
+			"memory": apiresource.MustParse("500Mi"),
 		},
 	}
 }
@@ -213,18 +212,16 @@ func (p *DefaultJobParser) ParseToMaster(job *paddlejob.TrainingJob) *v1beta1.Re
 					Labels: map[string]string{"paddle-job-master": job.ObjectMeta.Name},
 				},
 				Spec: v1.PodSpec{
-					// TODO: setup pserver volumes on cloud.
-					Volumes: podVolumes(job),
+					Volumes: job.Spec.Volumes,
 					Containers: []v1.Container{
 						v1.Container{
 							Name:            "master",
 							Image:           job.Spec.Image,
 							ImagePullPolicy: imagePullPolicy,
 							Ports:           masterPorts(job),
-							// TODO(gongwb):master env
-							Command:      command,
-							VolumeMounts: podVolumeMounts(job),
-							Resources:    *masterResource(job),
+							Command:         command,
+							VolumeMounts:    job.Spec.VolumeMounts,
+							Resources:       *masterResource(job),
 						},
 						*getEtcdPodSpec(job),
 					},
@@ -312,29 +309,6 @@ func podEnv(job *paddlejob.TrainingJob) []v1.EnvVar {
 				FieldPath: "status.podIP",
 			},
 		}},
-	}
-}
-
-func podVolumes(job *paddlejob.TrainingJob) []v1.Volume {
-	return []v1.Volume{
-		v1.Volume{
-			Name: job.ObjectMeta.Name + "-workspace",
-			// TODO(gongwb): add support to ceph fs and mount public path.
-			VolumeSource: v1.VolumeSource{
-				HostPath: &v1.HostPathVolumeSource{
-					Path: job.Spec.Trainer.Workspace,
-				},
-			},
-		},
-	}
-}
-
-func podVolumeMounts(job *paddlejob.TrainingJob) []v1.VolumeMount {
-	return []v1.VolumeMount{
-		v1.VolumeMount{
-			Name:      job.ObjectMeta.Name + "-workspace",
-			MountPath: job.Spec.Trainer.Workspace,
-		},
 	}
 }
 

@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/api"
 )
 
@@ -47,6 +48,14 @@ func (c Cluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error)
 		BatchV1().
 		Jobs(namespace).
 		Get(fmt.Sprintf("%s-trainer", jobname), metav1.GetOptions{})
+}
+
+// GetTrainerJobByName gets the trainer job spec.
+func (c Cluster) GetTrainerJobByName(namespace, name string) (*batchv1.Job, error) {
+	return c.clientset.
+		BatchV1().
+		Jobs(namespace).
+		Get((name), metav1.GetOptions{})
 }
 
 // UpdateTrainerJob updates the trainer job spec
@@ -183,4 +192,53 @@ func (c *Cluster) SyncResource() (res ClusterResource, err error) {
 		},
 	}
 	return
+}
+
+// CreateJob creates a Job.
+func (c *Cluster) CreateJob(j *batchv1.Job) (*batchv1.Job, error) {
+	return c.clientset.
+		BatchV1().
+		Jobs(j.ObjectMeta.Namespace).
+		Create(j)
+}
+
+// CreateReplicaSet creates a ReplicaSet.
+func (c *Cluster) CreateReplicaSet(r *v1beta1.ReplicaSet) (*v1beta1.ReplicaSet, error) {
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(r.ObjectMeta.Namespace).
+		Create(r)
+}
+
+// GetReplicaSet gets a ReplicaSet.
+func (c *Cluster) GetReplicaSet(namespace, name string) (*v1beta1.ReplicaSet, error) {
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(namespace).
+		Get(name, metav1.GetOptions{})
+}
+
+// DeleteTrainerJob deletes a trainerjob and their pods.
+// see: https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/
+func (c *Cluster) DeleteTrainerJob(namespace, name string) error {
+	deletePolicy := metav1.DeletePropagationForeground
+	options := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	return c.clientset.
+		BatchV1().
+		Jobs(namespace).
+		Delete(name, &options)
+}
+
+// DeleteReplicaSet delete a ReplicaSet and their pods.
+func (c *Cluster) DeleteReplicaSet(namespace, name string) error {
+	deletePolicy := metav1.DeletePropagationForeground
+	options := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	return c.clientset.
+		ExtensionsV1beta1().
+		ReplicaSets(namespace).
+		Delete(name, &options)
 }
