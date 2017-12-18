@@ -10,6 +10,7 @@ import traceback
 
 import utils
 import volume
+import json
 
 # FIXME(typhoonzero): need a base class to define the interfaces?
 class K8sProvider:
@@ -91,7 +92,7 @@ class K8sProvider:
                 pass
         paddlejob.volumes = volumes
 
-    def submit_job(self, paddlejob, username):
+    def _valid_and_fill(self, paddlejob, username):
         namespace = utils.email_escape(username)
         api_client = utils.get_user_api_client(username)
         self.__setup_volumes(paddlejob, username)
@@ -102,18 +103,20 @@ class K8sProvider:
                 paddlejob.image = settings.JOB_DOCKER_IMAGE["image_gpu"]
             else:
                 paddlejob.image = settings.JOB_DOCKER_IMAGE["image"]
+
         # jobPackage validation: startwith /pfs
         # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
         package_in_pod = os.path.join("/pfs/%s/home/%s"%(paddlejob.dc, username), "jobs", paddlejob.name)
 
-        logging.info("current package: %s", package_in_pod)
+        logging.info("valid_and_fill: current package: %s", package_in_pod)
         # package must be ready before submit a job
         current_package_path = package_in_pod.replace("/pfs/%s/home"%paddlejob.dc, settings.STORAGE_PATH)
         if not os.path.exists(current_package_path):
             current_package_path = package_in_pod.replace("/pfs/%s/home/%s"%(paddlejob.dc, username), settings.STORAGE_PATH)
             if not os.path.exists(current_package_path):
                 raise Exception("package not exist in cloud: %s"%current_package_path)
-        logging.info("current package in pod: %s", current_package_path)
+        logging.info("valid_and_fill: current package in pod: %s", current_package_path)
+
         # GPU quota management
         # TODO(Yancey1989) We should move this to Kubernetes
         if 'GPU_QUOTA' in dir(settings) and int(paddlejob.gpu) > 0:
@@ -143,6 +146,12 @@ class K8sProvider:
                 mount_path = "/usr/local/nvidia/lib64",
                 host_path = settings.NVIDIA_LIB_PATH
             ))
+
+    def submit_job(self, paddlejob, username):
+        self._valid_and_fill(paddlejob, username)
+
+        namespace = utils.email_escape(username)
+        api_client = utils.get_user_api_client(username)
         # ========== submit master ReplicaSet if using fault_tolerant feature ==
         # FIXME: alpha features in separate module
         if paddlejob.fault_tolerant:
@@ -170,6 +179,34 @@ class K8sProvider:
             logging.error("error submitting trainer job: %s" % traceback.format_exc())
             raise e
         return ret
+
+    def _create_traingingjobs(self, body, username):
+        namespace = utils.email_escape(username)
+        api_client = utils.get_user_api_client(username)
+        resource_path = '/apis/paddlepaddle.org/v1/namespaces/' + namespace + '/trainingjobs'
+        header_params = {}
+        header_params['Accept'] = api_client.select_header_accept(['application/json'])
+        header_params['Content-Type'] = api_client.select_header_content_type(['*/*'])
+
+        (resp, code, header) = api_client.call_api(
+                resource_path, 'POST', {'namespace': namespace}, {}, header_params, body, [], _preload_content=False)
+
+        return json.loads(resp.data.decode('utf-8'))
+
+    def submit_trainingjobs(self, paddlejob, username):
+        self._valid_and_fill(paddlejob, username)
+
+        job = paddlejob.new_trainingjobs()
+        resp = self._create_traingingjobs(job, username)
+
+        logging.info(str(resp))
+    
+    def delete_trainingjobs(self, paddlejob, username):
+        api_client = utils.get_user_api_client(username)
+        resp = client.ExtensionsV1beta1Api().\
+            delete_third_party_resource("TrainingJobs", body=kubernetes.client.V1DeleteOptions())
+        print("ThirdPartyResource delete")
+        print(str(resp))
 
     def delete_job(self, jobname, username):
         namespace = utils.email_escape(username)
@@ -253,6 +290,7 @@ class K8sProvider:
         else:
             retcode = 200
         return retcode, delete_status
+
 
     def get_pservers(self, username):
         namespace = utils.email_escape(username)

@@ -2,6 +2,7 @@ package paddlectl
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,19 +10,15 @@ import (
 	"path"
 	"strings"
 
-	"k8s.io/client-go/pkg/api/v1"
-
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
-	kubeutil "github.com/PaddlePaddle/cloud/go/utils/kubeutil"
+	"github.com/PaddlePaddle/cloud/go/utils/restclient"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
-	apiresource "k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	invalidJobName = "jobname can not contain '.' or '_'"
+	invalidJobName   = "jobname can not contain '.' or '_'"
+	trainingjobsPath = "/api/v1/trainingjobs/"
 )
 
 // Config is global config object for paddlectl commandline
@@ -52,9 +49,6 @@ type SubmitCmd struct {
 	MaxInstance   int  `json:"maxInstance"`
 	MinInstance   int  `json:"minInstance"`
 
-	// TODO(gongwb): init config in memory.
-	KubeConfig string `json:"kubeconfig"`
-
 	// TODO(gongwb): create from yaml.
 }
 
@@ -72,84 +66,8 @@ func (*SubmitCmd) Usage() string {
 `
 }
 
-func (p *SubmitCmd) getTrainer() *paddlejob.TrainerSpec {
-	return &paddlejob.TrainerSpec{
-		Entrypoint:  p.Entry,
-		Workspace:   getJobPfsPath(p.Jobpackage, p.Jobname),
-		MinInstance: p.MinInstance,
-		MaxInstance: p.MaxInstance,
-		Resources: v1.ResourceRequirements{
-			Limits: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.CPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.Memory),
-			},
-			Requests: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.CPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.Memory),
-			},
-		},
-	}
-}
-
-func (p *SubmitCmd) getPserver() *paddlejob.PserverSpec {
-	return &paddlejob.PserverSpec{
-		// TODO(gongwb):Pserver can be auto-scaled?
-		MinInstance: p.Pservers,
-		MaxInstance: p.Pservers,
-		Resources: v1.ResourceRequirements{
-			Limits: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.PSCPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.PSMemory),
-			},
-			Requests: v1.ResourceList{
-				"cpu":    *apiresource.NewQuantity(int64(p.PSCPU), apiresource.DecimalSI),
-				"memory": apiresource.MustParse(p.PSMemory),
-			},
-		},
-	}
-}
-
-func (p *SubmitCmd) getMaster() *paddlejob.MasterSpec {
-	return &paddlejob.MasterSpec{}
-}
-
-// GetTrainingJob get's paddlejob.TrainingJob struct filed by Submitcmd paramters.
-func (p *SubmitCmd) GetTrainingJob() *paddlejob.TrainingJob {
-	t := paddlejob.TrainingJob{
-		metav1.TypeMeta{
-			Kind:       "TrainingJob",
-			APIVersion: "paddlepaddle.org/v1",
-		},
-		metav1.ObjectMeta{
-			Name:      p.Jobname,
-			Namespace: kubeutil.NameEscape(Config.ActiveConfig.Username),
-		},
-
-		// General job attributes.
-		paddlejob.TrainingJobSpec{
-			Image: p.Image,
-
-			// TODO(gongwb): init them?
-
-			FaultTolerant: p.FaultTolerant,
-			Passes:        p.Passes,
-
-			Trainer: *p.getTrainer(),
-			Pserver: *p.getPserver(),
-			Master:  *p.getMaster(),
-		},
-		paddlejob.TrainingJobStatus{},
-	}
-
-	if glog.V(3) {
-		glog.Infof("GetTrainingJob: %s\n", t)
-	}
-	return &t
-}
-
 // SetFlags registers subcommands flags.
 func (p *SubmitCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.KubeConfig, "kubeconfig", "", "Kubernetes config.")
 	f.StringVar(&p.Jobname, "jobname", "paddle-cluster-job", "Cluster job name.")
 	f.IntVar(&p.CPU, "cpu", 1, "CPU resource each trainer will use. Defaults to 1.")
 	f.IntVar(&p.GPU, "gpu", 0, "GPU resource each trainer will use. Defaults to 0.")
@@ -229,13 +147,31 @@ func putFilesToPfs(jobPackage, jobName string) error {
 	return nil
 }
 
-func (s *Submitter) getKubeConfig() (string, error) {
-	kubeconfig := s.args.KubeConfig
-	if _, err := os.Stat(kubeconfig); err != nil {
-		return "", fmt.Errorf("can't access kubeconfig '%s' error: %v", kubeconfig, err)
+func (s *Submitter) createJobs() error {
+	jsonString, err := json.Marshal(s.args)
+	if err != nil {
+		return err
 	}
 
-	return kubeconfig, nil
+	apiPath := Config.ActiveConfig.Endpoint + trainingjobsPath
+	respBody, err := restclient.PostCall(apiPath, jsonString)
+	if err != nil {
+		return err
+	}
+
+	var respObj map[string]string
+	if err = json.Unmarshal(respBody, &respObj); err != nil {
+		return err
+	}
+
+	// FIXME: Return an error if error message is not empty. Use response code instead.
+	errMsg := respObj["msg"]
+	if len(errMsg) > 0 {
+		return errors.New(errMsg)
+	}
+
+	glog.Infof("Submitting job: %s\n", s.args.Jobname)
+	return nil
 }
 
 // Submit current job.
@@ -248,22 +184,7 @@ func (s *Submitter) Submit(jobPackage string, jobName string) error {
 		return err
 	}
 
-	kubeconfig, err := s.getKubeConfig()
-	if err != nil {
-		return err
-	}
-
-	client, clientset, err := kubeutil.CreateClient(kubeconfig)
-	if err != nil {
-		return err
-	}
-
-	namespace := kubeutil.NameEscape(Config.ActiveConfig.Username)
-	if err := kubeutil.FindNamespace(clientset, namespace); err != nil {
-		return err
-	}
-
-	return kubeutil.CreateTrainingJob(client, namespace, s.args.GetTrainingJob())
+	return s.createJobs()
 }
 
 func checkJobName(jobName string) error {
