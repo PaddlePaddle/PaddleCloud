@@ -14,8 +14,6 @@ def get_trainingjob(paddlejob):
         },
         "spec": {
             "image": paddlejob.image,
-            #"port": paddlejob.port,
-            #"ports_num_for_sparse": paddlejob.ports_num_for_sparse,
             "fault_tolerant": paddlejob.fault_tolerant,
             "trainer": trainer["spec"],
             "pservser": pserver["spec"],

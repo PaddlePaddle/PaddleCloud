@@ -158,13 +158,14 @@ func (s *Submitter) createJobs() error {
 	if err != nil {
 		return err
 	}
-	var respObj interface{}
+
+	var respObj map[string]string
 	if err = json.Unmarshal(respBody, &respObj); err != nil {
 		return err
 	}
 
 	// FIXME: Return an error if error message is not empty. Use response code instead.
-	errMsg := respObj.(map[string]interface{})["msg"].(string)
+	errMsg := respObj["msg"]
 	if len(errMsg) > 0 {
 		return errors.New(errMsg)
 	}
