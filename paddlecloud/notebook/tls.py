@@ -36,7 +36,7 @@ def create_user_cert(ca_path, username):
         %s/%s.csr -subj \"/CN=%s\""%\
         (user_cert_dir, username,
         user_cert_dir, username, username))
-    user_cert_cmds.append("rm %s/ca.srl" % settings.USER_CERTS_PATH)
+    user_cert_cmds.append("rm -f %s/ca.srl" % settings.USER_CERTS_PATH)
     user_cert_cmds.append("openssl x509 -req -in %s/%s.csr -CA %s -CAkey %s \
         -CAcreateserial -out %s/%s.pem -days 365"% \
         (user_cert_dir, username,
