@@ -73,9 +73,9 @@ scp -r my_training_data_dir/ user@tunnel-server:/mnt/hdfs_mulan/idl/idl-dl/mydir
 - 使用RecordIO库进行数据预处理
 ```python
 import paddle.v2.dataset as dataset
-dataset.convert(output_path = "./dataset",
+dataset.common.convert(output_path = "./dataset",
                 reader = dataset.uci_housing.train(),
-                num_shards = 10,
+                line_count = 10,
                 name_prefix = "uci_housing_train")
 ```
   - `output_path` 输出路径
