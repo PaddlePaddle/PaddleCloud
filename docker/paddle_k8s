@@ -5,7 +5,7 @@ start_pserver() {
       --port=$PADDLE_INIT_PORT \
       --ports_num=$PADDLE_INIT_PORTS_NUM \
       --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
-      --nics=xgbe0 \
+      --nics=$PADDLE_INIT_NICS \
       --comment=paddle_process_k8s \
       --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
 }
@@ -122,7 +122,7 @@ start_trainer() {
 
         stdbuf -oL  paddle train \
           --port=$PADDLE_INIT_PORT \
-          --nics=xgbe0 \
+          --nics=$PADDLE_INIT_NICS \
           --ports_num=$PADDLE_INIT_PORTS_NUM \
           --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
           --num_passes=$PADDLE_INIT_NUM_PASSES \
