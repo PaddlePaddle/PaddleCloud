@@ -5,7 +5,7 @@ start_pserver() {
       --port=$PADDLE_INIT_PORT \
       --ports_num=$PADDLE_INIT_PORTS_NUM \
       --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
-      --nics=$NICES \
+      --nics=xgbe0 \
       --comment=paddle_process_k8s \
       --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
 }
@@ -102,9 +102,27 @@ start_trainer() {
 
     case "$1" in
       "v1")
+        FILE_COUNT=$(wc -l $TRAIN_LIST | awk '{print $1}')
+        if [ $FILE_COUNT -le $PADDLE_INIT_NUM_GRADIENT_SERVERS ]; then
+          echo "file count less than trainers"
+          check_trainer_ret 0
+        fi
+        let lines_per_node="$FILE_COUNT / ($PADDLE_INIT_NUM_GRADIENT_SERVERS + 1)"
+        echo "spliting file to" $lines_per_node
+        cp $TRAIN_LIST /
+        cd /
+        split -l $lines_per_node -d -a 3 $TRAIN_LIST train.list
+        CURRENT_LIST=$(printf "train.list%03d" $PADDLE_INIT_TRAINER_ID)
+        # always use /train.list for paddle v1 for each node.
+        echo "File for current node ${CURRENT_LIST}"
+        sleep 10
+        cp $CURRENT_LIST train.list
+
+        cd $TRAINER_PACKAGE
+
         stdbuf -oL  paddle train \
           --port=$PADDLE_INIT_PORT \
-          --nics=eth0 \
+          --nics=xgbe0 \
           --ports_num=$PADDLE_INIT_PORTS_NUM \
           --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
           --num_passes=$PADDLE_INIT_NUM_PASSES \
