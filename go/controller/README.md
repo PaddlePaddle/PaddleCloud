@@ -7,5 +7,5 @@ Currently support only TPR, if update to CRD support need to run `deepcopy_gen.s
 ```bash
 # must use --strip-vendor to avoid recursive vendoring
 glide install --strip-vendor
-go build -o path/to/output github.com/PaddlePaddle/cloud/go/cmd/controller
+go build -o path/to/output github.com/PaddlePaddle/cloud/go/cmd/autoscaler
 ```

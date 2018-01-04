@@ -140,6 +140,9 @@ The training job controller can be started by the cluster
 administrator with command: `kubectl create -f
 training_job_controller.yaml`
 
+You can use `go/cmd/autoscaler/Dockerfile` to build a new controller image 
+or downloading an existing one.
+
 ## Implementation
 
 ### Training Job Resource
