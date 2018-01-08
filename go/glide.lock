@@ -1,5 +1,5 @@
-hash: 68f2ea1e94337de23ced934e5329705b86d854bf8be2ac2781bf06ff54fe2732
-updated: 2017-10-26T21:56:48.987012103Z
+hash: 50f1deb70494c2eec4c862f9c9651163931f0268585a8f11670bd52e530d12c1
+updated: 2018-01-09T00:37:44.855693+08:00
 imports:
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
@@ -26,7 +26,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
-  version: 84b5bee7bcb76f3d17bcbaf421bac44bd5709ca6
+  version: 6aced65f8501fe1217321abf0749d354824ba2ff
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/go-stack/stack
@@ -45,7 +45,7 @@ imports:
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/mux
-  version: 24fca303ac6da784b9e8269f724ddeb0b2eea5e7
+  version: 7f08801859139f86dfafd1c296e2cba9a80d292e
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/imdario/mergo
@@ -69,7 +69,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/pflag
-  version: 97afa5e7ca8a08a383cb259e06636b5e2cc7897f
+  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
@@ -81,8 +81,6 @@ imports:
 - name: golang.org/x/net
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
-  - context
-  - context/ctxhttp
   - http2
   - http2/hpack
   - idna
@@ -234,10 +232,8 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
-- name: k8s.io/kube-openapi
-  version: 61b46af70dfed79c6d24530cd23b41440a7f22a5
-  subpackages:
-  - pkg/common
+- name: k8s.io/code-generator
+  version: 25fd8c8ddbf75b223882df4479f8b8e615da05ae
 - name: k8s.io/kubernetes
   version: d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae
   subpackages:
