@@ -15,7 +15,7 @@ spec:
       hostNetwork: true
       containers:
       - name: trainer
-        image: "registry.baidu.com/paddlepaddle/rawjob:latest"
+        image: "yourimage"
         imagePullPolicy: Always
         command: ["paddle_k8s", "start_trainer", "v2"]
         env:
