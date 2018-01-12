@@ -47,8 +47,12 @@ type Controller struct {
 	autoscaler *Autoscaler
 }
 
-// NewController construct a new Controller struct
-func NewController(c *rest.RESTClient, cs *kubernetes.Clientset, as *Autoscaler) (*Controller, error) {
+// New construct a new Controller struct
+func New(c *rest.RESTClient, cs *kubernetes.Clientset, maxLoadDesired float64) (*Controller, error) {
+	cluster := newCluster(cs)
+	as := newAutoscaler(cluster,
+		withMaxLoadDesired(maxLoadDesired))
+
 	return &Controller{
 		client:     c,
 		clientset:  cs,

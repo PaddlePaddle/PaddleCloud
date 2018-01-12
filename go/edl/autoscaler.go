@@ -102,15 +102,15 @@ type Autoscaler struct {
 	maxLoadDesired float64
 }
 
-// WithMaxLoadDesired init with maxLoadDesired
-func WithMaxLoadDesired(maxLoadDesired float64) func(as *Autoscaler) {
+// withMaxLoadDesired init with maxLoadDesired
+func withMaxLoadDesired(maxLoadDesired float64) func(as *Autoscaler) {
 	return func(as *Autoscaler) {
 		as.maxLoadDesired = maxLoadDesired
 	}
 }
 
-// New creates a new Autoscaler.
-func New(cluster *Cluster, options ...func(*Autoscaler)) *Autoscaler {
+// newAutoscaler creates a new Autoscaler.
+func newAutoscaler(cluster *Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	c := &Autoscaler{
 		cluster:        cluster,
 		ticker:         time.NewTicker(defaultLoopDur),

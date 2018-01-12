@@ -33,8 +33,8 @@ type Cluster struct {
 	clientset *kubernetes.Clientset
 }
 
-// NewCluster create a new instance of K8sCluster.
-func NewCluster(clientset *kubernetes.Clientset) *Cluster {
+// newCluster create a new instance of K8sCluster.
+func newCluster(clientset *kubernetes.Clientset) *Cluster {
 	return &Cluster{
 		clientset: clientset,
 	}
