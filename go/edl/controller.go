@@ -22,7 +22,7 @@
 // When controller starts, both event watching routine and resource
 // monitoring and scaling routine should be started.
 
-package controller
+package edl
 
 import (
 	"context"

@@ -20,12 +20,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNeedGPU(t *testing.T) {
-	var j api.TrainingJob
+	var j edlresource.TrainingJob
 	assert.False(t, j.NeedGPU())
 
 	q, err := resource.ParseQuantity("1")
@@ -37,7 +37,7 @@ func TestNeedGPU(t *testing.T) {
 }
 
 func TestElastic(t *testing.T) {
-	var j api.TrainingJob
+	var j edlresource.TrainingJob
 	assert.False(t, j.Elastic())
 
 	j.Spec.Trainer.MinInstance = 1

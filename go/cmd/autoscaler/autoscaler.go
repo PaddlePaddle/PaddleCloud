@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/PaddlePaddle/cloud/go/edl"
 	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 )
 
@@ -59,7 +60,7 @@ func main() {
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	edl.Run(ctx)
+	controller.Run(ctx)
 }
 
 func buildConfig(kubeconfig string) (*rest.Config, error) {

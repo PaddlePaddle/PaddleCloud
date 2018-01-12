@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -31,7 +31,7 @@ func CreateClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset, e
 		return nil, nil, fmt.Errorf("create clientset from config '%s' error: %v", kubeconfig, err)
 	}
 
-	paddlejob.ConfigureClient(config)
+	edlresource.RegisterTrainingJob(config)
 
 	client, err := rest.RESTClientFor(config)
 	if err != nil {
@@ -89,8 +89,8 @@ func EnsureTPR(clientset *kubernetes.Clientset, resourceName, apiversion string)
 }
 
 // CreateTrainingJob try to create a training-job under namespace.
-func CreateTrainingJob(restClient *rest.RESTClient, namespace string, job *paddlejob.TrainingJob) error {
-	var result paddlejob.TrainingJob
+func CreateTrainingJob(restClient *rest.RESTClient, namespace string, job *edlresource.TrainingJob) error {
+	var result edlresource.TrainingJob
 	err := restClient.Post().
 		Resource("trainingjobs").
 		Namespace(namespace).
