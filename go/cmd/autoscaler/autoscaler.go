@@ -9,8 +9,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/PaddlePaddle/cloud/go/controller"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 )
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// setup some optional configuration
-	paddlejob.ConfigureClient(config)
+	edlresource.RegisterTrainingJob(config)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
