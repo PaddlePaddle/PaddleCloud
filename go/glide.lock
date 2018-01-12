@@ -1,5 +1,5 @@
 hash: 50f1deb70494c2eec4c862f9c9651163931f0268585a8f11670bd52e530d12c1
-updated: 2018-01-09T00:37:44.855693+08:00
+updated: 2018-01-12T20:32:35.773528993Z
 imports:
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
@@ -81,6 +81,8 @@ imports:
 - name: golang.org/x/net
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
+  - context
+  - context/ctxhttp
   - http2
   - http2/hpack
   - idna
@@ -109,6 +111,7 @@ imports:
 - name: k8s.io/apimachinery
   version: 9603df80256c35a1dd4bc3037ed9690737af941b
   subpackages:
+  - pkg/api/equality
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
@@ -135,18 +138,22 @@ imports:
   - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
+  - pkg/util/httpstream
   - pkg/util/intstr
   - pkg/util/json
+  - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
   - pkg/util/runtime
   - pkg/util/sets
+  - pkg/util/strategicpatch
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
   - pkg/util/yaml
   - pkg/version
   - pkg/watch
+  - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: a95edf803628a1bba60fb59af594fdddec9a0f8a
@@ -247,3 +254,4 @@ testImports:
   version: e3a8ff8ce36581f87a15341206f205b1da467059
   subpackages:
   - assert
+  - require
