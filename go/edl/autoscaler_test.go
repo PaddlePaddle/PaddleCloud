@@ -22,12 +22,12 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	c := New(nil)
+	c := newAutoscaler(nil)
 	assert.NotNil(t, c)
 }
 
 func TestMonitor(t *testing.T) {
-	c := New(nil)
+	c := newAutoscaler(nil)
 	ch := make(chan struct{})
 
 	go func() {

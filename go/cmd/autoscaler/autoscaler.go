@@ -48,19 +48,12 @@ func main() {
 		panic(err)
 	}
 
-	cluster := edl.NewCluster(clientset)
-
-	as := edl.New(cluster,
-		edl.WithMaxLoadDesired(*maxLoadDesired))
-
-	controller, err := edl.NewController(client, clientset, as)
+	controller, err := edl.New(client, clientset, *maxLoadDesired)
 	if err != nil {
 		panic(err)
 	}
 
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
-	controller.Run(ctx)
+	controller.Run(context.Background())
 }
 
 func buildConfig(kubeconfig string) (*rest.Config, error) {

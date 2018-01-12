@@ -384,7 +384,7 @@ func TestSortedJobs(t *testing.T) {
 
 	expected := []string{"b", "c", "a"}
 
-	c := New(nil)
+	c := newAutoscaler(nil)
 	for _, j := range jobs {
 		c.jobs[j.Config.Name] = j
 	}
@@ -406,7 +406,7 @@ func TestSortedJobsGPUOnly(t *testing.T) {
 	}
 
 	expected := []string{"a"}
-	c := New(nil)
+	c := newAutoscaler(nil)
 	for _, j := range jobs {
 		c.jobs[j.Config.Name] = j
 	}
