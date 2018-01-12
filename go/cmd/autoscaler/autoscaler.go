@@ -9,7 +9,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/PaddlePaddle/cloud/go/controller"
 	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 )
 
@@ -48,19 +47,19 @@ func main() {
 		panic(err)
 	}
 
-	cluster := controller.NewCluster(clientset)
+	cluster := edl.NewCluster(clientset)
 
-	as := controller.New(cluster,
-		controller.WithMaxLoadDesired(*maxLoadDesired))
+	as := edl.New(cluster,
+		edl.WithMaxLoadDesired(*maxLoadDesired))
 
-	controller, err := controller.NewController(client, clientset, as)
+	controller, err := edl.NewController(client, clientset, as)
 	if err != nil {
 		panic(err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	controller.Run(ctx)
+	edl.Run(ctx)
 }
 
 func buildConfig(kubeconfig string) (*rest.Config, error) {
