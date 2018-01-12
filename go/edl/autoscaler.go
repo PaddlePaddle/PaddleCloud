@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	log "github.com/inconshreveable/log15"
 )
 
@@ -62,7 +62,7 @@ func (n NodeInfos) String() string {
 }
 
 type job struct {
-	Config     *paddlejob.TrainingJob
+	Config     *edlresource.TrainingJob
 	TrainerJob *batchv1.Job
 }
 
@@ -178,7 +178,7 @@ const (
 
 type event struct {
 	Type eventType
-	Job  *paddlejob.TrainingJob
+	Job  *edlresource.TrainingJob
 }
 
 func (e event) GoString() string {
@@ -186,17 +186,17 @@ func (e event) GoString() string {
 }
 
 // OnAdd notifies the autoscaler that a job has been added.
-func (a *Autoscaler) OnAdd(trainingjob *paddlejob.TrainingJob) {
+func (a *Autoscaler) OnAdd(trainingjob *edlresource.TrainingJob) {
 	a.eventCh <- event{Type: add, Job: trainingjob}
 }
 
 // OnDel notifies the autoscaler that a job has been deleted.
-func (a *Autoscaler) OnDel(trainingjob *paddlejob.TrainingJob) {
+func (a *Autoscaler) OnDel(trainingjob *edlresource.TrainingJob) {
 	a.eventCh <- event{Type: del, Job: trainingjob}
 }
 
 // OnUpdate notifies the autoscaler that a job has been deleted.
-func (a *Autoscaler) OnUpdate(trainingjob *paddlejob.TrainingJob) {
+func (a *Autoscaler) OnUpdate(trainingjob *edlresource.TrainingJob) {
 	a.eventCh <- event{Type: update, Job: trainingjob}
 }
 

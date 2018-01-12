@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
-	"github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,7 +75,7 @@ func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, ma
 	}
 
 	j := job{
-		Config:     &api.TrainingJob{},
+		Config:     &edlresource.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
 	}
 	j.Config.Name = name

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strconv"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
@@ -34,17 +34,17 @@ const (
 // JobParser is a interface can parse "TrainingJob" to
 // ReplicaSet and job.
 type JobParser interface {
-	Validate(job *paddlejob.TrainingJob) error
-	ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.Job
-	ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.ReplicaSet
-	ParseToMaster(job *paddlejob.TrainingJob) *v1beta1.ReplicaSet
+	Validate(job *edlresource.TrainingJob) error
+	ParseToTrainer(job *edlresource.TrainingJob) *batchv1.Job
+	ParseToPserver(job *edlresource.TrainingJob) *v1beta1.ReplicaSet
+	ParseToMaster(job *edlresource.TrainingJob) *v1beta1.ReplicaSet
 }
 
 // DefaultJobParser implement a basic JobParser.
 type DefaultJobParser int
 
 // Validate updates default values for the added job and validates the fields.
-func (p *DefaultJobParser) Validate(job *paddlejob.TrainingJob) error {
+func (p *DefaultJobParser) Validate(job *edlresource.TrainingJob) error {
 	// Fill in default values
 	// FIXME: Need to test. What is the value if specified "omitempty"
 	if job.Spec.Port == 0 {
@@ -71,7 +71,7 @@ func (p *DefaultJobParser) Validate(job *paddlejob.TrainingJob) error {
 }
 
 // ParseToPserver generate a pserver replicaset resource according to "TrainingJob" resource specs.
-func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.ReplicaSet {
+func (p *DefaultJobParser) ParseToPserver(job *edlresource.TrainingJob) *v1beta1.ReplicaSet {
 	replicas := int32(job.Spec.Pserver.MinInstance)
 	command := make([]string, 2, 2)
 	// FIXME: refine these part.
@@ -112,7 +112,7 @@ func (p *DefaultJobParser) ParseToPserver(job *paddlejob.TrainingJob) *v1beta1.R
 }
 
 // ParseToTrainer parse TrainingJob to a kubernetes job resource.
-func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.Job {
+func (p *DefaultJobParser) ParseToTrainer(job *edlresource.TrainingJob) *batchv1.Job {
 	replicas := int32(job.Spec.Trainer.MinInstance)
 	command := make([]string, 2)
 	if job.Spec.FaultTolerant {
@@ -157,7 +157,7 @@ func (p *DefaultJobParser) ParseToTrainer(job *paddlejob.TrainingJob) *batchv1.J
 	}
 }
 
-func masterResource(job *paddlejob.TrainingJob) *v1.ResourceRequirements {
+func masterResource(job *edlresource.TrainingJob) *v1.ResourceRequirements {
 	// TODO(gongwb): config master resource?
 	return &v1.ResourceRequirements{
 		Limits: v1.ResourceList{
@@ -171,7 +171,7 @@ func masterResource(job *paddlejob.TrainingJob) *v1.ResourceRequirements {
 	}
 }
 
-func getEtcdPodSpec(job *paddlejob.TrainingJob) *v1.Container {
+func getEtcdPodSpec(job *edlresource.TrainingJob) *v1.Container {
 	command := []string{"etcd", "-name", "etcd0",
 		"-advertise-client-urls", "http://$(POD_IP):2379,http://$(POD_IP):4001",
 		"-listen-client-urls", "http://0.0.0.0:2379,http://0.0.0.0:4001",
@@ -191,7 +191,7 @@ func getEtcdPodSpec(job *paddlejob.TrainingJob) *v1.Container {
 }
 
 // ParseToMaster parse TrainingJob to a kubernetes replicaset resource.
-func (p *DefaultJobParser) ParseToMaster(job *paddlejob.TrainingJob) *v1beta1.ReplicaSet {
+func (p *DefaultJobParser) ParseToMaster(job *edlresource.TrainingJob) *v1beta1.ReplicaSet {
 	replicas := int32(1)
 	// FIXME: refine these part.
 	command := []string{"paddle_k8s", "start_master"}
@@ -234,7 +234,7 @@ func (p *DefaultJobParser) ParseToMaster(job *paddlejob.TrainingJob) *v1beta1.Re
 // -----------------------------------------------------------------------
 // general functions that pserver, trainer use the same
 // -----------------------------------------------------------------------
-func podPorts(job *paddlejob.TrainingJob) []v1.ContainerPort {
+func podPorts(job *edlresource.TrainingJob) []v1.ContainerPort {
 	portsTotal := job.Spec.PortsNum + job.Spec.PortsNumForSparse
 	ports := make([]v1.ContainerPort, 8)
 	basePort := int32(job.Spec.Port)
@@ -248,7 +248,7 @@ func podPorts(job *paddlejob.TrainingJob) []v1.ContainerPort {
 	return ports
 }
 
-func masterPorts(job *paddlejob.TrainingJob) []v1.ContainerPort {
+func masterPorts(job *edlresource.TrainingJob) []v1.ContainerPort {
 	ports := []v1.ContainerPort{
 		v1.ContainerPort{
 			Name:          "master-port",
@@ -262,7 +262,7 @@ func masterPorts(job *paddlejob.TrainingJob) []v1.ContainerPort {
 	return ports
 }
 
-func podEnv(job *paddlejob.TrainingJob) []v1.EnvVar {
+func podEnv(job *edlresource.TrainingJob) []v1.EnvVar {
 	needGPU := "0"
 	if job.NeedGPU() {
 		needGPU = "1"
