@@ -11,7 +11,8 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
 	 limitations under the License. */
-package controller
+
+package edl
 
 import (
 	"testing"
@@ -20,7 +21,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
-	"github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,7 +76,7 @@ func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, ma
 	}
 
 	j := job{
-		Config:     &api.TrainingJob{},
+		Config:     &edlresource.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
 	}
 	j.Config.Name = name

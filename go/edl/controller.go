@@ -22,7 +22,7 @@
 // When controller starts, both event watching routine and resource
 // monitoring and scaling routine should be started.
 
-package controller
+package edl
 
 import (
 	"context"
@@ -37,7 +37,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 )
 
 // Controller for dispatching TrainingJob resource.
@@ -72,14 +72,14 @@ func (c *Controller) Run(ctx context.Context) error {
 func (c *Controller) startWatch(ctx context.Context) error {
 	source := cache.NewListWatchFromClient(
 		c.client,
-		paddlejob.TrainingJobs,
+		edlresource.TrainingJobs,
 		// TODO(helin): pass in namespace as an argument.
 		api.NamespaceAll,
 		fields.Everything())
 
 	_, informer := cache.NewInformer(
 		source,
-		&paddlejob.TrainingJob{},
+		&edlresource.TrainingJob{},
 
 		// TODO(helin): support resync. resync will eventually
 		// happen even if the resyncPeriod parameter is set to
@@ -102,7 +102,7 @@ func (c *Controller) startWatch(ctx context.Context) error {
 }
 
 func (c *Controller) onAdd(obj interface{}) {
-	job := obj.(*paddlejob.TrainingJob)
+	job := obj.(*edlresource.TrainingJob)
 	log.Debug("TrainingJob resource added", "name", job.ObjectMeta.Name)
 	c.autoscaler.OnAdd(job)
 
@@ -128,14 +128,14 @@ func (c *Controller) onAdd(obj interface{}) {
 }
 
 func (c *Controller) onUpdate(oldObj, newObj interface{}) {
-	oldjob := oldObj.(*paddlejob.TrainingJob)
-	newjob := newObj.(*paddlejob.TrainingJob)
+	oldjob := oldObj.(*edlresource.TrainingJob)
+	newjob := newObj.(*edlresource.TrainingJob)
 	log.Debug("TrainingJob resource updated", "old name", oldjob.ObjectMeta.Name, "new name", newjob.ObjectMeta.Name)
 	c.autoscaler.OnUpdate(newjob)
 }
 
 func (c *Controller) onDelete(obj interface{}) {
-	job := obj.(*paddlejob.TrainingJob)
+	job := obj.(*edlresource.TrainingJob)
 	log.Debug("TrainingJob resource deleted", "name", job.ObjectMeta.Name)
 	c.autoscaler.OnDel(job)
 }
