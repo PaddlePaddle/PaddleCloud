@@ -17,9 +17,9 @@ package edl
 import (
 	"testing"
 
+	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/pkg/api/v1"
-	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
 	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	"github.com/stretchr/testify/assert"

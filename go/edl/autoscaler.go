@@ -20,8 +20,8 @@ import (
 	"time"
 
 	// TODO(typhoonzero): this package still depends on k8s API, try to remove this.
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
 	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	log "github.com/inconshreveable/log15"

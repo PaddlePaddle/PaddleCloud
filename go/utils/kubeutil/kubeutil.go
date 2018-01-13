@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -46,7 +46,7 @@ func FindNamespace(clientset *kubernetes.Clientset, namespace string) error {
 	n := v1.Namespace{}
 	n.SetName(namespace)
 
-	if _, err := clientset.Namespaces().Get(namespace, metav1.GetOptions{}); err != nil {
+	if _, err := clientset.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{}); err != nil {
 		return fmt.Errorf("get namespace '%s' error:%v", namespace, err)
 	}
 
