@@ -73,9 +73,63 @@ type TrainerSpec struct {
 	Resources    apiv1.ResourceRequirements `json:"resources"`
 }
 
-// TrainingJobStatus is the status for a TrainingJob resource
+// TrainingJobPhase is the phase of TrainingJob
+type TrainingJobPhase string
+
+const (
+	TrainingJobPhaseNone      TrainingJobPhase = ""
+	TrainingJobPhaseCreating                   = "creating"
+	TrainingJobPhaseRunning                    = "running"
+	TrainingJobPhaseSucceeded                  = "succeeded"
+	TrainingJobPhaseFailed                     = "failed"
+)
+
+// TrainerJobScaleStatus is status of trainer jobs.
+type TrainerJobScaleStatus struct {
+}
+
+// TrainingResourceType the type of TrainingJob resource, include MASTER PSERVER and TRAINER
+type TrainingResourceType string
+
+const (
+	MASTER  TrainingResourceType = "MASTER"
+	PSERVER TrainingResourceType = "PSERVER"
+	TRAINER TrainingResourceType = "TRAINER"
+)
+
+// ResourceState is the state of a type of resource
+type ResourceState string
+
+const (
+	ResourceStateNone      ResourceState = ""
+	ResourceStateStarting                = "starting"
+	ResourceStateRunning                 = "running"
+	ResourceStateFailed                  = "failed"
+	ResourceStateSucceeded               = "succeeded"
+)
+
+// TrainingResourceStatus is the status of every resource
+type TrainingResourceStatus struct {
+	// TrainingResourceType the type of TrainingJob resource, include MASTER PSERVER and TRAINER
+	TrainingResourceType `json:"training_resource_type"`
+	// State is the state of a type of resource
+	State ResourceState `json:"state"`
+	// ResourceStates is the number of resource in different state
+	ResourceStates map[ResourceState]int `json:"resource_states"`
+}
+
+// TrainingJobStatus is the status for a TrainingJob resource.
 type TrainingJobStatus struct {
-	// TODO define the status of paddle training job
+	// Phase is phase of TrainingJob
+	Phase TrainingJobPhase `json:"phase"`
+	// Reason is the reason of job phase failed
+	Reason string `json:"reason"`
+	// ScaleStatus is autoscale status of trainer jobs
+	// TODO(ZhengQi): this will used in autoscale mode in future.
+	ScaleStatus TrainerJobScaleStatus `json:"scale_status"`
+	// ReplicaStatuses is detail status of resources
+	// TODO(ZhengQi): should we only considered trainer job now?
+	ReplicaStatuses []*TrainingResourceStatus `json:"replica_statuses"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
