@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/PaddlePaddle/cloud/go/utils/pathutil"
+	"github.com/stretchr/testify/require"
 )
 
 func fakeServer() (*http.Server, int) {
@@ -32,6 +34,7 @@ func fakeServer() (*http.Server, int) {
 			return
 		}
 	}()
+	time.Sleep(50 * time.Millisecond)
 	return srv, listener.Addr().(*net.TCPAddr).Port
 }
 
@@ -49,26 +52,15 @@ func TestTokenParse(t *testing.T) {
 	}}
 
 	token, err := Token(tmpconf)
-	if err != nil {
-		t.Errorf("get token error %v", err)
-	}
-	if token != "testtokenvalue" {
-		t.Error("token not equal to the server: (" + token + ")")
-	}
+	require.Nil(t, err, "get token")
+	require.Equal(t, "testtokenvalue", token, "token not equal to the server")
 
 	// FIXME: separate these tests
 	// test token request
 	uri := fmt.Sprintf("http://127.0.0.1:%d/fake-api/", port)
 	req, err := MakeRequest(uri, "GET", nil, "", nil, nil)
-	if err != nil {
-		t.Errorf("make request error %v", err)
-	}
+	require.Nil(t, err, "make request")
 	resp, err := GetResponse(req)
-	if err != nil {
-		t.Errorf("get request error %v", err)
-	}
-	if string(resp) != "fakeresult" {
-		t.Error("error result fetched")
-	}
-
+	require.Nil(t, err, "get request")
+	require.Equal(t, "fakeresult", string(resp))
 }
