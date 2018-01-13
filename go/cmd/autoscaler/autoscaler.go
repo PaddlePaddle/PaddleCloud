@@ -9,8 +9,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
-	"github.com/PaddlePaddle/cloud/go/controller"
+	"github.com/PaddlePaddle/cloud/go/edl"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 )
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// setup some optional configuration
-	paddlejob.ConfigureClient(config)
+	edlresource.RegisterTrainingJob(config)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -48,19 +48,12 @@ func main() {
 		panic(err)
 	}
 
-	cluster := controller.NewCluster(clientset)
-
-	as := controller.New(cluster,
-		controller.WithMaxLoadDesired(*maxLoadDesired))
-
-	controller, err := controller.NewController(client, clientset, as)
+	controller, err := edl.New(client, clientset, *maxLoadDesired)
 	if err != nil {
 		panic(err)
 	}
 
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
-	controller.Run(ctx)
+	controller.Run(context.Background())
 }
 
 func buildConfig(kubeconfig string) (*rest.Config, error) {

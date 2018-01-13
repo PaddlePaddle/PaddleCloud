@@ -12,13 +12,13 @@
    See the License for the specific language governing permissions and
 	 limitations under the License. */
 
-package controller
+package edl
 
 import (
 	"fmt"
 	"time"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	log "github.com/inconshreveable/log15"
 )
 
@@ -78,7 +78,7 @@ func (c *TrainingJober) cleanupTrainer(namespace, jobname string) error {
 	return nil
 }
 
-func (c *TrainingJober) createMaster(job *paddlejob.TrainingJob) error {
+func (c *TrainingJober) createMaster(job *edlresource.TrainingJob) error {
 	var parser DefaultJobParser
 	m := parser.ParseToMaster(job)
 
@@ -93,7 +93,7 @@ func (c *TrainingJober) createMaster(job *paddlejob.TrainingJob) error {
 	return nil
 }
 
-func (c *TrainingJober) createPserver(job *paddlejob.TrainingJob) error {
+func (c *TrainingJober) createPserver(job *edlresource.TrainingJob) error {
 	var parser DefaultJobParser
 	p := parser.ParseToPserver(job)
 
@@ -107,7 +107,7 @@ func (c *TrainingJober) createPserver(job *paddlejob.TrainingJob) error {
 	return nil
 }
 
-func (c *TrainingJober) createTrainer(job *paddlejob.TrainingJob) error {
+func (c *TrainingJober) createTrainer(job *edlresource.TrainingJob) error {
 	var parser DefaultJobParser
 	t := parser.ParseToTrainer(job)
 
@@ -123,7 +123,7 @@ func (c *TrainingJober) createTrainer(job *paddlejob.TrainingJob) error {
 }
 
 // Complete clears master and pserver resources.
-func (c *TrainingJober) Complete(job *paddlejob.TrainingJob) {
+func (c *TrainingJober) Complete(job *edlresource.TrainingJob) {
 	c.cleanupPserver(job.ObjectMeta.Namespace,
 		job.ObjectMeta.Name)
 
@@ -132,14 +132,14 @@ func (c *TrainingJober) Complete(job *paddlejob.TrainingJob) {
 }
 
 // Destroy destroys resource and pods.
-func (c *TrainingJober) Destroy(job *paddlejob.TrainingJob) {
+func (c *TrainingJober) Destroy(job *edlresource.TrainingJob) {
 	c.Complete(job)
 
 	c.cleanupTrainer(job.ObjectMeta.Namespace,
 		job.ObjectMeta.Name)
 }
 
-func (c *TrainingJober) checkAndCreate(job *paddlejob.TrainingJob) error {
+func (c *TrainingJober) checkAndCreate(job *edlresource.TrainingJob) error {
 	tname := job.ObjectMeta.Name + "-trainer"
 	mname := job.ObjectMeta.Name + "-master"
 	pname := job.ObjectMeta.Name + "-pserver"
@@ -193,7 +193,7 @@ func (c *TrainingJober) checkAndCreate(job *paddlejob.TrainingJob) error {
 }
 
 // Ensure try to make sure trainer, pserver, master exists.
-func (c *TrainingJober) Ensure(job *paddlejob.TrainingJob) error {
+func (c *TrainingJober) Ensure(job *edlresource.TrainingJob) error {
 	var err error
 	for i := 0; i < defaultLoopNum; i++ {
 		err = c.checkAndCreate(job)

@@ -1,5 +1,7 @@
 # PaddlePaddle Cloud
 
+[![Build Status](https://travis-ci.org/PaddlePaddle/cloud.svg?branch=develop)](https://travis-ci.org/PaddlePaddle/cloud)
+
 PaddlePaddle Cloud is a Distributed Deep-Learning Cloud Platform for both cloud
 providers and enterprises.
 

@@ -52,13 +52,18 @@ spec:
 				memory: "600Mi"
 */
 
-package api
+package resource
 
 import (
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	clientgoapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
 )
 
 // TrainingJobs string for registration
@@ -169,4 +174,30 @@ func (s *TrainingJob) GPU() int {
 func (s *TrainingJob) String() string {
 	b, _ := json.MarshalIndent(s, "", "   ")
 	return string(b[:])
+}
+
+// RegisterTrainingJob registers TrainingJob a new type of resource to Kubernetes.
+func RegisterTrainingJob(config *rest.Config) {
+	groupversion := schema.GroupVersion{
+		Group:   "paddlepaddle.org",
+		Version: "v1",
+	}
+
+	config.GroupVersion = &groupversion
+	config.APIPath = "/apis"
+	config.ContentType = runtime.ContentTypeJSON
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: clientgoapi.Codecs}
+
+	schemeBuilder := runtime.NewSchemeBuilder(
+		func(scheme *runtime.Scheme) error {
+			scheme.AddKnownTypes(
+				groupversion,
+				&TrainingJob{},
+				&TrainingJobList{},
+				&v1.ListOptions{},
+				&v1.DeleteOptions{},
+			)
+			return nil
+		})
+	schemeBuilder.AddToScheme(clientgoapi.Scheme)
 }
