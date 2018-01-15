@@ -15,7 +15,7 @@
 package edl
 
 import (
-	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/api/core/v1"
 )
 
 // AddResourceList add another v1.ResourceList to first's inner
