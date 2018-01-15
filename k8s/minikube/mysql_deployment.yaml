@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: paddle-cloud-mysql
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: paddle-cloud-mysql
+    spec:
+      volumes:
+      - name: mysql-data
+        hostPath:
+            path: "<yourpath>/mysql"
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        imagePullPolicy: IfNotPresent
+        #volumeMounts:
+           #- name: mysql-data
+           #mountPath: /var/lib/mysql2
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: root
+          - name: MYSQL_DATABASE
+            value: paddlecloud
+        args: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+      nodeSelector:
+        kubernetes.io/hostname: minikube

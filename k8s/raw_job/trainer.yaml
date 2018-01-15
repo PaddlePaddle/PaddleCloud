@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rawjob-trainer
+spec:
+  parallelism: 4
+  completions: 4
+  template:
+    metadata:
+      labels:
+        paddle-job: rawjob
+    spec:
+      imagePullSecrets:
+        - name: job-registry-secret
+      hostNetwork: true
+      containers:
+      - name: trainer
+        image: "yourimage"
+        imagePullPolicy: Always
+        command: ["paddle_k8s", "start_trainer", "v2"]
+        env:
+        - name: PADDLE_JOB_NAME
+          value: rawjob
+        - name: TRAINERS
+          value: "4"
+        - name: PSERVERS
+          value: "4"
+        - name: TOPOLOGY
+          value: ""
+        - name: ENTRY
+          value: "cd /workspace && python train.py"
+        - name: TRAINER_PACKAGE
+          value: "/workspace"
+        - name: PADDLE_INIT_PORT
+          value: "30487"
+        - name: PADDLE_INIT_NICS
+          value: "xgbe0"
+        - name: PADDLE_INIT_TRAINER_COUNT
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM_FOR_SPARSE
+          value: "1"
+        - name: PADDLE_INIT_NUM_GRADIENT_SERVERS
+          value: "4"
+        - name: PADDLE_INIT_NUM_PASSES
+          value: "1"
+        - name: PADDLE_INIT_USE_GPU
+          value: "0"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/nvidia/lib64"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 1
+          limits:
+            memory: 1Gi
+            cpu: 1
+            #alpha.kubernetes.io/nvidia-gpu: 1
+      restartPolicy: Never
+

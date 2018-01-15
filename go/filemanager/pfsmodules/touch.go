@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/PaddlePaddle/cloud/go/utils/restclient"
+	log "github.com/golang/glog"
 )
 
 const (
@@ -102,6 +103,7 @@ func NewTouchCmdFromURLParam(path string) (*TouchCmd, int32) {
 func CreateSizedFile(path string, size int64) error {
 	fd, err := os.Create(path)
 	if err != nil {
+		log.Errorf("create path:%v error:%v\n", path, err)
 		return err
 	}
 	defer Close(fd)
@@ -112,10 +114,14 @@ func CreateSizedFile(path string, size int64) error {
 
 	_, err = fd.Seek(size-1, 0)
 	if err != nil {
+		log.Errorf("seek path:%v size:%v error:%v\n", path, size, err)
 		return err
 	}
 
 	_, err = fd.Write([]byte{0})
+	if err != nil {
+		log.Errorf("write byte{0} fd:%v path:%v size:%v error:%v\n", fd, path, size, err)
+	}
 	return err
 }
 

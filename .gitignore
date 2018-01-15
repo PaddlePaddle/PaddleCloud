@@ -3,3 +3,5 @@
 .cache
 vendor
 *~
+*.pyc
+*.idea

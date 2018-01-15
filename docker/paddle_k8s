@@ -5,7 +5,7 @@ start_pserver() {
       --port=$PADDLE_INIT_PORT \
       --ports_num=$PADDLE_INIT_PORTS_NUM \
       --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
-      --nics=$NICES \
+      --nics=$PADDLE_INIT_NICS \
       --comment=paddle_process_k8s \
       --num_gradient_servers=$PADDLE_INIT_NUM_GRADIENT_SERVERS
 }
@@ -23,6 +23,8 @@ start_new_pserver() {
 start_master() {
   stdbuf -oL /usr/bin/master \
   -port=8080 \
+  -chunk-per-task=1\
+  -task-timout-dur=16s\
   -endpoints=http://127.0.0.1:2379
 }
 
@@ -57,20 +59,18 @@ check_trainer_ret() {
 start_new_trainer() {
   # FIXME(Yancey1989): use command-line interface to configure the max failed count
   check_failed_cnt ${TRAINERS}
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
+  sleep 5
   stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
-  # FIXME: use etcd lock instead of trainer id
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS} 
   export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
   export ETCD_IP="$MASTER_IP"
-  export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
 
   # NOTE: $TRAINER_PACKAGE may be large, do not copy
   export PYTHONPATH=$TRAINER_PACKAGE:$PYTHONPATH
   cd $TRAINER_PACKAGE
 
   stdbuf -oL echo "Starting training job: " $TRAINER_PACKAGE, "num_gradient_servers:" \
-  $PADDLE_INIT_NUM_GRADIENT_SERVERS, "trainer_id: " $PADDLE_INIT_TRAINER_ID, \
-  "version: " $1 
+  $PADDLE_INIT_NUM_GRADIENT_SERVERS, "version: " $1 
 
   stdbuf -oL sh -c "${ENTRY}"
   check_trainer_ret $?
@@ -102,9 +102,27 @@ start_trainer() {
 
     case "$1" in
       "v1")
+        FILE_COUNT=$(wc -l $TRAIN_LIST | awk '{print $1}')
+        if [ $FILE_COUNT -le $PADDLE_INIT_NUM_GRADIENT_SERVERS ]; then
+          echo "file count less than trainers"
+          check_trainer_ret 0
+        fi
+        let lines_per_node="$FILE_COUNT / ($PADDLE_INIT_NUM_GRADIENT_SERVERS + 1)"
+        echo "spliting file to" $lines_per_node
+        cp $TRAIN_LIST /
+        cd /
+        split -l $lines_per_node -d -a 3 $TRAIN_LIST train.list
+        CURRENT_LIST=$(printf "train.list%03d" $PADDLE_INIT_TRAINER_ID)
+        # always use /train.list for paddle v1 for each node.
+        echo "File for current node ${CURRENT_LIST}"
+        sleep 10
+        cp $CURRENT_LIST train.list
+
+        cd $TRAINER_PACKAGE
+
         stdbuf -oL  paddle train \
           --port=$PADDLE_INIT_PORT \
-          --nics=eth0 \
+          --nics=$PADDLE_INIT_NICS \
           --ports_num=$PADDLE_INIT_PORTS_NUM \
           --ports_num_for_sparse=$PADDLE_INIT_PORTS_NUM_FOR_SPARSE \
           --num_passes=$PADDLE_INIT_NUM_PASSES \

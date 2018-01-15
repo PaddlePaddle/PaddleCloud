@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: rawjob-pserver
+spec:
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        paddle-job-pserver: rawjob
+    spec:
+      hostNetwork: true
+      imagePullSecrets:
+      - name: job-registry-secret
+      containers:
+      - name: pserver
+        image: "yourimage"
+        imagePullPolicy: Always
+        ports:
+        - name: jobport-30487
+          containerPort: 30487
+        env:
+        - name: PADDLE_JOB_NAME
+          value: rawjob
+        - name: TRAINERS
+          value: "4"
+        - name: PSERVERS
+          value: "4"
+        - name: TOPOLOGY
+          value: ""
+        - name: ENTRY
+          value: "python train.py"
+        - name: TRAINER_PACKAGE
+          value: "/workspace"
+        - name: PADDLE_INIT_PORT
+          value: "30487"
+        - name: PADDLE_INIT_NICS
+          value: "xgbe0"
+        - name: PADDLE_INIT_TRAINER_COUNT
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM
+          value: "1"
+        - name: PADDLE_INIT_PORTS_NUM_FOR_SPARSE
+          value: "1"
+        - name: PADDLE_INIT_NUM_GRADIENT_SERVERS
+          value: "4"
+        - name: PADDLE_INIT_NUM_PASSES
+          value: "1"
+        - name: PADDLE_INIT_USE_GPU
+          value: "0"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/nvidia/lib64"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        command: ["paddle_k8s", "start_pserver"]
+        resources:
+          requests:
+            memory: 2Gi
+            cpu: 1
+          limits:
+            memory: 2Gi
+            cpu: 1
+      

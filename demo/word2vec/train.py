@@ -14,10 +14,10 @@ N = 5
 #       then you can use different size of embedding.
 
 # NOTE: must change this to your own username on paddlecloud.
-USERNAME = "wuyi05@baidu.com"
+USERNAME = "your-username"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
-TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "imikolov")
+TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "imikolov", "imikolov_train-*")
 WORD_DICT_PATH = os.path.join(common.DATA_HOME, "imikolov/word_dict.pickle")
 
 TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID", "-1"))
@@ -27,10 +27,7 @@ def prepare_dataset():
     word_dict = paddle.dataset.imikolov.build_dict()
     with open(WORD_DICT_PATH, "w") as fn:
         pickle.dump(word_dict, fn)
-    # convert will also split the dataset by line-count
-    common.convert(TRAIN_FILES_PATH, 
-                   paddle.dataset.imikolov.train(word_dict, N),
-                   1000, "train")
+    # NOTE: convert should be done by other job.
 
 def cluster_reader_recordio(trainer_id, trainer_count):
     '''
@@ -39,8 +36,7 @@ def cluster_reader_recordio(trainer_id, trainer_count):
     '''
     import recordio
     def reader():
-        TRAIN_FILES_PATTERN = os.path.join(TRAIN_FILES_PATH, "train-*")
-        file_list = glob.glob(TRAIN_FILES_PATTERN)
+        file_list = glob.glob(TRAIN_FILES_PATH)
         file_list.sort()
         my_file_list = []
         # read files for current trainer_id
@@ -56,15 +52,6 @@ def cluster_reader_recordio(trainer_id, trainer_count):
                 record_raw = reader.read()
             reader.close()
     return reader
-
-def cluster_reader_recordio_from_master(etcd_endpoints):
-    '''
-        call paddle master's RPC to get recordio metadata,
-        then read from cloud storage.
-    '''
-    TRAIN_FILES_PATTERN = os.path.join(TRAIN_FILES_PATH, "train-*")
-    return paddle.reader.creator.cloud_reader(TRAIN_FILES_PATTERN, etcd_endpoints)
-
 
 def wordemb(inlayer):
     wordemb = paddle.layer.table_projection(
@@ -132,9 +119,11 @@ def main():
     adam_optimizer = paddle.optimizer.Adam(
         learning_rate=3e-3,
         regularization=paddle.optimizer.L2Regularization(8e-4))
-    trainer = paddle.trainer.SGD(cost, parameters, adam_optimizer)
+    trainer = paddle.trainer.SGD(cost,
+        parameters,
+        adam_optimizer)
+
     trainer.train(
-        # NOTE: use either cluster_reader_recordio or cluster_reader_recordio_from_master
         paddle.batch(cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT), 32),
         num_passes=30,
         event_handler=event_handler)

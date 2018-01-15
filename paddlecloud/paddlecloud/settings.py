@@ -273,7 +273,7 @@ PADDLE_BOOK_PORT=8888
 #   ...
 #   "dc1":{
 #       "fstype": "hostpath",
-#       "host_path": "/mnt/hdfs/",
+#       "host_path": "/mnt/hdfs/%s/", # host_path % username
 #       "mount_path" "/pfs/%s/home/%s/" # mount_path % ( dc, username )
 #    }
 #}

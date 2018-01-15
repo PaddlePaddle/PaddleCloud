@@ -1,0 +1,33 @@
+apiVersion: paddlepaddle.org/v1
+kind: TrainingJob
+metadata:
+  name: <jobname>
+spec:
+  image: "paddlepaddle/paddlecloud-job"
+  port: 7164
+  ports_num: 1
+  ports_num_for_sparse: 1
+  fault_tolerant: true
+  trainer:
+    entrypoint: "python train.py"
+    workspace: "/home/job-1/"
+    passes: 10
+    min-instance: 2
+    max-instance: 60
+    resources:
+      limits:
+        cpu: "5"
+        memory: "8Gi"
+      requests:
+        cpu: "5"
+        memory: "8Gi"
+  pserver:
+    min-instance: 2
+    max-instance: 2
+    resources:
+      limits:
+        cpu: "4"
+        memory: "5Gi"
+      requests:
+        cpu: "4"
+        memory: "5Gi"

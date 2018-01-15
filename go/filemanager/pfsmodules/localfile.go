@@ -125,10 +125,14 @@ func (f *FileHandle) CopyN(w io.Writer, offset, len int64) error {
 	n, err := io.CopyN(w, f.F, len)
 	log.V(2).Infof("CopyN expect %d real %d\n", len, n)
 
-	if err != nil && err != io.EOF {
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 		return err
 	}
 	f.Offset += int64(n)
+
+	if err == io.ErrUnexpectedEOF {
+		err = io.EOF
+	}
 
 	return err
 }

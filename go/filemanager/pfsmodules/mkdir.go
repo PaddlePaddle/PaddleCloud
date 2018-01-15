@@ -104,8 +104,8 @@ func (*MkdirCmd) Synopsis() string { return "mkdir directoies on PaddlePaddle Cl
 // Usage returns usage of MkdirCmd.
 func (*MkdirCmd) Usage() string {
 	return `mkdir <pfspath>:
-	mkdir directories on PaddlePaddleCloud
-	Options:
+    mkdir directories on PaddlePaddleCloud
+    Options:
 `
 }
 

@@ -61,7 +61,7 @@ func getUserName(uri string, token string) (string, error) {
 func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header http.Header) {
 	resp := response{}
 
-	user, err := getUserName(TokenURI+"/api/v1/token2user/", header.Get("Authorization"))
+	user, err := getUserName(TokenURI+"/"+pfsmod.RESTTokenPath, header.Get("Authorization"))
 	if err != nil {
 		resp.Err = "get username error:" + err.Error()
 		writeJSONResponse(w, req, http.StatusOK, resp)
@@ -73,6 +73,9 @@ func cmdHandler(w http.ResponseWriter, req string, cmd pfsmod.Command, header ht
 		writeJSONResponse(w, req, http.StatusOK, resp)
 		return
 	}
+
+	ret, _ := cmd.ToJSON()
+	log.Infof("user:%s cmd:%s\n", user, string(ret[:]))
 
 	result, err := cmd.Run()
 	if err != nil && err != io.EOF {
@@ -309,6 +312,51 @@ func GetChunkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func checkChunkAuthorization(path string, header http.Header, cmdName string) (string, response) {
+	resp := response{}
+	// Check user authorization.
+	user, err := getUserName(TokenURI+"/"+pfsmod.RESTTokenPath, header.Get("Authorization"))
+	if err != nil {
+		resp.Err = "get username error:" + err.Error()
+		return "", resp
+	}
+
+	if err := pfsmod.ValidatePfsPath([]string{path}, user, cmdName); err != nil {
+		resp.Err = err.Error()
+		return user, resp
+	}
+
+	return user, resp
+}
+
+func getChunk(w http.ResponseWriter, r *http.Request, param *pfsmod.ChunkParam) error {
+	writer := multipart.NewWriter(w)
+	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
+
+	fileName := param.ToURLParam().Encode()
+	part, err := writer.CreateFormFile("chunk", fileName)
+	if err != nil {
+		return err
+	}
+	defer writer.Close()
+
+	fr := pfsmod.FileHandle{}
+	if err := fr.Open(param.Path, os.O_RDONLY, 0); err != nil {
+		return err
+	}
+	defer fr.Close()
+
+	err = fr.CopyN(part, param.Offset, param.Size)
+	if err != nil {
+		if err != io.EOF {
+			return err
+		}
+
+		return errors.New(pfsmod.StatusFileEOF)
+	}
+	return nil
+}
+
 // GetChunkHandler processes GET Chunk  request.
 func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Infof("begin proc GetChunkHandler")
@@ -319,46 +367,22 @@ func GetChunkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writer := multipart.NewWriter(w)
-	writer.SetBoundary(pfsmod.DefaultMultiPartBoundary)
-
-	fileName := p.ToURLParam().Encode()
-	part, err := writer.CreateFormFile("chunk", fileName)
-	if err != nil {
-		log.Error(err)
-		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, response{})
-		return
-	}
-
-	resp := response{}
-
-	fr := pfsmod.FileHandle{}
-	if err := fr.Open(p.Path, os.O_RDONLY, 0); err != nil {
-		resp.Err = err.Error()
-		log.Error(err)
+	user, resp := checkChunkAuthorization(p.Path, r.Header, "GetChunk")
+	if resp.Err != "" {
 		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 		return
 	}
-	defer fr.Close()
+	log.Infof("user:%s download %s\n", user, p.String())
 
-	if err = fr.CopyN(part, p.Offset, p.Size); err != nil {
-		if err != io.EOF {
-			resp.Err = err.Error()
-			log.Error(err)
-			writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
-			return
+	err = getChunk(w, r, p)
+	if err != nil {
+		if err.Error() != pfsmod.StatusFileEOF {
+			log.Errorln("cmd %s error info:%s", p.String(), err)
 		}
-
-		resp.Err = pfsmod.StatusFileEOF
-		writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
+		resp.Err = err.Error()
 	}
 
-	err = writer.Close()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
+	writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
 	log.V(1).Info("end proc GetChunkHandler")
 	return
 }
@@ -392,7 +416,14 @@ func PostChunkHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		user, resp := checkChunkAuthorization(param.Path, r.Header, "PostChunk")
+		if resp.Err != "" {
+			writeJSONResponse(w, r.URL.RawQuery, http.StatusOK, resp)
+			return
+		}
+
 		log.V(2).Infof("received post chunk param:%s\n", param.String())
+		log.Infof("user:%s upload %s\n", user, param.String())
 
 		fw := pfsmod.FileHandle{}
 		if err := fw.Open(param.Path, os.O_RDWR, -1); err != nil {

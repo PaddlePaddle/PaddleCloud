@@ -21,7 +21,7 @@ type RemoteFile struct {
 }
 
 // Open file to read ,write or read-write.
-// if flag == WriteOnly or flag == ReadAndWrite, this function will
+// if flag == O_WRONLY or flag == O_RDWR, this function will
 // attempt to create a sized file on remote if it does't exist.
 func (f *RemoteFile) Open(path string, flag int, size int64) error {
 	if flag != os.O_RDONLY &&
@@ -73,18 +73,26 @@ func getChunkData(m ChunkParam) (*Chunk, error) {
 			break
 		}
 
-		if part.FormName() == "chunk" {
-			m1, err := ParseChunkParam(part.FileName())
-			if err != nil {
-				return nil, errors.New(err.Error())
-			}
+		if part.FormName() != "chunk" {
+			continue
+		}
 
-			c = NewChunk(m1.Size)
-			c.Len = m1.Size
-			c.Offset = m1.Offset
-			if _, err := part.Read(c.Data); err != nil && err != io.EOF {
-				return nil, err
-			}
+		log.V(2).Infof("received post chunk param:%s\n", part.FileName())
+		m1, err := ParseChunkParam(part.FileName())
+		if err != nil {
+			return nil, errors.New(err.Error())
+		}
+
+		c = NewChunk(m1.Size)
+		c.Len = m1.Size
+		c.Offset = m1.Offset
+		n, err := io.ReadFull(part, c.Data)
+		if err != nil {
+			return c, err
+		}
+
+		if int64(n) != m1.Size {
+			log.V(2).Infof("download chunk data error expected %d real %d", m1.Size, n)
 		}
 	}
 

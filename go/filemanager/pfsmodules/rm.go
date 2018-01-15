@@ -133,8 +133,8 @@ func (*RmCmd) Synopsis() string { return "rm files on PaddlePaddle Cloud" }
 // Usage returns usage of RmCmd.
 func (*RmCmd) Usage() string {
 	return `rm -r <pfspath>:
-	rm files on PaddlePaddleCloud
-	Options:
+    rm files on PaddlePaddleCloud
+    Options:
 `
 }
 

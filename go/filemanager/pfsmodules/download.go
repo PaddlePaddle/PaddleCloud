@@ -6,11 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/golang/glog"
 )
 
-func downloadFile(src string, srcFileSize int64, dst string) error {
+func downloadFile(src string, srcFileSize int64, dst string, verbose bool, chunkSize int64) error {
 	w := FileHandle{}
 	if err := w.Open(dst, os.O_RDWR, srcFileSize); err != nil {
 		return err
@@ -24,31 +25,38 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 	defer r.Close()
 
 	offset := int64(0)
-	size := defaultChunkSize
+	if chunkSize <= 0 {
+		chunkSize = defaultChunkSize
+	}
 
 	for {
-		m, errm := r.GetChunkMeta(offset, size)
-		if errm != nil && errm != io.EOF {
-			return errm
+		start := time.Now()
+		sm, errs := r.GetChunkMeta(offset, chunkSize)
+		if errs != nil && errs != io.EOF {
+			return errs
 		}
-		log.V(2).Infoln("remote chunk info:", m)
+		log.V(2).Infoln("remote chunk info:", sm)
 
-		c, errc := w.ReadChunk(offset, size)
-		if errc != nil && errc != io.EOF {
-			return errc
+		wm, errw := w.GetChunkMeta(offset, chunkSize)
+		if errw != nil && errw != io.EOF {
+			return errw
 		}
-		offset += m.Len
-		log.V(2).Infoln("local chunk info:" + c.String())
+		log.V(2).Infoln("local chunk info:", wm)
 
-		if m.Checksum == c.Checksum {
-			log.V(2).Infof("remote chunk is same as local chunk:%s\n", c.String())
-			if errc == io.EOF || errm == io.EOF {
+		if sm.Checksum == wm.Checksum {
+			if verbose {
+				used := time.Since(start).Nanoseconds() / time.Millisecond.Nanoseconds()
+				ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, sm.Len/used)
+			}
+			offset += sm.Len
+			log.V(2).Infoln("remote chunk is same as local chunk:", sm)
+			if errs == io.EOF || errw == io.EOF {
 				break
 			}
 			continue
 		}
 
-		c, err := r.ReadChunk(offset, m.Len)
+		c, err := r.ReadChunk(offset, sm.Len)
 		if err != nil && err != io.EOF {
 			return err
 		}
@@ -56,9 +64,15 @@ func downloadFile(src string, srcFileSize int64, dst string) error {
 		if err := w.WriteChunk(c); err != nil {
 			return err
 		}
+		offset += sm.Len
+
+		if verbose {
+			used := time.Since(start).Nanoseconds() / time.Millisecond.Nanoseconds()
+			ColorInfoOverWrite("%s download   %d%% %dKB/s", src, offset*100/srcFileSize, sm.Len/used)
+		}
 
 		log.V(2).Infof("downlod chunk:%s ok\n\n", c.String())
-		if errc == io.EOF || errm == io.EOF {
+		if errs == io.EOF || errw == io.EOF {
 			break
 		}
 	}
@@ -85,7 +99,7 @@ func checkBeforeDownLoad(src []LsResult, dst string) (bool, error) {
 	return bDir, err
 }
 
-func download(src, dst string) error {
+func download(src, dst string, verbose bool, chunkSize int64) error {
 	log.V(1).Infof("download %s to %s\n", src, dst)
 	lsRet, err := RemoteLs(NewLsCmd(true, src))
 	if err != nil {
@@ -111,11 +125,11 @@ func download(src, dst string) error {
 			realDst = dst + "/" + file
 		}
 
-		if err := downloadFile(realSrc, attr.Size, realDst); err != nil {
+		if err := downloadFile(realSrc, attr.Size, realDst, verbose, chunkSize); err != nil {
 			ColorError("Download %s to %s error info:%s\n", realSrc, realDst, err)
 			return err
 		}
-		ColorInfo("Downloaded %s\n", realSrc)
+		ColorInfoOverWrite("Downloaded %s\n", realSrc)
 	}
 
 	return nil

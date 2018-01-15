@@ -1,5 +1,7 @@
 # PaddlePaddle Cloud
 
+[![Build Status](https://travis-ci.org/PaddlePaddle/cloud.svg?branch=develop)](https://travis-ci.org/PaddlePaddle/cloud)
+
 PaddlePaddle Cloud is a Distributed Deep-Learning Cloud Platform for both cloud
 providers and enterprises.
 
@@ -21,6 +23,9 @@ English tutorials(comming soon...)
 - PaddlePaddle Cloud use kubernetes as it's backend core, deploy kubernetes cluster
   using [Sextant](https://github.com/k8sp/sextant) or any tool you like.
 
+
+### Run on minikube
+Please see [here](https://github.com/PaddlePaddle/cloud/blob/develop/doc/run_on_minikube.md)
 
 ### Run on kubernetes
 - Build Paddle Cloud Docker Image

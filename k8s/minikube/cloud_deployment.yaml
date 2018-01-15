@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: paddle-cloud
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: paddle-cloud
+    spec:
+      volumes:
+      - name: cert-volume
+        hostPath:
+          path: <yourpath>/certs
+      - name: settings
+        hostPath:
+          path: <yourpath>/settings.py
+      containers:
+      - name: paddle-cloud
+        imagePullPolicy: IfNotPresent
+        image: paddlepaddle/cloud
+        volumeMounts:
+        - name: cert-volume
+          mountPath: /certs
+        - name: settings
+          mountPath: /pcloud/paddlecloud/settings.py
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: PORT
+          value: "8000"
+      nodeSelector:
+        kubernetes.io/hostname: minikube

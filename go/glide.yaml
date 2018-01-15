@@ -8,4 +8,15 @@ import:
   version: ^1.4.0
 - package: gopkg.in/yaml.v2
 - package: github.com/fatih/color
-
+- package: k8s.io/client-go
+  version: v5.0.0
+- package: k8s.io/kubernetes
+  version: release-1.8
+- package: k8s.io/api
+  version: release-1.8
+- package: github.com/inconshreveable/log15
+  version: v2.13
+- package: github.com/go-stack/stack
+  version: v1.6.0
+- package: k8s.io/code-generator
+  version: kubernetes-1.8.5
