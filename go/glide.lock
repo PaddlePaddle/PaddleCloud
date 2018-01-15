@@ -1,5 +1,5 @@
 hash: 9c125b7ddc893ea6228034bc28995209118f4702b183cb6cec49ab7a776708db
-updated: 2018-01-13T20:51:17.946185+08:00
+updated: 2018-01-15T20:33:34.067167+08:00
 imports:
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
@@ -276,3 +276,4 @@ testImports:
   version: f6abca593680b2315d2075e0f5e2a9751e3f431a
   subpackages:
   - assert
+  - require
