@@ -2,10 +2,10 @@
 package trainingjober
 
 import (
-	"time"
 	"github.com/PaddlePaddle/cloud/go/pkg/apis/paddlepaddle/v1alpha1"
 	trainingJobClient "github.com/PaddlePaddle/cloud/go/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
+	"time"
 )
 
 const (
@@ -50,7 +50,7 @@ type TrainingJober struct {
 
 // initJobber init a TrainingJober to manager a specific training job.
 func initJobber(job *v1alpha1.TrainingJob, kubeCli kubernetes.Interface, trainingJobClient trainingJobClient.Interface) (*TrainingJober,
-error) {
+	error) {
 	jobber := &TrainingJober{
 		job:               job,
 		kubeCli:           kubeCli,
@@ -60,4 +60,3 @@ error) {
 	}
 	return jobber, nil
 }
-
