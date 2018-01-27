@@ -19,4 +19,6 @@ import:
 - package: github.com/go-stack/stack
   version: v1.6.0
 - package: k8s.io/code-generator
-  version: kubernetes-1.8.5
+  version: kubernetes-1.8.6
+- package: k8s.io/apiextensions-apiserver
+  version: kubernetes-1.8.6

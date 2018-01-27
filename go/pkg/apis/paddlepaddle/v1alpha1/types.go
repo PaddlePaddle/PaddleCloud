@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	CRDKind       = "TraingingJob"
-	CRDKindPlural = "traingingjobs"
+	CRDKind       = "TrainingJob"
+	CRDKindPlural = "trainingjobs"
+	CRDShortName  = "tj"
 	CRDGroup      = "paddlepaddle.org"
 	CRDVersion    = "v1alpha1"
 )
@@ -21,7 +22,6 @@ func CRDName() string {
 
 // +genclient
 // +genclient:noStatus
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=trainingjob
 
@@ -36,7 +36,10 @@ type TrainingJob struct {
 // TrainingJobSpec is the spec for a TrainingJob resource
 type TrainingJobSpec struct {
 	// General job attributes.
-	Image             string              `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
+	// If you want to use the hostnetwork instead of container network
+	// portmanager is necessary.
+	HostNetwork       bool                `json:"host_network,omitempty"`
 	Port              int                 `json:"port,omitempty"`
 	PortsNum          int                 `json:"ports_num,omitempty"`
 	PortsNumForSparse int                 `json:"ports_num_for_sparse,omitempty"`
@@ -125,10 +128,10 @@ type TrainingJobStatus struct {
 	// Reason is the reason of job phase failed
 	Reason string `json:"reason"`
 	// ScaleStatus is autoscale status of trainer jobs
-	// TODO(ZhengQi): this will used in autoscale mode in future.
+	// TODO(ZhengQi): this will be used in autoscale mode in future.
 	ScaleStatus TrainerJobScaleStatus `json:"scale_status"`
 	// ReplicaStatuses is detail status of resources
-	// TODO(ZhengQi): should we only considered trainer job now?
+	// TODO(ZhengQi): should we only consider trainer job now?
 	ReplicaStatuses []*TrainingResourceStatus `json:"replica_statuses"`
 }
 

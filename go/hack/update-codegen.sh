@@ -32,5 +32,8 @@ echo ${CODEGEN_PKG}
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
  github.com/PaddlePaddle/cloud/go/pkg/client github.com/PaddlePaddle/cloud/go/pkg/apis \
-  paddlepaddle:v1alpha1
+  paddlepaddle:v1alpha1 \
+  --go-header-file ${SCRIPT_ROOT}/hack/custom-boilerplate.go.txt
+#  --output-base "$(dirname ${BASH_SOURCE})/../../../../.."
 
+grep "github.com/paddlepaddle/cloud" -nR pkg/client | awk -F ':' '{print $1}' | xargs sed -i "" 's|github.com/paddlepaddle/cloud|github.com/PaddlePaddle/cloud|g'
