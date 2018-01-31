@@ -28,7 +28,14 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 )
 
-// Cluster resprensents a Kubernetes cluster.
+// Cluster is our interface to the Kubernetes cluster. It can inquiry
+// the cluster's overall status and the status of a specific
+// PaddlePaddle trainning job.  It can also create training jobs and
+// replica.
+//
+// TODO(yi): The above functionalities are NOT logically related with
+// each other.  I am not sure if it is a good idea to group them in
+// this source file.
 type Cluster struct {
 	clientset *kubernetes.Clientset
 }

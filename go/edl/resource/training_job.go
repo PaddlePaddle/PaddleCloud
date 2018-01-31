@@ -89,8 +89,8 @@ type TrainingJobSpec struct {
 	PortsNumForSparse int              `json:"ports_num_for_sparse,omitempty"`
 	FaultTolerant     bool             `json:"fault_tolerant,omitempty"`
 	Passes            int              `json:"passes,omitempty"`
-	Volumes           []v1.Volume      `json:volumes`
-	VolumeMounts      []v1.VolumeMount `json:VolumeMounts`
+	Volumes           []v1.Volume      `json:"volumes"`
+	VolumeMounts      []v1.VolumeMount `json:"VolumeMounts"`
 	// Job components.
 	Trainer TrainerSpec `json:"trainer"`
 	Pserver PserverSpec `json:"pserver"`
@@ -177,8 +177,11 @@ func (s *TrainingJob) String() string {
 	return string(b[:])
 }
 
-// RegisterTrainingJob registers TrainingJob a new type of resource to Kubernetes.
-func RegisterTrainingJob(config *rest.Config) {
+// RegisterResource registers a resource type and the corresponding
+// resource list type to the local Kubernetes runtime under group
+// version "paddlepaddle.org", so the runtime could encode/decode this
+// Go type.  It also change config.GroupVersion to "paddlepaddle.org".
+func RegisterResource(config *rest.Config, resourceType, resourceListType runtime.Object) *rest.Config {
 	groupversion := schema.GroupVersion{
 		Group:   "paddlepaddle.org",
 		Version: "v1",
@@ -189,16 +192,13 @@ func RegisterTrainingJob(config *rest.Config) {
 	config.ContentType = runtime.ContentTypeJSON
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: clientgoapi.Codecs}
 
-	schemeBuilder := runtime.NewSchemeBuilder(
-		func(scheme *runtime.Scheme) error {
-			scheme.AddKnownTypes(
-				groupversion,
-				&TrainingJob{},
-				&TrainingJobList{},
-				&v1.ListOptions{},
-				&v1.DeleteOptions{},
-			)
-			return nil
-		})
-	schemeBuilder.AddToScheme(clientgoapi.Scheme)
+	clientgoapi.Scheme.AddKnownTypes(
+		groupversion,
+		resourceType,
+		resourceListType,
+		&v1.ListOptions{},
+		&v1.DeleteOptions{},
+	)
+
+	return config
 }
