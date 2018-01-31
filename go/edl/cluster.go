@@ -12,19 +12,19 @@
    See the License for the specific language governing permissions and
 	 limitations under the License. */
 
-package controller
+package edl
 
 import (
 	"fmt"
 
-	paddlejob "github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
+	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/api"
 )
 
@@ -33,15 +33,15 @@ type Cluster struct {
 	clientset *kubernetes.Clientset
 }
 
-// NewCluster create a new instance of K8sCluster.
-func NewCluster(clientset *kubernetes.Clientset) *Cluster {
+// newCluster create a new instance of K8sCluster.
+func newCluster(clientset *kubernetes.Clientset) *Cluster {
 	return &Cluster{
 		clientset: clientset,
 	}
 }
 
 // GetTrainerJob gets the trainer job spec.
-func (c Cluster) GetTrainerJob(job *paddlejob.TrainingJob) (*batchv1.Job, error) {
+func (c Cluster) GetTrainerJob(job *edlresource.TrainingJob) (*batchv1.Job, error) {
 	namespace := job.ObjectMeta.Namespace
 	jobname := job.ObjectMeta.Name
 	return c.clientset.
@@ -67,7 +67,7 @@ func (c Cluster) UpdateTrainerJob(job *batchv1.Job) error {
 
 // JobPods returns the number total desired pods and the number of
 // running pods of a job.
-func (c Cluster) JobPods(job *paddlejob.TrainingJob) (total, running, pending int, err error) {
+func (c Cluster) JobPods(job *edlresource.TrainingJob) (total, running, pending int, err error) {
 	if err != nil {
 		return
 	}

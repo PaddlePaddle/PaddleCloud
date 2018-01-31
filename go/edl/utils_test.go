@@ -11,14 +11,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
 	 limitations under the License. */
-package controller
+
+package edl
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 func TestAddResourceList(t *testing.T) {

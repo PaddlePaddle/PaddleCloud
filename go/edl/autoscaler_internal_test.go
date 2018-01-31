@@ -11,16 +11,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
 	 limitations under the License. */
-package controller
+
+package edl
 
 import (
 	"testing"
 
+	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/pkg/api/v1"
-	batchv1 "k8s.io/client-go/pkg/apis/batch/v1"
 
-	"github.com/PaddlePaddle/cloud/go/api"
+	edlresource "github.com/PaddlePaddle/cloud/go/edl/resource"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,7 +76,7 @@ func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, ma
 	}
 
 	j := job{
-		Config:     &api.TrainingJob{},
+		Config:     &edlresource.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
 	}
 	j.Config.Name = name
@@ -383,7 +384,7 @@ func TestSortedJobs(t *testing.T) {
 
 	expected := []string{"b", "c", "a"}
 
-	c := New(nil)
+	c := newAutoscaler(nil)
 	for _, j := range jobs {
 		c.jobs[j.Config.Name] = j
 	}
@@ -405,7 +406,7 @@ func TestSortedJobsGPUOnly(t *testing.T) {
 	}
 
 	expected := []string{"a"}
-	c := New(nil)
+	c := newAutoscaler(nil)
 	for _, j := range jobs {
 		c.jobs[j.Config.Name] = j
 	}

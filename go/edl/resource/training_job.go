@@ -52,13 +52,18 @@ spec:
 				memory: "600Mi"
 */
 
-package api
+package resource
 
 import (
 	"encoding/json"
 
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	clientgoapi "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 )
 
 // TrainingJobs string for registration
@@ -137,6 +142,7 @@ const (
 
 // TrainingJobList defination
 // +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TrainingJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
@@ -169,4 +175,30 @@ func (s *TrainingJob) GPU() int {
 func (s *TrainingJob) String() string {
 	b, _ := json.MarshalIndent(s, "", "   ")
 	return string(b[:])
+}
+
+// RegisterTrainingJob registers TrainingJob a new type of resource to Kubernetes.
+func RegisterTrainingJob(config *rest.Config) {
+	groupversion := schema.GroupVersion{
+		Group:   "paddlepaddle.org",
+		Version: "v1",
+	}
+
+	config.GroupVersion = &groupversion
+	config.APIPath = "/apis"
+	config.ContentType = runtime.ContentTypeJSON
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: clientgoapi.Codecs}
+
+	schemeBuilder := runtime.NewSchemeBuilder(
+		func(scheme *runtime.Scheme) error {
+			scheme.AddKnownTypes(
+				groupversion,
+				&TrainingJob{},
+				&TrainingJobList{},
+				&v1.ListOptions{},
+				&v1.DeleteOptions{},
+			)
+			return nil
+		})
+	schemeBuilder.AddToScheme(clientgoapi.Scheme)
 }

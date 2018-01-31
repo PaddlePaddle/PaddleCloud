@@ -11,34 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
 	 limitations under the License. */
-package controller
+
+package edl
 
 import (
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
+	"k8s.io/api/core/v1"
 )
 
-func TestNew(t *testing.T) {
-	c := New(nil)
-	assert.NotNil(t, c)
-}
-
-func TestMonitor(t *testing.T) {
-	c := New(nil)
-	ch := make(chan struct{})
-
-	go func() {
-		c.Monitor()
-		close(ch)
-	}()
-
-	time.Sleep(10 * time.Millisecond)
-
-	select {
-	case <-ch:
-		t.Fatal("monitor should be blocked")
-	default:
+// AddResourceList add another v1.ResourceList to first's inner
+// quantity.  v1.ResourceList is equal to map[string]Quantity
+func AddResourceList(a v1.ResourceList, b v1.ResourceList) {
+	for resname, q := range b {
+		v, ok := a[resname]
+		if !ok {
+			a[resname] = q.DeepCopy()
+		}
+		v.Add(q)
+		a[resname] = v
 	}
+
+	return
 }

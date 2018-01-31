@@ -4,3 +4,4 @@
 vendor
 *~
 *.pyc
+*.idea
