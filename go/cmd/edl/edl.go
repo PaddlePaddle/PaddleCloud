@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 
 	log "github.com/inconshreveable/log15"
@@ -48,5 +47,5 @@ func main() {
 	controller, err := edl.New(client, clientset, *maxLoadDesired)
 	candy.Must(err)
 
-	controller.Run(context.Background())
+	controller.Run()
 }
