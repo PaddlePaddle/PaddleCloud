@@ -12,7 +12,31 @@
    See the License for the specific language governing permissions and
 	 limitations under the License. */
 
-// sample resource:
+package resource
+
+import (
+	"encoding/json"
+
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	clientgoapi "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+)
+
+// TrainingJobs string for registration
+const TrainingJobs = "TrainingJobs"
+
+// TrainingJob is a Kubernetes resource type defined by EDL.  It
+// describes a PaddlePaddle training job.  As a Kubernetes resource,
+//
+//  - Its content must follow the Kubernetes resource definition convention.
+//  - It must be a Go struct with JSON tags.
+//  - It must implement the deepcopy interface.
+//
+// An example TrainingJob instance:
 /*
 apiVersion: paddlepaddle.org/v1
 kind: TrainingJob
@@ -51,25 +75,6 @@ spec:
 				cpu: "500m"
 				memory: "600Mi"
 */
-
-package resource
-
-import (
-	"encoding/json"
-
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	clientgoapi "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-)
-
-// TrainingJobs string for registration
-const TrainingJobs = "TrainingJobs"
-
-// TrainingJob defination
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TrainingJob struct {
@@ -149,12 +154,6 @@ type TrainingJobList struct {
 	Items           []TrainingJob `json:"items"`
 }
 
-// NeedGPU returns true if the job need GPU resource to run.
-func (s *TrainingJob) NeedGPU() bool {
-	q := s.Spec.Trainer.Resources.Limits.NvidiaGPU()
-	return q.CmpInt64(0) == 1
-}
-
 // Elastic returns true if the job can scale to more workers.
 func (s *TrainingJob) Elastic() bool {
 	return s.Spec.Trainer.MinInstance < s.Spec.Trainer.MaxInstance
@@ -168,8 +167,12 @@ func (s *TrainingJob) GPU() int {
 		// FIXME: treat errors
 		gpu = 0
 	}
-
 	return int(gpu)
+}
+
+// NeedGPU returns true if the job need GPU resource to run.
+func (s *TrainingJob) NeedGPU() bool {
+	return s.GPU() > 0
 }
 
 func (s *TrainingJob) String() string {
