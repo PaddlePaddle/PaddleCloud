@@ -29,12 +29,33 @@ import (
 // TrainingJobs string for registration
 const TrainingJobs = "TrainingJobs"
 
-// TrainingJob is a Kubernetes resource type defined by EDL.  It
-// describes a PaddlePaddle training job.  As a Kubernetes resource,
+// A TrainingJob is a Kubernetes resource, it describes a PaddlePaddle
+// training job.  As a Kubernetes resource,
 //
 //  - Its content must follow the Kubernetes resource definition convention.
 //  - It must be a Go struct with JSON tags.
 //  - It must implement the deepcopy interface.
+//
+// To start a PadldePaddle training job,
+//
+// (1) The user uses the paddlecloud command line tool, which sends
+// the command line arguments to the paddlecloud HTTP server.
+//
+// (2) The paddlecloud server converts the command line arguments into
+// a TrainingJob resource and sends it to the Kubernetes API server.
+//
+//
+// (3) the EDL controller, which moinitors events about the
+// TrainingJob resource accepted by the Kubernetes API server,
+// converts the TrainingJob resource into the following Kubernetes
+// resources:
+//
+//   (3.1) a ReplicaSet of the master process
+//   (3.2) a ReplicaSet of the parameter server proceses
+//   (3.3)  a Job of trainer processes
+//
+// (4) some default controllers provided by Kubernetes monitors events
+// about ReplicaSet and Job creates and maintains the Pods.
 //
 // An example TrainingJob instance:
 /*
