@@ -53,7 +53,7 @@ func makePtr(c int) *int32 {
 	return &p
 }
 
-func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, max, p int) job {
+func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, max, p int) *job {
 	cr, err := resource.ParseQuantity(cpuReq)
 	if err != nil {
 		panic(err)
@@ -75,7 +75,7 @@ func makeJob(name string, cpuReq, cpuLim, memReq, memLim, gpuLim string, min, ma
 		panic(err)
 	}
 
-	j := job{
+	j := &job{
 		Config:     &edlresource.TrainingJob{},
 		TrainerJob: &batchv1.Job{},
 	}
@@ -106,7 +106,7 @@ func TestScaleDryRunSatisfied(t *testing.T) {
 	assert.Equal(t, 0, scaleDryRun(&r, j, 0, 1.0, false))
 }
 
-var allIdleNodeInfos = NodeInfos{
+var allIdleNodes = Nodes{
 	NodesCPUIdleMilli:   map[string]int64{"node0": 99999},
 	NodesMemoryFreeMega: map[string]int64{"node0": 99999},
 }
@@ -119,7 +119,7 @@ func TestScaleDryRunMoreCPU(t *testing.T) {
 		MemoryRequestMega: 100,
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0, 1.0, false))
@@ -133,7 +133,7 @@ func TestScaleDryRunNoMoreCPU(t *testing.T) {
 		MemoryRequestMega: 100,
 		MemoryLimitMega:   100,
 		MemoryTotalMega:   1000,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
@@ -151,7 +151,7 @@ func TestScaleDryRunMoreGPU(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
 	assert.Equal(t, 1, scaleDryRun(&r, j, 0, 1.0, false))
@@ -169,7 +169,7 @@ func TestScaleDryRunNoMoreGPU(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "1", 1, 3, 1)
@@ -207,7 +207,7 @@ func TestScaleDryRunScaleDownToMin(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
@@ -227,7 +227,7 @@ func TestScaleDryRunScaleDownFullCluster(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "10Mi", "10Mi", "0", 1, 3, 3)
@@ -246,7 +246,7 @@ func TestScaleDryRunNoMem(t *testing.T) {
 		GPULimit:          10,
 		GPURequest:        10,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
@@ -260,11 +260,11 @@ func TestScaleAllDryRunNoMem(t *testing.T) {
 		MemoryLimitMega:   1000,
 		MemoryTotalMega:   1000,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
+	scale := scaleAllJobsDryRun([]*job{j}, r, 1.0)["name"]
 	assert.Equal(t, 0, scale)
 }
 
@@ -279,11 +279,11 @@ func TestScaleAllDryRun(t *testing.T) {
 		GPULimit:          8,
 		GPURequest:        8,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
+	scale := scaleAllJobsDryRun([]*job{j}, r, 1.0)["name"]
 	assert.Equal(t, 2, scale)
 }
 
@@ -298,11 +298,11 @@ func TestScaleAllDryRunNotFull(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r, 0.8)["name"]
+	scale := scaleAllJobsDryRun([]*job{j}, r, 0.8)["name"]
 	assert.Equal(t, 1, scale)
 }
 
@@ -317,11 +317,11 @@ func TestScaleAllDryRunDownNotFull(t *testing.T) {
 		GPULimit:          0,
 		GPURequest:        0,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "100Mi", "100Mi", "0", 1, 3, 3)
-	scale := scaleAllDryRun([]job{j}, r, 0.8)["name"]
+	scale := scaleAllJobsDryRun([]*job{j}, r, 0.8)["name"]
 	assert.Equal(t, -1, scale)
 }
 
@@ -336,11 +336,11 @@ func TestScaleAllDryRunLessCPU(t *testing.T) {
 		GPULimit:          8,
 		GPURequest:        8,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
+	scale := scaleAllJobsDryRun([]*job{j}, r, 1.0)["name"]
 	assert.Equal(t, 1, scale)
 }
 
@@ -355,11 +355,11 @@ func TestScaleAllDryRunLessGPU(t *testing.T) {
 		GPULimit:          9,
 		GPURequest:        9,
 		GPUTotal:          10,
-		NodeInfos:         allIdleNodeInfos,
+		Nodes:             allIdleNodes,
 	}
 
 	j := makeJob("name", "1", "1", "1", "1", "1", 1, 3, 1)
-	scale := scaleAllDryRun([]job{j}, r, 1.0)["name"]
+	scale := scaleAllJobsDryRun([]*job{j}, r, 1.0)["name"]
 	assert.Equal(t, 1, scale)
 }
 
@@ -375,7 +375,7 @@ func TestFulfillment(t *testing.T) {
 }
 
 func TestSortedJobs(t *testing.T) {
-	jobs := []job{
+	jobs := []*job{
 		makeJob("a", "1", "1", "1", "1", "1", 1, 2, 2),
 		makeJob("b", "1", "1", "1", "1", "1", 1, 20, 2),
 		makeJob("c", "1", "1", "1", "1", "1", 1, 10, 2),
@@ -398,7 +398,7 @@ func TestSortedJobs(t *testing.T) {
 }
 
 func TestSortedJobsGPUOnly(t *testing.T) {
-	jobs := []job{
+	jobs := []*job{
 		makeJob("a", "1", "1", "1", "1", "1", 1, 2, 2),
 		makeJob("b", "1", "1", "1", "1", "0", 1, 20, 2),
 		makeJob("c", "1", "1", "1", "1", "0", 1, 10, 2),
@@ -420,7 +420,7 @@ func TestSortedJobsGPUOnly(t *testing.T) {
 }
 
 func TestSortedJobsWithTie(t *testing.T) {
-	jobs := []job{
+	jobs := []*job{
 		makeJob("a", "1", "0", "1", "1", "1", 1, 2, 1),
 		makeJob("b", "1", "1", "1", "1", "0", 1, 2, 1),
 		makeJob("c", "10", "10", "1", "1", "0", 1, 2, 1),

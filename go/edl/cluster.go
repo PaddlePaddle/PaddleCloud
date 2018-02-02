@@ -50,7 +50,7 @@ type ClusterResource struct {
 	MemoryLimitMega   int64 // \sum_job memory_limit_in_mega(job)
 	MemoryTotalMega   int64 // The total amount of memory in the cluster in mega.
 
-	NodeInfos NodeInfos
+	Nodes Nodes
 }
 
 // Nodes records the amount of idle CPU and free memory of each node
@@ -60,11 +60,12 @@ type Nodes struct {
 	NodesMemoryFreeMega map[string]int64 // node id -> free memory
 }
 
-func (ns *Nodes) Len() string {
+func (ns *Nodes) String() string {
 	if len(ns.NodesCPUIdleMilli) != len(ns.NodesMemoryFreeMega) {
 		panic("Inconsistent length in Nodes")
 	}
-	return len(ns.NodesCPUIdleMilli)
+
+	return fmt.Sprintf("%d Nodes", len(ns.NodesCPUIdleMilli))
 }
 
 // Cluster is our interface to the Kubernetes cluster. It can inquiry
@@ -232,7 +233,7 @@ func (c *Cluster) InquiryResource() (res ClusterResource, err error) {
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
-		NodeInfos: NodeInfos{
+		Nodes: Nodes{
 			NodesCPUIdleMilli:   nodesCPUIdleMilli,
 			NodesMemoryFreeMega: nodesMemoryFreeMega,
 		},
