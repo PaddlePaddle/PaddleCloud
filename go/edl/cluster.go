@@ -60,11 +60,12 @@ type Nodes struct {
 	NodesMemoryFreeMega map[string]int64 // node id -> free memory
 }
 
-func (ns *Nodes) Len() int {
+func (ns *Nodes) String() string {
 	if len(ns.NodesCPUIdleMilli) != len(ns.NodesMemoryFreeMega) {
 		panic("Inconsistent length in Nodes")
 	}
-	return len(ns.NodesCPUIdleMilli)
+
+	return fmt.Sprintf("%d Nodes", len(ns.NodesCPUIdleMilli))
 }
 
 // Cluster is our interface to the Kubernetes cluster. It can inquiry
