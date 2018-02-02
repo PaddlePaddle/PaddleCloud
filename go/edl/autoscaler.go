@@ -94,7 +94,7 @@ func newAutoscaler(cluster *Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	return c
 }
 
-type jobs []job
+type jobs []*job
 
 func (j jobs) Len() int {
 	return len(j)
@@ -129,12 +129,12 @@ func (j jobs) Swap(a int, b int) {
 }
 
 // elastic job filter.
-func elastic(j job) bool {
+func elastic(j *job) bool {
 	return j.Config.Elastic()
 }
 
 // gpu job filter.
-func gpu(j job) bool {
+func gpu(j *job) bool {
 	return j.Config.NeedGPU()
 }
 
@@ -172,7 +172,7 @@ func (a *Autoscaler) OnUpdate(trainingjob *edlresource.TrainingJob) {
 
 // sortedJobs return the names of sorted jobs by fulfillment and
 // tiebreakers in ascending order.
-func sortedJobs(j []job, filters ...func(job) bool) []job {
+func sortedJobs(j []*job, filters ...func(*job) bool) []*job {
 	var js jobs
 nextJob:
 	for _, v := range j {
@@ -188,17 +188,17 @@ nextJob:
 	return js
 }
 
-func searchAssignableNode(r *ClusterResource, j job) (nodeName string) {
-	for name, idle := range r.NodeInfos.NodesCPUIdleMilli {
+func searchAssignableNode(r *ClusterResource, j *job) (nodeName string) {
+	for name, idle := range r.Nodes.NodesCPUIdleMilli {
 		if j.TrainerCPURequestMilli() <= idle &&
-			j.TrainerMemRequestMega() <= r.NodeInfos.NodesMemoryFreeMega[name] {
+			j.TrainerMemRequestMega() <= r.Nodes.NodesMemoryFreeMega[name] {
 			return name
 		}
 	}
 	return ""
 }
 
-func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
+func scaleDryRun(r *ClusterResource, j *job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
 	cpuRequestMilli := j.TrainerCPURequestMilli()
@@ -211,8 +211,8 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64,
 		r.CPURequestMilli += cpuRequestMilli * int64(additional)
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 		if nodeName != "" {
-			r.NodeInfos.NodesCPUIdleMilli[nodeName] += cpuRequestMilli * int64(additional)
-			r.NodeInfos.NodesMemoryFreeMega[nodeName] += memRequestMega * int64(additional)
+			r.Nodes.NodesCPUIdleMilli[nodeName] += cpuRequestMilli * int64(additional)
+			r.Nodes.NodesMemoryFreeMega[nodeName] += memRequestMega * int64(additional)
 		}
 	}()
 
@@ -299,7 +299,7 @@ func scaleAllJobsDryRun(jobs []*job, r ClusterResource, maxLoadDesired float64) 
 	for {
 		noChange := true
 		sorted := sortedJobs(jobs, elastic)
-		dryRun := func(j job, isScaleDown bool) {
+		dryRun := func(j *job, isScaleDown bool) {
 			name := j.Config.Name
 			additional := scaleDryRun(&r, j, diff[name], maxLoadDesired, isScaleDown)
 			log.Debug(
@@ -381,11 +381,11 @@ func (a *Autoscaler) scaleAllJobs(target map[string]int) {
 // false, the EDL controller could simply go on monitoring other
 // events.
 func (a *Autoscaler) updateJobList(evt event) bool {
-	log.Debug("monitor received event", "event", e)
-	switch e.Type {
+	log.Debug("monitor received event", "event", evt)
+	switch evt.Type {
 	case add, update:
 		j := &job{Config: evt.Job}
-		a.jobs[e.Job.ObjectMeta.Name] = j
+		a.jobs[evt.Job.ObjectMeta.Name] = j
 		if a.tryToRetrieveTrainerJobInTrainingJob(evt.Job.ObjectMeta.Name, j) != nil {
 			return false
 		}
@@ -393,9 +393,9 @@ func (a *Autoscaler) updateJobList(evt event) bool {
 		// TODO(helin): delete all created resources (e.g.,
 		// trainer Job, pserver Replica Set) when we schedules
 		// the resources.
-		delete(a.jobs, e.Job.ObjectMeta.Name)
+		delete(a.jobs, evt.Job.ObjectMeta.Name)
 	default:
-		log.Error("unrecognized event", "event", e)
+		log.Error("unrecognized event", "event", evt)
 	}
 
 	return true
@@ -443,11 +443,12 @@ func (a *Autoscaler) tryToRetrieveTrainerJobInTrainingJob(jobName string, job *j
 		}
 		job.TrainerJob = tj
 	}
+	return nil
 }
 
 // Monitor monitors the cluster resources and training jobs in a loop,
 // scales the training jobs according to the cluster resource.
-func (a *Autoscaler) Monitor() {
+func (a *Autoscaler) Run() {
 	for {
 		select {
 		case <-a.ticker.C:
@@ -503,7 +504,8 @@ func (a *Autoscaler) findTrainingJobsMightBeRescheduled(havePending bool) []*job
 		// pending, we might need to reschedule all other jobs
 		// to make a room for the pending job.
 		if total == running || havePending {
-			js = append(js, j)
+			js = append(js, job)
 		}
 	}
+	return js
 }
