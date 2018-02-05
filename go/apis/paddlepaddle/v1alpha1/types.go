@@ -38,7 +38,8 @@ type TrainingJobSpec struct {
 	// General job attributes.
 	Image string `json:"image,omitempty"`
 	// If you want to use the hostnetwork instead of container network
-	// portmanager is necessary.
+	// portmanager is necessary. About portmanager, please refer to
+	// https://github.com/PaddlePaddle/cloud/blob/develop/doc/hostnetwork/hostnetwork.md
 	HostNetwork       bool                `json:"host_network,omitempty"`
 	Port              int                 `json:"port,omitempty"`
 	PortsNum          int                 `json:"ports_num,omitempty"`
