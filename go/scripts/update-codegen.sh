@@ -31,7 +31,7 @@ echo ${CODEGEN_PKG}
 #                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
- github.com/PaddlePaddle/cloud/go/pkg/client github.com/PaddlePaddle/cloud/go/pkg/apis \
+ github.com/PaddlePaddle/cloud/go/client github.com/PaddlePaddle/cloud/go/apis \
   paddlepaddle:v1alpha1 \
   --go-header-file ${SCRIPT_ROOT}/scripts/custom-boilerplate.go.txt
 
