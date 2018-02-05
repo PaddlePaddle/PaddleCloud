@@ -13,7 +13,7 @@ autoscaling will be supported in the near future. This design doc
 considers both of them.
 
 [Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is
-an autoscaling solution provided by Kuberentes, but it's not suitable
+an autoscaling solution provided by Kubernetes, but it's not suitable
 for the training job autoscaling for the following reasons:
 
 - The goal of autoscaling is to fairly distribute the computation
@@ -40,7 +40,7 @@ will do autoscaling. To be more precise, we will create
 a
 [custom Kubernetes Resource](https://kubernetes.io/docs/concepts/api-extension/custom-resources/) and
 a
-[custom Kuberentes Controller](https://resources.coreos.com/youtube-coreos-fest-2017/writing-a-custom-controller-extending-the-functionality-of-your-cluster). Kuberentes
+[custom Kubernetes Controller](https://resources.coreos.com/youtube-coreos-fest-2017/writing-a-custom-controller-extending-the-functionality-of-your-cluster). Kubernetes
 is designed to be flexible so adding custom Resources and custom
 Controllers into our cluster does not require modifying the Kubernetes
 source code.
@@ -107,7 +107,7 @@ optional: the master server will be created only when configured.
 The training job custom resource can be created with: `kubectl create
 -f training_job.yaml`.
 
-The custom resource will only be saved on Kuberentes, we will need a
+The custom resource will only be saved on Kubernetes, we will need a
 custom controller that operates on it.
 
 ### Training Job Controller
@@ -151,7 +151,7 @@ The training job resource is a custom resource. There are two ways of
 implementing custom resources:
 
 - [Custom Resource Definition (CRD)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/),
-  since Kuberentes v1.7.
+  since Kubernetes v1.7.
 - [Third Party Resource (TPR)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/),
   since Kubernetes v1.2, fully deprecated in v1.8, will be removed in
   v1.9.

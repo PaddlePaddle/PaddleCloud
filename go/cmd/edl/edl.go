@@ -30,20 +30,25 @@ func main() {
 	)
 
 	// Create the client config. Use kubeconfig if given, otherwise assume in-cluster.
-	config, err := buildConfig(*kubeconfig)
+	var cfg *rest.Config
+	if *kubeconfig != "" {
+		cfg, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	} else {
+		cfg, err = rest.InClusterConfig()
+	}
 	if err != nil {
 		panic(err)
 	}
 
 	// setup some optional configuration
-	edlresource.RegisterTrainingJob(config)
+	edlresource.RegisterTrainingJob(cfg)
 
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	client, err := rest.RESTClientFor(config)
+	client, err := rest.RESTClientFor(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -54,11 +59,4 @@ func main() {
 	}
 
 	controller.Run(context.Background())
-}
-
-func buildConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig != "" {
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-	return rest.InClusterConfig()
 }
