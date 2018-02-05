@@ -31,7 +31,7 @@ func CreateClient(kubeconfig string) (*rest.RESTClient, *kubernetes.Clientset, e
 		return nil, nil, fmt.Errorf("create clientset from config '%s' error: %v", kubeconfig, err)
 	}
 
-	edlresource.RegisterTrainingJob(config)
+	edlresource.RegisterResource(config, &edlresource.TrainingJob{}, &edlresource.TrainingJobList{})
 
 	client, err := rest.RESTClientFor(config)
 	if err != nil {
