@@ -13,7 +13,7 @@ import (
 
 func main() {
 	pfsmod.Config = config.ParseDefaultConfig()
-	paddlecloud.Config = config.ParseDefaultConfig()
+	paddlecloud.Config = pfsmod.Config
 
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
