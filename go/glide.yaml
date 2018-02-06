@@ -20,3 +20,4 @@ import:
   version: v1.6.0
 - package: k8s.io/code-generator
   version: kubernetes-1.8.5
+- package: github.com/wangkuiyi/candy
