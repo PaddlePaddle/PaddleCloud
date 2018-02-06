@@ -7,10 +7,14 @@ import (
 
 	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	"github.com/PaddlePaddle/cloud/go/paddlecloud"
+	"github.com/PaddlePaddle/cloud/go/utils/config"
 	"github.com/google/subcommands"
 )
 
 func main() {
+	pfsmod.Config = config.ParseDefaultConfig()
+	paddlecloud.Config = config.ParseDefaultConfig()
+
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&paddlecloud.SubmitCmd{}, "")
