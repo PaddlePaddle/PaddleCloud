@@ -26,12 +26,12 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, c)
 }
 
-func TestMonitor(t *testing.T) {
+func TestRun(t *testing.T) {
 	c := newAutoscaler(nil)
 	ch := make(chan struct{})
 
 	go func() {
-		c.Monitor()
+		c.Run()
 		close(ch)
 	}()
 

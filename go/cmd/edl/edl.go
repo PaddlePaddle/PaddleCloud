@@ -1,10 +1,10 @@
 package main
 
 import (
-	"context"
 	"flag"
 
 	log "github.com/inconshreveable/log15"
+	"github.com/wangkuiyi/candy"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,9 +21,7 @@ func main() {
 	flag.Parse()
 
 	lvl, err := log.LvlFromString(*logLevel)
-	if err != nil {
-		panic(err)
-	}
+	candy.Must(err)
 
 	log.Root().SetHandler(
 		log.LvlFilterHandler(lvl, log.CallerStackHandler("%+v", log.StderrHandler)),
@@ -36,27 +34,18 @@ func main() {
 	} else {
 		cfg, err = rest.InClusterConfig()
 	}
-	if err != nil {
-		panic(err)
-	}
+	candy.Must(err)
 
-	// setup some optional configuration
-	edlresource.RegisterTrainingJob(cfg)
+	edlresource.RegisterResource(cfg, &edlresource.TrainingJob{}, &edlresource.TrainingJobList{})
 
 	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		panic(err)
-	}
+	candy.Must(err)
 
 	client, err := rest.RESTClientFor(cfg)
-	if err != nil {
-		panic(err)
-	}
+	candy.Must(err)
 
 	controller, err := edl.New(client, clientset, *maxLoadDesired)
-	if err != nil {
-		panic(err)
-	}
+	candy.Must(err)
 
-	controller.Run(context.Background())
+	controller.Run()
 }
