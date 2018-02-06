@@ -1,11 +1,10 @@
-# Run PaddlePaddle Cloud on your local machine
+# Run PaddlePaddle Cloud with minikube
 
-This documentation shows how to run PaddlePaddle Cloud on minikube.   
+This documentation explains how to run PaddlePaddle Cloud on the development computer using [minikube](https://kubernetes.io/docs/getting-started-guides/minikube/).
 
 ## Prerequisites
 
-- [install minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-- [install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+1. Install [minikube and kubectl](https://kubernetes.io/docs/tasks/tools/install-minikube/).
 
 1. Start a local minikube cluster:
 
@@ -30,7 +29,7 @@ This documentation shows how to run PaddlePaddle Cloud on minikube.
 	mkdir <yourpath>
 	```  
 	- mac  
-	Since Minikube mounts `$Home` path by default, we recommend creating the path under `$Home` which offers the flexibility of switching between directories in your deployment without stopping the MiniKube and mounting another one.
+	Since Minikube mounts `$HOME` path by default, we recommend creating the path under `$HOME` which offers the flexibility of switching between directories in your deployment without stopping the MiniKube and mounting another one.
 	- linux  
 	Mount path manually:  
 	```
@@ -50,7 +49,7 @@ This documentation shows how to run PaddlePaddle Cloud on minikube.
 	cp ~/.minikube/ca.key .		
 	```
 	
-1. Copy and update PaddlePaddle Cloud configurations::
+1. Copy and update PaddlePaddle Cloud configurations:
 
 	```
 	git clone https://github.com/PaddlePaddle/cloud 
