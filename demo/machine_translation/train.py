@@ -1,8 +1,23 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import sys
 import numpy as np
 
 import paddle.v2 as paddle
+
 
 # TODO(helin): remove this once paddle.v2.reader.creator.recordio is
 # fixed.
@@ -28,6 +43,7 @@ def recordio(paths, buf_size=100):
         f.close()
 
     return dec.buffered(reader, buf_size)
+
 
 def save_model(parameters, save_path):
     with open(save_path, 'w') as f:
@@ -57,19 +73,17 @@ def seq_to_seq_net(source_dict_dim,
     encoded_vector = paddle.layer.concat(input=[src_forward, src_backward])
 
     #### Decoder
-    encoded_proj = paddle.layer.fc(
-        act=paddle.activation.Linear(),
-        size=decoder_size,
-        bias_attr=False,
-        input=encoded_vector)
+    encoded_proj = paddle.layer.fc(act=paddle.activation.Linear(),
+                                   size=decoder_size,
+                                   bias_attr=False,
+                                   input=encoded_vector)
 
     backward_first = paddle.layer.first_seq(input=src_backward)
 
-    decoder_boot = paddle.layer.fc(
-        size=decoder_size,
-        act=paddle.activation.Tanh(),
-        bias_attr=False,
-        input=backward_first)
+    decoder_boot = paddle.layer.fc(size=decoder_size,
+                                   act=paddle.activation.Tanh(),
+                                   bias_attr=False,
+                                   input=backward_first)
 
     def gru_decoder_with_attention(enc_vec, enc_proj, current_word):
 
@@ -95,11 +109,10 @@ def seq_to_seq_net(source_dict_dim,
             output_mem=decoder_mem,
             size=decoder_size)
 
-        out = paddle.layer.fc(
-            size=target_dict_dim,
-            bias_attr=True,
-            act=paddle.activation.Softmax(),
-            input=gru_step)
+        out = paddle.layer.fc(size=target_dict_dim,
+                              bias_attr=True,
+                              act=paddle.activation.Softmax(),
+                              input=gru_step)
         return out
 
     decoder_group_name = 'decoder_group'
@@ -113,7 +126,8 @@ def seq_to_seq_net(source_dict_dim,
                 name='target_language_word',
                 type=paddle.data_type.integer_value_sequence(target_dict_dim)),
             size=word_vector_dim,
-            param_attr=paddle.attr.ParamAttr(name='_target_language_embedding'))
+            param_attr=paddle.attr.ParamAttr(
+                name='_target_language_embedding'))
         group_inputs.append(trg_embedding)
 
         # For decoder equipped with attention mechanism, in training,
@@ -177,11 +191,14 @@ def main():
         cost = seq_to_seq_net(source_dict_dim, target_dict_dim, is_generating)
         parameters = paddle.parameters.create(cost)
 
-        trainer = paddle.trainer.SGD(
-            cost=cost, parameters=parameters, update_equation=optimizer)
+        trainer = paddle.trainer.SGD(cost=cost,
+                                     parameters=parameters,
+                                     update_equation=optimizer)
         # define data reader
         wmt14_reader = paddle.batch(
-            paddle.reader.shuffle(recordio("/pfs/dlnel/public/dataset/wmt14/wmt14_train-*"), buf_size=8192),
+            paddle.reader.shuffle(
+                recordio("/pfs/dlnel/public/dataset/wmt14/wmt14_train-*"),
+                buf_size=8192),
             batch_size=4)
 
         # define event_handler callback

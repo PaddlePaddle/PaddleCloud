@@ -1,7 +1,22 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import utils
 import os
 
 outdir = os.environ['OUTDIR']
+
 
 def merge_case_one_reports(jobname, passes):
     rs = [_load_case_one_from_file('%s/%s-case1-pass%d.csv' %(outdir, jobname, i) )\
@@ -9,7 +24,7 @@ def merge_case_one_reports(jobname, passes):
     avg_pending_time = 0
     avg_running_time = 0
     avg_cpu_utils = 0.0
-    with open('%s/%s-case1-result.csv'%(outdir, jobname), 'w') as f:
+    with open('%s/%s-case1-result.csv' % (outdir, jobname), 'w') as f:
         f.write(utils.REPORT_SEPARATOR.join(rs[0].title()) + '\n')
         for i in xrange(len(rs)):
             r = rs[i]
@@ -19,13 +34,12 @@ def merge_case_one_reports(jobname, passes):
             res = [str(i)]
             res.extend(r.values())
             f.write(utils.REPORT_SEPARATOR.join(res) + '\n')
-        f.write(utils.REPORT_SEPARATOR.join([
-            'AVG',
-            str(avg_running_time),
-            str(avg_pending_time),
-            'N/A',
-            '%0.2f' % avg_cpu_utils
-        ]) + '\n') 
+        f.write(
+            utils.REPORT_SEPARATOR.join([
+                'AVG', str(avg_running_time), str(avg_pending_time), 'N/A',
+                '%0.2f' % avg_cpu_utils
+            ]) + '\n')
+
 
 def _load_case_one_from_file(fn):
     with open(fn, 'r') as f:
@@ -36,6 +50,7 @@ def _load_case_one_from_file(fn):
         r.job_running_time = d[2].split(',')
         r.avg_cpu_utils = float(d[3])
         return r
+
 
 class CaseOneReport(object):
     def __init__(self):
@@ -69,7 +84,10 @@ class CaseOneReport(object):
         self.avg_pending_time /= len(jobs)
 
     def title(self):
-        return ['PASS', 'AVG RUNNING TIME', 'AVG PENDING TIME', 'JOB RUNNING TIME', 'AVG CLUSTER CPU UTILS']
+        return [
+            'PASS', 'AVG RUNNING TIME', 'AVG PENDING TIME', 'JOB RUNNING TIME',
+            'AVG CLUSTER CPU UTILS'
+        ]
 
     def run(self):
         self.avg_cpu_utils /= self.cnt
@@ -77,13 +95,10 @@ class CaseOneReport(object):
 
     def values(self):
         return [
-            str(self.avg_running_time),
-            str(self.avg_pending_time),
-            ','.join(self.job_running_time),
-            '%0.2f' % self.avg_cpu_utils
+            str(self.avg_running_time), str(self.avg_pending_time),
+            ','.join(self.job_running_time), '%0.2f' % self.avg_cpu_utils
         ]
 
     def to_csv(self, fn):
         with open(fn, 'w') as f:
             f.write(utils.REPORT_SEPARATOR.join(self.values()))
-

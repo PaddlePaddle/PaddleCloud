@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import paddle.v2 as paddle
 import paddle.v2.dataset as dataset
 import os
@@ -15,12 +29,15 @@ DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 dataset.common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
 TRAIN_FILES_PATH = os.path.join(dataset.common.DATA_HOME, "uci_housing")
 
+
 def prepare_dataset():
     dataset.common.convert(TRAIN_FILES_PATH,
                            dataset.uci_housing.train(), 100, "train")
 
+
 TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID"))
 TRAINER_INSTANCES = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS"))
+
 
 def cluster_reader_recordio(paths, trainer_id, trainer_instances):
     """
@@ -53,7 +70,9 @@ def cluster_reader_recordio(paths, trainer_id, trainer_instances):
                 yield pickle.loads(record_raw)
                 record_raw = reader.read()
             reader.close()
+
     return reader
+
 
 def main():
     # init
@@ -61,7 +80,9 @@ def main():
 
     # network config
     x = paddle.layer.data(name='x', type=paddle.data_type.dense_vector(13))
-    y_predict = paddle.layer.fc(input=x, size=1, act=paddle.activation.Linear())
+    y_predict = paddle.layer.fc(input=x,
+                                size=1,
+                                act=paddle.activation.Linear())
     y = paddle.layer.data(name='y', type=paddle.data_type.dense_vector(1))
     cost = paddle.layer.square_error_cost(input=y_predict, label=y)
 
@@ -71,8 +92,10 @@ def main():
     # create optimizer
     optimizer = paddle.optimizer.Momentum(momentum=0)
 
-    trainer = paddle.trainer.SGD(
-        cost=cost, parameters=parameters, update_equation=optimizer, is_local=False)
+    trainer = paddle.trainer.SGD(cost=cost,
+                                 parameters=parameters,
+                                 update_equation=optimizer,
+                                 is_local=False)
 
     feeding = {'x': 0, 'y': 1}
 
@@ -85,20 +108,21 @@ def main():
 
         if isinstance(event, paddle.event.EndPass):
             result = trainer.test(
-                reader=paddle.batch(dataset.uci_housing.test(), batch_size=2),
+                reader=paddle.batch(
+                    dataset.uci_housing.test(), batch_size=2),
                 feeding=feeding)
             print "Test %d, Cost %f" % (event.pass_id, result.cost)
             if TRAINER_ID == 0:
                 with gzip.open("fit-a-line_pass_%05d.tar.gz" % event.pass_id,
                                "w") as f:
                     parameters.to_tar(f)
+
     # training
     trainer.train(
         reader=paddle.batch(
             paddle.reader.shuffle(
                 cluster_reader_recordio(
-                    os.path.join(TRAIN_FILES_PATH, "train-*"),
-                    TRAINER_ID,
+                    os.path.join(TRAIN_FILES_PATH, "train-*"), TRAINER_ID,
                     TRAINER_INSTANCES),
                 buf_size=500),
             batch_size=2),
