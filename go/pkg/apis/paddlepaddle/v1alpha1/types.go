@@ -117,7 +117,7 @@ const (
 	ResourceStateNone ResourceState = ""
 	// ResourceStateStarting is the starting name of ResourceState.
 	ResourceStateStarting = "starting"
-	// ResourceStateRunning is the none running of ResourceState.
+	// ResourceStateRunning is the  running name of ResourceState.
 	ResourceStateRunning = "running"
 	// ResourceStateFailed is the failed name of ResourceState.
 	ResourceStateFailed = "failed"
