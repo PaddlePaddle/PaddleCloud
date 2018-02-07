@@ -26,6 +26,7 @@ etcd_endpoint = "http://" + etcd_ip + ":" + "2379"
 testing_image_path = "/workspace/data/cifar/image/dog.png"
 cifar_train10_path = "/workspace/data/cifar/cifar_train10-*"
 
+
 def main():
     datadim = 3 * 32 * 32
     classdim = 10
@@ -42,8 +43,9 @@ def main():
     # option 2. vgg
     net = vgg_bn_drop(image)
 
-    out = paddle.layer.fc(
-        input=net, size=classdim, act=paddle.activation.Softmax())
+    out = paddle.layer.fc(input=net,
+                          size=classdim,
+                          act=paddle.activation.Softmax())
 
     lbl = paddle.layer.data(
         name="label", type=paddle.data_type.integer_value(classdim))
@@ -61,16 +63,12 @@ def main():
         learning_rate_decay_b=50000 * 100,
         learning_rate_schedule='discexp')
 
-
-    feeding = {
-        'image': 0,
-        'label': 1
-    }
+    feeding = {'image': 0, 'label': 1}
 
     train_reader = paddle.batch(
-        paddle.reader.shuffle(cloud_reader(
-            [cifar_train10_path],
-            etcd_endpoint), buf_size=50000), batch_size=128)
+        paddle.reader.shuffle(
+            cloud_reader([cifar_train10_path], etcd_endpoint), buf_size=50000),
+        batch_size=128)
 
     # End batch and end pass event handler
     def event_handler(event):
@@ -93,19 +91,17 @@ def main():
             print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
 
     # Create trainer
-    trainer = paddle.trainer.SGD(
-        cost=cost,
-        parameters=parameters,
-        update_equation=momentum_optimizer,
-        is_local=False,
-        pserver_spec=etcd_endpoint,
-        use_etcd=True)
+    trainer = paddle.trainer.SGD(cost=cost,
+                                 parameters=parameters,
+                                 update_equation=momentum_optimizer,
+                                 is_local=False,
+                                 pserver_spec=etcd_endpoint,
+                                 use_etcd=True)
 
     # Save the inference topology to protobuf.
     inference_topology = paddle.topology.Topology(layers=out)
     with open("inference_topology.pkl", 'wb') as f:
         inference_topology.serialize_for_inference(f)
-
 
     trainer.train(
         reader=train_reader,

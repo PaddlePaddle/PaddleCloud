@@ -1,6 +1,21 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import subprocess
 import os
 from django.conf import settings
+
 
 def __check_cert_requirements__(program):
     def is_exe(fpath):
@@ -19,6 +34,7 @@ def __check_cert_requirements__(program):
 
     return None
 
+
 def create_user_cert(ca_path, username):
     """
         @ca_path directory that contains ca.pem and ca-key.pem
@@ -31,13 +47,15 @@ def create_user_cert(ca_path, username):
     user_cert_dir = os.path.join(settings.USER_CERTS_PATH, username)
     user_cert_cmds.append("mkdir -p %s" % user_cert_dir)
     user_cert_cmds.append("openssl genrsa -out \
-        %s/%s-key.pem 2048"%(user_cert_dir, username))
+        %s/%s-key.pem 2048" % (user_cert_dir, username))
     user_cert_cmds.append("openssl req -new -key %s/%s-key.pem -out\
-        %s/%s.csr -subj \"/CN=%s\""%\
+        %s/%s.csr -subj \"/CN=%s\""
+                                   %\
         (user_cert_dir, username,
         user_cert_dir, username, username))
     user_cert_cmds.append("openssl x509 -req -in %s/%s.csr -CA %s -CAkey %s \
-        -CAcreateserial -out %s/%s.pem -days 365"% \
+        -CAcreateserial -out %s/%s.pem -days 365"
+                                                 % \
         (user_cert_dir, username,
         settings.CA_PATH, settings.CA_KEY_PATH,
         user_cert_dir, username))
@@ -46,4 +64,5 @@ def create_user_cert(ca_path, username):
         process.wait()
         out, err = process.communicate()
         if process.returncode != 0:
-            raise RuntimeError("%s error with: (%d) - %s" % (cmd, process.returncode, err))
+            raise RuntimeError("%s error with: (%d) - %s" %
+                               (cmd, process.returncode, err))
