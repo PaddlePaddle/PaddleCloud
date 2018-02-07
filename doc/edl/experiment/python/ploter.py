@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.ticker as mticker
@@ -10,6 +24,7 @@ CASEID = os.getenv("CASE", "1")
 DATA_MAX = int(os.getenv("DATA_MAX", "550"))
 PNGPATH = os.getenv("PNGPATH", "./")
 
+
 def clean_data(data):
     new_data = []
     for ins in data:
@@ -21,6 +36,7 @@ def clean_data(data):
         new_data.append(new_ins)
     return new_data
 
+
 def nearest(l, val):
     r = l[0]
     cur_dis = -1
@@ -30,6 +46,7 @@ def nearest(l, val):
             cur_dis = dis
             r = v
     return r
+
 
 def avg(a, weight_a, b, weight_b):
     if isinstance(a, list):
@@ -73,6 +90,7 @@ def avg(a, weight_a, b, weight_b):
 
     return out
 
+
 def merge_two(a, weight_a, b, weight_b):
     result = []
 
@@ -87,32 +105,28 @@ def merge_two(a, weight_a, b, weight_b):
     sorted_result = sorted(result, key=lambda v: int(v[0]))
     return sorted_result
 
+
 def merge_data(data):
     data = clean_data(data)
     result = data[0]
-    for i in range(len(data)-1):
-        result = merge_two(result, i+1, data[i+1], 1)
+    for i in range(len(data) - 1):
+        result = merge_two(result, i + 1, data[i + 1], 1)
     return result
+
 
 if __name__ == '__main__':
     column_names = [
-        "timestamp",
-        "cpu util",
-        "# of trainers",
-        "# of not existing jobs",
-        "# of pending jobs",
-        "# of running jobs",
-        "# of completed jobs",
-        "# of ngix pods",
-        "running trainers for each job",
+        "timestamp", "cpu util", "# of trainers", "# of not existing jobs",
+        "# of pending jobs", "# of running jobs", "# of completed jobs",
+        "# of ngix pods", "running trainers for each job",
         "cpu utils for each job"
     ]
 
     # y axes limits for case 1 and 2
     ylims = {
-        "1": #CASEID
+        "1":  #CASEID
         [
-            0, #timestamp, not used
+            0,  #timestamp, not used
             100,
             360,
             20,
@@ -121,11 +135,10 @@ if __name__ == '__main__':
             20,
             0,
             80,
-            30 #cpu utils for each job. To be decided
+            30  #cpu utils for each job. To be decided
         ],
-        "2": 
-        [
-            0, #timestamp, not used
+        "2": [
+            0,  #timestamp, not used
             100,
             300,
             20,
@@ -134,7 +147,7 @@ if __name__ == '__main__':
             20,
             0,
             60,
-            50 #cpu utils for each job. To be decided
+            50  #cpu utils for each job. To be decided
         ]
     }
 
@@ -144,11 +157,7 @@ if __name__ == '__main__':
     for filepath in datafiles:
         with open(filepath, "rb") as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
-            data_csvs.append({
-                'data': list(csv_reader),
-                'time_of_event': 0
-            })
-    
+            data_csvs.append({'data': list(csv_reader), 'time_of_event': 0})
     '''
         start aligning different batch of data by time of event
         case one's event is when # of not existing job become 0
@@ -168,7 +177,7 @@ if __name__ == '__main__':
                     data_csv['time_of_event'] = row[0]
                     break
             previous_row = row
-    
+
     # correct data offest
     data_merged = data_csvs[0]["data"]
     data_corrected = [None] * len(data_csvs)
@@ -180,7 +189,8 @@ if __name__ == '__main__':
 
         # disable time_offset
         time_offset = 0
-        data_corrected[index] = [[str(int(x[0])-time_offset)] + x[1:] for x in data_csv['data']]
+        data_corrected[index] = [[str(int(x[0]) - time_offset)] + x[1:]
+                                 for x in data_csv['data']]
 
     data_plot = merge_data(data_corrected)
     plot_data = [[] for _ in range(len(column_names))]
@@ -195,21 +205,21 @@ if __name__ == '__main__':
             plot_data[col_idx].append(v)
 
     ax_data = np.array(plot_data[0])
-    _, axes = plt.subplots(len(plot_data)-1, sharex=True)
+    _, axes = plt.subplots(len(plot_data) - 1, sharex=True)
 
     #create charts
     for index, plot in enumerate(plot_data):
         if index == 0:
             continue
-        
+
         plot = np.array(plot)
         name = column_names[index]
         ymax = ylims[CASEID][index]
-        ymax = ymax if ymax >0 else 1
+        ymax = ymax if ymax > 0 else 1
 
-        ax = axes[index-1]
+        ax = axes[index - 1]
         ax.plot(ax_data, plot)
-        
+
         ax.set_ylim((0, ymax))
         ax.yaxis.set_major_locator(mticker.MaxNLocator(4, integer=True))
         ax.set_title(name)
@@ -222,5 +232,6 @@ if __name__ == '__main__':
         plt.savefig(PNGPATH + name + ".png")
         plt.close(fig)
 
-    plt.subplots_adjust(left=0.07, bottom=0.11, right=0.96, top=0.93, wspace=0.2, hspace=0.57)
+    plt.subplots_adjust(
+        left=0.07, bottom=0.11, right=0.96, top=0.93, wspace=0.2, hspace=0.57)
     plt.show()

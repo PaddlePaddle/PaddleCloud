@@ -8,6 +8,7 @@ matrix:
         - curl https://glide.sh/get | bash
         - sudo pip install pre-commit
       script:
+        - rm -f .copy.hook && wget https://raw.githubusercontent.com/PaddlePaddle/Paddle/develop/.copyright.hook
         - |
           bash .tools/check_style.sh
           RESULT=$?; if [ $RESULT -eq 0 ]; then true; else false; fi;

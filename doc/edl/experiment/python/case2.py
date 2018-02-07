@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 class CaseTwoItem(object):
     def __init__(self, ts, nginx_pods, running_trainers, collector):
         self.ts = ts
@@ -8,6 +22,7 @@ class CaseTwoItem(object):
 
     #def values(self):
     #    return [str(self.times), str(self.nginx_pods), str(self.running_trainers), str(self.cpu_utils)]
+
 
 class CaseTwoReport(object):
     def __init__(self):
@@ -33,7 +48,6 @@ class CaseTwoReport(object):
             f.write('|'.join(self.title()) + '\n')
             for item in self.items:
                 f.write('|'.join([
-                    str(item.ts),
-                    str(item.nginx_pods),
-                    str(item.running_trainers),
-                    item.cpu_utils]) + '\n')
+                    str(item.ts), str(item.nginx_pods), str(
+                        item.running_trainers), item.cpu_utils
+                ]) + '\n')
