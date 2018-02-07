@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 def get_spec_pserver(paddlejob):
     rs = {
         "apiVersion": "extensions/v1beta1",

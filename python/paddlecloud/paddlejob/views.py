@@ -112,8 +112,8 @@ def get_paddlejob(request):
     # jobPackage validation: startwith /pfs
     # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
     job_name = obj.get("name", "paddle-cluster-job")
-    package_in_pod = os.path.join("/pfs/%s/home/%s" %
-                                  (dc, username), "jobs", job_name)
+    package_in_pod = os.path.join("/pfs/%s/home/%s" % (dc, username), "jobs",
+                                  job_name)
 
     logging.info("current package: %s", package_in_pod)
     # package must be ready before submit a job

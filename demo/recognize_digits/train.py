@@ -77,8 +77,9 @@ def softmax_regression(img):
 
 def multilayer_perceptron(img):
     # The first fully-connected layer
-    hidden1 = paddle.layer.fc(
-        input=img, size=128, act=paddle.activation.Relu())
+    hidden1 = paddle.layer.fc(input=img,
+                              size=128,
+                              act=paddle.activation.Relu())
     # The second fully-connected layer and the according activation function
     hidden2 = paddle.layer.fc(input=hidden1,
                               size=64,
