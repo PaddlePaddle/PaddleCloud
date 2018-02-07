@@ -113,15 +113,15 @@ const (
 type ResourceState string
 
 const (
-	// ResourceStateNone is the none name of ResourceState.
+	// ResourceStateNone is the initial state of training job
 	ResourceStateNone ResourceState = ""
-	// ResourceStateStarting is the starting name of ResourceState.
+	// ResourceStateStarting is the starting state of ResourceState.
 	ResourceStateStarting = "starting"
-	// ResourceStateRunning is the  running name of ResourceState.
+	// ResourceStateRunning is the  running state of ResourceState.
 	ResourceStateRunning = "running"
-	// ResourceStateFailed is the failed name of ResourceState.
+	// ResourceStateFailed is the failed state of ResourceState.
 	ResourceStateFailed = "failed"
-	// ResourceStateSucceeded is the succeeded name of ResourceState
+	// ResourceStateSucceeded is the succeeded state of ResourceState
 	ResourceStateSucceeded = "succeeded"
 )
 
