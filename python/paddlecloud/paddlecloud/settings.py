@@ -1,7 +1,22 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 from kubernetes import config
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir))
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = PACKAGE_ROOT
 
@@ -13,7 +28,7 @@ DATABASES = {
         "NAME": "paddlecloud",
         'USER': 'root',
         'PASSWORD': 'root',
-        'HOST': '127.0.0.1',   # Or an IP Address that your DB is hosted on
+        'HOST': '127.0.0.1',  # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
 }
@@ -33,11 +48,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+        'rest_framework.authentication.TokenAuthentication', ),
+    'DEFAULT_PERMISSION_CLASSES':
+    ['rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly']
 }
 
 # Local time zone for this installation. Choices can be found here:
@@ -86,9 +99,7 @@ STATIC_ROOT = os.path.join(PACKAGE_ROOT, "site_media", "static")
 STATIC_URL = "/site_media/static/"
 
 # Additional locations of static files
-STATICFILES_DIRS = [
-    os.path.join(PROJECT_ROOT, "static", "dist"),
-]
+STATICFILES_DIRS = [os.path.join(PROJECT_ROOT, "static", "dist"), ]
 
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
@@ -102,30 +113,26 @@ STATICFILES_FINDERS = [
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = "vpu^(5mjr)*tloao^m$wlh)oc(fn1yoiqoq@m0$er((qlocq1k"
 
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            os.path.join(PACKAGE_ROOT, "templates"),
+TEMPLATES = [{
+    "BACKEND": "django.template.backends.django.DjangoTemplates",
+    "DIRS": [os.path.join(PACKAGE_ROOT, "templates"), ],
+    "APP_DIRS": True,
+    "OPTIONS": {
+        "debug": DEBUG,
+        "context_processors": [
+            "django.contrib.auth.context_processors.auth",
+            "django.template.context_processors.debug",
+            "django.template.context_processors.i18n",
+            "django.template.context_processors.media",
+            "django.template.context_processors.static",
+            "django.template.context_processors.tz",
+            "django.template.context_processors.request",
+            "django.contrib.messages.context_processors.messages",
+            "account.context_processors.account",
+            "pinax_theme_bootstrap.context_processors.theme",
         ],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "debug": DEBUG,
-            "context_processors": [
-                "django.contrib.auth.context_processors.auth",
-                "django.template.context_processors.debug",
-                "django.template.context_processors.i18n",
-                "django.template.context_processors.media",
-                "django.template.context_processors.static",
-                "django.template.context_processors.tz",
-                "django.template.context_processors.request",
-                "django.contrib.messages.context_processors.messages",
-                "account.context_processors.account",
-                "pinax_theme_bootstrap.context_processors.theme",
-            ],
-        },
     },
-]
+}, ]
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -218,13 +225,11 @@ LOGGING = {
     }
 }
 
-FIXTURE_DIRS = [
-    os.path.join(PROJECT_ROOT, "fixtures"),
-]
+FIXTURE_DIRS = [os.path.join(PROJECT_ROOT, "fixtures"), ]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-LOGIN_URL="/account/login"
+LOGIN_URL = "/account/login"
 
 ACCOUNT_OPEN_SIGNUP = True
 ACCOUNT_EMAIL_UNIQUE = True
@@ -235,7 +240,7 @@ ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 2
 ACCOUNT_USE_AUTH_AUTHENTICATE = True
 ACCOUNT_USER_DISPLAY = lambda user: user.email
 
-ACCOUNT_PASSWORD_EXPIRY = 60*60*24*5  # seconds until pw expires, this example shows five days
+ACCOUNT_PASSWORD_EXPIRY = 60 * 60 * 24 * 5  # seconds until pw expires, this example shows five days
 ACCOUNT_PASSWORD_USE_HISTORY = True
 
 AUTHENTICATION_BACKENDS = [
@@ -245,13 +250,13 @@ AUTHENTICATION_BACKENDS = [
 # secret places to store ca and users keys
 CA_PATH = "/certs/ca.pem"
 CA_KEY_PATH = "/certs/ca-key.pem"
-USER_CERTS_PATH="/certs"
+USER_CERTS_PATH = "/certs"
 
 K8S_HOST = "https://%s:%s" % (os.getenv("KUBERNETES_SERVICE_HOST"),
-    os.getenv("KUBERNETES_SERVICE_PORT_HTTPS"))
+                              os.getenv("KUBERNETES_SERVICE_PORT_HTTPS"))
 # PADDLE_BOOK_IMAGE="docker.paddlepaddle.org/book:0.10.0rc2"
-PADDLE_BOOK_IMAGE="yancey1989/book-cloud"
-PADDLE_BOOK_PORT=8888
+PADDLE_BOOK_IMAGE = "yancey1989/book-cloud"
+PADDLE_BOOK_PORT = 8888
 
 # ============== Datacenter Storage Config Samples ==============
 #if Paddle cloud use CephFS as backend storage, configure CEPHFS_CONFIGURATION
@@ -280,13 +285,13 @@ PADDLE_BOOK_PORT=8888
 FSTYPE_CEPHFS = "cephfs"
 FSTYPE_HOSTPATH = "hostpath"
 DATACENTERS = {
-    "meiyan":{
+    "meiyan": {
         "fstype": FSTYPE_CEPHFS,
         "monitors_addr": ["172.19.32.166:6789"],  # must be a list
         "secret": "ceph-secret",
         "user": "admin",
-        "mount_path": "/pfs/%s/home/%s/", # mount_path % ( dc, username )
-        "cephfs_path": "/%s", # cephfs_path % username
+        "mount_path": "/pfs/%s/home/%s/",  # mount_path % ( dc, username )
+        "cephfs_path": "/%s",  # cephfs_path % username
         "admin_key": "/certs/admin.secret",
     },
     "public": {
@@ -294,16 +299,16 @@ DATACENTERS = {
         "monitors_addr": ["172.19.32.166:6789"],  # must be a list
         "secret": "ceph-secret",
         "user": "admin",
-        "mount_path": "/pfs/%s/public/", # mount_path % ( dc, username )
-        "cephfs_path": "/public", # cephfs_path % username
+        "mount_path": "/pfs/%s/public/",  # mount_path % ( dc, username )
+        "cephfs_path": "/public",  # cephfs_path % username
         "admin_key": "/certs/admin.secret",
         "read_only": True
     }
 }
 # where cephfs root is mounted when using cephfs storage service
-STORAGE_PATH="/pfs"
+STORAGE_PATH = "/pfs"
 # HACK: define use HDFS or CEPHFS, in cephfs mode jobpath will be /pfs/jobs/[jobname]
-STORAGE_MODE="HDFS"
+STORAGE_MODE = "HDFS"
 
 # ===================== Docker image registry =====================
 JOB_DOCKER_IMAGE = {
@@ -311,29 +316,27 @@ JOB_DOCKER_IMAGE = {
     "image": "typhoon1986/paddlecloud-job",
     "image_gpu": "typhoon1986/paddlecloud-job:gpu",
     # docker registry credentials
-    "registry_secret": "job-registry-secret", # put this to None if not using registry login
-    "docker_config":{"auths":
-                     {"registry.baidu.com":
-                      {"auth": "eWFueHUwNTpRTndVSGV1Rldl"}}}
+    "registry_secret":
+    "job-registry-secret",  # put this to None if not using registry login
+    "docker_config": {
+        "auths": {
+            "registry.baidu.com": {
+                "auth": "eWFueHUwNTpRTndVSGV1Rldl"
+            }
+        }
+    }
 }
 
 # Path store all cuda, nvidia driver libs
-NVIDIA_LIB_PATH="/usr/local/nvidia/lib64"
+NVIDIA_LIB_PATH = "/usr/local/nvidia/lib64"
 # etcd image for fault-tolerant jobs
-ETCD_IMAGE="quay.io/coreos/etcd:v3.2.1"
+ETCD_IMAGE = "quay.io/coreos/etcd:v3.2.1"
 
 # domains that allow notebook to enter
-NOTEBOOK_DOMAINS=["cloud.paddlepaddle.org"]
+NOTEBOOK_DOMAINS = ["cloud.paddlepaddle.org"]
 
 # GPU limit for users
 # TODO(Yancey1989): 
 # 1. Implement 
 # 2. Move GPU quota to Kubernetes
-GPU_QUOTA={
-    "DEFAULT": {
-        "limit": 2
-    },
-    "yanxu05@baidu.com": {
-        "limit": 5
-    }
-}
+GPU_QUOTA = {"DEFAULT": {"limit": 2}, "yanxu05@baidu.com": {"limit": 5}}

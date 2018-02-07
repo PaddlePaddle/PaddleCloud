@@ -1,18 +1,33 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 
-__all__=["get_volume_config"]
+__all__ = ["get_volume_config"]
 
 tmpl_volume = {
     "hostpath": "{\"name\": $NAME, \"hostPath\":{\"path\": $HOST_PATH}}",
-    "cephfs":"{\"name\": $NAME,\"cephfs\":{\"name\": \"cephfs\", \
+    "cephfs": "{\"name\": $NAME,\"cephfs\":{\"name\": \"cephfs\", \
                \"monitors\": $MONITORS_ADDR,\"path\": $CEPHFS_PATH, \
                \"readOnly\": $READ_ONLY, \"user\": $USER, \
                \"secretRef\": {\"name\": $SECRET}}}"
 }
 tmpl_volume_mount = {
     "hostpath": "{\"name\": $NAME, \"mountPath\":$MOUNT_PATH}",
-    "cephfs":"{\"mountPath\": $MOUNT_PATH, \"name\": $NAME}"
+    "cephfs": "{\"mountPath\": $MOUNT_PATH, \"name\": $NAME}"
 }
+
 
 def __render(tmpl, **kwargs):
     for k, v in kwargs.items():
@@ -26,11 +41,13 @@ def __render(tmpl, **kwargs):
                 pass
     return tmpl
 
+
 def __get_template(tmpls, fstype):
     if fstype in tmpls.keys():
         return tmpls[fstype]
     else:
         return ""
+
 
 def get_volume_config(**kwargs):
     """
@@ -64,5 +81,9 @@ def get_volume_config(**kwargs):
     fstype = kwargs["fstype"]
     tmpl_v = __get_template(tmpl_volume, fstype)
     tmpl_vm = __get_template(tmpl_volume_mount, fstype)
-    return {"volume":json.loads(__render(tmpl=tmpl_v, **kwargs)),
-            "volume_mount": json.loads(__render(tmpl=tmpl_vm, **kwargs))}
+    return {
+        "volume": json.loads(__render(
+            tmpl=tmpl_v, **kwargs)),
+        "volume_mount": json.loads(__render(
+            tmpl=tmpl_vm, **kwargs))
+    }
