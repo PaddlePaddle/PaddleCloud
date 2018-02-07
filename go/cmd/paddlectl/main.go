@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 
+	pfsmod "github.com/PaddlePaddle/cloud/go/filemanager/pfsmodules"
 	"github.com/PaddlePaddle/cloud/go/paddlecloud"
 	"github.com/PaddlePaddle/cloud/go/paddlectl"
 	"github.com/PaddlePaddle/cloud/go/utils/config"
