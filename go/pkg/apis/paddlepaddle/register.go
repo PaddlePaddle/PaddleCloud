@@ -17,5 +17,6 @@ limitations under the License.
 package paddlepaddle
 
 const (
+	// GroupName is the name of group.
 	GroupName = "paddlepaddle.org"
 )
