@@ -1,10 +1,10 @@
-#-   repo: https://github.com/dnephin/pre-commit-golang
-#    sha: e4693a4c282b4fc878eda172a929f7a6508e7d16
-#    hooks:
-#      -   id: go-fmt
-#          files: \.go$
-#      -   id: go-lint
-#          files: \.go$
+-   repo: https://github.com/dnephin/pre-commit-golang
+    sha: e4693a4c282b4fc878eda172a929f7a6508e7d16
+    hooks:
+      -   id: go-fmt
+          files: \.go$
+      -   id: go-lint
+          files: \.go$
 -   repo: https://github.com/PaddlePaddle/mirrors-yapf.git
     sha: 0d79c0c469bab64f7229c9aca2b1186ef47f0e37
     hooks:
