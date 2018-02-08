@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import math
 import pickle
 import glob
@@ -17,11 +31,13 @@ N = 5
 USERNAME = "your-username"
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 common.DATA_HOME = "/pfs/%s/home/%s" % (DC, USERNAME)
-TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "imikolov", "imikolov_train-*")
+TRAIN_FILES_PATH = os.path.join(common.DATA_HOME, "imikolov",
+                                "imikolov_train-*")
 WORD_DICT_PATH = os.path.join(common.DATA_HOME, "imikolov/word_dict.pickle")
 
 TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID", "-1"))
 TRAINER_COUNT = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS", "-1"))
+
 
 def prepare_dataset():
     word_dict = paddle.dataset.imikolov.build_dict()
@@ -29,12 +45,14 @@ def prepare_dataset():
         pickle.dump(word_dict, fn)
     # NOTE: convert should be done by other job.
 
+
 def cluster_reader_recordio(trainer_id, trainer_count):
     '''
         read from cloud dataset which is stored as recordio format
         each trainer will read a subset of files of the whole dataset.
     '''
     import recordio
+
     def reader():
         file_list = glob.glob(TRAIN_FILES_PATH)
         file_list.sort()
@@ -51,7 +69,9 @@ def cluster_reader_recordio(trainer_id, trainer_count):
                 yield pickle.loads(record_raw)
                 record_raw = reader.read()
             reader.close()
+
     return reader
+
 
 def wordemb(inlayer):
     wordemb = paddle.layer.table_projection(
@@ -88,19 +108,18 @@ def main():
     Efourth = wordemb(fourthword)
 
     contextemb = paddle.layer.concat(input=[Efirst, Esecond, Ethird, Efourth])
-    hidden1 = paddle.layer.fc(
-        input=contextemb,
-        size=hiddensize,
-        act=paddle.activation.Sigmoid(),
-        layer_attr=paddle.attr.Extra(drop_rate=0.5),
-        bias_attr=paddle.attr.Param(learning_rate=2),
-        param_attr=paddle.attr.Param(
-            initial_std=1. / math.sqrt(embsize * 8), learning_rate=1))
-    predictword = paddle.layer.fc(
-        input=hidden1,
-        size=dict_size,
-        bias_attr=paddle.attr.Param(learning_rate=2),
-        act=paddle.activation.Softmax())
+    hidden1 = paddle.layer.fc(input=contextemb,
+                              size=hiddensize,
+                              act=paddle.activation.Sigmoid(),
+                              layer_attr=paddle.attr.Extra(drop_rate=0.5),
+                              bias_attr=paddle.attr.Param(learning_rate=2),
+                              param_attr=paddle.attr.Param(
+                                  initial_std=1. / math.sqrt(embsize * 8),
+                                  learning_rate=1))
+    predictword = paddle.layer.fc(input=hidden1,
+                                  size=dict_size,
+                                  bias_attr=paddle.attr.Param(learning_rate=2),
+                                  act=paddle.activation.Softmax())
 
     def event_handler(event):
         if isinstance(event, paddle.event.EndIteration):
@@ -109,7 +128,8 @@ def main():
                     paddle.batch(
                         # NOTE: if you're going to use cluster test files,
                         #       prepare them on the storage first
-                        paddle.dataset.imikolov.test(word_dict, N), 32))
+                        paddle.dataset.imikolov.test(word_dict, N),
+                        32))
                 print "Pass %d, Batch %d, Cost %f, %s, Testing metrics %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics,
                     result.metrics)
@@ -119,9 +139,7 @@ def main():
     adam_optimizer = paddle.optimizer.Adam(
         learning_rate=3e-3,
         regularization=paddle.optimizer.L2Regularization(8e-4))
-    trainer = paddle.trainer.SGD(cost,
-        parameters,
-        adam_optimizer)
+    trainer = paddle.trainer.SGD(cost, parameters, adam_optimizer)
 
     trainer.train(
         paddle.batch(cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT), 32),

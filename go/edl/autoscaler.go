@@ -31,36 +31,6 @@ const (
 	defaultLoopDur = time.Second * 5
 )
 
-// ClusterResource is the resource of a cluster
-type ClusterResource struct {
-	NodeCount int
-
-	GPURequest int
-	GPULimit   int
-	GPUTotal   int
-
-	CPURequestMilli int64
-	CPULimitMilli   int64
-	CPUTotalMilli   int64
-
-	MemoryRequestMega int64
-	MemoryLimitMega   int64
-	MemoryTotalMega   int64
-
-	NodeInfos NodeInfos
-}
-
-// NodeInfos is the information of all nodes.
-type NodeInfos struct {
-	NodesCPUIdleMilli   map[string]int64
-	NodesMemoryFreeMega map[string]int64
-}
-
-// String returns the string that represents NodeInfo when printed.
-func (n NodeInfos) String() string {
-	return fmt.Sprintf("NodeInfo(%d nodes)", len(n.NodesCPUIdleMilli))
-}
-
 type job struct {
 	Config     *edlresource.TrainingJob
 	TrainerJob *batchv1.Job
@@ -97,7 +67,7 @@ func (j job) Fulfillment() float64 {
 type Autoscaler struct {
 	ticker         *time.Ticker
 	cluster        *Cluster
-	jobs           map[string]job
+	jobs           map[string]*job
 	eventCh        chan event
 	maxLoadDesired float64
 }
@@ -114,7 +84,7 @@ func newAutoscaler(cluster *Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	c := &Autoscaler{
 		cluster:        cluster,
 		ticker:         time.NewTicker(defaultLoopDur),
-		jobs:           make(map[string]job),
+		jobs:           make(map[string]*job),
 		eventCh:        make(chan event),
 		maxLoadDesired: 1.0,
 	}
@@ -124,7 +94,7 @@ func newAutoscaler(cluster *Cluster, options ...func(*Autoscaler)) *Autoscaler {
 	return c
 }
 
-type jobs []job
+type jobs []*job
 
 func (j jobs) Len() int {
 	return len(j)
@@ -159,12 +129,12 @@ func (j jobs) Swap(a int, b int) {
 }
 
 // elastic job filter.
-func elastic(j job) bool {
+func elastic(j *job) bool {
 	return j.Config.Elastic()
 }
 
 // gpu job filter.
-func gpu(j job) bool {
+func gpu(j *job) bool {
 	return j.Config.NeedGPU()
 }
 
@@ -202,7 +172,7 @@ func (a *Autoscaler) OnUpdate(trainingjob *edlresource.TrainingJob) {
 
 // sortedJobs return the names of sorted jobs by fulfillment and
 // tiebreakers in ascending order.
-func sortedJobs(j []job, filters ...func(job) bool) []job {
+func sortedJobs(j []*job, filters ...func(*job) bool) []*job {
 	var js jobs
 nextJob:
 	for _, v := range j {
@@ -218,17 +188,17 @@ nextJob:
 	return js
 }
 
-func searchAssignableNode(r *ClusterResource, j job) (nodeName string) {
-	for name, idle := range r.NodeInfos.NodesCPUIdleMilli {
+func searchAssignableNode(r *ClusterResource, j *job) (nodeName string) {
+	for name, idle := range r.Nodes.NodesCPUIdleMilli {
 		if j.TrainerCPURequestMilli() <= idle &&
-			j.TrainerMemRequestMega() <= r.NodeInfos.NodesMemoryFreeMega[name] {
+			j.TrainerMemRequestMega() <= r.Nodes.NodesMemoryFreeMega[name] {
 			return name
 		}
 	}
 	return ""
 }
 
-func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
+func scaleDryRun(r *ClusterResource, j *job, curDiff int, maxLoadDesired float64, scaleDown bool) (additional int) {
 	additionalGPUInstance := 0
 	additionalCPUInstance := 0
 	cpuRequestMilli := j.TrainerCPURequestMilli()
@@ -241,8 +211,8 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64,
 		r.CPURequestMilli += cpuRequestMilli * int64(additional)
 		r.MemoryRequestMega += memRequestMega * int64(additional)
 		if nodeName != "" {
-			r.NodeInfos.NodesCPUIdleMilli[nodeName] += cpuRequestMilli * int64(additional)
-			r.NodeInfos.NodesMemoryFreeMega[nodeName] += memRequestMega * int64(additional)
+			r.Nodes.NodesCPUIdleMilli[nodeName] += cpuRequestMilli * int64(additional)
+			r.Nodes.NodesMemoryFreeMega[nodeName] += memRequestMega * int64(additional)
 		}
 	}()
 
@@ -320,13 +290,16 @@ func scaleDryRun(r *ClusterResource, j job, curDiff int, maxLoadDesired float64,
 	return
 }
 
-func scaleAllDryRun(jobs []job, r ClusterResource, maxLoadDesired float64) map[string]int {
+// scaleAllJobsDryRun pretends to rescale all jobs in order to find
+// out the number of pods should be added/deleted for each job, or
+// say, delta.  It returns a map from job name to the delta.
+func scaleAllJobsDryRun(jobs []*job, r ClusterResource, maxLoadDesired float64) map[string]int {
 	// Iteratively calculate scaling diff until nothing changes.
 	diff := make(map[string]int)
 	for {
 		noChange := true
 		sorted := sortedJobs(jobs, elastic)
-		dryRun := func(j job, isScaleDown bool) {
+		dryRun := func(j *job, isScaleDown bool) {
 			name := j.Config.Name
 			additional := scaleDryRun(&r, j, diff[name], maxLoadDesired, isScaleDown)
 			log.Debug(
@@ -363,7 +336,7 @@ func scaleAllDryRun(jobs []job, r ClusterResource, maxLoadDesired float64) map[s
 	return diff
 }
 
-func (a *Autoscaler) scaleAll(target map[string]int) {
+func (a *Autoscaler) scaleAllJobs(target map[string]int) {
 	for name := range target {
 		log.Info("scaling job",
 			"name", name, "target", target[name])
@@ -402,130 +375,101 @@ func (a *Autoscaler) scaleAll(target map[string]int) {
 	}
 }
 
-// Monitor monitors the cluster resources and training jobs in a loop,
+// updateJobList updates the data structure a.jobs according to
+// received events about the TrainingJob resource.  It returns true if
+// the EDL controller need to do some scheduling work.  If it returns
+// false, the EDL controller could simply go on monitoring other
+// events.
+func (a *Autoscaler) updateJobList(evt event) bool {
+	log.Debug("monitor received event", "event", evt)
+	switch evt.Type {
+	case add, update:
+		j := &job{Config: evt.Job}
+		a.jobs[evt.Job.ObjectMeta.Name] = j
+		if a.tryToRetrieveTrainerJobInTrainingJob(evt.Job.ObjectMeta.Name, j) != nil {
+			return false
+		}
+	case del:
+		// TODO(helin): delete all created resources (e.g.,
+		// trainer Job, pserver Replica Set) when we schedules
+		// the resources.
+		delete(a.jobs, evt.Job.ObjectMeta.Name)
+	default:
+		log.Error("unrecognized event", "event", evt)
+	}
+
+	return true
+}
+
+// findPendingJob returns true if there is at least one training job
+// whose all pods are pending.
+func (a *Autoscaler) findPendingJob() bool {
+	for jobName, job := range a.jobs {
+		if a.tryToRetrieveTrainerJobInTrainingJob(jobName, job) != nil {
+			continue
+		}
+		total, _, pending, err := a.cluster.JobPods(job.Config)
+		if err != nil {
+			log.Error("check if job is running failed", "error", err)
+			continue
+		}
+
+		if total == pending {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *Autoscaler) tryToRetrieveTrainerJobInTrainingJob(jobName string, job *job) error {
+	// TODO(helin): Because we wrote the conversion from
+	// TrainingJob into ReplicaSet and Job in paddlelcloud instead
+	// of EDL controller (please refer to above TODO comment for
+	// details), we might suffer from the problem that when the
+	// EDL controller calls cluster.GetTrainerJob, it doesn't
+	// return TrainerJob before the conversion is done at the
+	// paddlecloud.  After we fix this problem, we can remove the
+	// following call to cluster.GetTrainerJob and keep the one in
+	// updateJobLists.
+	if job.TrainerJob == nil {
+		tj, err := a.cluster.GetTrainerJob(job.Config)
+		if err != nil {
+			log.Error(
+				"Error getting the trainer k8s job, will sync later.",
+				"name", job.Config.ObjectMeta.Name,
+				"error", err,
+			)
+			return err
+		}
+		job.TrainerJob = tj
+	}
+	return nil
+}
+
+// Run monitors the cluster resources and training jobs in a loop,
 // scales the training jobs according to the cluster resource.
-func (a *Autoscaler) Monitor() {
+func (a *Autoscaler) Run() {
 	for {
 		select {
 		case <-a.ticker.C:
-		case e := <-a.eventCh:
-			log.Debug("monitor received event", "event", e)
-			switch e.Type {
-			case add:
-				fallthrough
-			case update:
-				// TODO(helin): schedule the training
-				// k8s Job. Currently we don't
-				// schedule the trainer job, but only
-				// scale it.
-				var tj *batchv1.Job
-				var err error
-				tj, err = a.cluster.GetTrainerJob(e.Job)
-				if err != nil {
-					log.Error(
-						"Error getting the trainer k8s job, will sync later.",
-						"name", e.Job.ObjectMeta.Name,
-						"error", err,
-					)
-					j := job{
-						Config:     e.Job,
-						TrainerJob: nil,
-					}
-					a.jobs[e.Job.ObjectMeta.Name] = j
-					continue
-				}
-				j := job{
-					Config:     e.Job,
-					TrainerJob: tj,
-				}
-				a.jobs[e.Job.ObjectMeta.Name] = j
-			case del:
-				// TODO(helin): delete all created
-				// resources (e.g., trainer Job,
-				// pserver Replica Set) when we
-				// schedules the resources.
-				delete(a.jobs, e.Job.ObjectMeta.Name)
-			default:
-				log.Error("unrecognized event", "event", e)
+		case evt := <-a.eventCh:
+			if !a.updateJobList(evt) {
+				continue // If nothing important, go on looping.
 			}
 		}
 
-		r, err := a.cluster.SyncResource()
+		r, err := a.cluster.InquiryResource()
 		if err != nil {
-			log.Error("error sync resource", "error", err)
+			log.Error("Cluster.InquiryResource", "error", err)
 			continue
 		}
-		log.Info("sync cluster resource done", "resource", r)
+		log.Debug("Cluster.InquiryResource done", "resource", r)
 
-		havePending := false
-		for key, j := range a.jobs {
-			// k8s job for trainers may not be created immediently
-			// try sync it here
-			if j.TrainerJob == nil {
-				tj, err := a.cluster.GetTrainerJob(j.Config)
-				if err != nil {
-					log.Error(
-						"Error getting the trainer k8s job, will sync later.",
-						"name", j.Config.ObjectMeta.Name,
-						"error", err,
-					)
-					continue
-				}
-				j.TrainerJob = tj
-				a.jobs[key] = j
-			}
+		diff := scaleAllJobsDryRun(
+			a.findTrainingJobsMightBeRescheduled(
+				a.findPendingJob()),
+			r, a.maxLoadDesired)
 
-			total, _, pending, err := a.cluster.JobPods(j.Config)
-			if err != nil {
-				log.Error("check if job is running failed", "error", err)
-				continue
-			}
-
-			if total == pending {
-				havePending = true
-				break
-			}
-		}
-
-		var js []job
-		for key, j := range a.jobs {
-			// k8s job for trainers may not be created immediently
-			// try sync it here
-			if j.TrainerJob == nil {
-				tj, err := a.cluster.GetTrainerJob(j.Config)
-				if err != nil {
-					log.Error(
-						"Error getting the trainer k8s job, will sync later.",
-						"name", j.Config.ObjectMeta.Name,
-						"error", err,
-					)
-					continue
-				}
-				j.TrainerJob = tj
-				a.jobs[key] = j
-			}
-
-			total, running, pending, err := a.cluster.JobPods(j.Config)
-			if err != nil {
-				log.Error("check if job is running failed", "error", err)
-				continue
-			}
-
-			log.Info(
-				"job info",
-				"name", key,
-				"running", running,
-				"pending", pending,
-				"total", total,
-			)
-
-			// Scale jobs only when all pods' "Phase" are
-			// running, or some job is pending.
-			if total == running || havePending {
-				js = append(js, j)
-			}
-		}
-		diff := scaleAllDryRun(js, r, a.maxLoadDesired)
 		target := make(map[string]int)
 		for k, v := range diff {
 			target[k] = int(*a.jobs[k].TrainerJob.Spec.Parallelism) + v
@@ -535,6 +479,33 @@ func (a *Autoscaler) Monitor() {
 			log.Info("calculated scaling plan", "target", target,
 				"clusterResource", r)
 		}
-		a.scaleAll(target)
+
+		a.scaleAllJobs(target)
 	}
+}
+
+func (a *Autoscaler) findTrainingJobsMightBeRescheduled(havePending bool) []*job {
+	var js []*job
+	for jobName, job := range a.jobs {
+		if a.tryToRetrieveTrainerJobInTrainingJob(jobName, job) != nil {
+			continue
+		}
+
+		total, running, pending, err := a.cluster.JobPods(job.Config)
+		if err != nil {
+			log.Error("check if job is running failed", "error", err)
+			continue
+		}
+		log.Info("job info", "name", jobName, "running", running, "pending", pending, "total", total)
+
+		// A job is subject to rescheduling if it is in a
+		// stable status, which means that all its pods are
+		// running.  Or, if there is a job whose all pods are
+		// pending, we might need to reschedule all other jobs
+		// to make a room for the pending job.
+		if total == running || havePending {
+			js = append(js, job)
+		}
+	}
+	return js
 }

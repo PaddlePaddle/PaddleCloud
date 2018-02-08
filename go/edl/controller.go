@@ -25,8 +25,8 @@
 package edl
 
 import (
-	"context"
 	"encoding/json"
+	"sync"
 
 	log "github.com/inconshreveable/log15"
 
@@ -61,19 +61,22 @@ func New(c *rest.RESTClient, cs *kubernetes.Clientset, maxLoadDesired float64) (
 }
 
 // Run start to watch kubernetes events and do handlers.
-func (c *Controller) Run(ctx context.Context) error {
-	err := c.startWatch(ctx)
-	if err != nil {
-		return err
-	}
-
-	go c.autoscaler.Monitor()
-
-	<-ctx.Done()
-	return ctx.Err()
+func (c *Controller) Run() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		c.WatchTrainingJobs()
+		wg.Done()
+	}()
+	go func() {
+		c.autoscaler.Run()
+		wg.Done()
+	}()
+	wg.Wait()
 }
 
-func (c *Controller) startWatch(ctx context.Context) error {
+// WatchTrainingJobs moinitors trainingjobs resources.
+func (c *Controller) WatchTrainingJobs() {
 	source := cache.NewListWatchFromClient(
 		c.client,
 		edlresource.TrainingJobs,
@@ -101,8 +104,7 @@ func (c *Controller) startWatch(ctx context.Context) error {
 			DeleteFunc: c.onDelete,
 		})
 
-	go informer.Run(ctx.Done())
-	return nil
+	informer.Run(make(chan struct{})) // A channel will never close.
 }
 
 func (c *Controller) onAdd(obj interface{}) {

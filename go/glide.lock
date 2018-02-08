@@ -1,5 +1,5 @@
-hash: 9c125b7ddc893ea6228034bc28995209118f4702b183cb6cec49ab7a776708db
-updated: 2018-01-15T20:33:34.067167+08:00
+hash: ec75366a24092a9e6ab3e50b78c8f4fe836f4a79c32bb21277bab8a13a816e6f
+updated: 2018-01-31T13:52:07.261668-08:00
 imports:
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
@@ -57,7 +57,7 @@ imports:
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/mux
-  version: 7f08801859139f86dfafd1c296e2cba9a80d292e
+  version: 53c1911da2b537f792e7cafcb446b05ffe33b996
 - name: github.com/gregjones/httpcache
   version: 787624de3eb7bd915c329cba748687a3b22666a6
   subpackages:
@@ -94,6 +94,8 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
+- name: github.com/wangkuiyi/candy
+  version: 1b9030d056fa9f8c4b1f9c91b52fe4b8ab4cd8cc
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -264,7 +266,7 @@ imports:
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: f50b3431ea82d981d7d2e62d9f9da44e724fbe41
+  version: f7c6586ab26f07a6573218b0b820b1f9b92e76a0
   subpackages:
   - pkg/api
 testImports:

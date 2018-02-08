@@ -28,7 +28,54 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 )
 
-// Cluster resprensents a Kubernetes cluster.
+// ClusterResource is the resource of a cluster
+type ClusterResource struct {
+	NodeCount int // The total number of nodes in the cluster.
+
+	// Each Kubernetes job could require some number of GPUs in
+	// the range of [request, limit].
+	GPURequest int // \sum_job num_gpu_request(job)
+	GPULimit   int // \sum_job num_gpu_limit(job)
+	GPUTotal   int // The total number of GPUs in the cluster
+
+	// Each Kubernetes job could require some CPU timeslices in
+	// the unit of *milli*.
+	CPURequestMilli int64 // \sum_job cpu_request_in_milli(job)
+	CPULimitMilli   int64 // \sum_job cpu_request_in_milli(job)
+	CPUTotalMilli   int64 // The total amount of CPUs in the cluster in milli.
+
+	// Each Kubernetes job could require some amount of memory in
+	// the unit of *mega*.
+	MemoryRequestMega int64 // \sum_job memory_request_in_mega(job)
+	MemoryLimitMega   int64 // \sum_job memory_limit_in_mega(job)
+	MemoryTotalMega   int64 // The total amount of memory in the cluster in mega.
+
+	Nodes Nodes
+}
+
+// Nodes records the amount of idle CPU and free memory of each node
+// in the cluster.
+type Nodes struct {
+	NodesCPUIdleMilli   map[string]int64 // node id -> idle CPU
+	NodesMemoryFreeMega map[string]int64 // node id -> free memory
+}
+
+func (ns *Nodes) String() string {
+	if len(ns.NodesCPUIdleMilli) != len(ns.NodesMemoryFreeMega) {
+		panic("Inconsistent length in Nodes")
+	}
+
+	return fmt.Sprintf("%d Nodes", len(ns.NodesCPUIdleMilli))
+}
+
+// Cluster is our interface to the Kubernetes cluster. It can inquiry
+// the cluster's overall status and the status of a specific
+// PaddlePaddle trainning job.  It can also create training jobs and
+// replica.
+//
+// TODO(yi): The above functionalities are NOT logically related with
+// each other.  I am not sure if it is a good idea to group them in
+// this source file.
 type Cluster struct {
 	clientset *kubernetes.Clientset
 }
@@ -125,8 +172,8 @@ func updateNodesIdleResource(podList *v1.PodList, nodesCPUIdleMilli map[string]i
 	return
 }
 
-// SyncResource will update free and total resources in k8s cluster.
-func (c *Cluster) SyncResource() (res ClusterResource, err error) {
+// InquiryResource returns the idle and total resources of the Kubernetes cluster.
+func (c *Cluster) InquiryResource() (res ClusterResource, err error) {
 	nodes := c.clientset.CoreV1().Nodes()
 	nodeList, err := nodes.List(metav1.ListOptions{})
 	if err != nil {
@@ -186,7 +233,7 @@ func (c *Cluster) SyncResource() (res ClusterResource, err error) {
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
-		NodeInfos: NodeInfos{
+		Nodes: Nodes{
 			NodesCPUIdleMilli:   nodesCPUIdleMilli,
 			NodesMemoryFreeMega: nodesMemoryFreeMega,
 		},

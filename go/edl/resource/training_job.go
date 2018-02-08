@@ -12,7 +12,52 @@
    See the License for the specific language governing permissions and
 	 limitations under the License. */
 
-// sample resource:
+package resource
+
+import (
+	"encoding/json"
+
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	clientgoapi "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+)
+
+// TrainingJobs string for registration
+const TrainingJobs = "TrainingJobs"
+
+// A TrainingJob is a Kubernetes resource, it describes a PaddlePaddle
+// training job.  As a Kubernetes resource,
+//
+//  - Its content must follow the Kubernetes resource definition convention.
+//  - It must be a Go struct with JSON tags.
+//  - It must implement the deepcopy interface.
+//
+// To start a PadldePaddle training job,
+//
+// (1) The user uses the paddlecloud command line tool, which sends
+// the command line arguments to the paddlecloud HTTP server.
+//
+// (2) The paddlecloud server converts the command line arguments into
+// a TrainingJob resource and sends it to the Kubernetes API server.
+//
+//
+// (3) the EDL controller, which moinitors events about the
+// TrainingJob resource accepted by the Kubernetes API server,
+// converts the TrainingJob resource into the following Kubernetes
+// resources:
+//
+//   (3.1) a ReplicaSet of the master process
+//   (3.2) a ReplicaSet of the parameter server proceses
+//   (3.3)  a Job of trainer processes
+//
+// (4) some default controllers provided by Kubernetes monitors events
+// about ReplicaSet and Job creates and maintains the Pods.
+//
+// An example TrainingJob instance:
 /*
 apiVersion: paddlepaddle.org/v1
 kind: TrainingJob
@@ -51,25 +96,6 @@ spec:
 				cpu: "500m"
 				memory: "600Mi"
 */
-
-package resource
-
-import (
-	"encoding/json"
-
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	clientgoapi "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-)
-
-// TrainingJobs string for registration
-const TrainingJobs = "TrainingJobs"
-
-// TrainingJob defination
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TrainingJob struct {
@@ -89,8 +115,8 @@ type TrainingJobSpec struct {
 	PortsNumForSparse int              `json:"ports_num_for_sparse,omitempty"`
 	FaultTolerant     bool             `json:"fault_tolerant,omitempty"`
 	Passes            int              `json:"passes,omitempty"`
-	Volumes           []v1.Volume      `json:volumes`
-	VolumeMounts      []v1.VolumeMount `json:VolumeMounts`
+	Volumes           []v1.Volume      `json:"volumes"`
+	VolumeMounts      []v1.VolumeMount `json:"VolumeMounts"`
 	// Job components.
 	Trainer TrainerSpec `json:"trainer"`
 	Pserver PserverSpec `json:"pserver"`
@@ -149,12 +175,6 @@ type TrainingJobList struct {
 	Items           []TrainingJob `json:"items"`
 }
 
-// NeedGPU returns true if the job need GPU resource to run.
-func (s *TrainingJob) NeedGPU() bool {
-	q := s.Spec.Trainer.Resources.Limits.NvidiaGPU()
-	return q.CmpInt64(0) == 1
-}
-
 // Elastic returns true if the job can scale to more workers.
 func (s *TrainingJob) Elastic() bool {
 	return s.Spec.Trainer.MinInstance < s.Spec.Trainer.MaxInstance
@@ -168,8 +188,12 @@ func (s *TrainingJob) GPU() int {
 		// FIXME: treat errors
 		gpu = 0
 	}
-
 	return int(gpu)
+}
+
+// NeedGPU returns true if the job need GPU resource to run.
+func (s *TrainingJob) NeedGPU() bool {
+	return s.GPU() > 0
 }
 
 func (s *TrainingJob) String() string {
@@ -177,8 +201,11 @@ func (s *TrainingJob) String() string {
 	return string(b[:])
 }
 
-// RegisterTrainingJob registers TrainingJob a new type of resource to Kubernetes.
-func RegisterTrainingJob(config *rest.Config) {
+// RegisterResource registers a resource type and the corresponding
+// resource list type to the local Kubernetes runtime under group
+// version "paddlepaddle.org", so the runtime could encode/decode this
+// Go type.  It also change config.GroupVersion to "paddlepaddle.org".
+func RegisterResource(config *rest.Config, resourceType, resourceListType runtime.Object) *rest.Config {
 	groupversion := schema.GroupVersion{
 		Group:   "paddlepaddle.org",
 		Version: "v1",
@@ -189,16 +216,13 @@ func RegisterTrainingJob(config *rest.Config) {
 	config.ContentType = runtime.ContentTypeJSON
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: clientgoapi.Codecs}
 
-	schemeBuilder := runtime.NewSchemeBuilder(
-		func(scheme *runtime.Scheme) error {
-			scheme.AddKnownTypes(
-				groupversion,
-				&TrainingJob{},
-				&TrainingJobList{},
-				&v1.ListOptions{},
-				&v1.DeleteOptions{},
-			)
-			return nil
-		})
-	schemeBuilder.AddToScheme(clientgoapi.Scheme)
+	clientgoapi.Scheme.AddKnownTypes(
+		groupversion,
+		resourceType,
+		resourceListType,
+		&v1.ListOptions{},
+		&v1.DeleteOptions{},
+	)
+
+	return config
 }
