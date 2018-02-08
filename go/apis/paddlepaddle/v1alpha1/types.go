@@ -8,11 +8,16 @@ import (
 )
 
 const (
-	CRDKind       = "TrainingJob"
+	// CRDKind is the kind of K8s CRD.
+	CRDKind = "TrainingJob"
+	// CRDKindPlural is the plural of CRDKind.
 	CRDKindPlural = "trainingjobs"
-	CRDShortName  = "tj"
-	CRDGroup      = "paddlepaddle.org"
-	CRDVersion    = "v1alpha1"
+	// CRDShortName is the short name of CRD.
+	CRDShortName = "tj"
+	// CRDGroup is the name of group.
+	CRDGroup = "paddlepaddle.org"
+	// CRDVersion is the version of CRD.
+	CRDVersion = "v1alpha1"
 )
 
 // CRDName returns name of crd
@@ -81,11 +86,16 @@ type TrainerSpec struct {
 type TrainingJobPhase string
 
 const (
-	TrainingJobPhaseNone      TrainingJobPhase = ""
-	TrainingJobPhaseCreating                   = "creating"
-	TrainingJobPhaseRunning                    = "running"
-	TrainingJobPhaseSucceeded                  = "succeeded"
-	TrainingJobPhaseFailed                     = "failed"
+	// TrainingJobPhaseNone is empty TrainingJobPhase.
+	TrainingJobPhaseNone TrainingJobPhase = ""
+	// TrainingJobPhaseCreating is creating TrainingJobPhase.
+	TrainingJobPhaseCreating = "creating"
+	// TrainingJobPhaseRunning is running TrainingJobPhase.
+	TrainingJobPhaseRunning = "running"
+	// TrainingJobPhaseSucceeded is succeeded TrainingJobPhase.
+	TrainingJobPhaseSucceeded = "succeeded"
+	// TrainingJobPhaseFailed is failed TrainingJobPhase.
+	TrainingJobPhaseFailed = "failed"
 )
 
 // TrainerJobScaleStatus is status of trainer jobs.
@@ -96,8 +106,11 @@ type TrainerJobScaleStatus struct {
 type TrainingResourceType string
 
 const (
-	MASTER  TrainingResourceType = "MASTER"
+	// MASTER is the master name of TrainingResourceType.
+	MASTER TrainingResourceType = "MASTER"
+	// PSERVER is the pserver name of TrainingResourceType.
 	PSERVER TrainingResourceType = "PSERVER"
+	// TRAINER is the trainer name of TrainingResourceType.
 	TRAINER TrainingResourceType = "TRAINER"
 )
 
@@ -105,11 +118,16 @@ const (
 type ResourceState string
 
 const (
-	ResourceStateNone      ResourceState = ""
-	ResourceStateStarting                = "starting"
-	ResourceStateRunning                 = "running"
-	ResourceStateFailed                  = "failed"
-	ResourceStateSucceeded               = "succeeded"
+	// ResourceStateNone is the initial state of training job
+	ResourceStateNone ResourceState = ""
+	// ResourceStateStarting is the starting state of ResourceState.
+	ResourceStateStarting = "starting"
+	// ResourceStateRunning is the  running state of ResourceState.
+	ResourceStateRunning = "running"
+	// ResourceStateFailed is the failed state of ResourceState.
+	ResourceStateFailed = "failed"
+	// ResourceStateSucceeded is the succeeded state of ResourceState
+	ResourceStateSucceeded = "succeeded"
 )
 
 // TrainingResourceStatus is the status of every resource

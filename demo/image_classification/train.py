@@ -38,8 +38,9 @@ def main():
     # option 2. vgg
     net = vgg_bn_drop(image)
 
-    out = paddle.layer.fc(
-        input=net, size=classdim, act=paddle.activation.Softmax())
+    out = paddle.layer.fc(input=net,
+                          size=classdim,
+                          act=paddle.activation.Softmax())
 
     lbl = paddle.layer.data(
         name="label", type=paddle.data_type.integer_value(classdim))
@@ -79,8 +80,9 @@ def main():
             print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
 
     # Create trainer
-    trainer = paddle.trainer.SGD(
-        cost=cost, parameters=parameters, update_equation=momentum_optimizer)
+    trainer = paddle.trainer.SGD(cost=cost,
+                                 parameters=parameters,
+                                 update_equation=momentum_optimizer)
 
     # Save the inference topology to protobuf.
     inference_topology = paddle.topology.Topology(layers=out)

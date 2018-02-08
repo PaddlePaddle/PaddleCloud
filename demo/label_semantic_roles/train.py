@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import math
 import numpy as np
@@ -17,6 +31,7 @@ hidden_dim = 512
 depth = 8
 default_std = 1 / math.sqrt(hidden_dim) / 3.0
 mix_hidden_lr = 1e-3
+
 
 # TODO(helin): remove this once paddle.v2.reader.creator.recordio is
 # fixed.
@@ -43,6 +58,7 @@ def recordio(paths, buf_size=100):
 
     return dec.buffered(reader, buf_size)
 
+
 def d_type(size):
     return paddle.data_type.integer_value_sequence(size)
 
@@ -66,14 +82,15 @@ def db_lstm():
     predicate_embedding = paddle.layer.embedding(
         size=word_dim,
         input=predicate,
-        param_attr=paddle.attr.Param(name='vemb', initial_std=default_std))
+        param_attr=paddle.attr.Param(
+            name='vemb', initial_std=default_std))
     mark_embedding = paddle.layer.embedding(
         size=mark_dim, input=mark, param_attr=std_0)
 
     word_input = [word, ctx_n2, ctx_n1, ctx_0, ctx_p1, ctx_p2]
     emb_layers = [
-        paddle.layer.embedding(size=word_dim, input=x, param_attr=emb_para)
-        for x in word_input
+        paddle.layer.embedding(
+            size=word_dim, input=x, param_attr=emb_para) for x in word_input
     ]
     emb_layers.append(predicate_embedding)
     emb_layers.append(mark_embedding)
@@ -148,12 +165,13 @@ def main():
     # define network topology
     feature_out = db_lstm()
     target = paddle.layer.data(name='target', type=d_type(label_dict_len))
-    crf_cost = paddle.layer.crf(
-        size=label_dict_len,
-        input=feature_out,
-        label=target,
-        param_attr=paddle.attr.Param(
-            name='crfw', initial_std=default_std, learning_rate=mix_hidden_lr))
+    crf_cost = paddle.layer.crf(size=label_dict_len,
+                                input=feature_out,
+                                label=target,
+                                param_attr=paddle.attr.Param(
+                                    name='crfw',
+                                    initial_std=default_std,
+                                    learning_rate=mix_hidden_lr))
 
     crf_dec = paddle.layer.crf_decoding(
         size=label_dict_len,
@@ -174,16 +192,21 @@ def main():
         model_average=paddle.optimizer.ModelAverage(
             average_window=0.5, max_average_window=10000), )
 
-    trainer = paddle.trainer.SGD(
-        cost=crf_cost,
-        parameters=parameters,
-        update_equation=optimizer,
-        extra_layers=crf_dec)
+    trainer = paddle.trainer.SGD(cost=crf_cost,
+                                 parameters=parameters,
+                                 update_equation=optimizer,
+                                 extra_layers=crf_dec)
 
     reader = paddle.batch(
-        paddle.reader.shuffle(recordio("/pfs/dlnel/public/dataset/conll05/conl105_train-*"), buf_size=8192), batch_size=10)
+        paddle.reader.shuffle(
+            recordio("/pfs/dlnel/public/dataset/conll05/conl105_train-*"),
+            buf_size=8192),
+        batch_size=10)
     reader_test = paddle.batch(
-        paddle.reader.shuffle(recordio("/pfs/dlnel/public/dataset/conll05/conl105_test-*"), buf_size=50), batch_size=10)
+        paddle.reader.shuffle(
+            recordio("/pfs/dlnel/public/dataset/conll05/conl105_test-*"),
+            buf_size=50),
+        batch_size=10)
 
     feeding = {
         'word_data': 0,

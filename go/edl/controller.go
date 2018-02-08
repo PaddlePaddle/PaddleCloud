@@ -75,6 +75,7 @@ func (c *Controller) Run() {
 	wg.Wait()
 }
 
+// WatchTrainingJobs moinitors trainingjobs resources.
 func (c *Controller) WatchTrainingJobs() {
 	source := cache.NewListWatchFromClient(
 		c.client,

@@ -22,7 +22,7 @@ const (
 )
 
 // Config is global config object for paddlectl commandline
-var Config = config.ParseDefaultConfig()
+var Config *config.SubmitConfig
 
 // SubmitCmd define the subcommand of submitting paddle training jobs.
 type SubmitCmd struct {
