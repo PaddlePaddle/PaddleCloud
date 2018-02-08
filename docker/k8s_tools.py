@@ -39,11 +39,15 @@ def count_pods_by_phase(label_selector, phase):
     return len(filtered_pod_list)
 
 
-def fetch_pserver_ips(label_selector):
+def fetch_pserver_ips(label_selector, port=0):
     #label_selector = "paddle-job-pserver=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     pserver_ips = [item[1] for item in pod_list]
-    return ",".join(pserver_ips)
+    if port > 0:
+        return ",".join(pserver_ips+":"+port)
+    else:
+        return ",".join(pserver_ips)
+
 
 def fetch_master_ip(label_selector):
     #label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
@@ -51,7 +55,7 @@ def fetch_master_ip(label_selector):
     master_ips = [item[1] for item in pod_list]
     return master_ips[0]
 
-def fetch_trainer_id(label_selector, desired):
+def fetch_trainer_id(label_selector):
     #label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     trainer_ips = [item[1] for item in pod_list]
