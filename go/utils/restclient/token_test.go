@@ -1,6 +1,7 @@
 package restclient
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -38,12 +39,33 @@ func fakeServer() (*http.Server, int) {
 	return srv, listener.Addr().(*net.TCPAddr).Port
 }
 
+func mkdir_p(path string) error {
+	fi, err := os.Stat(path)
+
+	if os.IsExist(err) {
+		if !fi.IsDir() {
+			return errors.New("exist a same name file")
+		}
+
+		return nil
+	}
+
+	if err := os.MkdirAll(path, 0700); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func TestTokenParse(t *testing.T) {
 	srv, port := fakeServer()
 	defer srv.Shutdown(nil)
 
 	// test token fetching
-	os.Remove(filepath.Join(pathutil.UserHomeDir(), ".paddle", "token_cache"))
+	path := filepath.Join(pathutil.UserHomeDir(), ".paddle")
+	require.Nil(t, mkdir_p(path), "mkdir ", path)
+
+	os.Remove(filepath.Join(path, "token_cache"))
 	tmpconf := &config.SubmitConfig{ActiveConfig: &config.SubmitConfigDataCenter{
 		Name:     "test",
 		Username: "testuser",
