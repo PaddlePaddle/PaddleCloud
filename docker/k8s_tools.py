@@ -4,9 +4,9 @@ import sys
 import time
 import socket
 from kubernetes import client, config
-PADDLE_JOB_NAME = os.getenv("PADDLE_JOB_NAME")
+#PADDLE_JOB_NAME = os.getenv("PADDLE_JOB_NAME")
 NAMESPACE = os.getenv("NAMESPACE")
-PORT = os.getenv("PSERVER_PORT")
+#PORT = os.getenv("PSERVER_PORT")
 if os.getenv("KUBERNETES_SERVICE_HOST", None):
     config.load_incluster_config()
 else:
@@ -39,20 +39,20 @@ def count_pods_by_phase(label_selector, phase):
     return len(filtered_pod_list)
 
 
-def fetch_pserver_ips():
-    label_selector = "paddle-job-pserver=%s" % PADDLE_JOB_NAME
+def fetch_pserver_ips(label_selector):
+    #label_selector = "paddle-job-pserver=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     pserver_ips = [item[1] for item in pod_list]
     return ",".join(pserver_ips)
 
-def fetch_master_ip():
-    label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
+def fetch_master_ip(label_selector):
+    #label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     master_ips = [item[1] for item in pod_list]
     return master_ips[0]
 
-def fetch_trainer_id():
-    label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
+def fetch_trainer_id(label_selector, desired):
+    #label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     trainer_ips = [item[1] for item in pod_list]
     trainer_ips.sort()
@@ -66,11 +66,11 @@ def fetch_trainer_id():
 if __name__ == "__main__":
     command = sys.argv[1]
     if command == "fetch_pserver_ips":
-        print fetch_pserver_ips()
+        print fetch_pserver_ips(sys.argv[2])
     elif command == "fetch_trainer_id":
-        print fetch_trainer_id()
+        print fetch_trainer_id(sys.argv[2])
     elif command == "fetch_master_ip":
-        print fetch_master_ip()
+        print fetch_master_ip(sys.argv[2])
     elif command == "count_pods_by_phase":
         print count_pods_by_phase(sys.argv[2], sys.argv[3])
     elif command == "wait_pods_running":
