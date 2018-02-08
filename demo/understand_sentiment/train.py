@@ -29,15 +29,15 @@ TEST_FILES_PATH = os.path.join(common.DATA_HOME, "imdb")
 TRAINER_ID = int(os.getenv("PADDLE_INIT_TRAINER_ID", "-1"))
 TRAINER_COUNT = int(os.getenv("PADDLE_INIT_NUM_GRADIENT_SERVERS", "-1"))
 
+
 def prepare_dataset():
     word_dict = paddle.dataset.imdb.word_dict()
     # convert will also split the dataset by line-count
     common.convert(TRAIN_FILES_PATH,
-            lambda: paddle.dataset.imdb.train(word_dict),
-                1000, "train")
+                   lambda: paddle.dataset.imdb.train(word_dict), 1000, "train")
     common.convert(TEST_FILES_PATH,
-            lambda: paddle.dataset.imdb.test(word_dict),
-                1000, "test")
+                   lambda: paddle.dataset.imdb.test(word_dict), 1000, "test")
+
 
 def cluster_reader_recordio(trainer_id, trainer_count, flag):
     '''
@@ -45,6 +45,7 @@ def cluster_reader_recordio(trainer_id, trainer_count, flag):
         each trainer will read a subset of files of the whole dataset.
     '''
     import recordio
+
     def reader():
         PATTERN_STR = "%s-*" % flag
         FILES_PATTERN = os.path.join(TRAIN_FILES_PATH, PATTERN_STR)
@@ -63,20 +64,21 @@ def cluster_reader_recordio(trainer_id, trainer_count, flag):
                 yield pickle.loads(record_raw)
                 record_raw = reader.read()
             reader.close()
+
     return reader
 
 
-
 def convolution_net(input_dim, class_dim=2, emb_dim=128, hid_dim=128):
-    data = paddle.layer.data("word",
-                             paddle.data_type.integer_value_sequence(input_dim))
+    data = paddle.layer.data(
+        "word", paddle.data_type.integer_value_sequence(input_dim))
     emb = paddle.layer.embedding(input=data, size=emb_dim)
     conv_3 = paddle.networks.sequence_conv_pool(
         input=emb, context_len=3, hidden_size=hid_dim)
     conv_4 = paddle.networks.sequence_conv_pool(
         input=emb, context_len=4, hidden_size=hid_dim)
-    output = paddle.layer.fc(
-        input=[conv_3, conv_4], size=class_dim, act=paddle.activation.Softmax())
+    output = paddle.layer.fc(input=[conv_3, conv_4],
+                             size=class_dim,
+                             act=paddle.activation.Softmax())
     lbl = paddle.layer.data("label", paddle.data_type.integer_value(2))
     cost = paddle.layer.classification_cost(input=output, label=lbl)
     return cost
@@ -110,23 +112,24 @@ def stacked_lstm_net(input_dim,
     relu = paddle.activation.Relu()
     linear = paddle.activation.Linear()
 
-    data = paddle.layer.data("word",
-                             paddle.data_type.integer_value_sequence(input_dim))
+    data = paddle.layer.data(
+        "word", paddle.data_type.integer_value_sequence(input_dim))
     emb = paddle.layer.embedding(input=data, size=emb_dim)
 
-    fc1 = paddle.layer.fc(
-        input=emb, size=hid_dim, act=linear, bias_attr=bias_attr)
+    fc1 = paddle.layer.fc(input=emb,
+                          size=hid_dim,
+                          act=linear,
+                          bias_attr=bias_attr)
     lstm1 = paddle.layer.lstmemory(
         input=fc1, act=relu, bias_attr=bias_attr, layer_attr=layer_attr)
 
     inputs = [fc1, lstm1]
     for i in range(2, stacked_num + 1):
-        fc = paddle.layer.fc(
-            input=inputs,
-            size=hid_dim,
-            act=linear,
-            param_attr=para_attr,
-            bias_attr=bias_attr)
+        fc = paddle.layer.fc(input=inputs,
+                             size=hid_dim,
+                             act=linear,
+                             param_attr=para_attr,
+                             bias_attr=bias_attr)
         lstm = paddle.layer.lstmemory(
             input=fc,
             reverse=(i % 2) == 0,
@@ -139,12 +142,11 @@ def stacked_lstm_net(input_dim,
         input=inputs[0], pooling_type=paddle.pooling.Max())
     lstm_last = paddle.layer.pooling(
         input=inputs[1], pooling_type=paddle.pooling.Max())
-    output = paddle.layer.fc(
-        input=[fc_last, lstm_last],
-        size=class_dim,
-        act=paddle.activation.Softmax(),
-        bias_attr=bias_attr,
-        param_attr=para_attr)
+    output = paddle.layer.fc(input=[fc_last, lstm_last],
+                             size=class_dim,
+                             act=paddle.activation.Softmax(),
+                             bias_attr=bias_attr,
+                             param_attr=para_attr)
 
     lbl = paddle.layer.data("label", paddle.data_type.integer_value(2))
     cost = paddle.layer.classification_cost(input=output, label=lbl)
@@ -161,10 +163,12 @@ def main():
     class_dim = 2
     train_reader = paddle.batch(
         paddle.reader.shuffle(
-            cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT, "train"), buf_size=1000),
+            cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT, "train"),
+            buf_size=1000),
         batch_size=100)
     test_reader = paddle.batch(
-        cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT, "test"), batch_size=100)
+        cluster_reader_recordio(TRAINER_ID, TRAINER_COUNT, "test"),
+        batch_size=100)
 
     feeding = {'word': 0, 'label': 1}
 
@@ -197,14 +201,16 @@ def main():
             print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
 
     # create trainer
-    trainer = paddle.trainer.SGD(
-        cost=cost, parameters=parameters, update_equation=adam_optimizer)
+    trainer = paddle.trainer.SGD(cost=cost,
+                                 parameters=parameters,
+                                 update_equation=adam_optimizer)
 
     trainer.train(
         reader=train_reader,
         event_handler=event_handler,
         feeding=feeding,
         num_passes=2)
+
 
 if __name__ == '__main__':
     usage = "python train.py [prepare|train]"
