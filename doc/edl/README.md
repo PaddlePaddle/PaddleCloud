@@ -3,16 +3,30 @@
 ## Background
 
 A PaddlePaddle training job contains several trainer instances,
-several parameter server instances, and one master instance. We would
-like to automatically scale the number of training instances and the
+several parameter server instances, and one master instance. 
+We are going to define PaddlePaddle cluster job using Kubernetes [CRD](https://kubernetes.io/docs/concepts/api-extension/custom-resources/). 
+Each job is described using a yaml representation called TrainingJob. 
+With CRD, we can manage the PaddlePaddle cluster job as easy as k8s primary resources. 
+We also would like to automatically scale the number of training instances and the
 number of parameter server instances to fully utilize the cluster's
 computation resources. We call this Elastic Deep Learning.
 
+Currently, we have two controller Lifecycle Controller and Autoscale Controller to support the functions mentioned 
+above. We will merge them in the near future.
+
+**The goals of Lifecycle Controller including:**
+
+- Implement a controller and register a TrainingJob CRD
+- Create and delete TrainingJob
+- TrainingJob life cycle management
+
+**The goals of Autoscale Controller including:**
+
+- Autoscale trainer and pserver
+
 Currently, we will only support trainer autoscaling. Parameter server
 autoscaling will be supported in the near future. This design doc
-considers both of them.
-
-[Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is
+considers both of them. [Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is
 an autoscaling solution provided by Kubernetes, but it's not suitable
 for the training job autoscaling for the following reasons:
 
@@ -30,22 +44,16 @@ for the training job autoscaling for the following reasons:
   parameter servers is correlated to the required number of trainers,
   we need to scale them together.
 
-We need to develop our own solution for autoscaling.
+So we need to develop our own Autoscale Controller.
 
-## Solution
+## Requirements
 
-We will build
-an [Operator](https://coreos.com/blog/introducing-operators.html) that
-will do autoscaling. To be more precise, we will create
-a
-[custom Kubernetes Resource](https://kubernetes.io/docs/concepts/api-extension/custom-resources/) and
-a
-[custom Kubernetes Controller](https://resources.coreos.com/youtube-coreos-fest-2017/writing-a-custom-controller-extending-the-functionality-of-your-cluster). Kubernetes
-is designed to be flexible so adding custom Resources and custom
-Controllers into our cluster does not require modifying the Kubernetes
-source code.
+K8s 1.8+  and [Golang 1.9+](https://golang.org/dl/) are required for this project.
 
-### Training Job Resource
+## Design
+
+### Concepts
+#### Training Job Resource
 
 Just
 like
@@ -58,34 +66,18 @@ describes the training job.
 A pseudo resource declaration (`training_job.yaml`) is as follows:
 
 ```yaml
-apiVersion: paddlepaddle.org/v1
+apiVersion: paddlepaddle.org/v1alpha1
 kind: TrainingJob
 metadata:
-  name: job-1
+  name: paddlejob
+  namespace: testspace
 spec:
-  trainer:
-    entrypoint: "python train.py"
-    workspace: "/home/job-1/"
-    min-instance: 3
-    max-instance: 6
-    resources:
-      limits:
-        alpha.kubernetes.io/nvidia-gpu: 1
-        cpu: "800m"
-        memory: "1Gi"
-      requests:
-        cpu: "500m"
-        memory: "600Mi"
-  pserver:
-    min-instance: 3
-    max-instance: 3
-    resources:
-      limits:
-        cpu: "800m"
-        memory: "1Gi"
-      requests:
-        cpu: "500m"
-        memory: "600Mi"
+  image: "paddlepaddle/paddlecloud-job"
+  port: 7164
+  ports_num: 1
+  ports_num_for_sparse: 1
+  fault_tolerant: false
+  mountPath: "/home/work/namespace/"
   master:
     resources:
       limits:
@@ -94,9 +86,35 @@ spec:
       requests:
         cpu: "500m"
         memory: "600Mi"
+  pserver:
+    min-instance: 2
+    max-instance: 2
+    resources:
+      limits:
+        cpu: "800m"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "600Mi"
+  trainer:
+    entrypoint: "python train.py"
+    workspace: "/home/job-1/"
+    passes: 10
+    min-instance: 2
+    max-instance: 6
+    resources:
+      limits:
+        cpu: "200m"
+        memory: "200Mi"
+      requests:
+        cpu: "200m"
+        memory: "200Mi"
 ```
 
-The training job controller will create and continuously scale the
+The lifecycle controller will create a PaddlePaddle cluster job with a master, 2 pserver, 2 trainer and update state 
+of the training job.
+
+The autoscale controller will create and continuously scale the
 number of trainers and the number of pservers between the
 corresponding `min-instance` and `max-instance`.
 
@@ -107,60 +125,175 @@ optional: the master server will be created only when configured.
 The training job custom resource can be created with: `kubectl create
 -f training_job.yaml`.
 
-The custom resource will only be saved on Kubernetes, we will need a
-custom controller that operates on it.
+#### TrainingJobUpdater
 
-### Training Job Controller
+In lifecycle controller, we need an object which named TrainingJobUpdater to manages a specific TrainingJob. 
+Including job spec, current status and events of this job. 
+Here is the struct of TrainingJobUpdater.
+ 
+ ```go
+ type trainingJobEventType string
+ 
+ const (
+ 	trainingJobEventDelete trainingJobEventType = "Delete"
+ 	trainingJobEventModify trainingJobEventType = "Modify"
+ )
+ 
+ type trainingJobEvent struct {
+ 	// pet is the TrainingJobEventType of TrainingJob
+ 	pet trainingJobEventType
+ 	// The job transfer the information fo job
+ 	job *v1alpha1.TrainingJob
+ }
+ 
+ // TrainingJobUpdater is to manager a specific TrainingJob
+ type TrainingJobUpdater struct {
+ 	// job is the job the TrainingJobUpdater manager.
+ 	job *v1alpha1.TrainingJob
+ 
+ 	// kubeCli is standard kubernetes client.
+ 	kubeCli kubernetes.Interface
+ 
+ 	// trainingJobClient is the client of TrainingJob.
+ 	trainingJobClient trainingJobClient.Interface
+ 
+ 	// status is the status in memory, update when TrainingJob status changed and update the CRD resource status.
+ 	status v1alpha1.TrainingJobStatus
+ 
+ 	// eventCh is the channel received by Controller, include Modify and Delete.
+ 	// When trainingJobEvent is Delete it will delete all resources
+ 	// The maximum is 1000.
+ 	eventCh chan *trainingJobEvent
+ }
+ 
+ ```
+ 
+ When user submit a TrainingJob, lifecycle controller start a TrainingJobUpdater to manage the TrainingJob. 
+ - It will parser the config to TrainingJob spec including PSERVER, MASTER and TRAINER.
+ - It will create resource orderly. 
+ - It will sync the status of the job at regular time. While the status changed, it will update the job's status to k8s. 
+ - It will release all the resource while the job succeeded or failed.
+ 
+#### Controller
 
-The training job controller runs as a Pod. It has the global view of
+**Lifecycle Controller**
+
+The lifecycle controller manages distributed PaddlePaddle jobs by creating a series of TrainingJobUpdaters. Here is the struct of 
+Controller.
+```go
+type Controller struct {
+	// KubeCli is a standard kubernetes clientset
+	KubeCli kubernetes.Interface
+	// ApiCli is the extension kubernetes clientset
+	ApiCli apiextensionsclient.Interface
+	// PaddleCli is a clientset for our own API group
+	PaddleCli paddleclientset.Interface
+
+	trainingjobLister paddlelisters.TrainingJobLister
+	trainingjobSynced cache.InformerSynced
+
+	jobtracker map[string]*updater.TrainingJobUpdater
+
+	// workqueue is a rate limited work queue. This is used to queue work to be
+	// processed instead of performing it as soon as a change happens.
+	workqueue workqueue.RateLimitingInterface
+	// recorder is an event recorder for recording Event resources to the
+	// Kubernetes API.
+	recorder record.EventRecorder
+}
+
+```
+
+- It start to confirm that there are only one TrainingJob controller in cluster.
+- It will register TrainingJob CRD to cluster if there is no TrainingJob resource.
+- It will create a TrainingJobUpdater while PaddlePaddle job was submitted and delete the TrainingJobUpdater while job was 
+deleted.
+
+**Autoscale Controller**
+
+The autoscale controller runs as a Pod. It has the global view of
 the computation resources. It watches the training job resources and
 schedules and scales the training jobs using the Kuberenetes API.
 
-The pseudo controller declaration (`training_job_controller.yaml`) is
+The pseudo controller declaration (`autoscale_controller.yaml`) is
 as follows:
 
 ```yaml
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: training-job-controller
+  name: autoscale-controller
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: training-job-controller
+        name: autoscale-controller
     spec:
       containers:
-      - name: training-job-controller
+      - name: autoscale-controller
         image: paddlepaddle/training-job-controller
 ```
 
 The training job controller can be started by the cluster
-administrator with command: `kubectl create -f
-training_job_controller.yaml`
+administrator with command: `kubectl create -f autoscale_controller.yaml`
 
 You can use `go/cmd/autoscaler/Dockerfile` to build a new controller image 
 or downloading an existing one.
 
 ## Implementation
 
-### Training Job Resource
+### Lifecycle Controller
+#### Lifecycle Overall
 
-The training job resource is a custom resource. There are two ways of
-implementing custom resources:
+The whole life cycle of TrainingJob is managed through the two layer control of Lifecycle Controller and TrainingJobUpdater. As 
+shown in the following figure:
+![image](pictures/lifecycle_overall.png)
 
-- [Custom Resource Definition (CRD)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/),
-  since Kubernetes v1.7.
-- [Third Party Resource (TPR)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/),
-  since Kubernetes v1.2, fully deprecated in v1.8, will be removed in
-  v1.9.
+As shown above, when the job is submitted, `Controller` will create a `TrainingJobUpdater` by `NewUpdater` and start 
+the lifecycle manager. `TrainingJobUpdater` will start `InitResource` with a goroutine and start a `Ticker` to sync the
+state of the trainingjob. When the state is changed to `failed` or `succeeded`, resources of PSERVER and MASTER will 
+be released.
 
-We will support TPR first, because some of our clusters is using
-Kubernetes v1.6. CRD will be supported in the future.
+When the job is killed, resources of PSERVER and MASTER will be released and the metadata will be deleted.
 
 
-### Training Job Controller
+#### State Machine
+
+The struct of TrainingJob Status as follows.
+
+```go
+type TrainingJobStatus struct {
+	// Phase is phase of TrainingJob
+	Phase TrainingJobPhase `json:"phase"`
+	// Reason is the reason of job phase failed
+	Reason string `json:"reason"`
+	// ScaleStatus is autoscale status of trainer jobs
+	ScaleStatus TrainerJobScaleStatus `json:"scale_status"`
+	// ReplicaStatuses is detail status of resources
+	ReplicaStatuses []*TrainingResourceStatus `json:"replica_statuses"`
+}
+```
+
+We define five phases to describe the traingingjob:
+
+- TrainingJobPhaseNone: `""`
+- TrainingJobPhaseCreating: `creating`
+- TrainingJobPhaseRunning: `running`
+- TrainingJobPhaseSucceeded: `succeeded`
+- TrainingJobPhaseFailed: `failed`
+
+When a job was submitted to cluster. Controller will start a Updater to manager the lifecycle. Here is the state 
+machine of a TrainingJob:
+![image](pictures/state_machine.png)
+
+As shown above, when the job is submitted, controller will start a Updater and the state of the job is none. While 
+the job config is valid and through parser, the state will convert to `creating`. While all the resources are set up,
+ the state will convert to `running`. While all trainer are succeeded or any trainer succeeded (fault tolerant mode),
+  the state will convert to `succeeded`. Otherwise, the state will convert to `failed`.
+
+
+### Autoscale Controller
 
 Currently, we will run a single training job controller instance and
 assume that there is no training job controller running concurrently
