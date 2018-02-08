@@ -248,7 +248,7 @@ or downloading an existing one.
 
 The whole life cycle of TrainingJob is managed through the two layer control of Lifecycle Controller and TrainingJobUpdater. As 
 shown in the following figure:
-![image](pictures/lifecycle_overall.png)
+![image](lifecycle_overall.png)
 
 As shown above, when the job is submitted, `Controller` will create a `TrainingJobUpdater` by `NewUpdater` and start 
 the lifecycle manager. `TrainingJobUpdater` will start `InitResource` with a goroutine and start a `Ticker` to sync the
@@ -285,7 +285,7 @@ We define five phases to describe the traingingjob:
 
 When a job was submitted to cluster. Controller will start a Updater to manager the lifecycle. Here is the state 
 machine of a TrainingJob:
-![image](pictures/state_machine.png)
+![image](state_machine.png)
 
 As shown above, when the job is submitted, controller will start a Updater and the state of the job is none. While 
 the job config is valid and through parser, the state will convert to `creating`. While all the resources are set up,
