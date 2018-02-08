@@ -175,7 +175,7 @@ $ scripts/update-codegen.sh
 ```
 For more details, please refer to [article](https://blog.openshift.com/kubernetes-deep-dive-code-generation-customresources/).
 When the definition of resource is stable, we will commit generated dependent codes.
-Just skip `go/pkg` when running `go test` during your development.
+Just skip `go/apis` when running `go test` during your development.
 
 By the way, if you want to generate these codes by yourself, due to this [issue](https://github.com/kubernetes/code-generator/issues/20),
 you have to deal with the import problem.

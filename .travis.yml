@@ -14,8 +14,8 @@ matrix:
           RESULT=$?; if [ $RESULT -eq 0 ]; then true; else exit 1 ; fi;
         - ln -s $GOPATH/src/github.com/PaddlePaddle $GOPATH/src/github.com/paddlepaddle
         - cd go && glide install && go get k8s.io/kubernetes || echo 1
-        - bash ./vendor/k8s.io/code-generator/generate-groups.sh "deepcopy,client,informer,lister" github.com/PaddlePaddle/cloud/go/pkg/client github.com/PaddlePaddle/cloud/go/pkg/apis paddlepaddle:v1alpha1
-        - grep "github.com/paddlepaddle/cloud" -nR pkg/client | awk -F ':' '{print $1}' | xargs sed -i 's|github.com/paddlepaddle/cloud|github.com/PaddlePaddle/cloud|g'
+        - bash ./vendor/k8s.io/code-generator/generate-groups.sh "deepcopy,client,informer,lister" github.com/PaddlePaddle/cloud/go/client github.com/PaddlePaddle/cloud/go/apis paddlepaddle:v1alpha1
+        - grep "github.com/paddlepaddle/cloud" -nR client | awk -F ':' '{print $1}' | xargs sed -i 's|github.com/paddlepaddle/cloud|github.com/PaddlePaddle/cloud|g'
         - glide install --strip-vendor && go test $(glide novendor)
     - language: python
       python: 2.7

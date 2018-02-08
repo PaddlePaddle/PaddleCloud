@@ -9,9 +9,11 @@ import (
 
 const (
 	// CRDKind is the kind of K8s CRD.
-	CRDKind = "TraingingJob"
+	CRDKind = "TrainingJob"
 	// CRDKindPlural is the plural of CRDKind.
-	CRDKindPlural = "traingingjobs"
+	CRDKindPlural = "trainingjobs"
+	// CRDShortName is the short name of CRD.
+	CRDShortName = "tj"
 	// CRDGroup is the name of group.
 	CRDGroup = "paddlepaddle.org"
 	// CRDVersion is the version of CRD.
@@ -25,7 +27,6 @@ func CRDName() string {
 
 // +genclient
 // +genclient:noStatus
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=trainingjob
 
@@ -40,7 +41,11 @@ type TrainingJob struct {
 // TrainingJobSpec is the spec for a TrainingJob resource
 type TrainingJobSpec struct {
 	// General job attributes.
-	Image             string              `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
+	// If you want to use the hostnetwork instead of container network
+	// portmanager is necessary. About portmanager, please refer to
+	// https://github.com/PaddlePaddle/cloud/blob/develop/doc/hostnetwork/hostnetwork.md
+	HostNetwork       bool                `json:"host_network,omitempty"`
 	Port              int                 `json:"port,omitempty"`
 	PortsNum          int                 `json:"ports_num,omitempty"`
 	PortsNumForSparse int                 `json:"ports_num_for_sparse,omitempty"`
