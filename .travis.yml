@@ -9,9 +9,7 @@ matrix:
         - sudo pip install pre-commit
       script:
         - rm -f .copyright.hook && wget https://raw.githubusercontent.com/PaddlePaddle/Paddle/develop/.copyright.hook
-        - |
-          bash .tools/check_style.sh
-          RESULT=$?; if [ $RESULT -eq 0 ]; then true; else exit 1 ; fi;
+        - bash -x .tools/check_style.sh
         - ln -s $GOPATH/src/github.com/PaddlePaddle $GOPATH/src/github.com/paddlepaddle
         - cd go && glide install && go get k8s.io/kubernetes || echo 1
         - bash ./vendor/k8s.io/code-generator/generate-groups.sh "deepcopy,client,informer,lister" github.com/PaddlePaddle/cloud/go/client github.com/PaddlePaddle/cloud/go/apis paddlepaddle:v1alpha1
