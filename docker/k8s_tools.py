@@ -4,9 +4,7 @@ import sys
 import time
 import socket
 from kubernetes import client, config
-#PADDLE_JOB_NAME = os.getenv("PADDLE_JOB_NAME")
 NAMESPACE = os.getenv("NAMESPACE")
-#PORT = os.getenv("PSERVER_PORT")
 if os.getenv("KUBERNETES_SERVICE_HOST", None):
     config.load_incluster_config()
 else:
@@ -39,32 +37,40 @@ def count_pods_by_phase(label_selector, phase):
     return len(filtered_pod_list)
 
 
-def fetch_pserver_ips(label_selector, port=0):
-    #label_selector = "paddle-job-pserver=%s" % PADDLE_JOB_NAME
+def fetch_ips(label_selector, port=0):
     pod_list = fetch_pods_info(label_selector)
-    pserver_ips = [item[1] for item in pod_list]
+    ips = [item[1] for item in pod_list]
     if port > 0:
-        return ",".join(pserver_ips+":"+port)
+        return ",".join(ips+":"+port)
     else:
-        return ",".join(pserver_ips)
+        return ",".join(ips)
 
+def fetch_id(label_selector):
+    pod_list = fetch_pods_info(label_selector)
+    ips = [item[1] for item in pod_list]
+    ips.sort()
+    local_ip = socket.gethostbyname(socket.gethostname())
+    for i in xrange(len(ips)):
+        if ips[i] == local_ip:
+            return i
+    return None
+
+def fetch_trainer_ips(label_selector, port=0):
+    return fetch_ips(label_selector, port)
+
+def fetch_pserver_ips(label_selector, port=0):
+    return fetch_ips(label_selector, port)
+
+def fetch_trainer_id(label_selector):
+    return fetch_id(label_selector)
+
+def fetch_pserver_id(label_selector):
+    return fetch_id(label_selector)
 
 def fetch_master_ip(label_selector):
-    #label_selector = "paddle-job-master=%s" % PADDLE_JOB_NAME
     pod_list = fetch_pods_info(label_selector)
     master_ips = [item[1] for item in pod_list]
     return master_ips[0]
-
-def fetch_trainer_id(label_selector):
-    #label_selector = "paddle-job=%s" % PADDLE_JOB_NAME
-    pod_list = fetch_pods_info(label_selector)
-    trainer_ips = [item[1] for item in pod_list]
-    trainer_ips.sort()
-    local_ip = socket.gethostbyname(socket.gethostname())
-    for i in xrange(len(trainer_ips)):
-        if trainer_ips[i] == local_ip:
-            return i
-    return None
 
 
 if __name__ == "__main__":
