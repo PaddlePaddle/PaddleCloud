@@ -141,7 +141,7 @@ administrator with command: `kubectl create -f
 training_job_controller.yaml`
 
 You can use `go/cmd/autoscaler/Dockerfile` to build a new controller image 
-or downloading an existing one.
+or download an existing one.
 
 ## Implementation
 
@@ -157,8 +157,28 @@ implementing custom resources:
   v1.9.
 
 We will support TPR first, because some of our clusters is using
-Kubernetes v1.6. CRD will be supported in the future.
+Kubernetes v1.6.
 
+In the near feature, we will use CRD to replace TPR to define our training job resource,
+then the resource defined under `go/edl/resource` will be deprecated.
+If you want to use TPR in Kubernetes with version <= 1.7,
+please checkout the `unreleased-tpr` tag.
+
+Currently, implementation using CRD is still under development,
+you can use the following command to verify and generate dependent codes:
+```
+# check freshness of generated codes
+$ scripts/verify-codegen.sh
+
+# update dependent codes
+$ scripts/update-codegen.sh
+```
+For more details, please refer to [article](https://blog.openshift.com/kubernetes-deep-dive-code-generation-customresources/).
+When the definition of resource is stable, we will commit generated dependent codes.
+Just skip `go/apis` when running `go test` during your development.
+
+By the way, if you want to generate these codes by yourself, due to this [issue](https://github.com/kubernetes/code-generator/issues/20),
+you have to deal with the import problem.
 
 ### Training Job Controller
 

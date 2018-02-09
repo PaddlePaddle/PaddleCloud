@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from PIL import Image
 import numpy as np
 import paddle.v2 as paddle
@@ -8,26 +22,32 @@ import sys
 import glob
 import pickle
 
-
 DC = os.getenv("PADDLE_CLOUD_CURRENT_DATACENTER")
 
 DATASET_PATH = "/data/mnist/mnist-train-*"
 
+
 def softmax_regression(img):
-    predict = paddle.layer.fc(
-        input=img, size=10, act=paddle.activation.Softmax())
+    predict = paddle.layer.fc(input=img,
+                              size=10,
+                              act=paddle.activation.Softmax())
     return predict
+
 
 def multilayer_perceptron(img):
     # The first fully-connected layer
-    hidden1 = paddle.layer.fc(input=img, size=128, act=paddle.activation.Relu())
+    hidden1 = paddle.layer.fc(input=img,
+                              size=128,
+                              act=paddle.activation.Relu())
     # The second fully-connected layer and the according activation function
-    hidden2 = paddle.layer.fc(
-        input=hidden1, size=64, act=paddle.activation.Relu())
+    hidden2 = paddle.layer.fc(input=hidden1,
+                              size=64,
+                              act=paddle.activation.Relu())
     # The thrid fully-connected layer, note that the hidden size should be 10,
     # which is the number of unique digits
-    predict = paddle.layer.fc(
-        input=hidden2, size=10, act=paddle.activation.Softmax())
+    predict = paddle.layer.fc(input=hidden2,
+                              size=10,
+                              act=paddle.activation.Softmax())
     return predict
 
 
@@ -51,8 +71,9 @@ def convolutional_neural_network(img):
         pool_stride=2,
         act=paddle.activation.Relu())
     # fully-connected layer
-    predict = paddle.layer.fc(
-        input=conv_pool_2, size=10, act=paddle.activation.Softmax())
+    predict = paddle.layer.fc(input=conv_pool_2,
+                              size=10,
+                              act=paddle.activation.Softmax())
     return predict
 
 
@@ -82,13 +103,12 @@ def main():
         momentum=0.9,
         regularization=paddle.optimizer.L2Regularization(rate=0.0005 * 128))
 
-    trainer = paddle.trainer.SGD(
-        cost=cost,
-        parameters=parameters,
-        update_equation=optimizer,
-        is_local=False,
-        pserver_spec=etcd_endpoint,
-        use_etcd=True)
+    trainer = paddle.trainer.SGD(cost=cost,
+                                 parameters=parameters,
+                                 update_equation=optimizer,
+                                 is_local=False,
+                                 pserver_spec=etcd_endpoint,
+                                 use_etcd=True)
 
     def event_handler(event):
         if isinstance(event, paddle.event.EndIteration):
@@ -96,20 +116,17 @@ def main():
                 print "Pass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
         if isinstance(event, paddle.event.EndPass):
-            result = trainer.test(
-                    reader=paddle.batch(
-                        paddle.dataset.mnist.test(),
-                    batch_size=2))
+            result = trainer.test(reader=paddle.batch(
+                paddle.dataset.mnist.test(), batch_size=2))
             print "Test with Pass %d, Cost %f, %s\n" % (
                 event.pass_id, result.cost, result.metrics)
 
     trainer.train(
         reader=paddle.batch(
-            cloud_reader(
-                [DATASET_PATH], etcd_endpoint),
-            batch_size=10),
+            cloud_reader([DATASET_PATH], etcd_endpoint), batch_size=10),
         event_handler=event_handler,
         num_passes=120)
+
 
 if __name__ == '__main__':
     main()

@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 
 from notebook.models import PaddleUser
 
+
 # Define an inline admin descriptor for PaddleUser model
 # which acts a bit like a singleton
 class PaddleUserInline(admin.StackedInline):
@@ -14,9 +15,11 @@ class PaddleUserInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'PaddleUser'
 
+
 # Define a new User admin
 class UserAdmin(BaseUserAdmin):
     inlines = (PaddleUserInline, )
+
 
 # Re-register UserAdmin
 admin.site.unregister(User)

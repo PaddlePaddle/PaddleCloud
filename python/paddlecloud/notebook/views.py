@@ -30,33 +30,40 @@ from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+
 def healthz(request):
     return HttpResponse("OK")
 
+
 class SampleView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         content = {
-            'user': unicode(request.user),  # `django.contrib.auth.User` instance.
+            'user':
+            unicode(request.user),  # `django.contrib.auth.User` instance.
             'auth': unicode(request.auth),  # None
             'result': "sample api result",
         }
         return Response(content)
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
 
+
 @receiver(post_save, sender=User)
 def handle_user_save(sender, instance, created, **kwargs):
     if created:
         PaddleUser.objects.create(user=instance)
 
+
 class LoginView(account.views.LoginView):
 
     form_class = account.forms.LoginEmailForm
+
 
 class SignupView(account.views.SignupView):
     form_class = notebook.forms.SignupForm
@@ -73,7 +80,9 @@ class SignupView(account.views.SignupView):
         create_user_RBAC_permissions(form.cleaned_data["email"])
         # create user's cephfs storage dir
         try:
-            os.mkdir(os.path.join(settings.STORAGE_PATH, form.cleaned_data["email"]))
+            os.mkdir(
+                os.path.join(settings.STORAGE_PATH, form.cleaned_data[
+                    "email"]))
         except Exception, e:
             # FIXME: all exception is ignored
             logging.error("create user's storage path error: %s", e)
@@ -94,30 +103,46 @@ class SignupView(account.views.SignupView):
         username = form.cleaned_data["email"]
         return username
 
+
 class SettingsView(account.views.SettingsView):
     form_class = notebook.forms.SettingsForm
+
 
 @login_required
 def user_certs_view(request):
     key_exist = utils.user_certs_exist(request.user.username)
-    user_keys = ["%s.pem" % request.user.username, "%s-key.pem" % request.user.username]
+    user_keys = [
+        "%s.pem" % request.user.username, "%s-key.pem" % request.user.username
+    ]
 
-    return render(request, "user_certs.html",
-        context={"key_exist": key_exist, "user_keys": user_keys})
+    return render(
+        request,
+        "user_certs.html",
+        context={"key_exist": key_exist,
+                 "user_keys": user_keys})
+
 
 @login_required
 def user_certs_download(request):
     certs_file = StringIO.StringIO()
-    with zipfile.ZipFile(certs_file, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
-        with open(os.path.join(settings.USER_CERTS_PATH, request.user.username, "%s.pem"%request.user.username), "r") as c:
-            zf.writestr('%s.pem'%request.user.username, c.read())
-        with open(os.path.join(settings.USER_CERTS_PATH, request.user.username, "%s-key.pem"%request.user.username), "r") as s:
-            zf.writestr('%s-key.pem'%request.user.username, s.read())
+    with zipfile.ZipFile(
+            certs_file, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
+        with open(
+                os.path.join(settings.USER_CERTS_PATH, request.user.username,
+                             "%s.pem" % request.user.username), "r") as c:
+            zf.writestr('%s.pem' % request.user.username, c.read())
+        with open(
+                os.path.join(settings.USER_CERTS_PATH, request.user.username,
+                             "%s-key.pem" % request.user.username), "r") as s:
+            zf.writestr('%s-key.pem' % request.user.username, s.read())
 
-    response = HttpResponse(certs_file.getvalue(), content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=%s.zip' % request.user.username
+    response = HttpResponse(
+        certs_file.getvalue(), content_type='application/zip')
+    response[
+        'Content-Disposition'] = 'attachment; filename=%s.zip' % request.user.username
     response['Content-Length'] = certs_file.tell()
     return response
+
 
 @login_required
 def user_certs_generate(request):
@@ -130,25 +155,27 @@ def user_certs_generate(request):
         logging.error(str(e))
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+
 def create_user_RBAC_permissions(username):
     namespace = utils.email_escape(username)
-    rbacapi = kubernetes.client.RbacAuthorizationV1beta1Api(utils.get_admin_api_client())
+    rbacapi = kubernetes.client.RbacAuthorizationV1beta1Api(
+        utils.get_admin_api_client())
     body = {
-    "apiVersion": "rbac.authorization.k8s.io/v1beta1",
-    "kind": "RoleBinding",
-    "metadata": {
-        "name": "%s-admin-binding"%namespace,
-        "namespace": namespace
+        "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+        "kind": "RoleBinding",
+        "metadata": {
+            "name": "%s-admin-binding" % namespace,
+            "namespace": namespace
         },
-    "roleRef": {
-        "apiGroup": "rbac.authorization.k8s.io",
-        "kind": "ClusterRole",
-        "name": "admin"
+        "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "ClusterRole",
+            "name": "admin"
         },
-    "subjects": [{
-        "apiGroup": "rbac.authorization.k8s.io",
-        "kind": "User",
-        "name": username
+        "subjects": [{
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "User",
+            "name": username
         }]
     }
     try:
@@ -157,27 +184,28 @@ def create_user_RBAC_permissions(username):
         logging.error("%s", str(e))
     # create service account permissions
     body = {
-    "apiVersion": "rbac.authorization.k8s.io/v1beta1",
-    "kind": "RoleBinding",
-    "metadata": {
-        "name": "%s-sa-view"%namespace,
-        "namespace": namespace
+        "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+        "kind": "RoleBinding",
+        "metadata": {
+            "name": "%s-sa-view" % namespace,
+            "namespace": namespace
         },
-    "roleRef": {
-        "apiGroup": "rbac.authorization.k8s.io",
-        "kind": "ClusterRole",
-        "name": "view"
+        "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "ClusterRole",
+            "name": "view"
         },
-    "subjects": [{
-        "kind": "ServiceAccount",
-        "name": "default",
-        "namespace": namespace
+        "subjects": [{
+            "kind": "ServiceAccount",
+            "name": "default",
+            "namespace": namespace
         }]
     }
     try:
         rbacapi.create_namespaced_role_binding(namespace, body)
     except Exception, e:
         logging.error("%s", str(e))
+
 
 def create_user_namespace(username):
     v1api = kubernetes.client.CoreV1Api(utils.get_admin_api_client())
@@ -190,11 +218,13 @@ def create_user_namespace(username):
             user_namespace_found = True
     # Create user's namespace if it does not exist
     if not user_namespace_found:
-        v1api.create_namespace({"apiVersion": "v1",
+        v1api.create_namespace({
+            "apiVersion": "v1",
             "kind": "Namespace",
             "metadata": {
                 "name": user_namespace
-            }})
+            }
+        })
     for dc, cfg in settings.DATACENTERS.items():
         #create DataCenter sercret if not exists
         secrets = v1api.list_namespaced_secret(user_namespace)
@@ -213,7 +243,8 @@ def create_user_namespace(username):
                     },
                     "data": {
                         "key": encoded
-                    }})
+                    }
+                })
     # create docker registry secret
     registry_secret = settings.JOB_DOCKER_IMAGE.get("registry_secret", None)
     if registry_secret and registry_secret not in secret_names:
@@ -249,9 +280,14 @@ def notebook_view(request):
     ub = utils.UserNotebook()
     ub.start_all(username, user_namespace)
 
-    return render(request, "notebook.html",
-        context={"notebook_id": ub.get_notebook_id(username),
-                 "notebook_status": ub.status(username, user_namespace)})
+    return render(
+        request,
+        "notebook.html",
+        context={
+            "notebook_id": ub.get_notebook_id(username),
+            "notebook_status": ub.status(username, user_namespace)
+        })
+
 
 @login_required
 def stop_notebook_backend(request):

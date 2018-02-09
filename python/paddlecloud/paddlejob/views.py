@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, HttpResponseNotFound, HttpResponseForbidden
 from django.contrib import messages
 from django.conf import settings
@@ -39,17 +53,22 @@ def file_publish_view(request):
         return HttpResponseNotFound()
 
     real_path = "/".join([settings.STORAGE_PATH] + record.path.split("/")[4:])
-    logging.info("downloading file from: %s, record(%s)", real_path, record.path)
+    logging.info("downloading file from: %s, record(%s)", real_path,
+                 record.path)
 
     # mimetype is replaced by content_type for django 1.7
-    response = HttpResponse(open(real_path), content_type='application/force-download') 
-    response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(record.path)
+    response = HttpResponse(
+        open(real_path), content_type='application/force-download')
+    response[
+        'Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(
+            record.path)
     # It's usually a good idea to set the 'Content-Length' header too.
     # You can also set any other required headers: Cache-Control, etc.
     return response
 
+
 class FilePublishAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         """
@@ -67,7 +86,8 @@ class FilePublishAPIView(APIView):
         post_body = json.loads(request.body)
         file_path = post_body.get("path")
         publish_uuid = uuid.uuid4()
-        publish_url = "http://%s/filepub/?uuid=%s" % (request.META["HTTP_HOST"], publish_uuid)
+        publish_url = "http://%s/filepub/?uuid=%s" % (
+            request.META["HTTP_HOST"], publish_uuid)
         # save publish_url to mysql
         publish_record = FilePublish()
         publish_record.url = publish_url
@@ -76,6 +96,7 @@ class FilePublishAPIView(APIView):
         publish_record.uuid = publish_uuid
         publish_record.save()
         return Response({"url": publish_url})
+
 
 def get_paddlejob(request):
     username = request.user.username
@@ -91,15 +112,19 @@ def get_paddlejob(request):
     # jobPackage validation: startwith /pfs
     # NOTE: job packages are uploaded to /pfs/[dc]/home/[user]/jobs/[jobname]
     job_name = obj.get("name", "paddle-cluster-job")
-    package_in_pod = os.path.join("/pfs/%s/home/%s"%(dc, username), "jobs", job_name)
+    package_in_pod = os.path.join("/pfs/%s/home/%s" % (dc, username), "jobs",
+                                  job_name)
 
     logging.info("current package: %s", package_in_pod)
     # package must be ready before submit a job
-    package_path_4test = package_in_pod.replace("/pfs/%s/home"%dc, settings.STORAGE_PATH)
+    package_path_4test = package_in_pod.replace("/pfs/%s/home" % dc,
+                                                settings.STORAGE_PATH)
     if not os.path.exists(package_path_4test):
-        package_path_4test = package_in_pod.replace("/pfs/%s/home/%s"%(dc, username), settings.STORAGE_PATH)
+        package_path_4test = package_in_pod.replace("/pfs/%s/home/%s" % (
+            dc, username), settings.STORAGE_PATH)
         if not os.path.exists(package_path_4test):
-            return utils.error_message_response("package not exist in cloud: %s"%package_path_4test)
+            return utils.error_message_response(
+                "package not exist in cloud: %s" % package_path_4test)
     logging.info("current package in pod: %s", package_path_4test)
 
     envs = {}
@@ -107,35 +132,34 @@ def get_paddlejob(request):
     envs.update({"PADDLE_CLOUD_USERNAME": username})
     # ===================== create PaddleJob instance ======================
     paddle_job = PaddleJob(
-        name = job_name,
-        job_package = package_in_pod,
-        parallelism = obj.get("parallelism", 1),
-        cpu = obj.get("cpu", 1),
-        memory = obj.get("memory", "1Gi"),
-        pservers = obj.get("pservers", 1),
-        pscpu = obj.get("pscpu", 1),
-        psmemory = obj.get("psmemory", "1Gi"),
-        topology = topology,
-        entry = entry,
-        gpu = obj.get("gpu", 0),
-        image = obj.get("image", None),
-        passes = obj.get("passes", 1),
-        registry_secret = obj.get("registry", None),
-        volumes = [],
-        envs = envs,
-        fault_tolerant = obj.get("faulttolerant", False),
-        min_instance = obj.get("min_instance", 1),
-        max_instance = obj.get("max_instance", 1),
-        etcd_image = settings.ETCD_IMAGE,
-        dc = dc
-    )
+        name=job_name,
+        job_package=package_in_pod,
+        parallelism=obj.get("parallelism", 1),
+        cpu=obj.get("cpu", 1),
+        memory=obj.get("memory", "1Gi"),
+        pservers=obj.get("pservers", 1),
+        pscpu=obj.get("pscpu", 1),
+        psmemory=obj.get("psmemory", "1Gi"),
+        topology=topology,
+        entry=entry,
+        gpu=obj.get("gpu", 0),
+        image=obj.get("image", None),
+        passes=obj.get("passes", 1),
+        registry_secret=obj.get("registry", None),
+        volumes=[],
+        envs=envs,
+        fault_tolerant=obj.get("faulttolerant", False),
+        min_instance=obj.get("min_instance", 1),
+        max_instance=obj.get("max_instance", 1),
+        etcd_image=settings.ETCD_IMAGE,
+        dc=dc)
 
     logging.info("return paddlejob")
     return paddle_job
 
 
 class TrainingJobsView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         username = request.user.username
@@ -171,7 +195,7 @@ class TrainingJobsView(APIView):
 
 
 class JobsView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         username = request.user.username
@@ -205,8 +229,9 @@ class JobsView(APIView):
         retcode, status = p.delete_job(jobname, username)
         return utils.simple_response(retcode, "\n".join(status))
 
+
 class PserversView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         """
@@ -216,8 +241,9 @@ class PserversView(APIView):
         p = K8sProvider()
         return Response(p.get_pservers(username))
 
+
 class LogsView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         username = request.user.username
@@ -225,11 +251,13 @@ class LogsView(APIView):
         num_lines = request.query_params.get("n")
         worker = request.query_params.get("w")
 
-        total_job_log = K8sProvider().get_logs(jobname, num_lines, worker, username)
+        total_job_log = K8sProvider().get_logs(jobname, num_lines, worker,
+                                               username)
         return utils.simple_response(200, total_job_log)
 
+
 class WorkersView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         username = request.user.username
@@ -237,29 +265,35 @@ class WorkersView(APIView):
         ret = K8sProvider().get_workers(jobname, username)
         return Response(ret)
 
+
 class QuotaView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         username = request.user.username
         ret = K8sProvider().get_quotas(username)
         return Response(ret)
 
+
 class GetUserView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
         """
         Get user name
         """
         content = {
-            'user': request.user.username,  # `django.contrib.auth.User` instance.
+            'user':
+            request.user.username,  # `django.contrib.auth.User` instance.
         }
         return Response(content)
 
+
 class SimpleFileView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    parser_classes = (FormParser, MultiPartParser,)
+    permission_classes = (permissions.IsAuthenticated, )
+    parser_classes = (
+        FormParser,
+        MultiPartParser, )
 
     def __validate_path(self, request, file_path):
         """
@@ -267,12 +301,13 @@ class SimpleFileView(APIView):
         """
         path_parts = file_path.split(os.path.sep)
 
-        assert(path_parts[1]=="pfs")
-        assert(path_parts[2] in settings.DATACENTERS.keys())
-        assert(path_parts[3] == "home")
-        assert(path_parts[4] == request.user.username)
+        assert (path_parts[1] == "pfs")
+        assert (path_parts[2] in settings.DATACENTERS.keys())
+        assert (path_parts[3] == "home")
+        assert (path_parts[4] == request.user.username)
 
-        server_file = os.path.join(settings.STORAGE_PATH, request.user.username, *path_parts[5:])
+        server_file = os.path.join(settings.STORAGE_PATH,
+                                   request.user.username, *path_parts[5:])
 
         return server_file
 
@@ -284,13 +319,17 @@ class SimpleFileView(APIView):
         try:
             write_file = self.__validate_path(request, file_path)
         except Exception, e:
-            return utils.error_message_response("file path not valid: %s"%str(e))
+            return utils.error_message_response("file path not valid: %s" %
+                                                str(e))
 
-        if not os.path.exists(os.sep+write_file):
+        if not os.path.exists(os.sep + write_file):
             return Response({"msg": "file not exist"})
 
-        response = HttpResponse(open(write_file), content_type='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(write_file)
+        response = HttpResponse(
+            open(write_file), content_type='application/force-download')
+        response[
+            'Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(
+                write_file)
 
         return response
 
@@ -305,12 +344,13 @@ class SimpleFileView(APIView):
         try:
             write_file = self.__validate_path(request, file_path)
         except Exception, e:
-            return utils.error_message_response("file path not valid: %s"%str(e))
+            return utils.error_message_response("file path not valid: %s" %
+                                                str(e))
 
         if not os.path.exists(os.path.dirname(write_file)):
             try:
                 os.makedirs(os.path.dirname(write_file))
-            except OSError as exc: # Guard against race condition
+            except OSError as exc:  # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
         # FIXME: always overwrite package files
@@ -325,8 +365,10 @@ class SimpleFileView(APIView):
 
 
 class SimpleFileList(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    parser_classes = (FormParser, MultiPartParser,)
+    permission_classes = (permissions.IsAuthenticated, )
+    parser_classes = (
+        FormParser,
+        MultiPartParser, )
 
     def get(self, request, format=None):
         """
@@ -343,7 +385,7 @@ class SimpleFileList(APIView):
             if path_parts[1] != "pfs":
                 msg = "path must start with /pfs"
             if path_parts[2] not in settings.DATACENTERS.keys():
-                msg = "no datacenter "+path_parts[2]
+                msg = "no datacenter " + path_parts[2]
             if path_parts[3] != "home":
                 msg = "path must like /pfs/[dc]/home/[user]"
             if path_parts[4] != request.user.username:
@@ -351,7 +393,8 @@ class SimpleFileList(APIView):
         if msg:
             return Response({"msg": msg})
 
-        real_path = file_path.replace("/pfs/%s/home/%s"%(dc, request.user.username), "/pfs/%s"%request.user.username)
+        real_path = file_path.replace("/pfs/%s/home/%s" % (
+            dc, request.user.username), "/pfs/%s" % request.user.username)
         if not os.path.exists(real_path):
             return Response({"msg": "dir not exist"})
 

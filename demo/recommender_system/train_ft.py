@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import copy
 
@@ -6,6 +20,7 @@ from paddle.v2.reader.creator import cloud_reader
 
 master_ip = os.getenv("MASTER_IP")
 etcd_endpoint = "http://" + master_ip + ":" + "2379"
+
 
 def get_usr_combined_features():
     uid = paddle.layer.data(
@@ -106,9 +121,11 @@ def main():
 
     trainer.train(
         reader=paddle.batch(
-            paddle.reader.shuffle(cloud_reader(
-                ["/pfs/dlnel/public/dataset/movielens/movielens_train-*"],
-                etcd_endpoint), buf_size=8192),
+            paddle.reader.shuffle(
+                cloud_reader(
+                    ["/pfs/dlnel/public/dataset/movielens/movielens_train-*"],
+                    etcd_endpoint),
+                buf_size=8192),
             batch_size=256),
         event_handler=event_handler,
         feeding=feeding,

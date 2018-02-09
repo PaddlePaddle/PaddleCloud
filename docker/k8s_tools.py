@@ -31,6 +31,7 @@ def wait_pods_running(label_selector, desired):
         print 'current cnt: %d sleep for 5 seconds...' % count
         time.sleep(5)
 
+
 def count_pods_by_phase(label_selector, phase):
     pod_list = fetch_pods_info(label_selector)
     filtered_pod_list = filter(lambda x: x[0] == phase, pod_list)
