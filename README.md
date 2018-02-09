@@ -59,21 +59,33 @@ English tutorials(comming soon...)
 
 ## Contribute
 
-Contributions are welcomed! You can contribute on any of the components
+We appreciate your contributions! You can contribute on any of the components
 according to the following code structure:
 
-- `demo/`: distributed version of [PaddlePaddle book](https://github.com/PaddlePaddle/book) programs
-- `doc/`: documents
-- `docker/`: scripts to build Docker image to run PaddlePaddle distributed
-  job on the cluster
-- `go/cmd`: main functions of binaries for `paddlectl`, `edl` and `pfsserver`
-- `go/edl`: EDL implementaion
-- `go/filenamager`: PaddleFS implementaion
-- `go/paddlecloud`: lagacy version of paddlectl
-- `go/paddlectl`: command line client
-- `go/scripts`: scripts for Go code generation
-- `go/utils`: utility functions
-- `k8s`: YAML files to create different componets of PaddlePaddle Cloud
+```
+.
+├── demo: distributed version of https://github.com/PaddlePaddle/book programs
+├── doc: documents
+├── docker: scripts to build Docker image to run PaddlePaddle distributed
+├── go
+│   ├── cmd
+│   │   ├── edl: entry of EDL controller binary
+│   │   ├── paddlecloud: the command line client of PaddlePaddle Cloud (will be deprecated)
+│   │   ├── paddlectl: the command line client of PaddlePaddle Cloud
+│   │   └── pfsserver: entry of PaddleFS binary
+│   ├── edl: EDL implementaion
+│   ├── filemanager: PaddleFS implementaion
+│   ├── paddlecloud: command line client implement (will be deprecated)
+│   ├── paddlectl: command line client implement
+│   ├── scripts: scripts for Go code generation
+├── k8s: YAML files to create different componets of PaddlePaddle Cloud
+│   ├── edl: TPR defination and EDL controller for TraningJob resource
+│   │   ├── autoscale_job: A sample TrainingJob that can scale
+│   │   └── autoscale_load: A sample cluster job demonstrating a common workload
+│   ├── minikube: YAML files to deploy on local mini-kube environment
+│   └── raw_job: A demo job demostrates how to run PaddlePaddle jobs in cluster
+└── python: PaddlePaddle Cloud REAT API server
+```
 
 Contributors can create pull requests to describe one design under `doc/desgin`
 or write code according to current design docs.
