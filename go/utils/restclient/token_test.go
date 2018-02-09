@@ -39,7 +39,7 @@ func fakeServer() (*http.Server, int) {
 	return srv, listener.Addr().(*net.TCPAddr).Port
 }
 
-func mkdir_p(path string) error {
+func mkdirP(path string) error {
 	fi, err := os.Stat(path)
 
 	if os.IsExist(err) {
@@ -50,11 +50,7 @@ func mkdir_p(path string) error {
 		return nil
 	}
 
-	if err := os.MkdirAll(path, 0700); err != nil {
-		return err
-	}
-
-	return nil
+	return os.MkdirAll(path, 0700)
 }
 
 func TestTokenParse(t *testing.T) {
@@ -63,7 +59,7 @@ func TestTokenParse(t *testing.T) {
 
 	// test token fetching
 	path := filepath.Join(pathutil.UserHomeDir(), ".paddle")
-	require.Nil(t, mkdir_p(path), "mkdir ", path)
+	require.Nil(t, mkdirP(path), "mkdir ", path)
 
 	os.Remove(filepath.Join(path, "token_cache"))
 	tmpconf := &config.SubmitConfig{ActiveConfig: &config.SubmitConfigDataCenter{
