@@ -18,20 +18,23 @@ as the deep-learning frame work.
 
 ## Components
 
-- Command-Line client
-  Client for submit, list and kill cluster training jobs. Then code is under
-  `go/cmd/paddlecloud`, And, code under `go/cmd/paddlecloud` will deprecate and
-  move on to `go/cmd/paddlectl`.
-- Cloud Server
-  A REST API server accepts incomming request from lommand-line client, and submit
-  `TrainingJob` resource to Kubernetes cluster. Cloud Server is written using
-  `Django` framework under `python` directory.
-- PaddleFS
-  On cloud file management server used to upload user training job python programs,
-  downloading trained models to user's desktop. The code is under `go/cmd/pfsserver`.
-- EDL Controller
-  A Kubernetes [Controller](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-controllers)
-  to enable automatically scale up/down jobs to maximize cluster performance.
+- Server side components includes:
+  - Cloud Server
+    A REST API server accepts incomming request from lommand-line client, and submit
+    `TrainingJob` resource to Kubernetes cluster. Cloud Server is written using
+    `Django` framework under `python` directory.
+  - PaddleFS
+    On cloud file management server used to upload user training job python programs,
+    downloading trained models to user's desktop. The code is under `go/cmd/pfsserver`.
+  - EDL Controller
+    A Kubernetes [Controller](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-controllers)
+    to enable automatically scale up/down jobs to maximize cluster performance.
+  - PaddlePaddle Cloud Job runtime Docker image.
+- Client side component:
+  - Command-Line client
+    Client for submit, list and kill cluster training jobs. Then code is under
+    `go/cmd/paddlecloud`, And, code under `go/cmd/paddlecloud` will deprecate and
+    move on to `go/cmd/paddlectl`.
 
 ## User Manuals
 
@@ -43,11 +46,7 @@ English tutorials(comming soon...)
 
 ## Build
 
-[Build EDL controller and EDL Image](./doc/build/build_edl_controller.md)
-
-[Build Paddle Cloud Server Image](./doc/deploy/deploy.md)
-
-[Build paddlectl client](./doc/build/build_client.md)
+[Build all components and Docker images](./doc/build/build.md)
 
 ## Deploy
 
