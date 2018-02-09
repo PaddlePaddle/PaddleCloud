@@ -76,7 +76,11 @@ def fetch_master_ip(label_selector):
 if __name__ == "__main__":
     command = sys.argv[1]
     if command == "fetch_pserver_ips":
-        print fetch_pserver_ips(sys.argv[2])
+        print fetch_pserver_ips(sys.argv[2], sys.argv[3])
+    if command == "fetch_trainer_ips":
+        print fetch_trainer_ips(sys.argv[2], sys.argv[3])
+    elif command == "fetch_pserver_id":
+        print fetch_pserver_id(sys.argv[2])
     elif command == "fetch_trainer_id":
         print fetch_trainer_id(sys.argv[2])
     elif command == "fetch_master_ip":
