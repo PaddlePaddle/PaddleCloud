@@ -2,9 +2,9 @@
 
 This article contains instructions of build all the components
 of PaddlePaddle Cloud and how to pack them into Docker images
-so that server side components can run in the Kubernetes cluster.
+so that server-side components can run in the Kubernetes cluster.
 
-- Server side components includes:
+- Server-side components:
   - Cloud Server (written in Python, only need to pack to image)
   - EDL Controller
   - PaddleFS (PFS) Server
@@ -40,7 +40,7 @@ cd go/cmd/paddlectl
 go build
 ```
 
-Then file `paddlectl` will be generated under current directory.
+Then file `paddlectl` will be generated under the current directory.
 
 
 # Build Docker Images for Server side
@@ -57,7 +57,7 @@ docker build -t [your image tag] .
 
 ## Cloud Server Image
 
-This image it used to start the Cloud Server in Kubernetes cluster. To
+This image is used to start the Cloud Server in Kubernetes cluster. To
 build, just run:
 
 ```bash
