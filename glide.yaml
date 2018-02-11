@@ -1,4 +1,4 @@
-package: github.com/PaddlePaddle/cloud/go
+package: github.com/PaddlePaddle/cloud
 import:
 - package: github.com/bitly/go-simplejson
   version: ^0.5.0
