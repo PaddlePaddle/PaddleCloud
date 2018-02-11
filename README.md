@@ -2,15 +2,23 @@
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/cloud.svg?branch=develop)](https://travis-ci.org/PaddlePaddle/cloud)
 
-PaddlePaddle Cloud is a combination of PaddlePaddle and Kubernetes. It supports fault-recoverable and fault-tolerant large-scaled distributed deep learning.  We can deploy it on public cloud and on-premise clusters.
+PaddlePaddle Cloud is a combination of PaddlePaddle and Kubernetes. It
+supports fault-recoverable and fault-tolerant large-scaled distributed
+deep learning.  We can deploy it on public cloud and on-premise
+clusters.
 
 PaddlePaddle Cloud includes the following components:
 
-- paddlectl: A command-line tool that talks to paddlecloud and paddle-fs.
-- paddlecloud: An HTTP server that exposes Kubernetes as a Web service.
-- paddle-fs: An HTTP server that exposes the CephFS distributed filesystem as a Web service.
-- EDL (elastic deep learning): A Kubernetes controller that supports elastic scheduling of deep learning jobs and other jobs.
-- Fault-tolerant distributed deep learning: This part is in the [Paddle](https://github.com/PaddlePaddle/paddle) repo.
+- paddlectl: A command-line tool that talks to paddlecloud and
+  paddle-fs.
+- paddlecloud: An HTTP server that exposes Kubernetes as a Web
+  service.
+- paddle-fs: An HTTP server that exposes the CephFS distributed
+  filesystem as a Web service.
+- EDL (elastic deep learning): A Kubernetes controller that supports
+  elastic scheduling of deep learning jobs and other jobs.
+- Fault-tolerant distributed deep learning: This part is in
+  the [Paddle](https://github.com/PaddlePaddle/paddle) repo.
 
 ## Tutorials
 
