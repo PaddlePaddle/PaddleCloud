@@ -2,64 +2,30 @@
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/cloud.svg?branch=develop)](https://travis-ci.org/PaddlePaddle/cloud)
 
-PaddlePaddle Cloud is a Distributed Deep-Learning Cloud Platform for both cloud
-providers and enterprises. PaddlePaddle Cloud provides cluster Deep-Learning
-features including:
+PaddlePaddle Cloud is a combination of PaddlePaddle and Kubernetes. It supports fault-recoverable and fault-tolerant large-scaled distributed deep learning.  We can deploy it on public cloud and on-premise clusters.
 
-- Manage cluster Deep-Learning jobs use a command-line client very easily.
-- Elastic Deep-Learning ([EDL](./doc/edl/README.md)) enables maximizing cluster resource utilities
-  and reduce average job pending time.
-- Manages thousands of GPUs in the cluster.
-- Fault tolerant distributed training with zero downtime.
+PaddlePaddle Cloud includes the following components:
 
-PaddlePaddle Cloud use [Kubernetes](https://kubernetes.io) as it's backend job
-dispatching and cluster resource management center. And use [PaddlePaddle](https://github.com/PaddlePaddle/Paddle.git)
-as the deep-learning framework. 
+- paddlectl: A command-line tool that talks to paddlecloud and paddle-fs.
+- paddlecloud: An HTTP server that exposes Kubernetes as a Web service.
+- paddle-fs: An HTTP server that exposes the CephFS distributed filesystem as a Web service.
+- EDL (elastic deep learning): A Kubernetes controller that supports elastic scheduling of deep learning jobs and other jobs.
+- Fault-tolerant distributed deep learning: This part is in the [Paddle](https://github.com/PaddlePaddle/paddle) repo.
 
-## Components
+## Tutorials
 
-- Server-side components:
-  - Cloud Server
-    A REST API server accepts request from command-line client and submit
-    `TrainingJob` resource to Kubernetes cluster. Cloud Server is written using
-    `Django` framework under `python/` directory.
-  - PaddleFS
-    On cloud file management server used to upload user training job python programs,
-    downloading trained models to user's desktop etc. The code is under `go/cmd/pfsserver`.
-  - EDL Controller
-    A Kubernetes [Controller](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-controllers)
-    to enable automatically scale up/down jobs to maximize cluster performance.
-  - PaddlePaddle Cloud Job runtime Docker image.
-- Client-side component:
-  - Command-Line client
-    Client to submit, list and kill cluster jobs. The code is under
-    `go/cmd/paddlecloud`. Code under `go/cmd/paddlecloud` will be deprecated and
-    move on to `go/cmd/paddlectl`.
+- [快速开始](./doc/tutorial_cn.md)
+- [中文手册](./doc/usage_cn.md)
 
-## User Manuals
 
-[快速开始](./doc/tutorial_cn.md)
+## How To
 
-[中文手册](./doc/usage_cn.md)
+- [Build PaddlePaddle Cloud](./doc/howto/build.md)
+- [Deploy PaddlePaddle Cloud](./doc/howto/deploy.md)
+- [Elastic Deep Learning using EDL](./doc/howto/edl.md)
+- [PaddlePaddle Cloud on Minikube](./doc/howto/minikube.md)
 
-English tutorials(coming soon...)
-
-## Build
-
-[Build all components and Docker images](./doc/build/build.md)
-
-## Deploy
-
-[Deploy Cloud Server](./doc/deploy/deploy.md)
-
-[Deploy EDL](./doc/deploy/deploy_edl.md)
-
-[Run on Minikube (for developers)](./doc/deploy/run_on_minikube.md)
-
-## Contribute
-
-We appreciate your contributions! You can contribute on any of the components
-according to the following code structure:
+## Directory structure
 
 ```
 .
@@ -85,6 +51,3 @@ according to the following code structure:
 │   └── raw_job: A demo job demonstrates how to run PaddlePaddle jobs in cluster
 └── python: PaddlePaddle Cloud REST API server
 ```
-
-Contributors can create pull requests to describe one design under `doc/desgin`
-or write code according to current design docs.
