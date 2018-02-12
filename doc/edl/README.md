@@ -114,35 +114,35 @@ Here is the struct of TrainingJobUpdater.
  type trainingJobEventType string
  
  const (
- 	trainingJobEventDelete trainingJobEventType = "Delete"
- 	trainingJobEventModify trainingJobEventType = "Modify"
+  trainingJobEventDelete trainingJobEventType = "Delete"
+  trainingJobEventModify trainingJobEventType = "Modify"
  )
  
  type trainingJobEvent struct {
- 	// pet is the TrainingJobEventType of TrainingJob
- 	pet trainingJobEventType
- 	// The job transfer the information fo job
- 	job *v1.TrainingJob
+  // pet is the TrainingJobEventType of TrainingJob
+  pet trainingJobEventType
+  // The job transfer the information fo job
+  job *v1.TrainingJob
  }
  
  // TrainingJobUpdater is to manager a specific TrainingJob
  type TrainingJobUpdater struct {
- 	// job is the job the TrainingJobUpdater manager.
- 	job *v1.TrainingJob
+  // job is the job the TrainingJobUpdater manager.
+  job *v1.TrainingJob
  
- 	// kubeCli is standard kubernetes client.
- 	kubeCli kubernetes.Interface
+  // kubeCli is standard kubernetes client.
+  kubeCli kubernetes.Interface
  
- 	// trainingJobClient is the client of TrainingJob.
- 	trainingJobClient trainingJobClient.Interface
+  // trainingJobClient is the client of TrainingJob.
+  trainingJobClient trainingJobClient.Interface
  
- 	// status is the status in memory, update when TrainingJob status changed and update the CRD resource status.
- 	status v1.TrainingJobStatus
+  // status is the status in memory, update when TrainingJob status changed and update the CRD resource status.
+  status v1.TrainingJobStatus
  
- 	// eventCh is the channel received by Controller, include Modify and Delete.
- 	// When trainingJobEvent is Delete it will delete all resources
- 	// The maximum is 1000.
- 	eventCh chan *trainingJobEvent
+  // eventCh is the channel received by Controller, include Modify and Delete.
+  // When trainingJobEvent is Delete it will delete all resources
+  // The maximum is 1000.
+  eventCh chan *trainingJobEvent
  }
  
  ```
@@ -160,24 +160,24 @@ TrainingJobUpdaters. Here is
 the struct of Controller.
 ```go
 type Controller struct {
-	// KubeCli is a standard kubernetes clientset
-	KubeCli kubernetes.Interface
-	// ApiCli is the extension kubernetes clientset
-	ApiCli apiextensionsclient.Interface
-	// PaddleCli is a clientset for our own API group
-	PaddleCli paddleclientset.Interface
+  // KubeCli is a standard kubernetes clientset
+  KubeCli kubernetes.Interface
+  // ApiCli is the extension kubernetes clientset
+  ApiCli apiextensionsclient.Interface
+  // PaddleCli is a clientset for our own API group
+  PaddleCli paddleclientset.Interface
 
-	trainingjobLister paddlelisters.TrainingJobLister
-	trainingjobSynced cache.InformerSynced
+  trainingjobLister paddlelisters.TrainingJobLister
+  trainingjobSynced cache.InformerSynced
 
-	jobtracker map[string]*updater.TrainingJobUpdater
+  jobtracker map[string]*updater.TrainingJobUpdater
 
-	// workqueue is a rate limited work queue. This is used to queue work to be
-	// processed instead of performing it as soon as a change happens.
-	workqueue workqueue.RateLimitingInterface
-	// recorder is an event recorder for recording Event resources to the
-	// Kubernetes API.
-	recorder record.EventRecorder
+  // workqueue is a rate limited work queue. This is used to queue work to be
+  // processed instead of performing it as soon as a change happens.
+  workqueue workqueue.RateLimitingInterface
+  // recorder is an event recorder for recording Event resources to the
+  // Kubernetes API.
+  recorder record.EventRecorder
 }
 
 ```
@@ -273,14 +273,14 @@ The struct of TrainingJob Status as follows.
 
 ```go
 type TrainingJobStatus struct {
-	// Phase is phase of TrainingJob
-	Phase TrainingJobPhase `json:"phase"`
-	// Reason is the reason of job phase failed
-	Reason string `json:"reason"`
-	// ScaleStatus is autoscale status of trainer jobs
-	ScaleStatus TrainerJobScaleStatus `json:"scale_status"`
-	// ReplicaStatuses is detail status of resources
-	ReplicaStatuses []*TrainingResourceStatus `json:"replica_statuses"`
+  // Phase is phase of TrainingJob
+  Phase TrainingJobPhase `json:"phase"`
+  // Reason is the reason of job phase failed
+  Reason string `json:"reason"`
+  // ScaleStatus is autoscale status of trainer jobs
+  ScaleStatus TrainerJobScaleStatus `json:"scale_status"`
+  // ReplicaStatuses is detail status of resources
+  ReplicaStatuses []*TrainingResourceStatus `json:"replica_statuses"`
 }
 ```
 
@@ -302,7 +302,7 @@ the job config is valid and through parser, the state will convert to `creating`
  the state will convert to `running`. While all trainer are succeeded or any trainer succeeded (fault tolerant mode),
   the state will convert to `succeeded`. Otherwise, the state will convert to `failed`.
 
-### Autoscaler
+#### Autoscaler
 
 Currently, we will run a single training job controller instance and
 assume that there is no training job controller running concurrently
@@ -324,9 +324,9 @@ for {
 }
 ```
 
-#### Scaling Algorithm
+##### Scaling Algorithm
 
-##### Elastic Job
+###### Elastic Job
 
 A job is elastic only when it's trainer and pserver's `min-instance`
 equals to the `max-instance` respectively. We will only scale elastic
@@ -334,7 +334,7 @@ jobs.
 
 Currently, we will not scale the parameter server instances.
 
-##### Fulfillment Score
+###### Fulfillment Score
 
 When there are available computation resources, the algorithm needs to
 decide which jobs to assign the resources to. When there are no more
@@ -352,7 +352,7 @@ func (j Job) Score() float64 {
 }
 ```
 
-##### Scaling GPU Jobs
+###### Scaling GPU Jobs
 
 The controller knows the total number of available GPUs in a cluster
 and will try to assign all of them to the training jobs.
@@ -371,7 +371,7 @@ to `min-instance`, no training job will be scaled down, the new job
 cannot be scheduled and will wait for more resources.
 
 
-##### Scaling CPU Jobs
+###### Scaling CPU Jobs
 
 The controller knows the total CPU capacity, Mem capacity of the
 cluster, and the total CPU limits, Mem limits of all training jobs. We
