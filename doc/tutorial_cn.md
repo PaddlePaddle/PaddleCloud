@@ -74,19 +74,22 @@ mkdir fit_a_line
 cd fit_a_line
 wget https://raw.githubusercontent.com/PaddlePaddle/cloud/develop/demo/fit_a_line/train.py
 cd ..
-paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py" fit_a_line/
+paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py train" fit_a_line/
 ```
 
 可以看到在提交任务的时候，我们指定了以下参数:
 - `-jobname fit-a-line`, 任务名称
 - `-cpu 1`, 使用的CPU资源
+- `-gpu 1`, 使用的GPU资源（卡数），若集群无GPU资源，可以去掉这个配置
 - `-parallelism 1`, 并行度(训练节点个数)
-- `-entry "python train.py"`, 启动命令
+- `-entry "python train.py train"`, 启动命令
 - `fit_a_line` 任务程序目录
 
 ***说明1：*** 如果希望查看完整的任务提交参数说明，可以执行`paddlecloud submit -h`。
 
 ***说明2：*** 每个任务推荐使用不同的jobname提交，这样之前的任务的代码和执行结果都会保存在云端。
+
+***说明3：*** 如果提交的节点比较多，可以先修改启动命令中的参数`-entry "python train.py prepare"`，先将数据集下载到PFS上，再提交训练任务。
 
 ## 查看任务运行状态和日志
 

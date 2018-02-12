@@ -1,12 +1,27 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import kubernetes
 from kubernetes import client, config
 import os
 
 from specs import spec_master, spec_pserver, spec_trainer, spec_trainingjob
 
-DEFAULT_PADDLE_PORT=7164
-DEFAULT_MASTER_PORT=8080
-DEFAULT_ETCD_PORT=2379
+DEFAULT_PADDLE_PORT = 7164
+DEFAULT_MASTER_PORT = 8080
+DEFAULT_ETCD_PORT = 2379
+
 
 class UniversionedAPI(object):
     """
@@ -34,8 +49,10 @@ class UniversionedAPI(object):
         "registry_secret": "The secret for reading registry.",
         "envs": "The environment variables for all pods",
         "etcd_image": "The etcd docker image.",
-        "min_instance": "The minimum number of trainers to launch, only used for faulttolerant.",
-        "max_instance": "The maximum number of trainers to launch, only used for faulttolerant."
+        "min_instance":
+        "The minimum number of trainers to launch, only used for faulttolerant.",
+        "max_instance":
+        "The maximum number of trainers to launch, only used for faulttolerant."
     }
     optional_defaults = {
         "image": "",
@@ -63,11 +80,13 @@ class UniversionedAPI(object):
         "num_gradient_servers": 1
     }
 
+
 class APIV1(UniversionedAPI):
     """
         For v1 implementation
     """
     pass
+
 
 class PaddleJob(object):
     """
@@ -75,6 +94,7 @@ class PaddleJob(object):
         A job can be submited to any cluster environment
         using one submit engine.
     """
+
     def __init__(self, **kwargs):
         self.apiv1 = APIV1()
         # setup required
@@ -103,29 +123,59 @@ class PaddleJob(object):
 
     def get_env(self):
         envs = []
-        envs.append({"name":"PADDLE_JOB_NAME",      "value":self.name})
-        envs.append({"name":"TRAINERS",             "value":str(self.parallelism)})
-        envs.append({"name":"PSERVERS",             "value":str(self.pservers)})
-        envs.append({"name":"TOPOLOGY",             "value":self.topology})
-        envs.append({"name":"ENTRY",                "value":self.entry})
-        envs.append({"name":"TRAINER_PACKAGE",      "value":self.job_package})
-        envs.append({"name":"PADDLE_INIT_PORT",     "value":str(DEFAULT_PADDLE_PORT)})
+        envs.append({"name": "PADDLE_JOB_NAME", "value": self.name})
+        envs.append({"name": "TRAINERS", "value": str(self.parallelism)})
+        envs.append({"name": "PSERVERS", "value": str(self.pservers)})
+        envs.append({"name": "TOPOLOGY", "value": self.topology})
+        envs.append({"name": "ENTRY", "value": self.entry})
+        envs.append({"name": "TRAINER_PACKAGE", "value": self.job_package})
+        envs.append({
+            "name": "PADDLE_INIT_PORT",
+            "value": str(DEFAULT_PADDLE_PORT)
+        })
         if self.gpu > 0:
-            envs.append({"name":"PADDLE_INIT_TRAINER_COUNT", "value":str(self.gpu)})
+            envs.append({
+                "name": "PADDLE_INIT_TRAINER_COUNT",
+                "value": str(self.gpu)
+            })
         else:
-            envs.append({"name":"PADDLE_INIT_TRAINER_COUNT", "value":str(self.cpu)})
-        envs.append({"name":"PADDLE_INIT_PORTS_NUM",            "value":str(self.ports_num)})
-        envs.append({"name":"PADDLE_INIT_PORTS_NUM_FOR_SPARSE", "value":str(self.ports_num_for_sparse)})
-        envs.append({"name":"PADDLE_INIT_NUM_GRADIENT_SERVERS", "value":str(self.num_gradient_servers)})
-        envs.append({"name":"PADDLE_INIT_NUM_PASSES",           "value":str(self.passes)})
+            envs.append({
+                "name": "PADDLE_INIT_TRAINER_COUNT",
+                "value": str(self.cpu)
+            })
+        envs.append({
+            "name": "PADDLE_INIT_PORTS_NUM",
+            "value": str(self.ports_num)
+        })
+        envs.append({
+            "name": "PADDLE_INIT_PORTS_NUM_FOR_SPARSE",
+            "value": str(self.ports_num_for_sparse)
+        })
+        envs.append({
+            "name": "PADDLE_INIT_NUM_GRADIENT_SERVERS",
+            "value": str(self.num_gradient_servers)
+        })
+        envs.append({
+            "name": "PADDLE_INIT_NUM_PASSES",
+            "value": str(self.passes)
+        })
         if self.gpu:
-            envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("1")})
+            envs.append({"name": "PADDLE_INIT_USE_GPU", "value": str("1")})
             # HACK: add nvidia lib LD_LIBRARY_PATH for all pods
-            envs.append({"name":"LD_LIBRARY_PATH",                  "value":"/usr/local/nvidia/lib64"})
+            envs.append({
+                "name": "LD_LIBRARY_PATH",
+                "value": "/usr/local/nvidia/lib64"
+            })
         else:
-            envs.append({"name":"PADDLE_INIT_USE_GPU", "value":str("0")})
-        envs.append({"name":"NAMESPACE", "valueFrom":{
-            "fieldRef":{"fieldPath":"metadata.namespace"}}})
+            envs.append({"name": "PADDLE_INIT_USE_GPU", "value": str("0")})
+        envs.append({
+            "name": "NAMESPACE",
+            "valueFrom": {
+                "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                }
+            }
+        })
         if self.envs:
             for k, v in self.envs.items():
                 envs.append({"name": k, "value": v})
@@ -135,15 +185,18 @@ class PaddleJob(object):
         ports = []
         port = DEFAULT_PADDLE_PORT
         for i in xrange(self.ports_num + self.ports_num_for_sparse):
-            ports.append({"containerPort":port, "name":"jobport-%d" % i})
+            ports.append({"containerPort": port, "name": "jobport-%d" % i})
             port += 1
         return ports
 
     def get_master_container_ports(self):
         ports = []
         port = DEFAULT_MASTER_PORT
-        ports.append({"containerPort": DEFAULT_MASTER_PORT, "name":"master-port"})
-        ports.append({"containerPort": DEFAULT_ETCD_PORT, "name":"etcd-port"})
+        ports.append({
+            "containerPort": DEFAULT_MASTER_PORT,
+            "name": "master-port"
+        })
+        ports.append({"containerPort": DEFAULT_ETCD_PORT, "name": "etcd-port"})
         return ports
 
     def get_master_labels(self):
@@ -171,7 +224,6 @@ class PaddleJob(object):
     def get_trainer_labels(self):
         return {"paddle-job": self.name}
 
-
     def get_trainer_volumes(self):
         volumes = []
         for item in self.volumes:
@@ -183,7 +235,7 @@ class PaddleJob(object):
         for item in self.volumes:
             volume_mounts.append(item["volume_mount"])
         return volume_mounts
-    
+
     def new_master_job(self):
         return spec_master.get_spec_master(self)
 
@@ -192,6 +244,6 @@ class PaddleJob(object):
 
     def new_trainer_job(self):
         return spec_trainer.get_spec_trainer(self)
-    
+
     def new_trainingjobs(self):
         return spec_trainingjob.get_trainingjob(self)
