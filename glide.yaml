@@ -1,4 +1,4 @@
-package: github.com/PaddlePaddle/cloud/go
+package: github.com/PaddlePaddle/cloud
 import:
 - package: github.com/bitly/go-simplejson
   version: ^0.5.0
@@ -21,3 +21,5 @@ import:
 - package: k8s.io/code-generator
   version: kubernetes-1.8.5
 - package: github.com/wangkuiyi/candy
+- package: gonum.org/v1/plot
+- package: github.com/lucasb-eyer/go-colorful
