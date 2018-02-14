@@ -12,11 +12,13 @@ else:
 v1 = client.CoreV1Api()
 
 
-def fetch_pods_info(label_selector):
+def fetch_pods_info(label_selector, phase=None):
     api_response = v1.list_namespaced_pod(
         namespace=NAMESPACE, pretty=True, label_selector=label_selector)
     pod_list = []
     for item in api_response.items:
+        if phase is not None and item.status.phase != phase:
+            continue
         pod_list.append((item.status.phase, item.status.pod_ip))
     return pod_list
 
@@ -33,13 +35,12 @@ def wait_pods_running(label_selector, desired):
 
 
 def count_pods_by_phase(label_selector, phase):
-    pod_list = fetch_pods_info(label_selector)
-    filtered_pod_list = filter(lambda x: x[0] == phase, pod_list)
-    return len(filtered_pod_list)
+    pod_list = fetch_pods_info(label_selector, phase)
+    return len(pod_list)
 
 
-def fetch_ips(label_selector, port=0):
-    pod_list = fetch_pods_info(label_selector)
+def fetch_ips(label_selector, port=0, phase=None):
+    pod_list = fetch_pods_info(label_selector, phase)
 
     ips=[]
     for t in pod_list:
@@ -51,8 +52,8 @@ def fetch_ips(label_selector, port=0):
 
     return ",".join(ips)
 
-def fetch_id(label_selector):
-    pod_list = fetch_pods_info(label_selector)
+def fetch_id(label_selector, phase=None):
+    pod_list = fetch_pods_info(label_selector, phase)
     ips = [item[1] for item in pod_list]
     ips.sort()
     local_ip = socket.gethostbyname(socket.gethostname())
@@ -61,20 +62,20 @@ def fetch_id(label_selector):
             return i
     return None
 
-def fetch_trainer_ips(label_selector, port=0):
-    return fetch_ips(label_selector, port)
+def fetch_trainer_ips(label_selector, port=0, phase=None):
+    return fetch_ips(label_selector, port, phase)
 
-def fetch_pserver_ips(label_selector, port=0):
-    return fetch_ips(label_selector, port)
+def fetch_pserver_ips(label_selector, port=0, phase=None):
+    return fetch_ips(label_selector, port, phase)
 
 def fetch_trainer_id(label_selector):
-    return fetch_id(label_selector)
+    return fetch_id(label_selector, phase="Running")
 
 def fetch_pserver_id(label_selector):
-    return fetch_id(label_selector)
+    return fetch_id(label_selector, phase="Running")
 
 def fetch_master_ip(label_selector):
-    pod_list = fetch_pods_info(label_selector)
+    pod_list = fetch_pods_info(label_selector, phase="Running")
     master_ips = [item[1] for item in pod_list]
     return master_ips[0]
 
@@ -82,9 +83,9 @@ def fetch_master_ip(label_selector):
 if __name__ == "__main__":
     command = sys.argv[1]
     if command == "fetch_pserver_ips":
-        print fetch_pserver_ips(sys.argv[2], sys.argv[3])
+        print fetch_pserver_ips(sys.argv[2], sys.argv[3], sys.argv[4])
     if command == "fetch_trainer_ips":
-        print fetch_trainer_ips(sys.argv[2], sys.argv[3])
+        print fetch_trainer_ips(sys.argv[2], sys.argv[3], sys.argv[4])
     elif command == "fetch_pserver_id":
         print fetch_pserver_id(sys.argv[2])
     elif command == "fetch_trainer_id":
