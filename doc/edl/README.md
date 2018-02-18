@@ -29,7 +29,7 @@ for the training job autoscaling for the following reasons:
 We need to develop our own solution for autoscaling.
 
 Kubrenetes provide [CustomResourceDefinition (CRD)](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-resources)and [custom controller](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-controllers)
-we can use these feature to develop EDL controller, so it can flexiblly running in our
+we can use these feature to develop EDL controller, so it can flexibly running in our
 cluster and does not require modifying the Kubernetes source code.
 
 ## Solution
@@ -123,31 +123,21 @@ status to "Scaling up".
 type trainingJobEventType string
 
 const (
-trainingJobEventDelete trainingJobEventType = "Delete"
-trainingJobEventModify trainingJobEventType = "Modify"
+    trainingJobEventDelete trainingJobEventType = "Delete"
+    trainingJobEventModify trainingJobEventType = "Modify"
 )
 
 type trainingJobEvent struct {
-// pet is the TrainingJobEventType of TrainingJob
-pet trainingJobEventType
-// The job transfer the information fo job
-job *v1.TrainingJob
+    pet trainingJobEventType
+    job *v1.TrainingJob
 }
 
-// TrainingJobUpdater is to manager a specific TrainingJob
 type TrainingJobUpdater struct {
-// job is the job the TrainingJobUpdater manager.
-job *v1.TrainingJob
-// kubeCli is standard kubernetes client.
-kubeCli kubernetes.Interface
-// trainingJobClient is the client of TrainingJob.
-trainingJobClient trainingJobClient.Interface
-// status is the status in memory, update when TrainingJob status changed and update the CRD resource status.
-status v1.TrainingJobStatus
-// eventCh is the channel received by Controller, include Modify and Delete.
-// When trainingJobEvent is Delete it will delete all resources
-// The maximum is 1000.
-eventCh chan *trainingJobEvent
+    job *v1.TrainingJob
+    kubeCli kubernetes.Interface
+    trainingJobClient trainingJobClient.Interface
+    status v1.TrainingJobStatus
+    eventCh chan *trainingJobEvent
 }
 ```
  
@@ -247,8 +237,7 @@ you have to deal with the import problem.
 ### Controller
 #### Lifecycle Overall
 
-The whole lifecycle of `TrainingJob` is managed by controller and 
-`TrainingJobUpdater`:
+The whole lifecycle of `TrainingJob` is managed by controller and `TrainingJobUpdater`:
 
 ![](pictures/lifecycle_overall.jpg)
 
@@ -256,7 +245,7 @@ When the job is submitted, `Controller` will create a `TrainingJobUpdater`
 and start to handle Kubernetes events. `TrainingJobUpdater` will start 
 a goroutine sync the state of the `Trainingjob`. When the state is changed
 to `failed` or `succeeded`, resources of pservers and master will 
-be released. When the job is killed by user, resources of PSERVER and MASTER
+be released. When the job is killed by user, resources of pservers and master
 will also be released.
 
 #### State Machine
@@ -291,8 +280,8 @@ The state change follows the below graph:
 
 When the job is submitted, controller will start a Updater and the state of the
 job is set to `none`. When the job config is valid and through parser, the state will
-be set to `creating`. When all the resources are submited successfully,
-the state will convert to `running`. When all trainer are finished
+be set to `creating`. When all the resources are submitted successfully,
+the state will be set to `running`. When all trainer are finished
 the state be set to `succeeded`. Otherwise, the state will be set to `failed`.
 
 ### Autoscaler
@@ -317,9 +306,9 @@ for {
 }
 ```
 
-### Scaling Algorithm
+#### Scaling Algorithm
 
-#### Elastic Job
+##### Elastic Job
 
 A job is elastic only when it's trainer and pserver's `min-instance`
 equals to the `max-instance` respectively. We will only scale elastic
@@ -327,7 +316,7 @@ jobs.
 
 Currently, we will not scale the parameter server instances.
 
-#### Fulfillment Score
+##### Fulfillment Score
 
 When there are available computation resources, the algorithm needs to
 decide which jobs to assign the resources to. When there are no more
@@ -345,7 +334,7 @@ func (j Job) Score() float64 {
 }
 ```
 
-#### Scaling GPU Jobs
+##### Scaling GPU Jobs
 
 The controller knows the total number of available GPUs in a cluster
 and will try to assign all of them to the training jobs.
@@ -364,7 +353,7 @@ to `min-instance`, no training job will be scaled down, the new job
 cannot be scheduled and will wait for more resources.
 
 
-#### Scaling CPU Jobs
+##### Scaling CPU Jobs
 
 The controller knows the total CPU capacity, Mem capacity of the
 cluster, and the total CPU limits, Mem limits of all training jobs. We
