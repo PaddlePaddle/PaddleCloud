@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 start_pserver() {
     stdbuf -oL paddle pserver \
       --use_gpu=0 \
@@ -64,7 +65,7 @@ start_fluid_process() {
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
     export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id paddle-job=${PADDLE_JOB_NAME})
   fi
-  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips paddle-job-pserver=${PADDPADDLE_JOB_NAME})
+  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips paddle-job-pserver=${PADDLE_JOB_NAME})
   stdbuf -oL sh -c "${ENTRY}"
   check_trainer_ret $?
 }
