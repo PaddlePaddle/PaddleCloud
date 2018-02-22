@@ -65,7 +65,7 @@ def fetch_id(label_selector, phase=None):
 def fetch_trainer_ips(label_selector, port=0, phase=None):
     return fetch_ips(label_selector, port, phase)
 
-def fetch_pserver_ips(label_selector, port=0, phase=None):
+def fetch_pserver_ips(label_selector, port=0, phase="Running"):
     return fetch_ips(label_selector, port, phase)
 
 def fetch_trainer_id(label_selector):

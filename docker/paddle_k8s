@@ -65,7 +65,10 @@ start_fluid_process() {
     stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
     export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id paddle-job=${PADDLE_JOB_NAME})
   fi
-  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips paddle-job-pserver=${PADDLE_JOB_NAME})
+
+  pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
+  trainer_label="paddle-job=${PADDLE_JOB_NAME}"
+  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips  ${pserver_label} 0 Running)
   stdbuf -oL sh -c "${ENTRY}"
   check_trainer_ret $?
 }
@@ -93,11 +96,15 @@ start_new_trainer() {
 start_trainer() {
     # paddle v1 and V2 distributed training does not allow any trainer failed. 
     check_failed_cnt 0
-    stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
-    stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
 
-    export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips)
-    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id)
+    pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
+    trainer_label="paddle-job=${PADDLE_JOB_NAME}"
+
+    stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
+    stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
+
+    export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips ${pserver_label} 0 Running)
+    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id ${trainer_label})
     stdbuf -oL echo $PADDLE_INIT_TRAINER_ID > /trainer_id
     # FIXME: /trainer_count = PADDLE_INIT_NUM_GRADIENT_SERVERS
     stdbuf -oL echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count
