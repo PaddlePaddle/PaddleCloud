@@ -39,13 +39,13 @@ def count_pods_by_phase(label_selector, phase):
     return len(pod_list)
 
 
-def fetch_ips(label_selector, port=0, phase=None):
+def fetch_ips(label_selector, port=None, phase=None):
     pod_list = fetch_pods_info(label_selector, phase)
 
     ips=[]
     for t in pod_list:
         ip = t[1]
-        if port > 0:
+        if port != "0":
             ip = "{0}:{1}".format(t[1], port)
 
         ips.append(ip)
@@ -62,10 +62,10 @@ def fetch_id(label_selector, phase=None):
             return i
     return None
 
-def fetch_trainer_ips(label_selector, port=0, phase=None):
+def fetch_trainer_ips(label_selector, port=None, phase=None):
     return fetch_ips(label_selector, port, phase)
 
-def fetch_pserver_ips(label_selector, port=0, phase="Running"):
+def fetch_pserver_ips(label_selector, port=None, phase=None):
     return fetch_ips(label_selector, port, phase)
 
 def fetch_trainer_id(label_selector):
