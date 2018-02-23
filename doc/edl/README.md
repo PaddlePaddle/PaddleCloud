@@ -29,7 +29,7 @@ for the training job autoscaling for the following reasons:
 We need to develop our own solution for autoscaling.
 
 Kubrenetes provide [CustomResourceDefinition (CRD)](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-resources)and [custom controller](https://kubernetes.io/docs/concepts/api-extension/custom-resources/#custom-controllers)
-we can use these feature to develop EDL controller, so it can flexibly running in our
+we can use these feature to develop EDL controller, so it can flexibly run in our
 cluster and does not require modifying the Kubernetes source code.
 
 ## Solution
