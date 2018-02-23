@@ -15,6 +15,7 @@ pre-commit  --version
 
 if ! pre-commit run -a ; then
   git diff  --exit-code
+  exit 1
 fi
 
 trap : 0

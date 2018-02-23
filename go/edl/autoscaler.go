@@ -446,7 +446,7 @@ func (a *Autoscaler) tryToRetrieveTrainerJobInTrainingJob(jobName string, job *j
 	return nil
 }
 
-// Monitor monitors the cluster resources and training jobs in a loop,
+// Run monitors the cluster resources and training jobs in a loop,
 // scales the training jobs according to the cluster resource.
 func (a *Autoscaler) Run() {
 	for {

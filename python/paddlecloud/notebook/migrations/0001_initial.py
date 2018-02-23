@@ -19,11 +19,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PaddleUser',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
                 ('school', models.CharField(max_length=256)),
                 ('studentID', models.CharField(max_length=512)),
                 ('major', models.CharField(max_length=256)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
+                ('user', models.OneToOneField(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    to=settings.AUTH_USER_MODEL)),
+            ], ),
     ]

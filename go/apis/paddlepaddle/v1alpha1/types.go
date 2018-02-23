@@ -8,10 +8,16 @@ import (
 )
 
 const (
-	CRDKind       = "TraingingJob"
-	CRDKindPlural = "traingingjobs"
-	CRDGroup      = "paddlepaddle.org"
-	CRDVersion    = "v1alpha1"
+	// CRDKind is the kind of K8s CRD.
+	CRDKind = "TrainingJob"
+	// CRDKindPlural is the plural of CRDKind.
+	CRDKindPlural = "trainingjobs"
+	// CRDShortName is the short name of CRD.
+	CRDShortName = "tj"
+	// CRDGroup is the name of group.
+	CRDGroup = "paddlepaddle.org"
+	// CRDVersion is the version of CRD.
+	CRDVersion = "v1alpha1"
 )
 
 // CRDName returns name of crd
@@ -21,7 +27,6 @@ func CRDName() string {
 
 // +genclient
 // +genclient:noStatus
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=trainingjob
 
@@ -36,7 +41,11 @@ type TrainingJob struct {
 // TrainingJobSpec is the spec for a TrainingJob resource
 type TrainingJobSpec struct {
 	// General job attributes.
-	Image             string              `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
+	// If you want to use the hostnetwork instead of container network
+	// portmanager is necessary. About portmanager, please refer to
+	// https://github.com/PaddlePaddle/cloud/blob/develop/doc/hostnetwork/hostnetwork.md
+	HostNetwork       bool                `json:"host_network,omitempty"`
 	Port              int                 `json:"port,omitempty"`
 	PortsNum          int                 `json:"ports_num,omitempty"`
 	PortsNumForSparse int                 `json:"ports_num_for_sparse,omitempty"`
@@ -77,11 +86,16 @@ type TrainerSpec struct {
 type TrainingJobPhase string
 
 const (
-	TrainingJobPhaseNone      TrainingJobPhase = ""
-	TrainingJobPhaseCreating                   = "creating"
-	TrainingJobPhaseRunning                    = "running"
-	TrainingJobPhaseSucceeded                  = "succeeded"
-	TrainingJobPhaseFailed                     = "failed"
+	// TrainingJobPhaseNone is empty TrainingJobPhase.
+	TrainingJobPhaseNone TrainingJobPhase = ""
+	// TrainingJobPhaseCreating is creating TrainingJobPhase.
+	TrainingJobPhaseCreating = "creating"
+	// TrainingJobPhaseRunning is running TrainingJobPhase.
+	TrainingJobPhaseRunning = "running"
+	// TrainingJobPhaseSucceeded is succeeded TrainingJobPhase.
+	TrainingJobPhaseSucceeded = "succeeded"
+	// TrainingJobPhaseFailed is failed TrainingJobPhase.
+	TrainingJobPhaseFailed = "failed"
 )
 
 // TrainerJobScaleStatus is status of trainer jobs.
@@ -92,8 +106,11 @@ type TrainerJobScaleStatus struct {
 type TrainingResourceType string
 
 const (
-	MASTER  TrainingResourceType = "MASTER"
+	// MASTER is the master name of TrainingResourceType.
+	MASTER TrainingResourceType = "MASTER"
+	// PSERVER is the pserver name of TrainingResourceType.
 	PSERVER TrainingResourceType = "PSERVER"
+	// TRAINER is the trainer name of TrainingResourceType.
 	TRAINER TrainingResourceType = "TRAINER"
 )
 
@@ -101,11 +118,16 @@ const (
 type ResourceState string
 
 const (
-	ResourceStateNone      ResourceState = ""
-	ResourceStateStarting                = "starting"
-	ResourceStateRunning                 = "running"
-	ResourceStateFailed                  = "failed"
-	ResourceStateSucceeded               = "succeeded"
+	// ResourceStateNone is the initial state of training job
+	ResourceStateNone ResourceState = ""
+	// ResourceStateStarting is the starting state of ResourceState.
+	ResourceStateStarting = "starting"
+	// ResourceStateRunning is the  running state of ResourceState.
+	ResourceStateRunning = "running"
+	// ResourceStateFailed is the failed state of ResourceState.
+	ResourceStateFailed = "failed"
+	// ResourceStateSucceeded is the succeeded state of ResourceState
+	ResourceStateSucceeded = "succeeded"
 )
 
 // TrainingResourceStatus is the status of every resource

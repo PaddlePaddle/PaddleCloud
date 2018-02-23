@@ -15,7 +15,7 @@ import (
 )
 
 // Config is global config object for pfs commandline
-var Config = config.ParseDefaultConfig()
+var Config *config.SubmitConfig
 
 type uploadChunkResponse struct {
 	Err string `json:"err"`

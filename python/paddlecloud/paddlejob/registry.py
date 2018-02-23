@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.conf import settings
@@ -16,17 +30,23 @@ import logging
 import os
 import base64
 
+
 def docker_cfg(username, password, email, server):
     auth = "%s:%s" % (username, password)
     auth_encode = base64.b64encode(auth)
-    return json.dumps({server:
-                       {"username": username,
-                        "password": password,
-                        "email": email,
-                        "auth": auth_encode}})
+    return json.dumps({
+        server: {
+            "username": username,
+            "password": password,
+            "email": email,
+            "auth": auth_encode
+        }
+    })
+
 
 class RegistryView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, )
+
     def post(self, request):
         """
         Cretea a registry secret
@@ -39,15 +59,13 @@ class RegistryView(APIView):
         docker_username = obj.get("username")
         docker_password = obj.get("password")
         docker_server = obj.get("server")
-        cfg = docker_cfg(docker_username,
-                                docker_password,
-                                username,
-                                docker_server)
+        cfg = docker_cfg(docker_username, docker_password, username,
+                         docker_server)
         try:
             ret = client.CoreV1Api(
                 api_client=api_client).create_namespaced_secret(
-                    namespace = user_namespace,
-                    body = {
+                    namespace=user_namespace,
+                    body={
                         "apiVersion": "v1",
                         "kind": "Secret",
                         "metadata": {
@@ -56,7 +74,8 @@ class RegistryView(APIView):
                         "data": {
                             ".dockerconfigjson": base64.b64encode(cfg)
                         },
-                        "type": "kubernetes.io/dockerconfigjson"})
+                        "type": "kubernetes.io/dockerconfigjson"
+                    })
         except ApiException, e:
             logging.error("Failed when create secret.")
             return utils.simple_response(500, str(e))
@@ -72,10 +91,11 @@ class RegistryView(APIView):
         obj = json.loads(request.body)
         name = obj.get("name")
         try:
-            ret = client.CoreV1Api(api_client=api_client).delete_namespaced_secret(
-                name = name,
-                namespace = user_namespace,
-                body = client.V1DeleteOptions())
+            ret = client.CoreV1Api(
+                api_client=api_client).delete_namespaced_secret(
+                    name=name,
+                    namespace=user_namespace,
+                    body=client.V1DeleteOptions())
         except ApiException, e:
             logging.error("Failed when delete secret.")
             return utils.simple_response(500, str(e))
@@ -89,8 +109,9 @@ class RegistryView(APIView):
         user_namespace = notebook.utils.email_escape(username)
         api_client = notebook.utils.get_user_api_client(username)
         try:
-            secretes_list = client.CoreV1Api(api_client=api_client).list_namespaced_secret(
-                namespace=user_namespace)
+            secretes_list = client.CoreV1Api(
+                api_client=api_client).list_namespaced_secret(
+                    namespace=user_namespace)
             return utils.simple_response(200, secretes_list.to_dict())
         except ApiException, e:
             logging.error("Failed when list secrets.")
