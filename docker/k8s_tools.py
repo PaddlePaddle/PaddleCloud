@@ -41,16 +41,17 @@ def count_pods_by_phase(label_selector, phase):
 
 def fetch_ips(label_selector, port=None, phase=None):
     pod_list = fetch_pods_info(label_selector, phase)
+    ips = [item[1] for item in pod_list]
+    ips.sort()
 
-    ips=[]
-    for t in pod_list:
-        ip = t[1]
+    r=[]
+    for ip in ips:
         if port != "0":
-            ip = "{0}:{1}".format(t[1], port)
+            ip = "{0}:{1}".format(ip, port)
 
-        ips.append(ip)
+        r.append(ip)
 
-    return ",".join(ips)
+    return ",".join(r)
 
 def fetch_id(label_selector, phase=None):
     pod_list = fetch_pods_info(label_selector, phase)
