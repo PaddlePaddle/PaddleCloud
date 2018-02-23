@@ -12,12 +12,12 @@ so that server-side components can run in the Kubernetes cluster.
 - Client side component:
   - Command line client
 
-## Build EDL Controller
-
-To build EDL Controller you have to setup [Go development environment](https://golang.org/doc/install#install) and install
+Before starting, you have to setup [Go development environment](https://golang.org/doc/install#install) and install
 [glide](https://github.com/Masterminds/glide).
 
-After that you can run the following commands to finish the build:
+## Build EDL Controller
+
+Run the following commands to finish the build:
 
 ```bash
 cd go
@@ -32,8 +32,7 @@ run as a daemon process on the Kubernetes cluster.
 
 ## Build paddlectl client
 
-See [here](./build_edl_controller.md) to prepare Go and `glide` environment
-first and run the following command to build paddlectl binary.
+Run the following command to build paddlectl binary.
 
 ```bash
 cd go/cmd/paddlectl

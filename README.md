@@ -4,7 +4,7 @@
 
 PaddlePaddle Cloud is a combination of PaddlePaddle and Kubernetes. It
 supports fault-recoverable and fault-tolerant large-scaled distributed
-deep learning.  We can deploy it on public cloud and on-premise
+deep learning. We can deploy it on public cloud and on-premise
 clusters.
 
 PaddlePaddle Cloud includes the following components:
