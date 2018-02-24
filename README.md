@@ -30,8 +30,8 @@ PaddlePaddle Cloud includes the following components:
 
 - [Build PaddlePaddle Cloud](./doc/howto/build.md)
 - [Deploy PaddlePaddle Cloud](./doc/howto/deploy.md)
-- [Elastic Deep Learning using EDL](./doc/howto/edl.md)
-- [PaddlePaddle Cloud on Minikube](./doc/howto/minikube.md)
+- [Elastic Deep Learning using EDL](./doc/edl/example/autoscale.md)
+- [PaddlePaddle Cloud on Minikube](./doc/howto/run_on_minikube.md)
 
 ## Directory structure
 
