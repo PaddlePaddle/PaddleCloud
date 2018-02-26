@@ -88,7 +88,7 @@ def fetch_endpoints(label_selector, port):
 
 
 def fetch_id(label_selector):
-    return fetch_id(label_selector, phase="Running")
+    return fetch_pod_id(label_selector, phase="Running")
 
 
 if __name__ == "__main__":
