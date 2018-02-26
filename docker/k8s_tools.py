@@ -12,14 +12,24 @@ else:
 v1 = client.CoreV1Api()
 
 
+def get_pod_status(item):
+    phase = item.status.phase
+
+    # check terminate time although phase is Running.
+    if item.metadata.deletion_timestamp != None:
+        return "Terminating"
+
+    return phase
+
+
 def fetch_pods_info(label_selector, phase=None):
     api_response = v1.list_namespaced_pod(
         namespace=NAMESPACE, pretty=True, label_selector=label_selector)
     pod_list = []
     for item in api_response.items:
-        if phase is not None and item.status.phase != phase:
+        if phase is not None and get_pod_status(item) != phase:
             continue
-        # check terminate time although phase is Running.
+
         pod_list.append((item.status.phase, item.status.pod_ip))
     return pod_list
 
@@ -55,7 +65,7 @@ def fetch_ips_string(label_selector, phase=None):
 def fetch_endpoints_string(label_selector, port, phase=None):
     ips = fetch_ips_list(label_selector, phase)
     ips = ["{0}:{1}".format(ip, port) for ip in ips]
-    return ",".join(r)
+    return ",".join(ips)
 
 
 def fetch_pod_id(label_selector, phase=None):
@@ -73,8 +83,8 @@ def fetch_ips(label_selector):
     return fetch_ips_string(label_selector, phase="Running")
 
 
-def fetch_endpoints(label_selector):
-    return fetch_endpoints_string(label_selector, phase="Running")
+def fetch_endpoints(label_selector, port):
+    return fetch_endpoints_string(label_selector, port=port, phase="Running")
 
 
 def fetch_id(label_selector):
@@ -85,8 +95,10 @@ if __name__ == "__main__":
     command = sys.argv[1]
     if command == "fetch_ips":
         print fetch_ips(sys.argv[2])
+    if command == "fetch_ips_string":
+        print fetch_ips_string(sys.argv[2], sys.argv[3])
     elif command == "fetch_endpoints":
-        print fetch_endpoints(sys.argv[2])
+        print fetch_endpoints(sys.argv[2], sys.argv[3])
     elif command == "fetch_id":
         print fetch_id(sys.argv[2])
     elif command == "count_pods_by_phase":

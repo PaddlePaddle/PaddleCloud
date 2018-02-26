@@ -15,7 +15,7 @@ start_new_pserver() {
   master_label="paddle-job-master=${PADDLE_JOB_NAME}"
 
   stdbuf -oL python /root/k8s_tools.py wait_pods_running  ${master_label} 1
-  export MASTER_IP=$(python /root/k8s_tools.py fetch_ip ${master_label})
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_ips ${master_label})
   stdbuf -oL /usr/bin/pserver \
     -port=$PADDLE_INIT_PORT \
     -num-pservers=$PSERVERS \
