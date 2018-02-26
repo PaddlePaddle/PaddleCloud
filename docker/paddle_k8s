@@ -62,17 +62,23 @@ check_trainer_ret() {
 start_fluid_process() {
   pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
   trainer_label="paddle-job=${PADDLE_JOB_NAME}"
+  task_index=""
 
   stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
+
+  ps_hosts=$(python /root/k8s_tools.py fetch_endpoints  ${pserver_label} ${PADDLE_INIT_PORT})
+  trainer_hosts=$(python /root/k8s_tools.py fetch_endpoints  ${trainer_label} ${PADDLE_INIT_PORT})
+
   if [ "${TRAINING_ROLE}" == "TRAINER" ]; then
     check_failed_cnt ${TRAINERS}
-    sleep 5
-    stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
-    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_id ${trainer_label})
+    task_index=$(python /root/k8s_tools.py fetch_id ${trainer_label})
+  else
+    task_index=$(python /root/k8s_tools.py fetch_id ${pserver_label})
   fi
 
-  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_ips  ${pserver_label})
-  stdbuf -oL sh -c "${ENTRY}"
+  stdbuf -oL sh -c "${ENTRY} --ps_hosts=${ps_hosts} --trainer_hosts=${trainer_hosts} \
+      --task_index=${task_index}"
   check_trainer_ret $?
 }
 
