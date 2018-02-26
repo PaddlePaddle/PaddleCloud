@@ -39,14 +39,14 @@ def count_pods_by_phase(label_selector, phase):
     return len(pod_list)
 
 
-def fetch_ips(label_selector, port=None, phase=None):
+def fetch_endpoints(label_selector, port=None, phase=None):
     pod_list = fetch_pods_info(label_selector, phase)
     ips = [item[1] for item in pod_list]
     ips.sort()
 
     r = []
     for ip in ips:
-        if port != "0":
+        if port != None:
             ip = "{0}:{1}".format(ip, port)
 
         r.append(ip)
@@ -55,9 +55,7 @@ def fetch_ips(label_selector, port=None, phase=None):
 
 
 def fetch_id(label_selector, phase=None):
-    pod_list = fetch_pods_info(label_selector, phase)
-    ips = [item[1] for item in pod_list]
-    ips.sort()
+    ips = fetch_endpoints(label_selector, phase=phase)
     local_ip = socket.gethostbyname(socket.gethostname())
     for i in xrange(len(ips)):
         if ips[i] == local_ip:
@@ -66,11 +64,11 @@ def fetch_id(label_selector, phase=None):
 
 
 def fetch_trainer_ips(label_selector, port=None, phase=None):
-    return fetch_ips(label_selector, port, phase)
+    return fetch_endpoints(label_selector, port, phase)
 
 
 def fetch_pserver_ips(label_selector, port=None, phase=None):
-    return fetch_ips(label_selector, port, phase)
+    return fetch_endpoints(label_selector, port, phase)
 
 
 def fetch_trainer_id(label_selector):
