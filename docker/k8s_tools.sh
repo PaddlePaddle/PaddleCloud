@@ -12,8 +12,10 @@ start_pserver() {
 }
 
 start_new_pserver() {
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
-  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip)
+  master_label="paddle-job-master=${PADDLE_JOB_NAME}"
+
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running  ${master_label} 1
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_ip ${master_label})
   stdbuf -oL /usr/bin/pserver \
     -port=$PADDLE_INIT_PORT \
     -num-pservers=$PSERVERS \
@@ -58,17 +60,18 @@ check_trainer_ret() {
 }
 
 start_fluid_process() {
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
+  pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
+  trainer_label="paddle-job=${PADDLE_JOB_NAME}"
+
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
   if [ "${TRAINING_ROLE}" == "TRAINER" ]; then
     check_failed_cnt ${TRAINERS}
     sleep 5
-    stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job=${PADDLE_JOB_NAME} ${TRAINERS}
-    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id paddle-job=${PADDLE_JOB_NAME})
+    stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
+    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_id ${trainer_label})
   fi
 
-  pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
-  trainer_label="paddle-job=${PADDLE_JOB_NAME}"
-  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips  ${pserver_label} 0 Running)
+  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_ips  ${pserver_label})
   stdbuf -oL sh -c "${ENTRY}"
   check_trainer_ret $?
 }
@@ -76,10 +79,14 @@ start_fluid_process() {
 start_new_trainer() {
   # FIXME(Yancey1989): use command-line interface to configure the max failed count
   check_failed_cnt ${TRAINERS}
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running paddle-job-pserver=${PADDLE_JOB_NAME} ${PSERVERS}
+
+  master_label="paddle-job-master=${PADDLE_JOB_NAME}"
+  pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
+
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
   sleep 5
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running  paddle-job-master=${PADDLE_JOB_NAME} 1
-  export MASTER_IP=$(python /root/k8s_tools.py fetch_master_ip paddle-job-master=${PADDLE_JOB_NAME})
+  stdbuf -oL python /root/k8s_tools.py wait_pods_running  ${master_label} 1
+  export MASTER_IP=$(python /root/k8s_tools.py fetch_ips ${master_label})
   export ETCD_IP="$MASTER_IP"
 
   # NOTE: $TRAINER_PACKAGE may be large, do not copy
@@ -103,8 +110,8 @@ start_trainer() {
     stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
     stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
 
-    export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_pserver_ips ${pserver_label} 0 Running)
-    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_trainer_id ${trainer_label})
+    export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_ips ${pserver_label})
+    export PADDLE_INIT_TRAINER_ID=$(python /root/k8s_tools.py fetch_id ${trainer_label})
     stdbuf -oL echo $PADDLE_INIT_TRAINER_ID > /trainer_id
     # FIXME: /trainer_count = PADDLE_INIT_NUM_GRADIENT_SERVERS
     stdbuf -oL echo $PADDLE_INIT_NUM_GRADIENT_SERVERS > /trainer_count
