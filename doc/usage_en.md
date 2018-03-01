@@ -2,13 +2,13 @@
 
 ---
 
-## Donwload And Configure paddlecloud client
+## Donwload And Configure paddlectl client
 
-`paddlecloud` is the command line tool for PaddlePaddleCloud distributed training.
+`paddlectl` is the command line tool for PaddlePaddleCloud distributed training.
 
 ### Steps
 
-1. Download latest `paddlecloud` client binary from https://github.com/PaddlePaddle/cloud/releases, copy `paddlecloud` to system $PATH directory, I.E. `/usr/local/bin`
+1. Download latest `paddlectl` client binary from https://github.com/PaddlePaddle/cloud/releases, copy `paddlectl` to system $PATH directory, I.E. `/usr/local/bin`
 
 1. Create `~/.paddle/config` (`.paddle\config` under current user directory for Windows users) and fill it with the following content:
 
@@ -28,10 +28,10 @@ Above file configures PaddlePaddleCloud cluster endpoints with user credentials.
 - endpoint: URL for PaddlePaddleCloud cluster API. This info will be provided by system administrator along with username&password
 - current-datacenter: To identify current datacenter
 
-After finish editing the config file, run `paddlecloud` will show help message as follows:
+After finish editing the config file, run `paddlectl` will show help message as follows:
 
 ``` bash
-Usage: paddlecloud <flags> <subcommand> <subcommand args>
+Usage: paddlectl <flags> <subcommand> <subcommand args>
 
 Subcommands:
 	commands         list all command names
@@ -41,7 +41,7 @@ Subcommands:
 	help             describe subcommands and their syntax
 	kill             Stop the job. -rm will remove the job from history.
 	logs             Print logs of the job.
-	registry         Add registry secret on paddlecloud.
+	registry         Add registry secret on paddlectl.
 	submit           Submit job to PaddlePaddle Cloud.
 
 Subcommands for PFS:
@@ -51,7 +51,7 @@ Subcommands for PFS:
 	rm               rm files on PaddlePaddle Cloud
 
 
-Use "paddlecloud flags" for a list of top-level flags
+Use "paddlectl flags" for a list of top-level flags
 
 ```
 
@@ -129,12 +129,12 @@ def recordio_reader(filepath, parallelism, trainer_id):
     return reader
 ```
 
-### Upload training data using paddlecloud
+### Upload training data using paddlectl
 
-`paddlecloud` command line is able to upload data training cluster to CephFS.
+`paddlectl` command line is able to upload data training cluster to CephFS.
 
 ```bash
-paddlecloud file src dest
+paddlectl file src dest
 ```
 
 - `src` must be child directory of current directory，`../` is not allowed.
@@ -223,7 +223,7 @@ Submitting training jobs with the following command:
 - Submitting jobs utilizing v1 API
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job \
+paddlectl submit -jobname my-paddlecloud-job \
   -cpu 1 \
   -gpu 0 \
   -memory 1Gi \
@@ -237,7 +237,7 @@ paddlecloud submit -jobname my-paddlecloud-job \
 - Submitting jobs utilizing V2 API 
 
 ```bash
-paddlecloud submit -jobname my-paddlecloud-job \
+paddlectl submit -jobname my-paddlecloud-job \
   -cpu 1 \
   -gpu 0 \
   -memory 1Gi \
@@ -278,13 +278,13 @@ If your training task need to be wrapped in a docker image to be scheduled by ku
   ```
 - define runtime Docker Image to run training jobs
   ```bash
-  paddlecloud submit -image {runtime Docker image} -jobname ...
+  paddlectl submit -image {runtime Docker image} -jobname ...
   ```
 
 - if your runtime Docker image is submitted to a private registry
   - add registry credentials in PaddleCloud
     ```bash
-    paddlecloud registry \
+    paddlectl registry \
       -username {your username}
       -password {your password}
       -server {your registry server}
@@ -292,17 +292,17 @@ If your training task need to be wrapped in a docker image to be scheduled by ku
     ```
   - submit training job via private registry
     ```bash
-    paddlecloud submit \
+    paddlectl submit \
       -image {runtime Docker image} \
       -registry {your registry name}
     ```
   - list all registries
     ```bash
-    paddlecloud get registry
+    paddlectl get registry
     ```
   - delete a registry
     ```bash
-    paddlecloud delete registry
+    paddlectl delete registry
     ```
 
 
@@ -311,7 +311,7 @@ If your training task need to be wrapped in a docker image to be scheduled by ku
 User can check the status of training jobs, nodes and disk quota with the following command:
 
 ``` bash
-paddlecloud get jobs
+paddlectl get jobs
 
 
 NUM	NAME	SUCC	FAIL	START	COMP	ACTIVE
@@ -321,7 +321,7 @@ NUM	NAME	SUCC	FAIL	START	COMP	ACTIVE
 To check the status of workers, run the following command:
 
 ``` bash
-paddlecloud get workers paddle-cluster-job
+paddlectl get workers paddle-cluster-job
 
 NAME	STATUS	START
 paddle-cluster-job-trainer-3s4nz	Running	2017-05-24T07:53:41Z
@@ -334,7 +334,7 @@ paddle-cluster-job-trainer-6sc4q	Running	2017-05-24T07:53:03Z
 Run following command to check current training job's log from all workers:
 
 ``` bash
-paddlecloud logs paddle-cluster-job
+paddlectl logs paddle-cluster-job
 
 label selector: paddle-job-pserver=paddle-cluster-job, desired: 3
 running pod list:  [('Running', '172.17.29.47'), ('Running', '172.17.37.46'), …, ('Running', '172.17.28.244')]
@@ -370,15 +370,15 @@ I0524 12:00:39.925714    43 ParameterClient2.cpp:114] pserver 3 172.17.35.175:71
 
 ## Terminating Jobs
 
-Run `paddlecloud kill paddle-cluster-job` to terminate the training job.
+Run `paddlectl kill paddle-cluster-job` to terminate the training job.
 
-When above command is successful, cluster will try to terminate all the workers process in background, this procedure might take some time and works might not be terminated immediately. If you need to check if your work has been cleared, run `paddlecloud get workers paddle-cluster-job`
+When above command is successful, cluster will try to terminate all the workers process in background, this procedure might take some time and works might not be terminated immediately. If you need to check if your work has been cleared, run `paddlectl get workers paddle-cluster-job`
 
 *** When submitting a new job after terminating one, make sure -name is different to prevent name conflicting ***
 
 ## To prepare a dataset for distributed training
 
-Since distributed training will start multiple training instance, to ensure data is evenly distributed and delivered to each trainer, we need to split dataset into small pieces, each trainer will decide files to read based on its runtime state. [here](../demo/fit_a_line/train.py) is an example training program, [here](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/uci_housing.py) is an example of dataset.
+Since distributed training will start multiple training instances, to ensure data is evenly distributed and delivered to each trainer, we need to split dataset into small pieces, each trainer will decide files to read based on its runtime state. [here](../demo/fit_a_line/train.py) is an example training program, [here](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/uci_housing.py) is an example of dataset.
 
 
 ### Preprocessing training data.
