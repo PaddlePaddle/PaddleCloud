@@ -32,12 +32,14 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
 	```
 	minikube mount $HOME/workspace:/workspace
 	```
+
+	***Please Note*** : minikube's `mount` might not work properly in Mac. In the other hand, `/Users` directory is automatically mounted to VM's `Users` path by default in Mac, so if you are using Mac, you can skip this step and find workspace directory from `/Users/<your login name>/workspace` in VM instead.
 	
 1. Copy `ca` and generate `admin` certificate：    
 	(We must use `ca` under `~/.minikube` rather than `~/.minikube/certs`.)
 	
 	```
-	mkdir /workspace/certs && cd /workspace/certs
+	mkdir $HOME/workspace/certs && cd $HOME/workspace/certs
 	openssl genrsa -out admin-key.pem 2048
 	openssl req -new -key admin-key.pem -out admin.csr -subj "/CN=kube-admin"
 	openssl x509 -req -in admin.csr -CA ~/.minikube/ca.crt -CAkey ~/.minikube/ca.key \
@@ -48,10 +50,20 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
 	
 1. Copy and update PaddlePaddle Cloud configurations:
 
+	In Mac
+	``` bash
+	$WORKSPACE_PATH=$HOME/workspace
 	```
+	In other OS
+
+	``` bash
+	$WORKSPACE_PATH=/workspace
+	```
+
+	```bash
 	git clone https://github.com/PaddlePaddle/cloud 
-	cp cloud/k8s/minikube/* $HOME/workspace/
-	sed -i'.bak' -e "s#<yourpath>#yourpath#g"  $HOME/workspace/*.yaml
+	cp cloud/k8s/minikube/* $HOME/workspace
+	sed -i'.bak' -e "s#<yourpath>#$WORKSPACE_PATH#g"  $HOME/workspace/*.yaml
 	```
 
 1. Edit `/etc/hosts` and add `$(minikube ip) cloud.testpcloud.org` to it.
@@ -72,8 +84,8 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
 ```
 datacenters:
 - name: testpcloud
-  username: <username>
-  password: <password>
+  username: <username you just signed up>
+  password: <password of the user you just signed up>
   endpoint: http://cloud.testpcloud.org
 current-datacenter: testpcloud
 ```
