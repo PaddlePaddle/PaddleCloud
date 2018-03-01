@@ -23,7 +23,7 @@ set -o pipefail
 
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 echo ${SCRIPT_ROOT}
-CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${SCRIPT_ROOT}; ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
+CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${SCRIPT_ROOT}; ls -d -1 ../vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
 echo ${CODEGEN_PKG}
 
 # generate the code with:
@@ -32,6 +32,11 @@ echo ${CODEGEN_PKG}
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
  github.com/PaddlePaddle/cloud/go/client github.com/PaddlePaddle/cloud/go/apis \
-  paddlepaddle:v1alpha1 \
+  paddlepaddle:v1 \
   --go-header-file ${SCRIPT_ROOT}/scripts/custom-boilerplate.go.txt
 
+grep "github.com/paddlepaddle/cloud" -nR client | awk -F ':' '{print $1}' | \
+ xargs sed -i "" 's|github.com/paddlepaddle/cloud|github.com/PaddlePaddle/cloud|g'
+
+## format codes
+gofmt -w client
