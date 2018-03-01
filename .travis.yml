@@ -13,9 +13,6 @@ matrix:
         - bash -x .tools/check_style.sh
         - ln -s $GOPATH/src/github.com/PaddlePaddle $GOPATH/src/github.com/paddlepaddle
         - mkdir ~/.glide && glide mirror set https://gonum.org/v1/plot https://github.com/gonum/plot
-        - glide install && go get k8s.io/kubernetes || echo 1
-        - bash ./vendor/k8s.io/code-generator/generate-groups.sh "deepcopy,client,informer,lister" github.com/PaddlePaddle/cloud/go/client github.com/PaddlePaddle/cloud/go/apis paddlepaddle:v1alpha1
-        - grep "github.com/paddlepaddle/cloud" -nR go/client | awk -F ':' '{print $1}' | xargs sed -i 's|github.com/paddlepaddle/cloud|github.com/PaddlePaddle/cloud|g'
         - glide install --strip-vendor && go test $(glide novendor)
     - language: python
       python: 2.7

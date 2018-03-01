@@ -20,9 +20,9 @@ set -o pipefail
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-DIFFROOT="${SCRIPT_ROOT}/pkg"
-TMP_DIFFROOT="${SCRIPT_ROOT}/_tmp/pkg"
-_tmp="${SCRIPT_ROOT}/_tmp"
+DIFFROOT="${SCRIPT_ROOT}/../go/client"
+TMP_DIFFROOT="${SCRIPT_ROOT}/../_tmp/go/client"
+_tmp="${SCRIPT_ROOT}/../_tmp"
 
 cleanup() {
   rm -rf "${_tmp}"
