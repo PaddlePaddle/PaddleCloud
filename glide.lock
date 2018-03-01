@@ -1,6 +1,12 @@
-hash: ec75366a24092a9e6ab3e50b78c8f4fe836f4a79c32bb21277bab8a13a816e6f
-updated: 2018-01-31T13:52:07.261668-08:00
+hash: dc954636d4f45f9c1701099d5cde3d3dd8fb01a21a82eca350a98d820f7f9f5f
+updated: 2018-02-11T17:30:59.574062881+08:00
 imports:
+- name: bitbucket.org/zombiezen/gopdf
+  version: 1c63dc69751bc45441c2ce1f56b631c55294b4d5
+  subpackages:
+  - pdf
+- name: github.com/ajstarks/svgo
+  version: f9be02f22f2c23fbdd01ed76e5c7f5af79e13f9b
 - name: github.com/bitly/go-simplejson
   version: aabad6e819789e569bd6aabf444c935aa9ba1e44
 - name: github.com/davecgh/go-spew
@@ -32,6 +38,11 @@ imports:
   subpackages:
   - proto
   - sortkeys
+- name: github.com/golang/freetype
+  version: e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4
+  subpackages:
+  - raster
+  - truetype
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
@@ -76,6 +87,13 @@ imports:
   version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
+- name: github.com/llgcode/draw2d
+  version: 274031cf2abe8acd15c4a911e1f7f1295fc4830c
+  subpackages:
+  - draw2dbase
+  - draw2dimg
+- name: github.com/lucasb-eyer/go-colorful
+  version: 231272389856c976b7500c4fffcc52ddf06ff4eb
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -83,9 +101,9 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/mattn/go-colorable
-  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
+  version: 7dc3415be66d7cc68bf0182f35c8d31f8d2ad8a7
 - name: github.com/mattn/go-isatty
-  version: 57fdcb988a5c543893cc61bce354a6e24ab70022
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/PuerkitoBio/purell
@@ -100,11 +118,19 @@ imports:
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
   - ssh/terminal
+- name: golang.org/x/image
+  version: 12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7
+  subpackages:
+  - draw
+  - font
+  - math/f64
+  - math/fixed
+  - tiff
+  - tiff/lzw
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
-  - context/ctxhttp
   - http2
   - http2/hpack
   - idna
@@ -128,10 +154,23 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: gonum.org/v1/plot
+  version: feab214a240f4312b98ab52baf662b55ff1ee377
+  subpackages:
+  - palette
+  - plotter
+  - tools/bezier
+  - vg
+  - vg/draw
+  - vg/fonts
+  - vg/vgeps
+  - vg/vgimg
+  - vg/vgpdf
+  - vg/vgsvg
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: d670f9405373e636a5a2765eea47fac0c9bc91a4
 - name: k8s.io/api
   version: 389dfa299845bcf399c16af89987e8775718ea48
   subpackages:
@@ -160,7 +199,7 @@ imports:
   - storage/v1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: 019ae5ada31de202164b118aee88ee2d14075c31
+  version: bc110fd540ab678abbf2bc71d9ce908eb9325ef6
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -193,29 +232,23 @@ imports:
   - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
-  - pkg/util/httpstream
-  - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
-  - pkg/util/mergepatch
   - pkg/util/net
-  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
-  - pkg/util/strategicpatch
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
   - pkg/util/yaml
   - pkg/version
   - pkg/watch
-  - third_party/forked/golang/json
-  - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: 35874c597fed17ca62cd197e516d7d5ff9a2958c
   subpackages:
   - discovery
+  - discovery/fake
   - kubernetes
   - kubernetes/scheme
   - kubernetes/typed/admissionregistration/v1alpha1
@@ -245,6 +278,7 @@ imports:
   - pkg/version
   - rest
   - rest/watch
+  - testing
   - tools/auth
   - tools/cache
   - tools/clientcmd
@@ -266,7 +300,7 @@ imports:
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: f7c6586ab26f07a6573218b0b820b1f9b92e76a0
+  version: 849d464b18a9897b5aa696a14420914b6abbb0ca
   subpackages:
   - pkg/api
 testImports:
