@@ -1,19 +1,18 @@
-# Getting Started with Submitting Job
+# Getting Started with Submitting Training Jobs
 
 ## Download and Configure paddlectl
 
-`paddlectl` is a command-line tool that submits distributed training job to the cloud.
+`paddlectl` is a command-line tool that submits distributed training jobs to the paddle cloud.
 
 - Step1
 
-  Download `paddlectl` and copy the binary file to the folder which under
-  environment variable `$PATH`, such as `/usr/local/bin`, then set the
-  executable access by command `chmod +x /usr/local/bin/paddlectl`.
+  Download `paddlectl` to your system `$PATH` directory, and make it executable by running the command below
 
-  We advise users to download the last tag `paddlectl` on
-  the [Release Page](https://github.com/PaddlePaddle/cloud/releases),
-  and you can also fetch the least version binary file from our CI system,
-  it's built by the last code on develop branch.
+    `chmod +x paddlectl`
+
+  Stable `paddlectl` binary can be found from the [Release Page](https://github.com/PaddlePaddle/cloud/releases).
+
+  Or if you wish to try the latest one from our CI, please find the URLs from the table below for different OSs.
 
   OS |  Link
   -- | --
@@ -23,9 +22,9 @@
 
 - Step2
 
-  Configurate the configuration file `~/.paddle/config` (`./paddle\config`
+  Edit the configuration file `~/.paddle/config` (`./paddle\config`
   under current user folder for Windows),
-  an example is as following:
+  `paddlectl` supports adding multi data-center settings and switch between them on the fly. An example configuration is as follows:
 
   ```bash
   datacenters:
@@ -40,14 +39,13 @@
   current-datacenter: production
   ```
 
-  Supports you have two data-center's access, one for `production` and another one for
-  `experimentation`, you can choose one data-center by the `current-datacenter` field
-  for the current one.
+  We suppose you have two data-center's access, one for `production` and another one for
+  `experimentation`, you can select your current data-center by editing current-datacenter field.
 
-  `username`, `password` and `endpoint` is your secret for the data-center, you will
-  received an email including your secret information send by the administrator.
+  `username`, `password` and `endpoint` is your credential for accessing the data-center, you will
+  receive an email with your credential from paddle cloud administrator.
 
-After finish the two steps above, execute `paddlectl` command will print the usage:
+With completion of the two steps above, execute `paddlectl` command will print the usage:
 
 ```bash
 > paddlectl
@@ -74,14 +72,14 @@ Subcommands for PFS:
 Use "paddlectl flags" for a list of top-level flags
 ```
 
-## Download the Demo Code and Try to Submit it
+## Download the Demo Projects and Try to Submit it
 
-We prepare some demo code to help users understanding how to submit
+We prepare some demo projects to help users understanding how to submit
 a distributed training job to PaddleCloud, these demo codes are based
 on [Paddle Book](https://github.com/Paddlepaddle/book), you can find the
 tutorials for each chapter.
 
-You can fetch the demo code and submit the job as the following command:
+You can fetch the demo code and submit the job with the following command:
 
 ```bash
 > mkdir fit_a_line
@@ -91,7 +89,7 @@ You can fetch the demo code and submit the job as the following command:
 > paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py train" fit_a_line/
 ```
 
-For each submits arguments:
+Options:
 
 - `-jobname`, STRING, the job name, you should specify a unique name.
 - `-cpu`, INT, CPU cores for each trainer node.
@@ -101,8 +99,11 @@ For each submits arguments:
 - `-entry`, STRING, the entry point for the training job.
 - `./fit_a_line`, STRING, the local directory including job package.
 
-**NOTE1**: You can find the whole usage by `paddlectl submit -h`.
-**NOTE2**: Submit the job by different jobname, so that the previous jobs data would be saved on the cloud.
+**NOTE1**: You can find the complete usage by `paddlectl submit -h`.
+
+**NOTE2**: Submit the job by different jobnames, so that it does
+not conflict with previous job with the same name.
+
 **NOTE3**: If you want a higher parallelism, you could modify entry point by `-entry "python train.py prepare"`,
   to prepare the training data on PFS, and then submit the training job again.
 
@@ -120,7 +121,7 @@ NUM   NAME         SUCC    FAIL    START                  COMP                  
 - `SUCC`, the number for finished training node.
 - `FAIL`, the number for failed training node.
 
-Then, you can view the logs of job(only running or finished status) by `paddelctl logs`
+Then, you can view the logs of a job(only running or finished status) by `paddelctl logs`
 
 ```bash
  paddlecloud logs fit-a-line
@@ -138,7 +139,7 @@ Test 28, Cost 13.184950
 ```
 
 `paddlectl logs` will return the last 10 lines by default, you can also
-use `-n <number>` argument to print the last number lines.
+use `-n <number>` argument to print the last `<number>` of lines.
 
 ```bash
 > paddlecloud logs -n 100 fit-a-line
@@ -163,8 +164,8 @@ pass-0001.tar
 
 ## Clean the Training Job
 
-The following command will clean the training job, after that, you could check
-the logs, but you can find the output on
+The following command will clean the training job, after that, you can't check
+the logs, but you can find the output from
 `/pfs/<data-center/home/<username>/jobs/<job-name>`:
 
 ```bash
