@@ -16,7 +16,6 @@
   版本的客户端，同时您也可以在我们CI系统上下载develop分支最新编译的二进制文件。
 
   操作系统 | 下载链接
-
   -- | --
   Mac OSX| [paddlecloud.darwin](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.darwin)
   Windows| [paddlecloud.exe](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.exe)
