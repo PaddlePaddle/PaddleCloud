@@ -2,88 +2,97 @@
 
 ---
 
-## 下载并配置paddlecloud
+## 下载并配置paddlectl
 
-`paddlecloud`是提交PaddlePaddleCloud分布式训练任务的命令行工具。
+`paddlectl`是提交PaddlePaddleCloud分布式训练任务的命令行工具。
 
-步骤1：下载`paddlecloud`客户端，并把`paddlecloud`拷贝到环境变量$PATH中的路径下，比如：`/usr/local/bin`，然后增加可执行权限：
-`chmod +x /usr/local/bin/paddlecloud`
+- 步骤1
 
-推荐优先从 https://github.com/PaddlePaddle/cloud/releases 下载最新release的版本，或者点击下面链接下载最新代码编译的alpha版本:
+  下载`paddlectl`客户端，并将二进制文件拷贝到环境变量 `$PATH` 所指向的目录下，例如
+  `/usr/local/bin`, 然后使用命令 `chmod +x /usr/local/bin/paddlectl` 赋予
+  可执行权限。
 
-|操作系统|文件名称|最新版本二进制
--- | -- | --
-Mac OSX| paddlecloud.darwin | [paddlecloud.darwin](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.darwin)
-Windows| paddlecloud.exe | [paddlecloud.exe](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.exe)
-Linux | paddlecloud.x86_64 | [paddlecloud.x86_64](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.x86_64)
+  我们推荐用户优先从[Release Page](https://github.com/PaddlePaddle/cloud/releases)中下载最新
+  版本的客户端，同时您也可以在我们CI系统上下载develop分支最新编译的二进制文件。
 
-步骤2: 创建`~/.paddle/config`文件(windows系统创建当前用户目录下的`.paddle\config`文件)，并写入下面内容，
+  操作系统 | 下载链接
+  -- | --
+  Mac OSX| [paddlecloud.darwin](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.darwin)
+  Windows| [paddlecloud.exe](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.exe)
+  Linux | [paddlecloud.x86_64](http://guest:@paddleci.ngrok.io/repository/download/PaddleCloud_Client/.lastSuccessful/paddlecloud.x86_64)
 
-```yaml
-datacenters:
-- name: dlnel
-  username: [your user name]
-  password: [secret]
-  endpoint: http://cloud.dlnel.com
-current-datacenter: dlnel
-```
+- 步骤2
+  创建`~/.paddle/config`文件(windows系统创建当前用户目录下的`.paddle\config`文件)，下面是示例文件：
 
-配置文件用于指定使用的PaddlePaddleCloud服务器集群的接入地址，并需要配置用户的登录信息：
-- name: 自定义的datacenter名称，可以是任意字符串
-- username: PaddlePaddleCloud的用户名，账号在未开放注册前需要联系管理员分配，通常用户名为邮箱地址
-- password: 账号对应的密码
-- endpoint: PaddlePaddleCloud集群API地址，可以从集群管理员处获得
-- current-datacenter: 标明使用哪个datacenter作为当前操作的datacenter
+  ```bash
+  datacenters:
+  - name: production
+    username: paddlepaddle
+    password: paddlecloud
+    endpoint: http://production.paddlecloud.com
+  - name: experimentation
+    username: paddlepaddle
+    password: paddlecloud
+    endpoint: http://experimentation.paddlecloud.com
+  current-datacenter: production
+  ```
 
-配置文件创建完成后，执行`paddlecloud`会显示该客户端的帮助信息：
+  假设您有两个data-center的权限，其中一个是 `production`, 另外一个是 `experimentation`,
+  您可以通过 `current-datacenter` 字段来指定当前使用哪以为data-center.
 
-```
+  `username`, `password` 和 `endpoint` 字段是您在data-center中的认证信息，这些信息会包含在
+  管理员发给您的邮件中。
+
+以上两步骤完成后，执行 `paddelctl` 可以打印出帮助信息：
+
+```bash
+> paddlectl
 Usage: paddlecloud <flags> <subcommand> <subcommand args>
 
 Subcommands:
-	commands         list all command names
-	delete           Delete the specify resource.
-	file             Simple file operations.
-	get              Print resources
-	help             describe subcommands and their syntax
-	kill             Stop the job. -rm will remove the job from history.
-	logs             Print logs of the job.
-	registry         Add registry secret on paddlecloud.
-	submit           Submit job to PaddlePaddle Cloud.
+  commands         list all command names
+  delete           Delete the specify resource.
+  file             Simple file operations.
+  get              Print resources
+  help             describe subcommands and their syntax
+  kill             Stop the job. -rm will remove the job from history.
+  logs             Print logs of the job.
+  registry         Add registry secret on paddlecloud.
+  submit           Submit job to PaddlePaddle Cloud.
 
 Subcommands for PFS:
-	cp               upload or download files
-	ls               List files on PaddlePaddle Cloud
-	mkdir            mkdir directoies on PaddlePaddle Cloud
-	rm               rm files on PaddlePaddle Cloud
+  cp               upload or download files
+  ls               List files on PaddlePaddle Cloud
+  mkdir            mkdir directoies on PaddlePaddle Cloud
+  rm               rm files on PaddlePaddle Cloud
 
 
 Use "paddlecloud flags" for a list of top-level flags
 ```
 
-## 下载demo代码并提交运行
+## 下载Demo代码并尝试提交任务
 
-完成上面的配置之后，您可以马上提交一个示例的集群训练任务。我们准备了一些样例代码帮助理解集群训练
-任务的提交方法，您可以使用下面的命令获取样例代码并提交任务：
+我们准备了一些样例代码帮助理解集群训练任务的提交方法，这些示例代码都是基于
+[Paddle Book](https://github.com/PaddlePaddle/book) 编写的， 您可以在每个章节中找到说明文档。
 
-这些示例都是基于[paddle book](https://github.com/PaddlePaddle/book)编写的，对应的每个示例
-的解释可以参考paddle book。
+您可以使用下面命令获取Demo代码并提交任务：
 
 ```bash
-mkdir fit_a_line
-cd fit_a_line
-wget https://raw.githubusercontent.com/PaddlePaddle/cloud/develop/demo/fit_a_line/train.py
-cd ..
-paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py train" fit_a_line/
+> mkdir fit_a_line
+> cd fit_a_line
+> wget https://raw.githubusercontent.com/PaddlePaddle/cloud/develop/demo/fit_a_line/train.py
+> cd ..
+> paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "python train.py train" fit_a_line/
 ```
 
-可以看到在提交任务的时候，我们指定了以下参数:
-- `-jobname fit-a-line`, 任务名称
-- `-cpu 1`, 使用的CPU资源
-- `-gpu 1`, 使用的GPU资源（卡数），若集群无GPU资源，可以去掉这个配置
-- `-parallelism 1`, 并行度(训练节点个数)
-- `-entry "python train.py train"`, 启动命令
-- `fit_a_line` 任务程序目录
+参数说明：
+
+- `-jobname`, STRING，任务名称，您需要指定一个唯一的任务名字。
+- `-cpu`, INT，Trainer节点使用的CPU核心数。
+- `-gpu 1`, INT，使用的GPU资源（卡数），若集群无GPU资源，可以去掉这个配置
+- `-parallelism`, INT, 并行度， 训练节点的个数。
+- `-entry`, STRING, 训练脚本的启动命令。
+- `fit_a_line` STRING, 任务程序目录。
 
 ***说明1：*** 如果希望查看完整的任务提交参数说明，可以执行`paddlecloud submit -h`。
 
@@ -94,13 +103,16 @@ paddlecloud submit -jobname fit-a-line -cpu 1 -gpu 1 -parallelism 1 -entry "pyth
 ## 查看任务运行状态和日志
 
 任务启动之后，可以用过命令`paddlecloud get jobs`查看正在运行的任务：
+
 ```bash
-paddlecloud get jobs
+> paddlecloud get jobs
 NUM   NAME         SUCC    FAIL    START                  COMP                   ACTIVE
 0     fit-a-line   <nil>   <nil>   2017-06-26T08:41:01Z   <nil>                  1
 ```
 
-其中， “ACTIVE”表示正在运行的节点个数，“SUCC”表示运行成功的节点个数，“FAIL”表示运行失败的节点个数。
+- `ACTIVE`, 正在运行的节点数量。
+- `SUCC`，运行结束并成功的节点数量。
+- `FAIL`，运行失败的节点数量。
 
 然后，使用下面的命令可以查看正在运行或完成运行任务的日志：
 
@@ -135,7 +147,7 @@ NUM   NAME         SUCC   FAIL    START                  COMP                   
 
 任务成功执行后，训练程序一般会将模型输出保存在云端文件系统中，可以用下面的命令查看，并下载模型的输出：
 
-```
+```bash
 paddlecloud file ls /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/
 train.py
 image
@@ -152,7 +164,7 @@ paddlecloud file get /pfs/dlnel/home/wuyi05@baidu.com/jobs/fit_a_line/output/pas
 
 使用下面命令可以完全清除集群上的训练任务，清理之后，任务的历史日志将无法查看，但仍然可以在任务名的目录下找到之前的输出。
 
-```back
+```bash
 paddlecloud kill fit-a-line
 ```
 

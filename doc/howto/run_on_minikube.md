@@ -2,11 +2,11 @@
 
 This documentation explains how to run PaddlePaddle Cloud on the development computer using [minikube](https://kubernetes.io/docs/getting-started-guides/minikube/).
 
-## Prerequisites
+## Steps
 
 1. Install [minikube and kubectl](https://kubernetes.io/docs/tasks/tools/install-minikube/).
 
-1. Start a local minikube cluster:
+1. Start a local minikube cluster. The reason we start a 1.6.4 in this case is paddle cloud currently has some dependency on [TPR](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/), which will be deprecated from 1.7.
 
     ```bash
     minikube start --kubernetes-version v1.6.4
@@ -15,7 +15,7 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
     If you can't connect to minikube distribution server,add https_proxy like that:
     
     ```bash
-    https_proxy=https://YOURPROXY:PORT minikube start --kubernetes-version v1.6.4
+    https_proxy=YOURPROXY:PORT minikube start --kubernetes-version v1.6.4
     ```
 1. Enable ingress addon:
 
@@ -26,21 +26,20 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
 1. Create workspace directory:
 
 	```
-	mkdir <yourpath>
+	mkdir $HOME/workspace
 	```  
-	- mac  
-	Since Minikube mounts `$HOME` path by default, we recommend creating the path under `$HOME` which offers the flexibility of switching between directories in your deployment without stopping the MiniKube and mounting another one.
-	- linux  
-	Mount path manually:  
+	Mount this directory to `/workspce` 
 	```
-	minikube mount <yourpath>:<yourpath>
+	minikube mount $HOME/workspace:/workspace
 	```
+
+	***Please Note*** : minikube's `mount` might not work properly in Mac. In the other hand, `/Users` directory is automatically mounted to VM's `Users` path by default in Mac, so if you are using Mac, you can skip this step and find workspace directory from `/Users/<your login name>/workspace` in VM instead.
 	
 1. Copy `ca` and generate `admin` certificate：    
 	(We must use `ca` under `~/.minikube` rather than `~/.minikube/certs`.)
 	
 	```
-	mkdir <yourpath>/certs && cd <yourpath>/certs
+	mkdir $HOME/workspace/certs && cd $HOME/workspace/certs
 	openssl genrsa -out admin-key.pem 2048
 	openssl req -new -key admin-key.pem -out admin.csr -subj "/CN=kube-admin"
 	openssl x509 -req -in admin.csr -CA ~/.minikube/ca.crt -CAkey ~/.minikube/ca.key \
@@ -51,10 +50,20 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
 	
 1. Copy and update PaddlePaddle Cloud configurations:
 
+	In Mac
+	``` bash
+	$WORKSPACE_PATH=$HOME/workspace
 	```
+	In other OS
+
+	``` bash
+	$WORKSPACE_PATH=/workspace
+	```
+
+	```bash
 	git clone https://github.com/PaddlePaddle/cloud 
-	cp cloud/k8s/minikube/* <yourpath>/
-	sed -i'.bak' -e "s#<yourpath>#yourpath#g"  <yourpath>/*.yaml
+	cp cloud/k8s/minikube/* $HOME/workspace
+	sed -i'.bak' -e "s#<yourpath>#$WORKSPACE_PATH#g"  $HOME/workspace/*.yaml
 	```
 
 1. Edit `/etc/hosts` and add `$(minikube ip) cloud.testpcloud.org` to it.
@@ -70,22 +79,24 @@ This documentation explains how to run PaddlePaddle Cloud on the development com
 	kubectl create -f cloud_deployment.yaml
 	```
 1. open `cloud.testpcloud.org` in your browser and sign up a user.
-1. Edit `~/.paddle/config` like this:
+1. To interact with PaddlePaddle Cloud instance, you need to use paddlecloud command line tool. Edit command line config file from `~/.paddle/config` like this:
 
 ```
 datacenters:
 - name: testpcloud
-  username: <username>
-  password: <password>
+  username: <username you just signed up>
+  password: <password of the user you just signed up>
   endpoint: http://cloud.testpcloud.org
 current-datacenter: testpcloud
 ```
 
-You can use PaddlePaddle Cloud command line now.
+Now PaddlePaddle Cloud command line is ready to use.
+
+For further usage, please refer to the doc from [here](https://github.com/PaddlePaddle/cloud/blob/develop/doc/usage_cn.md) (in Chinese), and [here](https://github.com/PaddlePaddle/cloud/blob/develop/doc/usage_en.md) (comming soon)
 
 
 ## FAQ
-1. We can't get anything when we open `cloud.testpcloud.org` in browser.  
+1. There is nothing when open `cloud.testpcloud.org` in browser.  
    One possible cause is: `default-http-backend` is not ready yet. Run `minikube get po --all-namespaces` to check its status.
 If it's stuck at pulling the image, one alternative is to manually download the image and load it with minikube's docker.
   - run `kubectrl describe po name --namespace=kube-system` to get docker image uri.
@@ -97,5 +108,8 @@ If it's stuck at pulling the image, one alternative is to manually download the 
     That might be due to the files cache mechanism of Minikube. You can try to restart the Minikube with `minikube stop` `minikube start --kubernetes-version v1.6.4` to fix it.
 
 ## TODO	
-1. The `mysql` docker runs `mysqld` under user `mysql` instead of `root`,so it's difficult to save `mysql` data to hostpath.	
+
+1. Currently the `mysql` docker runs `mysqld` under user `mysql` instead of `root`, which makes it difficult to save `mysql` data to hostpath.
+
+1. Update TPR to CRD to be able to run on latest kubernetes
 	
