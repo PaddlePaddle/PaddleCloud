@@ -28,13 +28,13 @@ type trainingJobEvent struct {
 	job *padv1.TrainingJob
 }
 
-// TrainingJobUpdater is to manager a specific TrainingJob
+// TrainingJobUpdater is used to manage a specific TrainingJob
 type TrainingJobUpdater struct {
 	// Job is the job the TrainingJob manager.
 	job *padv1.TrainingJob
 
-	// kubeCli is standard kubernetes client.
-	kubeCli kubernetes.Interface
+	// kubeClient is standard kubernetes client.
+	kubeClient kubernetes.Interface
 
 	// TrainingJobClient is the client of TrainingJob.
 	trainingJobClient trainingJobClient.Interface
@@ -42,17 +42,17 @@ type TrainingJobUpdater struct {
 	// Status is the status in memory, update when TrainingJob status changed and update the CRD resource status.
 	status padv1.TrainingJobStatus
 
-	// EventCh is the channel received by Controller, include Modify and Delete.
+	// EventCh receives events from the controller, include Modify and Delete.
 	// When trainingJobEvent is Delete it will delete all resources
-	// The maximum is 1000.
+	// The capacity is 1000.
 	eventCh chan *trainingJobEvent
 }
 
-func initUpdater(job *padv1.TrainingJob, kubeCli kubernetes.Interface, trainingJobClient trainingJobClient.Interface) (*TrainingJobUpdater,
+func initUpdater(job *padv1.TrainingJob, kubeClient kubernetes.Interface, trainingJobClient trainingJobClient.Interface) (*TrainingJobUpdater,
 	error) {
 	jobber := &TrainingJobUpdater{
 		job:               job,
-		kubeCli:           kubeCli,
+		kubeClient:        kubeClient,
 		trainingJobClient: trainingJobClient,
 		status:            job.Status,
 		eventCh:           make(chan *trainingJobEvent, 1000),
@@ -61,10 +61,10 @@ func initUpdater(job *padv1.TrainingJob, kubeCli kubernetes.Interface, trainingJ
 }
 
 // NewUpdater return a trainingJobUpdater for controller.
-func NewUpdater(job *padv1.TrainingJob, kubeCli kubernetes.Interface, trainingJobClient trainingJobClient.Interface) (*TrainingJobUpdater,
+func NewUpdater(job *padv1.TrainingJob, kubeClient kubernetes.Interface, trainingJobClient trainingJobClient.Interface) (*TrainingJobUpdater,
 	error) {
 	log.Infof("NewJobber namespace=%v name=%v", job.Namespace, job.Name)
-	jobber, err := initUpdater(job, kubeCli, trainingJobClient)
+	jobber, err := initUpdater(job, kubeClient, trainingJobClient)
 	if err != nil {
 		return nil, err
 	}
