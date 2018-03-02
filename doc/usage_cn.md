@@ -364,7 +364,7 @@ kill命令执行成功后，集群会在后台终止集群作业的workers进程
 由于分布式训练会同时启动多个trainer实例，为了保证每个trainer实例能够获取到同等规模的数据集，我们需要对单机dataset拆分为多个小文件, 每个trainer根据自己的运行时信息来决定读取哪些具体的文件。[这里](../demo/fit_a_line/train.py)是训练程序的样例，[这里](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/uci_housing.py)是dataset的样例。
 
 ### 预处理训练数据
-您可以使用PaddlePaddle提供的默认函数[paddle.v2.dataset.common.split](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L81)将reader的数据切分为多个小文件，当然您也可以自定义一个预处理函数来切分数据：
+您可以使用PaddlePaddle提供的默认函数[paddle.v2.dataset.common.split](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L129)将reader的数据切分为多个小文件，当然您也可以自定义一个预处理函数来切分数据：
 
 ```python
 import paddle.v2.dataset.uci_housing as uci_housing
@@ -399,7 +399,7 @@ docker run --rm -it -v $PWD:/work paddlepaddle/paddle:latest python /work/run.py
   ```
 
 ### 读取分布式文件的reader
-训练代码需要在运行时判断自己身份并决定读取哪些文件,PaddlePaddle同样提供了默认函数[paddle.v2.dataset.common.cluster_files_reader](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L119)来读取这些文件，您也可以定义自己的函数来读取文件。通过以下环境变量可以获取到一些有用的运行时信息：
+训练代码需要在运行时判断自己身份并决定读取哪些文件,PaddlePaddle同样提供了默认函数[paddle.v2.dataset.common.cluster_files_reader](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/dataset/common.py#L167)来读取这些文件，您也可以定义自己的函数来读取文件。通过以下环境变量可以获取到一些有用的运行时信息：
 - `PADDLE_INIT_NUM_GRADIENT_SERVERS`: trainer实例的数量
 - `PADDLE_INIT_TRAINER_ID`: 当前trainer的ID,从0开始到`$TRAINERS-1`
 - `PADDLE_CLOUD_CURRENT_DATACENTER`: 当前的datacenter

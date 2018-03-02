@@ -1,9 +1,11 @@
-package v1alpha1
+package v1
 
 import (
 	"fmt"
 
+	batchv1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
+	v1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -17,7 +19,7 @@ const (
 	// CRDGroup is the name of group.
 	CRDGroup = "paddlepaddle.org"
 	// CRDVersion is the version of CRD.
-	CRDVersion = "v1alpha1"
+	CRDVersion = "v1"
 )
 
 // CRDName returns name of crd
@@ -63,6 +65,7 @@ type TrainingJobSpec struct {
 type MasterSpec struct {
 	EtcdEndpoint string                     `json:"etcd-endpoint"`
 	Resources    apiv1.ResourceRequirements `json:"resources"`
+	ReplicaSpec  *v1beta1.ReplicaSet        `json:"replicaSpec"`
 }
 
 // PserverSpec is the spec for pservers in the paddle job
@@ -70,6 +73,7 @@ type PserverSpec struct {
 	MinInstance int                        `json:"min-instance"`
 	MaxInstance int                        `json:"max-instance"`
 	Resources   apiv1.ResourceRequirements `json:"resources"`
+	ReplicaSpec *v1beta1.ReplicaSet        `json:"replicaSpec"`
 }
 
 // TrainerSpec is the spec for trainers in the paddle job
@@ -80,6 +84,7 @@ type TrainerSpec struct {
 	MinInstance  int                        `json:"min-instance"`
 	MaxInstance  int                        `json:"max-instance"`
 	Resources    apiv1.ResourceRequirements `json:"resources"`
+	ReplicaSpec  *batchv1.JobSpec           `json:"replicaSpec"`
 }
 
 // TrainingJobPhase is the phase of TrainingJob
