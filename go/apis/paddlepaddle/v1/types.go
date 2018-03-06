@@ -84,7 +84,7 @@ type TrainerSpec struct {
 	MinInstance  int                        `json:"min-instance"`
 	MaxInstance  int                        `json:"max-instance"`
 	Resources    apiv1.ResourceRequirements `json:"resources"`
-	ReplicaSpec  *batchv1.JobSpec           `json:"replicaSpec"`
+	ReplicaSpec  *batchv1.Job               `json:"replicaSpec"`
 }
 
 // TrainingJobPhase is the phase of TrainingJob
