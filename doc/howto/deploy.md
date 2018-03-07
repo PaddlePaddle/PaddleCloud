@@ -6,7 +6,7 @@
 
 
 ### Run on minikube
-Please see [here](https://github.com/PaddlePaddle/cloud/blob/develop/doc/run_on_minikube.md)
+Please see [here](https://github.com/PaddlePaddle/cloud/blob/develop/doc/howto/run_on_minikube.md)
 
 ### Run on Kubernetes
 - Build Paddle Cloud Docker Image
