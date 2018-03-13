@@ -17,6 +17,8 @@ const (
 	retryTimes            = 5
 	convertedTimerTicker  = 10 * time.Second
 	confirmResourceTicker = 5 * time.Second
+	eventChLength         = 1000
+	factor                = 0.8
 )
 
 type trainingJobEventType string
@@ -62,7 +64,7 @@ func NewUpdater(job *padv1.TrainingJob, kubeClient kubernetes.Interface, trainin
 		kubeClient:        kubeClient,
 		trainingJobClient: trainingJobClient,
 		status:            job.Status,
-		eventCh:           make(chan *trainingJobEvent, 1000),
+		eventCh:           make(chan *trainingJobEvent, eventChLength),
 	}
 	go updater.start()
 	return updater, nil
@@ -71,12 +73,10 @@ func NewUpdater(job *padv1.TrainingJob, kubeClient kubernetes.Interface, trainin
 // Notify is used to receive event from controller. While controller receive a informer,
 // it will notify updater to process the event. It send event to updater's eventCh.
 func (updater *TrainingJobUpdater) notify(te *trainingJobEvent) {
-	select {
-	case updater.eventCh <- te:
-		lene, cape := len(updater.eventCh), cap(updater.eventCh)
-		if lene > int(float64(cape)*0.8) {
-			log.Warning("the len of updater eventCh ", updater.job.Name, " is near to full")
-		}
+	updater.eventCh <- te
+	lene, cape := len(updater.eventCh), cap(updater.eventCh)
+	if lene > int(float64(cape)*factor) {
+		log.Warning("the len of updater eventCh ", updater.job.Name, " is near to full")
 	}
 }
 
@@ -232,6 +232,10 @@ func (updater *TrainingJobUpdater) createResource(tp padv1.TrainingResourceType)
 				updater.status.Reason = "Internal error; create resource error:" + err.Error()
 				return err
 			}
+			if errors.IsServerTimeout(err) || errors.IsTooManyRequests(err) {
+				log.Warningf("Connect to kubernetes failed for reasons=%v, retry next ticker", err.Error())
+				continue
+			}
 			if *resource.Spec.Replicas == 0 {
 				return fmt.Errorf(" trainingjob is deleting, namespace=%v name=%v ", updater.job.Namespace, updater.job.Name)
 
@@ -296,6 +300,7 @@ func (updater *TrainingJobUpdater) parseTrainingJob() {
 	if updater.job == nil {
 		updater.status.Phase = padv1.TrainingJobPhaseFailed
 		updater.status.Reason = "Internal error; Setup error; job is missing TainingJob"
+		return
 	}
 
 	err := func() error {
@@ -367,7 +372,7 @@ func (updater *TrainingJobUpdater) GetStatus() (*padv1.TrainingJobStatus, error)
 }
 
 // Convert is main process to convert TrainingJob to desire status.
-func (updater *TrainingJobUpdater) Convert(ticker *time.Ticker) {
+func (updater *TrainingJobUpdater) Convert() {
 	log.Infof("convert status, namespace=%v name=%v: ", updater.job.Namespace, updater.job.Name)
 
 	if updater.status.Phase == padv1.TrainingJobPhaseRunning {
@@ -396,14 +401,6 @@ func (updater *TrainingJobUpdater) Convert(ticker *time.Ticker) {
 			}
 		}
 	}
-
-	if updater.status.Phase == padv1.TrainingJobPhaseSucceeded || updater.status.Phase == padv1.TrainingJobPhaseFailed {
-		if ticker != nil {
-			log.Infof("stop ticker, namespace=%v name=%v: ", updater.job.Namespace, updater.job.Name)
-			ticker.Stop()
-		}
-	}
-	return
 }
 
 // InitResource is used to parse trainingJob and create trainingJob resources.
@@ -456,14 +453,19 @@ func (updater *TrainingJobUpdater) start() {
 			switch ev.pet {
 			case trainingJobEventDelete:
 				log.Infof("Delete updater, namespace=%v name=%v: ", updater.job.Namespace, updater.job.Name)
-				ticker.Stop()
 				if err := updater.deleteTrainingJob(); err != nil {
 					log.Errorf(err.Error())
 				}
 				return
 			}
 		case <-ticker.C:
-			updater.Convert(ticker)
+			updater.Convert()
+			if updater.status.Phase == padv1.TrainingJobPhaseSucceeded || updater.status.Phase == padv1.TrainingJobPhaseFailed {
+				if ticker != nil {
+					log.Infof("stop ticker for job has done, namespace=%v name=%v: ", updater.job.Namespace, updater.job.Name)
+					ticker.Stop()
+				}
+			}
 		}
 	}
 }
