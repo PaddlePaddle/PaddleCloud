@@ -149,7 +149,7 @@ func (in *TrainerSpec) DeepCopyInto(out *TrainerSpec) {
 		if *in == nil {
 			*out = nil
 		} else {
-			*out = new(batch_v1.JobSpec)
+			*out = new(batch_v1.Job)
 			(*in).DeepCopyInto(*out)
 		}
 	}
