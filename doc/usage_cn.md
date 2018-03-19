@@ -438,3 +438,5 @@ def train():
   ```
 
 *注意*: `"/pfs/%s/public" % dc`是公用数据的默认访问路径，所有Job对此目录具有*只读*权限。
+
+### PipeReader读取HDFS数据说明，[参考链接](https://github.com/PaddlePaddle/cloud/blob/develop/doc/pipe_reader_cn.md)
