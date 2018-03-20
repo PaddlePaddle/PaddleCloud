@@ -325,7 +325,7 @@ class SimpleFileView(APIView):
                                                 str(e))
 
         if not os.path.exists(os.sep + write_file):
-            return Response({"msg": "file not exist"})
+            return utils.error_message_response("file not exist")
 
         response = HttpResponse(
             open(write_file), content_type='application/force-download')
@@ -346,15 +346,14 @@ class SimpleFileView(APIView):
         try:
             write_file = self.__validate_path(request, file_path)
         except Exception, e:
-            return utils.error_message_response("file path not valid: %s" %
-                                                str(e))
+            return utils.error_message_response("file path not valid: %s" % str(e))
 
         if not os.path.exists(os.path.dirname(write_file)):
             try:
                 os.makedirs(os.path.dirname(write_file))
             except OSError as exc:  # Guard against race condition
                 if exc.errno != errno.EEXIST:
-                    raise
+                    return utils.error_message_response("can not makedirs: %s" % str(exc))
         # FIXME: always overwrite package files
         with open(write_file, "w") as fn:
             while True:
