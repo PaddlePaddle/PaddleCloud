@@ -11,7 +11,6 @@ else:
     config.load_kube_config()
 v1 = client.CoreV1Api()
 
-
 def get_pod_status(item):
     phase = item.status.phase
 
@@ -19,18 +18,28 @@ def get_pod_status(item):
     if item.metadata.deletion_timestamp != None:
         return "Terminating"
 
-    if not are_container_statuses_ready(item):
-        return "Preparing"
-
     return phase
 
 
-def are_container_statuses_ready(item):
-    container_statuses = item.status.container_statuses
+def containers_all_ready(label_selector):
 
-    for status in container_statuses:
-        if not status.ready:
+    def container_statuses_ready(item):
+        container_statuses = item.status.container_statuses
+    
+        for status in container_statuses:
+            if not status.ready:
+                return False
+        return True
+
+
+    api_response = v1.list_namespaced_pod(
+        namespace=NAMESPACE, pretty=True, label_selector=label_selector)
+
+    for item in api_response.items:
+        if not container_statuses_ready(item):
+            print "[DEBUG] has contain not ready"
             return False
+
     return True
 
 
@@ -54,6 +63,14 @@ def wait_pods_running(label_selector, desired):
         if count >= int(desired):
             break
         print 'current cnt: %d sleep for 5 seconds...' % count
+        time.sleep(5)
+
+def wait_containers_ready(label_selector):
+    print "label selector: %s, wait all containers ready" % (label_selector)
+    while True:
+        if containers_all_ready(label_selector):
+            break
+        print 'not all containers ready, sleep for 5 seconds...' 
         time.sleep(5)
 
 
@@ -117,3 +134,5 @@ if __name__ == "__main__":
         print count_pods_by_phase(sys.argv[2], sys.argv[3])
     elif command == "wait_pods_running":
         wait_pods_running(sys.argv[2], sys.argv[3])
+    elif command == "wait_containers_ready":
+        wait_containers_ready(sys.argv[2])
