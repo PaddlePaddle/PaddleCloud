@@ -19,7 +19,19 @@ def get_pod_status(item):
     if item.metadata.deletion_timestamp != None:
         return "Terminating"
 
+    if not are_container_statuses_ready(item):
+        return "Preparing"
+
     return phase
+
+
+def are_container_statuses_ready(item):
+    container_statuses = item.status.container_statuses
+
+    for status in container_statuses:
+        if not status.ready:
+            return False
+    return True
 
 
 def fetch_pods_info(label_selector, phase=None):
