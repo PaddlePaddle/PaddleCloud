@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #!/bin/env python
 import os
 import sys
@@ -11,6 +25,7 @@ else:
     config.load_kube_config()
 v1 = client.CoreV1Api()
 
+
 def get_pod_status(item):
     phase = item.status.phase
 
@@ -22,15 +37,13 @@ def get_pod_status(item):
 
 
 def containers_all_ready(label_selector):
-
     def container_statuses_ready(item):
         container_statuses = item.status.container_statuses
-    
+
         for status in container_statuses:
             if not status.ready:
                 return False
         return True
-
 
     api_response = v1.list_namespaced_pod(
         namespace=NAMESPACE, pretty=True, label_selector=label_selector)
@@ -64,12 +77,13 @@ def wait_pods_running(label_selector, desired):
         print 'current cnt: %d sleep for 5 seconds...' % count
         time.sleep(5)
 
+
 def wait_containers_ready(label_selector):
     print "label selector: %s, wait all containers ready" % (label_selector)
     while True:
         if containers_all_ready(label_selector):
             break
-        print 'not all containers ready, sleep for 5 seconds...' 
+        print 'not all containers ready, sleep for 5 seconds...'
         time.sleep(5)
 
 
