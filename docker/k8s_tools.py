@@ -37,7 +37,6 @@ def containers_all_ready(label_selector):
 
     for item in api_response.items:
         if not container_statuses_ready(item):
-            print "[DEBUG] has contain not ready"
             return False
 
     return True
