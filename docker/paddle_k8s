@@ -67,6 +67,7 @@ start_fluid_process() {
   stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
 
   if [ "${TRAINING_ROLE}" == "TRAINER" ]; then
+    stdbuf -oL python /root/k8s_tools.py wait_containers_ready ${pserver_label}
     stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
   fi
 

@@ -1,3 +1,17 @@
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #!/bin/env python
 import os
 import sys
@@ -22,6 +36,25 @@ def get_pod_status(item):
     return phase
 
 
+def containers_all_ready(label_selector):
+    def container_statuses_ready(item):
+        container_statuses = item.status.container_statuses
+
+        for status in container_statuses:
+            if not status.ready:
+                return False
+        return True
+
+    api_response = v1.list_namespaced_pod(
+        namespace=NAMESPACE, pretty=True, label_selector=label_selector)
+
+    for item in api_response.items:
+        if not container_statuses_ready(item):
+            return False
+
+    return True
+
+
 def fetch_pods_info(label_selector, phase=None):
     api_response = v1.list_namespaced_pod(
         namespace=NAMESPACE, pretty=True, label_selector=label_selector)
@@ -42,6 +75,15 @@ def wait_pods_running(label_selector, desired):
         if count >= int(desired):
             break
         print 'current cnt: %d sleep for 5 seconds...' % count
+        time.sleep(5)
+
+
+def wait_containers_ready(label_selector):
+    print "label selector: %s, wait all containers ready" % (label_selector)
+    while True:
+        if containers_all_ready(label_selector):
+            break
+        print 'not all containers ready, sleep for 5 seconds...'
         time.sleep(5)
 
 
@@ -105,3 +147,5 @@ if __name__ == "__main__":
         print count_pods_by_phase(sys.argv[2], sys.argv[3])
     elif command == "wait_pods_running":
         wait_pods_running(sys.argv[2], sys.argv[3])
+    elif command == "wait_containers_ready":
+        wait_containers_ready(sys.argv[2])
