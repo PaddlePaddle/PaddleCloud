@@ -107,7 +107,6 @@ start_tf_benchmark_process() {
     task_index=$(python /root/k8s_tools.py fetch_id ${trainer_label})
     export TF_ROLE=worker
   else
-    check_failed_cnt 1
     task_index=$(python /root/k8s_tools.py fetch_id ${pserver_label})
     export TF_ROLE=ps
   fi
