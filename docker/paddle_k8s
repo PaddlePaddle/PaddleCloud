@@ -64,23 +64,55 @@ start_fluid_process() {
   trainer_label="paddle-job=${PADDLE_JOB_NAME}"
   task_index=""
 
-  stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
+  if [ "${TRAINING_ROLE}" == "TRAINER" ] || [ "${TRAINING_ROLE}" == "PSERVER" ]; then
+    stdbuf -oL python /root/k8s_tools.py wait_pods_running ${pserver_label} ${PSERVERS}
+  fi
 
-  if [ "${TRAINING_ROLE}" == "TRAINER" ]; then
-    stdbuf -oL python /root/k8s_tools.py wait_containers_ready ${pserver_label}
+  if [ "${TRAINING_ROLE}" == "TRAINER" ] || [ "${TRAINING_ROLE}" == "WORKER" ]; then
     stdbuf -oL python /root/k8s_tools.py wait_pods_running ${trainer_label} ${TRAINERS}
   fi
 
   export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_ips ${pserver_label} ${PADDLE_INIT_PORT})
+  export PADDLE_WORKERS=$(python /root/k8s_tools.py fetch_ips ${trainer_label})
+  export PADDLE_TRAINER_IPS=$(python /root/k8s_tools.py fetch_ips ${trainer_label})
 
-  if [ "${TRAINING_ROLE}" == "TRAINER" ]; then
-    check_failed_cnt ${TRAINERS}
+  if [ "${TRAINING_ROLE}" == "TRAINER" ] || [ "${TRAINING_ROLE}" == "WORKER" ]; then
+    check_failed_cnt 1
     task_index=$(python /root/k8s_tools.py fetch_id ${trainer_label})
   else
     task_index=$(python /root/k8s_tools.py fetch_id ${pserver_label})
   fi
   
   export PADDLE_INIT_TRAINER_ID=${task_index}
+  export PADDLE_TRAINER_ID=${task_index}
+
+  stdbuf -oL sh -c "${ENTRY}"
+  check_trainer_ret $?
+}
+
+# start_tf_benchmark_process is only used for benchmarking
+start_tf_benchmark_process() {
+  # re-use the paddle job labels
+  pserver_label="paddle-job-pserver=${PADDLE_JOB_NAME}"
+  trainer_label="paddle-job=${PADDLE_JOB_NAME}"
+  task_index=""
+
+  export PADDLE_INIT_PSERVERS=$(python /root/k8s_tools.py fetch_ips ${pserver_label} ${PADDLE_INIT_PORT})
+  export PADDLE_WORKERS=$(python /root/k8s_tools.py fetch_ips ${trainer_label})
+  export PADDLE_TRAINER_IPS=$(python /root/k8s_tools.py fetch_ips ${trainer_label})
+  export TF_WORKER_EPS=$(python /root/k8s_tools.py fetch_ips ${trainer_label} ${TF_WORKER_PORT})
+
+  if [ "${TRAINING_ROLE}" == "TRAINER" ]; then
+    check_failed_cnt 1
+    task_index=$(python /root/k8s_tools.py fetch_id ${trainer_label})
+    export TF_ROLE=worker
+  else
+    task_index=$(python /root/k8s_tools.py fetch_id ${pserver_label})
+    export TF_ROLE=ps
+  fi
+  
+  export PADDLE_INIT_TRAINER_ID=${task_index}
+  export PADDLE_TRAINER_ID=${task_index}
 
   stdbuf -oL sh -c "${ENTRY}"
   check_trainer_ret $?
