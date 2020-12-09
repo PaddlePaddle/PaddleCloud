@@ -3,7 +3,9 @@
 ElasticTraining currently consists of two prjects EDL and Training Job K8S Operator, and leveraging on Volcano project.
 
 EDL: https://github.com/elasticdeeplearning/edl
+
 Training Job K8S Operator: https://github.com/elasticdeeplearning/trainingjob-operator && https://github.com/baidu/paddle-on-k8s-operator
+
 Volcano: https://github.com/volcano-sh/volcano
 
 EDL with K8S Operator mainly simplifies distributed training programming. Through the ability of checkpoint, EDL can tolerate worker errors during the training process, so that training process can have flexible amount of workers. Through the serverless mode, the entire training task can be started from a relatively small number of workers. When the cluster resources are sufficient, expand the number of workers in the entire training task, shorten the time for job startup, and see the results of the first iteration as soon as possible. At the same time, the overall utilization of the cluster is improved through online/offline service joint deployment, and R&D efficiency is improved.
