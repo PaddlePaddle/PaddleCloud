@@ -25,3 +25,31 @@ In terms of the definition of the network structure for prediction model, the Pa
 The number of samples used in prediction scenarios is generally large, ranging from several million to tens of millions. Single-machine training is very slow to meet the training efficiency of the model, and it is often necessary to accelerate model training on distributed clusters. Because the number of prediction scenes is large, dividing the resource training model for each scene separately will undoubtedly greatly increase the work of the cluster administrator. However, less resource division will affect the training speed, and too much division may cause resource waste. Therefore, the usual practice is that the model training of these niche estimation scenarios share a resource pool. However, sharing a resource pool is difficult to balance user experience and cluster resource utilization. Model training tasks for niche prediction scenarios are often more and less frequent. When there are few jobs, the resource pool is idle and waste resources; when there are many jobs, the tasks submitted later need to be queued.
 
 EDL's elastic training can solve this problem well. Usually the resources on a cluster are shared by multiple tenants, and these tenants may run various computing tasks, such as online service tasks, data computing tasks, and so on. In order to ensure the SLO of different tenants, the cluster manager will allocate resource quotas to each tenant. Each tenant has a high priority and uses its own resource quota to perform computing tasks. If the resources in the configuration are free, other tenants can use the free resources in the tenant quota with low priority. If the original tenant's computing tasks increase during use, other tenants need to return the used resources. Since the peaks and valleys of usage of different tenants in the cluster are generally staggered, there are often idle resources in the cluster. Model training tenants can use EDL to second the idle resources of other tenants to train the model in a low-priority manner. Even if the worker of the EDL job is preempted by the original tenant during the training process, the training job will not terminate and fail. EDL will look for idle resources of other tenants in the cluster to start new workers and add the new workers to the training job.
+
+## Prerequisites
+
+* Kubernetes Version 1.8+.
+
+ElasticTraining relies on CRD and garbage collection which are supported in Kubernetes 1.8+.
+
+## Get Started
+
+For operator installation and usage, please checkout [Quick Start Guide](docs/quick-start-guide.md).
+
+For detailed information of how to use operator, please check out [User Guide](docs/user-guide.md).
+
+For detailed design documentation, please check out [Design](docs/design.md).
+
+For detailed api specifications, please check out [Api](docs/api.md).
+
+## Overview
+
+The ElasticTraining Operator tries to run PaddlePaddle training job as native as other workloads on Kubernetes. It relies on CRD for specifying the PaddlePaddle training job.
+
+## Contributing
+
+For contributing to this project, please check out [CONTRIBUTING](CONTRIBUTING.md) first, then check out [Developer Guide](docs/developer-guide.md).
+
+## License
+
+This project is under the [Apache-2.0 license](LICENSE).

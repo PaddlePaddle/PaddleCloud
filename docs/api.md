@@ -2,7 +2,7 @@
 
 ## CRD Structure
 
-Paddle on Kubernetes Operator uses Kubernetes CRD for specifying Paddle training job. CRD is widely used after Kubernetes 1.8+ for creating native workload on Kubernetes.
+Paddle Operator uses Kubernetes CRD for specifying Paddle training job. CRD is widely used after Kubernetes 1.8+ for creating native workload on Kubernetes.
 
 Paddle CRD structure is as follows: 
 
