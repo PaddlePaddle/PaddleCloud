@@ -1,0 +1,34 @@
+apiVersion: paddlepaddle.org/v1
+kind: TrainingJob
+metadata:
+  name: examplejob
+spec:
+  image: "hub.baidubce.com/jpaas-public/paddlejob-mock"
+  port: 7164
+  ports_num: 1
+  ports_num_for_sparse: 1
+  fault_tolerant: true
+  trainer:
+    entrypoint: "python /root/mock_trainer.py"
+    workspace: "/root"
+    passes: 50
+    min-instance: 2
+    max-instance: 6
+    resources:
+      limits:
+        #alpha.kubernetes.io/nvidia-gpu: 1
+        cpu: "200m"
+        memory: "200Mi"
+      requests:
+        cpu: "200m"
+        memory: "200Mi"
+  pserver:
+    min-instance: 2
+    max-instance: 2
+    resources:
+      limits:
+        cpu: "800m"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "600Mi"
