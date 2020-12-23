@@ -4,7 +4,7 @@ ElasticTraining currently consists of two prjects EDL and Training Job K8S Opera
 
 * EDL: https://github.com/elasticdeeplearning/edl
 
-* Training Job K8S Operator: https://github.com/elasticdeeplearning/trainingjob-operator && https://github.com/baidu/paddle-on-k8s-operator
+* Training Job K8S Operator: https://github.com/elasticdeeplearning/trainingjob-operator && https://github.com/paddleflow/elastictraining
 
 * Volcano: https://github.com/volcano-sh/volcano
 
