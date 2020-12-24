@@ -182,7 +182,7 @@ type TrainerJobScaleRecord struct {
 
 // TrainerJobScaleRecords is records of trainer jobs.
 type TrainerJobScaleRecords struct {
-	ScaleRecords []*TrainerJobScaleRecord
+	ScaleRecords []*TrainerJobScaleRecord `json:"scaleRecords"`
 }
 
 // TrainingResourceType the type of TrainingJob resource, include MASTER PSERVER and TRAINER
