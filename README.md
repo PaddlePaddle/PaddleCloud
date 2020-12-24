@@ -1,6 +1,6 @@
 # ElasticTraining
 
-ElasticTraining is leveraging on Volcano project currently.
+ElasticTraining is leveraging on EDL & Volcano project currently.
 
 * EDL: https://github.com/elasticdeeplearning/edl
 * Volcano: https://github.com/volcano-sh/volcano
