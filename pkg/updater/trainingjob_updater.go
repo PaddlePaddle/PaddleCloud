@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -152,6 +152,7 @@ func (j *JobUpdater) Reconcile() error {
 		}
 
 		phase, reason, err := j.GetStatus()
+		// FIXME: log seems inappropriate. It may not be an Error.
 		log.Info("Error creating TrainingJob", "job", j.FullName(), "current phase", phase, "reason", reason, "err", err)
 		if err != nil {
 			log.Error("Error get TrainingJob status", "job", j.FullName(), "err", err.Error())
@@ -690,22 +691,16 @@ func (j *JobUpdater) jobTotalRunning() (bool, error) {
 
 	if j.Job.Spec.FaultTolerant {
 		masterRunning, err := j.masterRoleTotalRunning(paddlev1.MASTER)
-		if err != nil {
+		if err != nil || !masterRunning {
 			return false, err
-		}
-		if !masterRunning {
-			return false, nil
 		}
 	}
 
 	if frameWork == nil && !j.Job.Spec.LocalJob && !j.Job.Spec.IsNccl ||
 		frameWork != nil && frameWork.Type == paddlev1.Multi {
 		pserverRunning, err := j.masterRoleTotalRunning(paddlev1.PSERVER)
-		if err != nil {
+		if err != nil || !pserverRunning {
 			return false, err
-		}
-		if !pserverRunning {
-			return false, nil
 		}
 	}
 
@@ -728,10 +723,8 @@ func (j *JobUpdater) masterRoleTotalRunning(rt paddlev1.TrainingResourceType) (b
 	}
 
 	log.Debug("Resource status", "namespace", j.Job.Namespace, "name", resourceName, "status", resource.Status)
-	if resource.Status.ReadyReplicas >= *resource.Spec.Replicas {
-		return true, nil
-	}
-	return false, nil
+
+	return resource.Status.ReadyReplicas >= *resource.Spec.Replicas, nil
 }
 
 func (j *JobUpdater) trainerTotalRunning() (bool, error) {
@@ -750,10 +743,7 @@ func (j *JobUpdater) trainerTotalRunning() (bool, error) {
 		}
 	}
 
-	if runningPodCount >= *trainers.Spec.Parallelism {
-		return true, nil
-	}
-	return false, nil
+	return runningPodCount >= *trainers.Spec.Parallelism, nil
 }
 
 func (j *JobUpdater) findFailedTrainerPods() ([]*corev1.Pod, error) {

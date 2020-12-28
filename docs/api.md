@@ -8,15 +8,13 @@ Paddle CRD structure is as follows:
 
 ```
 TrainingJob
-|_TrainingJobSpec
-
-TrainingJobSpec
-|_Trainer
-  |_TrainerSpec
-|_Pserver
-  |_PserverSpec
-|_Master
-  |_MasterSpec
+└─ TrainingJobSpec
+   ├─ Trainer
+   │   └─ TrainerSpec
+   ├─ Pserver
+   │   └─ PserverSpec
+   └─ Master
+       └─ MasterSpec
 
 ```
 
@@ -41,6 +39,8 @@ podGroupName|str|the name of pod group which is used in co-scheduling
 mountPath|str|the path to mount into container for each trainer and pserver
 
 ### TrainerSpec
+parameter | type | explanation
+ --- | --- | ---
 entry_point | str | entry point for startup trainer process
 workspace | str | workspace in kubernetes
 passes | int | training pass number
@@ -51,11 +51,15 @@ trainer_mem|str| memory allocated for each Trainer process, a plain integer usin
 trainer_gpu|int| GPU count for each Trainer process, if you only want CPU, do not set this parameter
 
 ### PserverSpec
+parameter | type | explanation
+ --- | --- | ---
 min-instance | int | min instance number for auto scale 
 max-instance | int | max instance number for auto scale 
 pserver_cpu|int| CPU count for each Parameter Server process
 pserver_mem|str| memory allocated for each Parameter Server process, a plain integer using one of these suffixes: E, P, T, G, M, K
 
 ### MasterSpec
+parameter | type | explanation
+ --- | --- | ---
 master_cpu|int| CPU count for each Master process
 master_mem|str| memory allocated for each Master process, a plain integer using one of these suffixes: E, P, T, G, M, K
