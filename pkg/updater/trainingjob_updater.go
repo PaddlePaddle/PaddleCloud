@@ -816,14 +816,17 @@ func (j *JobUpdater) addLabelToPods(podType PodType) (bool, error) {
 
 	var labelOptions v1.ListOptions
 	var podName string
+	var desiredPodNum int
 	switch podType {
 	case TRAINER:
 		labelOptions = v1.ListOptions{LabelSelector: TrainerLabel + "=" + j.Job.Name}
 		podName = j.trainerName()
+		desiredPodNum = int(*j.Job.Spec.Trainer.ReplicaSpec.Spec.Parallelism)
 
 	case PSERVER:
 		labelOptions = v1.ListOptions{LabelSelector: PserverLabel + "=" + j.Job.Name}
 		podName = j.pserverName()
+		desiredPodNum = int(*j.Job.Spec.Pserver.ReplicaSpec.Spec.Replicas)
 
 	}
 
@@ -849,8 +852,9 @@ func (j *JobUpdater) addLabelToPods(podType PodType) (bool, error) {
 			return false, err
 		}
 
-		if int32(idx) > *j.Job.Spec.Trainer.ReplicaSpec.Spec.Parallelism-1 {
-			log.Warn("Idx exceeded parallelism", "current id", idx)
+		// FIXME: the loop will now index up to desiredPodNum+1 pods instead of desiredPodNum. Is that the desired behavior?
+		if idx >= desiredPodNum {
+			log.Warn("Idx exceededs desired pod number", "current id", idx)
 			break
 		}
 	}
@@ -915,7 +919,6 @@ func (j *JobUpdater) traceAddLabelToPods(podType PodType) error {
 			if id, err := strconv.Atoi(v); err == nil {
 				indexMap[id] = oldPod.Name
 			}
-			continue
 		} else {
 			unIndexedPod = append(unIndexedPod, &oldPod)
 		}
@@ -940,7 +943,7 @@ func (j *JobUpdater) traceAddLabelToPods(podType PodType) error {
 			}
 
 			if podLen > 1 {
-				unIndexedPod = unIndexedPod[1 : len(unIndexedPod)-1]
+				unIndexedPod = unIndexedPod[1:]
 			} else {
 				log.Info("Finished trace label of job", "podKind", podKind)
 				break
