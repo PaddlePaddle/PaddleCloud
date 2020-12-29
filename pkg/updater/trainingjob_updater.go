@@ -413,11 +413,7 @@ func (j *JobUpdater) GetStatus() (paddlev1.TrainingJobPhase, string, error) {
 
 func (j *JobUpdater) createTrainingJob() error {
 
-	var frameWork *paddlev1.Framework = nil
-
-	if j.Job.Spec.FrameWork != nil {
-		frameWork = j.Job.Spec.FrameWork
-	}
+	frameWork := j.Job.Spec.FrameWork
 
 	if j.Job.Spec.FaultTolerant {
 		log.Debug("Creating master", "name", j.masterName())
@@ -491,11 +487,7 @@ func (j *JobUpdater) createTrainer() error {
 
 func (j *JobUpdater) deleteTrainingJob() error {
 
-	var frameWork *paddlev1.Framework = nil
-
-	if j.Job.Spec.FrameWork != nil {
-		frameWork = j.Job.Spec.FrameWork
-	}
+	frameWork := j.Job.Spec.FrameWork
 
 	if j.Job.Spec.FaultTolerant {
 		log.Debug("deleting master", "name", j.masterName())
@@ -567,11 +559,7 @@ func (j *JobUpdater) deleteTrainer() error {
 
 func (j *JobUpdater) releaseMasterRoles() error {
 
-	var frameWork *paddlev1.Framework = nil
-
-	if j.Job.Spec.FrameWork != nil {
-		frameWork = j.Job.Spec.FrameWork
-	}
+	frameWork := j.Job.Spec.FrameWork
 
 	if j.Job.Spec.FaultTolerant {
 		if err := j.releaseResource(paddlev1.MASTER); err != nil {
@@ -683,11 +671,7 @@ func (j *JobUpdater) releaseTrainer() error {
 }
 
 func (j *JobUpdater) jobTotalRunning() (bool, error) {
-	var frameWork *paddlev1.Framework = nil
-
-	if j.Job.Spec.FrameWork != nil {
-		frameWork = j.Job.Spec.FrameWork
-	}
+	frameWork := j.Job.Spec.FrameWork
 
 	if j.Job.Spec.FaultTolerant {
 		masterRunning, err := j.masterRoleTotalRunning(paddlev1.MASTER)
