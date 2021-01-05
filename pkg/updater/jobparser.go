@@ -123,7 +123,7 @@ func parseToPserver(job *paddlev1.TrainingJob, extraEnv []corev1.EnvVar, outter 
 					SchedulerName: job.Spec.SchedulerName,
 					Volumes:       job.Spec.Volumes,
 					Containers: []corev1.Container{
-						corev1.Container{
+						{
 							Name:            string(PSERVER),
 							Image:           job.Spec.Image,
 							Ports:           podPorts(job, PSERVER),
@@ -201,7 +201,7 @@ func parseToTrainer(job *paddlev1.TrainingJob, extraEnv []corev1.EnvVar, outter 
 					SchedulerName: job.Spec.SchedulerName,
 					Volumes:       job.Spec.Volumes,
 					Containers: []corev1.Container{
-						corev1.Container{
+						{
 							Name:            string(TRAINER),
 							Image:           job.Spec.Image,
 							ImagePullPolicy: imagePullPolicy,
@@ -308,7 +308,7 @@ func parseToMaster(job *paddlev1.TrainingJob) *v1beta1.ReplicaSet {
 					SchedulerName: job.Spec.SchedulerName,
 					Volumes:       job.Spec.Volumes,
 					Containers: []corev1.Container{
-						corev1.Container{
+						{
 							Name:            string(MASTER),
 							Image:           job.Spec.Image,
 							ImagePullPolicy: imagePullPolicy,
@@ -415,11 +415,11 @@ func podPorts(job *paddlev1.TrainingJob, podType PodType) []corev1.ContainerPort
 
 func masterPorts(job *paddlev1.TrainingJob) []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{
-		corev1.ContainerPort{
+		{
 			Name:          "master-port",
 			ContainerPort: 8080,
 		},
-		corev1.ContainerPort{
+		{
 			Name:          "etcd-port",
 			ContainerPort: 2379,
 		},
@@ -443,38 +443,38 @@ func podEnv(job *paddlev1.TrainingJob, envs map[string]string) []corev1.EnvVar {
 	}
 
 	podEnv := []corev1.EnvVar{
-		corev1.EnvVar{Name: "PADDLE_JOB_NAME", Value: job.ObjectMeta.Name},
+		{Name: "PADDLE_JOB_NAME", Value: job.ObjectMeta.Name},
 		// NOTICE: TRAINERS, PSERVERS, PADDLE_INIT_NUM_GRADIENT_SERVERS
 		//         these env are used for non-faulttolerant training,
 		//         use min-instance all the time. When job is elastic,
 		//         these envs are not used.
-		corev1.EnvVar{Name: "TRAINERS", Value: strconv.Itoa(job.Spec.Trainer.MinInstance)},
-		corev1.EnvVar{Name: "PSERVERS", Value: strconv.Itoa(job.Spec.Pserver.MinInstance)},
-		corev1.EnvVar{Name: "ENTRY", Value: job.Spec.Trainer.Entrypoint},
+		{Name: "TRAINERS", Value: strconv.Itoa(job.Spec.Trainer.MinInstance)},
+		{Name: "PSERVERS", Value: strconv.Itoa(job.Spec.Pserver.MinInstance)},
+		{Name: "ENTRY", Value: job.Spec.Trainer.Entrypoint},
 		// FIXME: TOPOLOGY deprecated
-		corev1.EnvVar{Name: "TOPOLOGY", Value: job.Spec.Trainer.Entrypoint},
-		corev1.EnvVar{Name: "TRAINER_PACKAGE", Value: job.Spec.Trainer.Workspace},
-		corev1.EnvVar{Name: "PADDLE_INIT_PORT", Value: strconv.Itoa(job.Spec.Port)},
+		{Name: "TOPOLOGY", Value: job.Spec.Trainer.Entrypoint},
+		{Name: "TRAINER_PACKAGE", Value: job.Spec.Trainer.Workspace},
+		{Name: "PADDLE_INIT_PORT", Value: strconv.Itoa(job.Spec.Port)},
 		// PADDLE_INIT_TRAINER_COUNT should be same to gpu number when use gpu
 		// and cpu cores when using cpu
-		corev1.EnvVar{Name: "PADDLE_INIT_TRAINER_COUNT", Value: strconv.Itoa(trainerCount)},
-		corev1.EnvVar{Name: "PADDLE_INIT_PORTS_NUM", Value: strconv.Itoa(job.Spec.PortsNum)},
-		corev1.EnvVar{Name: "PADDLE_INIT_PORTS_NUM_FOR_SPARSE", Value: strconv.Itoa(job.Spec.PortsNumForSparse)},
-		corev1.EnvVar{Name: "PADDLE_INIT_NUM_GRADIENT_SERVERS", Value: strconv.Itoa(job.Spec.Trainer.MinInstance)},
-		corev1.EnvVar{Name: "PADDLE_INIT_NUM_PASSES", Value: strconv.Itoa(job.Spec.Passes)},
-		corev1.EnvVar{Name: "PADDLE_INIT_USE_GPU", Value: needGPU},
-		corev1.EnvVar{Name: "LD_LIBRARY_PATH", Value: "/usr/local/cuda/lib64"},
-		corev1.EnvVar{Name: "NAMESPACE", ValueFrom: &corev1.EnvVarSource{
+		{Name: "PADDLE_INIT_TRAINER_COUNT", Value: strconv.Itoa(trainerCount)},
+		{Name: "PADDLE_INIT_PORTS_NUM", Value: strconv.Itoa(job.Spec.PortsNum)},
+		{Name: "PADDLE_INIT_PORTS_NUM_FOR_SPARSE", Value: strconv.Itoa(job.Spec.PortsNumForSparse)},
+		{Name: "PADDLE_INIT_NUM_GRADIENT_SERVERS", Value: strconv.Itoa(job.Spec.Trainer.MinInstance)},
+		{Name: "PADDLE_INIT_NUM_PASSES", Value: strconv.Itoa(job.Spec.Passes)},
+		{Name: "PADDLE_INIT_USE_GPU", Value: needGPU},
+		{Name: "LD_LIBRARY_PATH", Value: "/usr/local/cuda/lib64"},
+		{Name: "NAMESPACE", ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.namespace",
 			},
 		}},
-		corev1.EnvVar{Name: "POD_IP", ValueFrom: &corev1.EnvVarSource{
+		{Name: "POD_IP", ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "status.podIP",
 			},
 		}},
-		corev1.EnvVar{Name: "POD_NAME", ValueFrom: &corev1.EnvVarSource{
+		{Name: "POD_NAME", ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.name",
 			},
