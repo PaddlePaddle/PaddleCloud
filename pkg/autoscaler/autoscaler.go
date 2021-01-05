@@ -20,7 +20,6 @@ import (
 	"time"
 
 	log "github.com/inconshreveable/log15"
-	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +69,7 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 	if err != nil {
 		return ClusterResource{}, err
 	}
-	allocatable := make(v1.ResourceList)
+	allocatable := make(corev1.ResourceList)
 	nodesCPUIdleMilli := make(map[string]int64)
 	nodesMemoryFreeMega := make(map[string]int64)
 
