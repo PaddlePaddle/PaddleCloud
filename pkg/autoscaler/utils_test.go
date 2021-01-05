@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -42,7 +42,7 @@ func TestAddResourceList(t *testing.T) {
 	gpuExpected, _ := resource.ParseQuantity("8")
 
 	AddResourceList(a, b)
-	assert.Equal(t, a.Cpu().Value(), cpuExpected.Value())
-	assert.Equal(t, a.Memory().Value(), memExpected.Value())
-	assert.Equal(t, a.NvidiaGPU().Value(), gpuExpected.Value())
+	assert.Equal(t, cpuExpected.MilliValue(), a.Cpu().MilliValue())
+	assert.Equal(t, memExpected.Value(), a.Memory().Value())
+	assert.Equal(t, gpuExpected.Value(), a.NvidiaGPU().Value())
 }
