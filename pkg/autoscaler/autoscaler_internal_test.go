@@ -22,7 +22,7 @@ import (
 	"github.com/paddleflow/elastictraining/pkg/updater"
 	"github.com/stretchr/testify/assert"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -394,10 +394,10 @@ func TestSortedJobs(t *testing.T) {
 
 	expected := []string{"test/b", "test/c", "test/a"}
 
-	updater := new(sync.Map)
-	c := NewAutoscaler(nil, updater)
+	tracker := new(sync.Map)
+	c := NewAutoscaler(nil, tracker)
 	for _, j := range jobs {
-		c.jobUpdater.Store(jobName(j), j)
+		c.jobtracker.Store(jobName(j), j)
 	}
 
 	sorted := sortedJobs(jobs, elastic)
@@ -417,10 +417,10 @@ func TestSortedJobsGPUOnly(t *testing.T) {
 	}
 
 	expected := []string{"test/a"}
-	updater := new(sync.Map)
-	c := NewAutoscaler(nil, updater)
+	tracker := new(sync.Map)
+	c := NewAutoscaler(nil, tracker)
 	for _, j := range jobs {
-		c.jobUpdater.Store(jobName(j), j)
+		c.jobtracker.Store(jobName(j), j)
 	}
 
 	sorted := sortedJobs(jobs, needGPU)

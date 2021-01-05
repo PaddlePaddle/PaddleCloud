@@ -39,7 +39,7 @@ const (
 // Autoscaler launches and scales the training jobs.
 type Autoscaler struct {
 	kubeCli        kubernetes.Interface
-	jobUpdater     *sync.Map
+	jobtracker     *sync.Map
 	maxLoadDesired float64
 }
 
@@ -51,10 +51,10 @@ func WithMaxLoadDesired(maxLoadDesired float64) func(as *Autoscaler) {
 }
 
 // NewAutoscaler creates a new Autoscaler.
-func NewAutoscaler(kubeClient kubernetes.Interface, jobUpdater *sync.Map, options ...func(*Autoscaler)) *Autoscaler {
+func NewAutoscaler(kubeClient kubernetes.Interface, jobtracker *sync.Map, options ...func(*Autoscaler)) *Autoscaler {
 	c := &Autoscaler{
 		kubeCli:        kubeClient,
-		jobUpdater:     jobUpdater,
+		jobtracker:     jobtracker,
 		maxLoadDesired: 1.0,
 	}
 	for _, option := range options {
@@ -150,7 +150,7 @@ func isRunning(j *padv1.TrainingJob) bool {
 }
 
 func (a *Autoscaler) totalRunningJob(jobName string) bool {
-	v, ok := a.jobUpdater.Load(jobName)
+	v, ok := a.jobtracker.Load(jobName)
 	if !ok {
 		return false
 	}
@@ -297,7 +297,7 @@ func scaleDryRun(r *ClusterResource, j *padv1.TrainingJob, curDiff int32, maxLoa
 }
 
 func (a *Autoscaler) setAdditional(diff map[string]int32) {
-	a.jobUpdater.Range(func(k, v interface{}) bool {
+	a.jobtracker.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		up := v.(*updater.JobUpdater)
 		var additional int32
@@ -306,7 +306,7 @@ func (a *Autoscaler) setAdditional(diff map[string]int32) {
 		}
 		up.Additional = additional
 		log.Debug("setAdditional", "jobname", key, "additional", additional)
-		a.jobUpdater.Store(k, up)
+		a.jobtracker.Store(k, up)
 		return true
 	})
 }
@@ -420,7 +420,7 @@ func (a *Autoscaler) findPendingJob() bool {
 		}
 		return true
 	}
-	a.jobUpdater.Range(traverseFunc)
+	a.jobtracker.Range(traverseFunc)
 	return havePending
 }
 
@@ -439,6 +439,6 @@ func (a *Autoscaler) findTrainingJobsMightBeRescheduled(havePending bool) (js tr
 		}
 		return true
 	}
-	a.jobUpdater.Range(traverseFunc)
+	a.jobtracker.Range(traverseFunc)
 	return
 }
