@@ -163,6 +163,7 @@ func (c *TrainingJobController) Run(threadiness int, maxLoadDesired float64, sto
 	as := autoscaler.NewAutoscaler(c.kubeCli, c.jobtracker, autoscaler.WithMaxLoadDesired(maxLoadDesired))
 	as.Run()
 
+	// FIXME: as.Run() will unconditionally loop forever. The following lines will not be reached.
 	<-stopCh
 	log.Info("Shutting down workers")
 
