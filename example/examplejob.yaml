@@ -1,4 +1,4 @@
-apiVersion: paddlepaddle.org/v1
+apiVersion: paddlepaddle.org/v1alpha1
 kind: TrainingJob
 metadata:
   name: examplejob
