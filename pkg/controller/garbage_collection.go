@@ -135,7 +135,7 @@ func (gc *GarbageCollector) deleteReplicaSet(namespace, name string) error {
 		var replicas int32
 		replicas = 0
 		obj.Spec.Replicas = &replicas
-		if _, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Update(context.TODO(), obj); err != nil {
+		if _, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -154,7 +154,7 @@ func (gc *GarbageCollector) deleteBatchJob(namespace, name string) error {
 		var para int32
 		para = 0
 		obj.Spec.Parallelism = &para
-		if _, err := gc.kubeCli.BatchV1().Jobs(namespace).Update(context.TODO(), obj); err != nil {
+		if _, err := gc.kubeCli.BatchV1().Jobs(namespace).Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}

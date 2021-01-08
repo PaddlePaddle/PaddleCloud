@@ -188,7 +188,7 @@ func (c *TrainingJobController) createCRD() error {
 		},
 	}
 
-	_, err := c.apiCli.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.TODO(), crd)
+	_, err := c.apiCli.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		log.Error("Failed to create crd", "err", err.Error())
 		return err
