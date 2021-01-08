@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/api"
 
 	padv1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
 	"github.com/paddleflow/elastictraining/pkg/updater"
@@ -89,7 +88,7 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 	// NOTE: "terminating" pods' status is still running, do not
 	// scale up/down the job if job is still at last scaling
 	// process.
-	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
+	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(corev1.PodSucceeded) + ",status.phase!=" + string(corev1.PodFailed))
 	if err != nil {
 		return ClusterResource{}, err
 	}
