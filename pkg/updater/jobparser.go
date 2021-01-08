@@ -15,6 +15,7 @@
 package updater
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -535,7 +536,7 @@ func (p *DefaultJobParser) GetExtraEnv(job *paddlev1.TrainingJob, kube kubernete
 	var envs []corev1.EnvVar
 
 	if !job.Spec.Matrix {
-		kubeSvc, err := kube.CoreV1().Services("default").Get("kubernetes", metav1.GetOptions{})
+		kubeSvc, err := kube.CoreV1().Services("default").Get(context.TODO(), "kubernetes", metav1.GetOptions{})
 		if err != nil {
 			return envs, err
 		}
