@@ -369,7 +369,7 @@ func (a *Autoscaler) findPendingJob() bool {
 			labelKey = "paddle-job-pserver"
 		}
 
-		pods, err := a.kubeCli.CoreV1().Pods(job.Namespace).List(metav1.ListOptions{LabelSelector: labelKey + "=" + job.Name})
+		pods, err := a.kubeCli.CoreV1().Pods(job.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelKey + "=" + job.Name})
 		if err != nil {
 			log.Error("Find pendingJob failed to list job pods", "error", err)
 			return true
