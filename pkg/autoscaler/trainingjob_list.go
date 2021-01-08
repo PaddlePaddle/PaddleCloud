@@ -18,22 +18,26 @@ func (ts trainingjobList) Less(a, b int) bool {
 	scoreA := ts[a].Fulfillment()
 	scoreB := ts[b].Fulfillment()
 
-	if scoreA == scoreB {
-		resA := ts[a].Spec.Trainer.Resources
-		resB := ts[b].Spec.Trainer.Resources
-		resALimitsGPU := *resA.Limits.NvidiaGPU()
-		resBLimitsGPU := *resB.Limits.NvidiaGPU()
-		if resALimitsGPU.Cmp(resBLimitsGPU) == 0 {
-			resARequestsCPU := *resA.Requests.Cpu()
-			resBRequestsCPU := *resB.Requests.Cpu()
-			if resARequestsCPU.Cmp(resBRequestsCPU) == 0 {
-				resARequestsMem := *resA.Requests.Memory()
-				resBRequestsMem := *resB.Requests.Memory()
-				return resARequestsMem.Cmp(resBRequestsMem) == -1
-			}
-			return resARequestsCPU.Cmp(resBRequestsCPU) == -1
-		}
-		return resALimitsGPU.Cmp(resBLimitsGPU) == -1
+	if scoreA != scoreB {
+		return scoreA < scoreB
 	}
-	return scoreA < scoreB
+
+	resA := ts[a].Spec.Trainer.Resources
+	resB := ts[b].Spec.Trainer.Resources
+
+	resALimitsGPU := *resA.Limits.NvidiaGPU()
+	resBLimitsGPU := *resB.Limits.NvidiaGPU()
+	if cmpGPU := resALimitsGPU.Cmp(resBLimitsGPU); cmpGPU != 0 {
+		return cmpGPU == -1
+	}
+
+	resARequestsCPU := *resA.Requests.Cpu()
+	resBRequestsCPU := *resB.Requests.Cpu()
+	if cmpCPU := resARequestsCPU.Cmp(resBRequestsCPU); cmpCPU != 0 {
+		return cmpCPU == -1
+	}
+
+	resARequestsMem := *resA.Requests.Memory()
+	resBRequestsMem := *resB.Requests.Memory()
+	return resARequestsMem.Cmp(resBRequestsMem) == -1
 }

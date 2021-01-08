@@ -141,28 +141,6 @@ func needGPU(j *padv1.TrainingJob) bool {
 	return j.NeedGPU()
 }
 
-func isRunning(j *padv1.TrainingJob) bool {
-	if j.Status.Phase == padv1.TrainingJobPhaseRunning || j.Status.Phase == padv1.TrainingJobPhaseScaling {
-		return true
-	}
-	return false
-}
-
-func (a *Autoscaler) totalRunningJob(jobName string) bool {
-	v, ok := a.jobtracker.Load(jobName)
-	if !ok {
-		return false
-	}
-	up, ok := v.(*updater.JobUpdater)
-	if !ok {
-		return false
-	}
-	job := up.Job
-	totalRunning := job.Status.Phase == padv1.TrainingJobPhaseRunning
-	log.Debug("totalRunningJob", "jobname", jobName, "totalRunning", totalRunning)
-	return totalRunning
-}
-
 // sortedJobs return the names of sorted jobs by fulfillment and
 // tiebreakers in ascending order.
 func sortedJobs(j []*padv1.TrainingJob, filters ...func(*padv1.TrainingJob) bool) []*padv1.TrainingJob {
@@ -192,8 +170,6 @@ func searchAssignableNode(r *ClusterResource, j *padv1.TrainingJob) string {
 }
 
 func scaleDryRun(r *ClusterResource, j *padv1.TrainingJob, curDiff int32, maxLoadDesired float64, scaleDown bool) (additional int) {
-	additionalGPUInstance := 0
-	additionalCPUInstance := 0
 	cpuRequestMilli := j.TrainerCPURequestMilli()
 	memRequestMega := j.TrainerMemRequestMega()
 	gpuLimit := j.TrainerGPULimit()
@@ -273,21 +249,19 @@ func scaleDryRun(r *ClusterResource, j *padv1.TrainingJob, curDiff int32, maxLoa
 
 	// NOTE: do not scale up to use full cluster resource of CPU
 	//       but we do scale up for GPU.
+	additionalCPUInstance := 0
 	if int64(float64(r.CPUTotalMilli)*maxLoadDesired)-r.CPURequestMilli >= cpuRequestMilli {
 		additionalCPUInstance = 1
 	}
 
+	additionalGPUInstance := 0
 	needGPU := gpuLimit > 0
 	if needGPU && r.GPUTotal-r.GPULimit >= gpuLimit {
 		additionalGPUInstance = 1
 	}
 
-	if needGPU {
-		if additionalGPUInstance < additionalCPUInstance {
-			additional = additionalGPUInstance
-		} else {
-			additional = additionalCPUInstance
-		}
+	if needGPU && additionalGPUInstance < additionalCPUInstance {
+		additional = additionalGPUInstance
 	} else {
 		additional = additionalCPUInstance
 	}
@@ -299,10 +273,7 @@ func (a *Autoscaler) setAdditional(diff map[string]int32) {
 	a.jobtracker.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		up := v.(*updater.JobUpdater)
-		var additional int32
-		if val, ok := diff[key]; ok {
-			additional = val
-		}
+		additional := diff[key]
 		up.Additional = additional
 		log.Debug("setAdditional", "jobname", key, "additional", additional)
 		a.jobtracker.Store(k, up)
@@ -433,8 +404,9 @@ func (a *Autoscaler) findTrainingJobsMightBeRescheduled(havePending bool) (js tr
 			return false
 		}
 		job := up.Job
-		if a.totalRunningJob(jn) || havePending {
+		if havePending || job.Status.Phase == padv1.TrainingJobPhaseRunning {
 			js = append(js, job)
+			log.Debug("job might need rescheduling", "jobname", jn)
 		}
 		return true
 	}

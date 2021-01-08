@@ -163,6 +163,20 @@ Return true if the number of running or succeeded pods is larger than or equal t
 It is a helper function for [jobTotalRunning](#func-(*JobUpdater)-jobTotalRunning).
 
 
+## func (*JobUpdater) findFailedTrainerPods
+```go
+func (j *JobUpdater) findFailedTrainerPods() ([]*corev1.Pod, error)
+```
+`findFailedTrainerPods` finds and returns failed trainer pods in the cluster.
+
+
+## func (*JobUpdater) scale
+```go
+func (j *JobUpdater) scale() (err error)
+```
+NOTE: new version of kubernetes [improves backoff policy in JobController](https://github.com/kubernetes/kubernetes/pull/60202). BackoffLimit changes may not be needed here.<br>
+`scale` adds `j.Additional` to parallelism and reports the change to `j.kubeCli`. If `j.Additional` is negative, `scale` increases the job backoffLimit by the abosolute value of `j.Additional`.
+
 
 ## func (*JobUpdater) initLabelOfPods
 ```go
