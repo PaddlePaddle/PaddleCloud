@@ -15,6 +15,7 @@
 package autoscaler
 
 import (
+	"context"
 	"sort"
 	"sync"
 	"time"
@@ -64,7 +65,7 @@ func NewAutoscaler(kubeClient kubernetes.Interface, jobtracker *sync.Map, option
 // InquiryResource returns the idle and total resources of the k8s cluster.
 func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 	nodes := a.kubeCli.CoreV1().Nodes()
-	nodeList, err := nodes.List(metav1.ListOptions{})
+	nodeList, err := nodes.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return ClusterResource{}, err
 	}
@@ -93,7 +94,7 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 		return ClusterResource{}, err
 	}
 
-	allPodsList, err := a.kubeCli.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+	allPodsList, err := a.kubeCli.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 	if err != nil {
 		return ClusterResource{}, err
 	}

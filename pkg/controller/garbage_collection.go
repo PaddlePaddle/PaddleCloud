@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -69,7 +70,7 @@ func (gc *GarbageCollector) cleanOrphanBatchJobs() {
 
 func (gc *GarbageCollector) findOrphanRelicaSets() ([]v1beta1.ReplicaSet, error) {
 	orphans := make([]v1beta1.ReplicaSet, 0)
-	all, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets("").List(metav1.ListOptions{})
+	all, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return orphans, err
 	}
@@ -101,7 +102,7 @@ func (gc *GarbageCollector) findOrphanRelicaSets() ([]v1beta1.ReplicaSet, error)
 
 func (gc *GarbageCollector) findOrphanBatchJobs() ([]batchv1.Job, error) {
 	orphans := make([]batchv1.Job, 0)
-	all, err := gc.kubeCli.BatchV1().Jobs("").List(metav1.ListOptions{})
+	all, err := gc.kubeCli.BatchV1().Jobs("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return orphans, err
 	}
@@ -125,7 +126,7 @@ func (gc *GarbageCollector) findOrphanBatchJobs() ([]batchv1.Job, error) {
 }
 
 func (gc *GarbageCollector) deleteReplicaSet(namespace, name string) error {
-	obj, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
+	obj, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -134,17 +135,17 @@ func (gc *GarbageCollector) deleteReplicaSet(namespace, name string) error {
 		var replicas int32
 		replicas = 0
 		obj.Spec.Replicas = &replicas
-		if _, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Update(obj); err != nil {
+		if _, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Update(context.TODO(), obj); err != nil {
 			return err
 		}
 	}
 
-	err = gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Delete(name, &metav1.DeleteOptions{})
+	err = gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
 	return err
 }
 
 func (gc *GarbageCollector) deleteBatchJob(namespace, name string) error {
-	obj, err := gc.kubeCli.BatchV1().Jobs(namespace).Get(name, metav1.GetOptions{})
+	obj, err := gc.kubeCli.BatchV1().Jobs(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -153,12 +154,12 @@ func (gc *GarbageCollector) deleteBatchJob(namespace, name string) error {
 		var para int32
 		para = 0
 		obj.Spec.Parallelism = &para
-		if _, err := gc.kubeCli.BatchV1().Jobs(namespace).Update(obj); err != nil {
+		if _, err := gc.kubeCli.BatchV1().Jobs(namespace).Update(context.TODO(), obj); err != nil {
 			return err
 		}
 	}
 
-	err = gc.kubeCli.BatchV1().Jobs(namespace).Delete(name, &metav1.DeleteOptions{})
+	err = gc.kubeCli.BatchV1().Jobs(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
 	return err
 }
 
@@ -176,7 +177,7 @@ func (gc *GarbageCollector) trainingJobFound(namespace, name string) (bool, erro
 }
 
 func (gc *GarbageCollector) CleanGarbagePods() {
-	all, err := gc.kubeCli.CoreV1().Pods("").List(metav1.ListOptions{})
+	all, err := gc.kubeCli.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Error("List garbage pod failed")
 		return
@@ -194,8 +195,8 @@ func (gc *GarbageCollector) CleanGarbagePods() {
 			log.Info("Find garbage pod", "name", pod.Name, "reason: terminated expired")
 			var gracePeriodSeconds int64 = 0
 			propagationPolicy := metav1.DeletePropagationBackground
-			err = gc.kubeCli.CoreV1().Pods(pod.Namespace).Delete(pod.Name,
-				&metav1.DeleteOptions{
+			err = gc.kubeCli.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name,
+				metav1.DeleteOptions{
 					PropagationPolicy:  &propagationPolicy,
 					GracePeriodSeconds: &gracePeriodSeconds,
 				})
@@ -222,7 +223,7 @@ func (gc *GarbageCollector) CleanGarbagePods() {
 		}
 		if !containerStatusOk {
 			log.Error("Find garbage pod", "name", pod.Name, "reason", "CreateContainerError")
-			err = gc.kubeCli.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+			err = gc.kubeCli.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 			if err != nil {
 				log.Error("Delete garbage pod", "name", pod.Name, "reason", err.Error())
 			}
