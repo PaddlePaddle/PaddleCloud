@@ -430,18 +430,8 @@ func masterPorts(job *paddlev1.TrainingJob) []corev1.ContainerPort {
 
 func podEnv(job *paddlev1.TrainingJob, envs map[string]string) []corev1.EnvVar {
 	needGPU := "0"
-	if job.NeedGPU() {
-		needGPU = "1"
-	}
-	trainerCount := 1
-	if job.NeedGPU() {
-		q := job.Spec.Trainer.Resources.Requests.NvidiaGPU()
-		trainerCount = int(q.Value())
-	} else {
-		q := job.Spec.Trainer.Resources.Requests.Cpu()
-		// FIXME: CPU resource value can be less than 1.
-		trainerCount = int(q.Value())
-	}
+	// FIXME: CPU resource value can be less than 1.
+	trainerCount := int(job.Spec.Trainer.Resources.Requests.Cpu().Value())
 
 	podEnv := []corev1.EnvVar{
 		{Name: "PADDLE_JOB_NAME", Value: job.ObjectMeta.Name},
