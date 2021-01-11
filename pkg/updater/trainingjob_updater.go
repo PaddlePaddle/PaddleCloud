@@ -20,9 +20,9 @@ import (
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
-	paddlev1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
-	trainingJobClient "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned"
-	"github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/scheme"
+	paddlev1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
+	trainingJobClient "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned"
+	"github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned/scheme"
 )
 
 var (

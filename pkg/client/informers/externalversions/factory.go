@@ -18,9 +18,9 @@ limitations under the License.
 package externalversions
 
 import (
-	versioned "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions/internalinterfaces"
-	paddlepaddle "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions/paddlepaddle"
+	versioned "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/paddleflow/paddle-operator/pkg/client/informers/externalversions/internalinterfaces"
+	paddlepaddle "github.com/paddleflow/paddle-operator/pkg/client/informers/externalversions/paddlepaddle"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"

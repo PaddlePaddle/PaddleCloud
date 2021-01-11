@@ -21,13 +21,13 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	paddlev1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
-	"github.com/paddleflow/elastictraining/pkg/autoscaler"
-	paddleclientset "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned"
-	paddlescheme "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/scheme"
-	paddleinformers "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions"
-	paddlelisters "github.com/paddleflow/elastictraining/pkg/client/listers/paddlepaddle/v1alpha1"
-	"github.com/paddleflow/elastictraining/pkg/updater"
+	paddlev1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
+	"github.com/paddleflow/paddle-operator/pkg/autoscaler"
+	paddleclientset "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned"
+	paddlescheme "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned/scheme"
+	paddleinformers "github.com/paddleflow/paddle-operator/pkg/client/informers/externalversions"
+	paddlelisters "github.com/paddleflow/paddle-operator/pkg/client/listers/paddlepaddle/v1alpha1"
+	"github.com/paddleflow/paddle-operator/pkg/updater"
 )
 
 // TrainingJobController defines the structure to manage TrainingJob resource

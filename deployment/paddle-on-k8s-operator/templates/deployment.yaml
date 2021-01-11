@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: elastictraining
+  name: paddle-operator
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: elastictraining
+      app: paddle-operator
   template:
     metadata:
       labels:
-        app: elastictraining
+        app: paddle-operator
     spec:
       volumes:
       - name: kube-config-volume
@@ -25,7 +25,7 @@ spec:
         volumeMounts:
         - mountPath: /.kube
           name: kube-config-volume
-        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/elastictraining:{{ .Values.image.tag }}"
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/paddle-operator:{{ .Values.image.tag }}"
         args: ["-kubeconfig", "/.kube/config", "-autoclean"]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:

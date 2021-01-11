@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
 
-ADD elastictraining /usr/local/bin
+ADD paddle-operator /usr/local/bin
 
-ENTRYPOINT ["/usr/local/bin/elastictraining"]
+ENTRYPOINT ["/usr/local/bin/paddle-operator"]

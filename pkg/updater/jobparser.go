@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	paddlev1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
+	paddlev1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
 )
 
 type PodType string

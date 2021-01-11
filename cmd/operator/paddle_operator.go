@@ -19,11 +19,11 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 
-	paddleclientset "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned"
-	"github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/scheme"
-	paddleinformers "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions"
-	paddlecontroller "github.com/paddleflow/elastictraining/pkg/controller"
-	"github.com/paddleflow/elastictraining/pkg/signals"
+	paddleclientset "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned"
+	"github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned/scheme"
+	paddleinformers "github.com/paddleflow/paddle-operator/pkg/client/informers/externalversions"
+	paddlecontroller "github.com/paddleflow/paddle-operator/pkg/controller"
+	"github.com/paddleflow/paddle-operator/pkg/signals"
 )
 
 var (

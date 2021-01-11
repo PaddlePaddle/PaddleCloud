@@ -18,8 +18,8 @@ limitations under the License.
 package paddlepaddle
 
 import (
-	internalinterfaces "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions/paddlepaddle/v1alpha1"
+	internalinterfaces "github.com/paddleflow/paddle-operator/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/paddleflow/paddle-operator/pkg/client/informers/externalversions/paddlepaddle/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

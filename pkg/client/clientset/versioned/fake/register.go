@@ -15,7 +15,7 @@ limitations under the License.
 */package fake
 
 import (
-	paddlepaddlev1alpha1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
+	paddlepaddlev1alpha1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

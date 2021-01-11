@@ -15,9 +15,9 @@ limitations under the License.
 */package fake
 
 import (
-	clientset "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned"
-	paddlepaddlev1alpha1 "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/typed/paddlepaddle/v1alpha1"
-	fakepaddlepaddlev1alpha1 "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/typed/paddlepaddle/v1alpha1/fake"
+	clientset "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned"
+	paddlepaddlev1alpha1 "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned/typed/paddlepaddle/v1alpha1"
+	fakepaddlepaddlev1alpha1 "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned/typed/paddlepaddle/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

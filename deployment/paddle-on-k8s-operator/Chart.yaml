@@ -1,4 +1,4 @@
 apiVersion: v1alpha1
 description: The paddle operator on Kubernetes
-name: elastictraining
+name: paddle-operator
 version: 0.1.0

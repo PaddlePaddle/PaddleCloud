@@ -27,8 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 
-	padv1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
-	"github.com/paddleflow/elastictraining/pkg/updater"
+	padv1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
+	"github.com/paddleflow/paddle-operator/pkg/updater"
 )
 
 const (

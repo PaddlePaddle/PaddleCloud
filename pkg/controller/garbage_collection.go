@@ -11,8 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	paddlelisters "github.com/paddleflow/elastictraining/pkg/client/listers/paddlepaddle/v1alpha1"
-	"github.com/paddleflow/elastictraining/pkg/updater"
+	paddlelisters "github.com/paddleflow/paddle-operator/pkg/client/listers/paddlepaddle/v1alpha1"
+	"github.com/paddleflow/paddle-operator/pkg/updater"
 )
 
 type GarbageCollector struct {
