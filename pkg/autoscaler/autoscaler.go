@@ -111,15 +111,12 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 
 	res := ClusterResource{
 		NodeCount:       len(nodeList.Items),
-		GPUTotal:        int(allocatable.NvidiaGPU().Value()),
 		CPUTotalMilli:   allocatable.Cpu().ScaledValue(resource.Milli),
 		MemoryTotalMega: allocatable.Memory().ScaledValue(resource.Mega),
 
-		GPURequest:        int(allReqs.NvidiaGPU().Value()),
 		CPURequestMilli:   allReqs.Cpu().ScaledValue(resource.Milli),
 		MemoryRequestMega: allReqs.Memory().ScaledValue(resource.Mega),
 
-		GPULimit:        int(allLimits.NvidiaGPU().Value()),
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
@@ -134,11 +131,6 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 // elastic job filter.
 func elastic(j *padv1.TrainingJob) bool {
 	return j.Elastic()
-}
-
-// gpu job filter
-func needGPU(j *padv1.TrainingJob) bool {
-	return j.NeedGPU()
 }
 
 // sortedJobs return the names of sorted jobs by fulfillment and
@@ -172,7 +164,8 @@ func searchAssignableNode(r *ClusterResource, j *padv1.TrainingJob) string {
 func scaleDryRun(r *ClusterResource, j *padv1.TrainingJob, curDiff int32, maxLoadDesired float64, scaleDown bool) (additional int) {
 	cpuRequestMilli := j.TrainerCPURequestMilli()
 	memRequestMega := j.TrainerMemRequestMega()
-	gpuLimit := j.TrainerGPULimit()
+	// NOTE: assume no GPU since no GPU support
+	gpuLimit := 0
 	nodeName := ""
 	// Adjust resource upon return.
 	defer func() {
