@@ -320,7 +320,7 @@ func (j *JobUpdater) updateCRDStatus(released bool) error {
 	newJob := j.Job
 	newJob.Status = j.status
 	// sync trainingjob to apiserver
-	newJob, err := j.trainingJobCli.PaddlepaddleV1alpha1().TrainingJobs(j.Job.Namespace).Update(newJob)
+	newJob, err := j.trainingJobCli.PaddlepaddleV1alpha1().TrainingJobs(j.Job.Namespace).Update(context.TODO(), newJob)
 	if err != nil {
 		return err
 	}
