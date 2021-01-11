@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"time"
@@ -8,7 +9,7 @@ import (
 	log "github.com/inconshreveable/log15"
 	"github.com/wangkuiyi/candy"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	extcli "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -73,7 +74,7 @@ func main() {
 	hostname, err := os.Hostname()
 	candy.Must(err)
 
-	run := func(stop <-chan struct{}) {
+	run := func(ctx context.Context) {
 		log.Info("I won the leader election", "hostname", hostname)
 		paddleInformer := paddleinformers.NewSharedInformerFactory(paddleClient, time.Second*10)
 		controller := paddlecontroller.New(kubeClient, extapiClient, paddleClient, paddleInformer, *autoClean,
@@ -113,7 +114,7 @@ func main() {
 		},
 	}
 
-	leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+	leaderelection.RunOrDie(context.TODO(), leaderelection.LeaderElectionConfig{
 		Lock:          lock,
 		LeaseDuration: leaseDuration,
 		RenewDeadline: renewDuration,

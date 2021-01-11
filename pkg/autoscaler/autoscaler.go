@@ -15,6 +15,7 @@
 package autoscaler
 
 import (
+	"context"
 	"sort"
 	"sync"
 	"time"
@@ -25,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/api"
 
 	padv1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
 	"github.com/paddleflow/elastictraining/pkg/updater"
@@ -65,7 +65,7 @@ func NewAutoscaler(kubeClient kubernetes.Interface, jobtracker *sync.Map, option
 // InquiryResource returns the idle and total resources of the k8s cluster.
 func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 	nodes := a.kubeCli.CoreV1().Nodes()
-	nodeList, err := nodes.List(metav1.ListOptions{})
+	nodeList, err := nodes.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return ClusterResource{}, err
 	}
@@ -89,12 +89,12 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 	// NOTE: "terminating" pods' status is still running, do not
 	// scale up/down the job if job is still at last scaling
 	// process.
-	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(api.PodSucceeded) + ",status.phase!=" + string(api.PodFailed))
+	fieldSelector, err := fields.ParseSelector("status.phase!=" + string(corev1.PodSucceeded) + ",status.phase!=" + string(corev1.PodFailed))
 	if err != nil {
 		return ClusterResource{}, err
 	}
 
-	allPodsList, err := a.kubeCli.CoreV1().Pods(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+	allPodsList, err := a.kubeCli.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 	if err != nil {
 		return ClusterResource{}, err
 	}
@@ -111,15 +111,12 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 
 	res := ClusterResource{
 		NodeCount:       len(nodeList.Items),
-		GPUTotal:        int(allocatable.NvidiaGPU().Value()),
 		CPUTotalMilli:   allocatable.Cpu().ScaledValue(resource.Milli),
 		MemoryTotalMega: allocatable.Memory().ScaledValue(resource.Mega),
 
-		GPURequest:        int(allReqs.NvidiaGPU().Value()),
 		CPURequestMilli:   allReqs.Cpu().ScaledValue(resource.Milli),
 		MemoryRequestMega: allReqs.Memory().ScaledValue(resource.Mega),
 
-		GPULimit:        int(allLimits.NvidiaGPU().Value()),
 		CPULimitMilli:   allLimits.Cpu().ScaledValue(resource.Milli),
 		MemoryLimitMega: allLimits.Memory().ScaledValue(resource.Mega),
 
@@ -134,11 +131,6 @@ func (a *Autoscaler) InquiryResource() (ClusterResource, error) {
 // elastic job filter.
 func elastic(j *padv1.TrainingJob) bool {
 	return j.Elastic()
-}
-
-// gpu job filter
-func needGPU(j *padv1.TrainingJob) bool {
-	return j.NeedGPU()
 }
 
 // sortedJobs return the names of sorted jobs by fulfillment and
@@ -172,7 +164,8 @@ func searchAssignableNode(r *ClusterResource, j *padv1.TrainingJob) string {
 func scaleDryRun(r *ClusterResource, j *padv1.TrainingJob, curDiff int32, maxLoadDesired float64, scaleDown bool) (additional int) {
 	cpuRequestMilli := j.TrainerCPURequestMilli()
 	memRequestMega := j.TrainerMemRequestMega()
-	gpuLimit := j.TrainerGPULimit()
+	// NOTE: assume no GPU since no GPU support
+	gpuLimit := 0
 	nodeName := ""
 	// Adjust resource upon return.
 	defer func() {
@@ -369,7 +362,7 @@ func (a *Autoscaler) findPendingJob() bool {
 			labelKey = "paddle-job-pserver"
 		}
 
-		pods, err := a.kubeCli.CoreV1().Pods(job.Namespace).List(metav1.ListOptions{LabelSelector: labelKey + "=" + job.Name})
+		pods, err := a.kubeCli.CoreV1().Pods(job.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelKey + "=" + job.Name})
 		if err != nil {
 			log.Error("Find pendingJob failed to list job pods", "error", err)
 			return true

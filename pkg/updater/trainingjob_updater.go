@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -239,9 +240,8 @@ func (j *JobUpdater) Reconcile() error {
 		}
 	}
 
-	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(v1.
-		ListOptions{LabelSelector: PserverLabel + "=" + j.
-		Job.Name})
+	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(context.TODO(),
+		v1.ListOptions{LabelSelector: PserverLabel + "=" + j.Job.Name})
 	if err != nil {
 		return err
 	}
@@ -320,7 +320,7 @@ func (j *JobUpdater) updateCRDStatus(released bool) error {
 	newJob := j.Job
 	newJob.Status = j.status
 	// sync trainingjob to apiserver
-	newJob, err := j.trainingJobCli.PaddlepaddleV1alpha1().TrainingJobs(j.Job.Namespace).Update(newJob)
+	newJob, err := j.trainingJobCli.PaddlepaddleV1alpha1().TrainingJobs(j.Job.Namespace).Update(context.TODO(), newJob)
 	if err != nil {
 		return err
 	}
@@ -334,7 +334,8 @@ func (j *JobUpdater) GetStatus() (paddlev1.TrainingJobPhase, string, error) {
 	phase := j.status.Phase
 	reason := ""
 
-	trainers, err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Get(j.Job.Spec.Trainer.ReplicaSpec.Name, v1.GetOptions{})
+	trainers, err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Get(context.TODO(),
+		j.Job.Spec.Trainer.ReplicaSpec.Name, v1.GetOptions{})
 	if err != nil {
 		log.Error("error getting trainers", "name", j.trainerName(), "err", err.Error())
 		return phase, reason, err
@@ -449,9 +450,9 @@ func (j *JobUpdater) createResource(rt paddlev1.TrainingResourceType) error {
 		return ErrorUnkownResourceType
 	}
 
-	if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(resource.Name, v1.GetOptions{}); err != nil {
+	if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(context.TODO(), resource.Name, v1.GetOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
-			if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Create(resource); err != nil {
+			if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Create(context.TODO(), resource, v1.CreateOptions{}); err != nil {
 				log.Error("Error creating resource", "namespace", resource.Namespace, "name", resource.Name, "err",
 					err.Error())
 				return err
@@ -468,9 +469,9 @@ func (j *JobUpdater) createResource(rt paddlev1.TrainingResourceType) error {
 }
 
 func (j *JobUpdater) createTrainer() error {
-	if _, err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Get(j.Job.Spec.Trainer.ReplicaSpec.Name, v1.GetOptions{}); err != nil {
+	if _, err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Get(context.TODO(), j.Job.Spec.Trainer.ReplicaSpec.Name, v1.GetOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
-			if _, err = j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Create(j.Job.Spec.Trainer.ReplicaSpec); err != nil {
+			if _, err = j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Create(context.TODO(), j.Job.Spec.Trainer.ReplicaSpec, v1.CreateOptions{}); err != nil {
 				log.Error("Error creating trainer", "name", j.trainerName(), "err", err.Error())
 				return err
 			}
@@ -530,7 +531,7 @@ func (j *JobUpdater) deleteResource(rt paddlev1.TrainingResourceType) error {
 	}
 
 	resourceName := j.Job.Name + "-" + string(rt)
-	if err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Delete(resourceName, &v1.DeleteOptions{GracePeriodSeconds: gracePeriodSeconds}); err != nil {
+	if err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Delete(context.TODO(), resourceName, v1.DeleteOptions{GracePeriodSeconds: gracePeriodSeconds}); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("Resource not found, skipped", "namespace", j.Job.Namespace, "name", resourceName)
 			return nil
@@ -546,7 +547,7 @@ func (j *JobUpdater) deleteTrainer() error {
 		return err
 	}
 
-	if err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Delete(j.Job.Spec.Trainer.ReplicaSpec.Name, &v1.DeleteOptions{}); err != nil {
+	if err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Delete(context.TODO(), j.Job.Spec.Trainer.ReplicaSpec.Name, v1.DeleteOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("trainer not exist skipped", "name", j.trainerName())
 			return nil
@@ -590,7 +591,7 @@ func (j *JobUpdater) releaseResource(rt paddlev1.TrainingResourceType) error {
 		return ErrorUnkownResourceType
 	}
 
-	resource, getErr := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Get(resourceName, v1.GetOptions{})
+	resource, getErr := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Get(context.TODO(), resourceName, v1.GetOptions{})
 	if getErr != nil {
 		if apierrors.IsNotFound(getErr) {
 			log.Debug("Resouce instance not exist, skipped", "namespace", j.Job.Namespace, "name", resourceName)
@@ -604,7 +605,7 @@ func (j *JobUpdater) releaseResource(rt paddlev1.TrainingResourceType) error {
 		var replicas int32
 		replicas = 0
 		resource.Spec.Replicas = &replicas
-		if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Update(resource); err != nil {
+		if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Update(context.TODO(), resource, v1.UpdateOptions{}); err != nil {
 			log.Error("error setting replicas to 0", "namespace", j.Job.Namespace, "name", resourceName, "err", err.Error())
 			return err
 		}
@@ -621,7 +622,7 @@ func (j *JobUpdater) releaseResource(rt paddlev1.TrainingResourceType) error {
 			LabelSelector: selector,
 		}
 
-		if err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).DeleteCollection(&v1.DeleteOptions{}, options); err != nil {
+		if err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).DeleteCollection(context.TODO(), v1.DeleteOptions{}, options); err != nil {
 			log.Error("error deleting resource pods", "namespace", j.Job.Namespace, "name", resourceName, "err", err.Error())
 			return err
 		}
@@ -634,7 +635,7 @@ func (j *JobUpdater) releaseTrainer() error {
 	jobNs := j.Job.Namespace
 	jobName := j.Job.Spec.Trainer.ReplicaSpec.Name
 
-	jobSpec, getErr := j.kubeCli.BatchV1().Jobs(jobNs).Get(jobName, v1.GetOptions{})
+	jobSpec, getErr := j.kubeCli.BatchV1().Jobs(jobNs).Get(context.TODO(), jobName, v1.GetOptions{})
 	if getErr != nil {
 		if apierrors.IsNotFound(getErr) {
 			return nil
@@ -648,7 +649,7 @@ func (j *JobUpdater) releaseTrainer() error {
 		var parallism int32
 		parallism = 0
 		jobSpec.Spec.Parallelism = &parallism
-		if _, err := j.kubeCli.BatchV1().Jobs(jobNs).Update(jobSpec); err != nil {
+		if _, err := j.kubeCli.BatchV1().Jobs(jobNs).Update(context.TODO(), jobSpec, v1.UpdateOptions{}); err != nil {
 			log.Error("Error resetting parallelism for TrainingJob trainer", "name", j.trainerName())
 			return err
 		}
@@ -662,7 +663,7 @@ func (j *JobUpdater) releaseTrainer() error {
 		LabelSelector: selector,
 	}
 
-	if err := j.kubeCli.CoreV1().Pods(jobNs).DeleteCollection(&v1.DeleteOptions{}, options); err != nil {
+	if err := j.kubeCli.CoreV1().Pods(jobNs).DeleteCollection(context.TODO(), v1.DeleteOptions{}, options); err != nil {
 		log.Error("Error deleting pods of TrainingJob trainer", "name", j.trainerName())
 		return err
 	}
@@ -701,7 +702,7 @@ func (j *JobUpdater) masterRoleTotalRunning(rt paddlev1.TrainingResourceType) (b
 	default:
 		return false, ErrorUnkownResourceType
 	}
-	resource, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Get(resourceName, v1.GetOptions{})
+	resource, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Get(context.TODO(), resourceName, v1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -713,13 +714,13 @@ func (j *JobUpdater) masterRoleTotalRunning(rt paddlev1.TrainingResourceType) (b
 
 func (j *JobUpdater) trainerTotalRunning() (bool, error) {
 	trainerName := j.Job.Spec.Trainer.ReplicaSpec.Name
-	trainers, err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Get(trainerName, v1.GetOptions{})
+	trainers, err := j.kubeCli.BatchV1().Jobs(j.Job.Namespace).Get(context.TODO(), trainerName, v1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
 
 	log.Debug("Trainer status", "namespace", j.Job.Namespace, "name", trainerName, "status", trainers.Status)
-	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(v1.ListOptions{LabelSelector: TrainerLabel + "=" + j.Job.Name})
+	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(context.TODO(), v1.ListOptions{LabelSelector: TrainerLabel + "=" + j.Job.Name})
 	var runningPodCount int32
 	for _, pod := range podsList.Items {
 		if pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded {
@@ -733,7 +734,7 @@ func (j *JobUpdater) trainerTotalRunning() (bool, error) {
 func (j *JobUpdater) findFailedTrainerPods() ([]*corev1.Pod, error) {
 	failedPods := make([]*corev1.Pod, 0)
 
-	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(v1.ListOptions{LabelSelector: TrainerLabel + "=" + j.Job.Name})
+	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(context.TODO(), v1.ListOptions{LabelSelector: TrainerLabel + "=" + j.Job.Name})
 	if err != nil {
 		return failedPods, err
 	}
@@ -749,7 +750,7 @@ func (j *JobUpdater) findFailedTrainerPods() ([]*corev1.Pod, error) {
 func (j *JobUpdater) scale() (err error) {
 	jobNs := j.Job.Namespace
 	jobName := j.Job.Spec.Trainer.ReplicaSpec.Name
-	jobSpec, err := j.kubeCli.BatchV1().Jobs(jobNs).Get(jobName, v1.GetOptions{})
+	jobSpec, err := j.kubeCli.BatchV1().Jobs(jobNs).Get(context.TODO(), jobName, v1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -763,7 +764,7 @@ func (j *JobUpdater) scale() (err error) {
 	jobSpec.Spec.BackoffLimit = &newBackoffLimit
 	j.Job.Spec.Trainer.ReplicaSpec.Spec.Parallelism = &newParallelism
 	log.Debug("Scaling job", "namespace", jobNs, "name", jobName, "new instance num", newParallelism)
-	if _, err := j.kubeCli.BatchV1().Jobs(jobNs).Update(jobSpec); err != nil {
+	if _, err := j.kubeCli.BatchV1().Jobs(jobNs).Update(context.TODO(), jobSpec, v1.UpdateOptions{}); err != nil {
 		log.Debug("Failed to scale job", "namespace", jobNs, "name", jobName, "error", err.Error())
 		return err
 	}
@@ -816,7 +817,7 @@ func (j *JobUpdater) addLabelToPods(podType PodType) (bool, error) {
 
 	log.Info("Start to add label", "podKind", podName)
 
-	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(labelOptions)
+	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(context.TODO(), labelOptions)
 	if err != nil {
 		return false, err
 	}
@@ -831,7 +832,7 @@ func (j *JobUpdater) addLabelToPods(podType PodType) (bool, error) {
 		labels[podName+"-idx"] = strconv.Itoa(idx)
 		oldPod.SetLabels(labels)
 
-		if _, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).Update(&oldPod); err != nil {
+		if _, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).Update(context.TODO(), &oldPod, v1.UpdateOptions{}); err != nil {
 			log.Error("Resource status updated failed", "namespace", j.Job.Namespace, "pod", oldPod.Name)
 			return false, err
 		}
@@ -882,7 +883,7 @@ func (j *JobUpdater) traceAddLabelToPods(podType PodType) error {
 	}
 	log.Info("Start trace pod", "podKind", podKind)
 
-	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(labelOptions)
+	podsList, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).List(context.TODO(), labelOptions)
 	if err != nil {
 		return err
 	}
@@ -921,7 +922,7 @@ func (j *JobUpdater) traceAddLabelToPods(podType PodType) error {
 			labels[podKind+"-idx"] = strconv.Itoa(id)
 			oldPod.SetLabels(labels)
 
-			if _, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).Update(&oldPod); err != nil {
+			if _, err := j.kubeCli.CoreV1().Pods(j.Job.Namespace).Update(context.TODO(), &oldPod, v1.UpdateOptions{}); err != nil {
 				log.Error("Resource status updated failed", "namespace", j.Job.Namespace, "name", oldPod.Name)
 				return err
 			}

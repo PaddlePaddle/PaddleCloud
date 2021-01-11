@@ -12,32 +12,10 @@ func (s *TrainingJob) Elastic() bool {
 	return s.Spec.Trainer.MinInstance < s.Spec.Trainer.MaxInstance
 }
 
-// GPU convert Resource Limit Quantity to int
-func (s *TrainingJob) GPU() int {
-	q := s.Spec.Trainer.Resources.Limits.NvidiaGPU()
-	gpu, ok := q.AsInt64()
-	if !ok {
-		// FIXME: treat errors
-		gpu = 0
-	}
-	return int(gpu)
-}
-
-// NeedGPU returns true if the job need GPU resource to run.
-func (s *TrainingJob) NeedGPU() bool {
-	return s.GPU() > 0
-}
-
 // String returns marshal string of TrainingJob
 func (s *TrainingJob) String() string {
 	b, _ := json.MarshalIndent(s, "", "   ")
 	return fmt.Sprintf("%s", b)
-}
-
-// TrainerGPULimit returns gpu limit of each trainer instance
-func (s *TrainingJob) TrainerGPULimit() int {
-	q := s.Spec.Trainer.Resources.Limits.NvidiaGPU()
-	return int(q.Value())
 }
 
 // TrainerCPURequestMilli returns cpu request of each trainer instance

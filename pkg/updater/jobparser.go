@@ -15,6 +15,7 @@
 package updater
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -429,18 +430,8 @@ func masterPorts(job *paddlev1.TrainingJob) []corev1.ContainerPort {
 
 func podEnv(job *paddlev1.TrainingJob, envs map[string]string) []corev1.EnvVar {
 	needGPU := "0"
-	if job.NeedGPU() {
-		needGPU = "1"
-	}
-	trainerCount := 1
-	if job.NeedGPU() {
-		q := job.Spec.Trainer.Resources.Requests.NvidiaGPU()
-		trainerCount = int(q.Value())
-	} else {
-		q := job.Spec.Trainer.Resources.Requests.Cpu()
-		// FIXME: CPU resource value can be less than 1.
-		trainerCount = int(q.Value())
-	}
+	// FIXME: CPU resource value can be less than 1.
+	trainerCount := int(job.Spec.Trainer.Resources.Requests.Cpu().Value())
 
 	podEnv := []corev1.EnvVar{
 		{Name: "PADDLE_JOB_NAME", Value: job.ObjectMeta.Name},
@@ -535,7 +526,7 @@ func (p *DefaultJobParser) GetExtraEnv(job *paddlev1.TrainingJob, kube kubernete
 	var envs []corev1.EnvVar
 
 	if !job.Spec.Matrix {
-		kubeSvc, err := kube.CoreV1().Services("default").Get("kubernetes", metav1.GetOptions{})
+		kubeSvc, err := kube.CoreV1().Services("default").Get(context.TODO(), "kubernetes", metav1.GetOptions{})
 		if err != nil {
 			return envs, err
 		}

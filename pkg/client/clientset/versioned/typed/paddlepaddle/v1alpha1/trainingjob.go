@@ -15,6 +15,8 @@ limitations under the License.
 */package v1alpha1
 
 import (
+	"context"
+
 	v1alpha1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
 	scheme "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,14 +33,14 @@ type TrainingJobsGetter interface {
 
 // TrainingJobInterface has methods to work with TrainingJob resources.
 type TrainingJobInterface interface {
-	Create(*v1alpha1.TrainingJob) (*v1alpha1.TrainingJob, error)
-	Update(*v1alpha1.TrainingJob) (*v1alpha1.TrainingJob, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.TrainingJob, error)
-	List(opts v1.ListOptions) (*v1alpha1.TrainingJobList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TrainingJob, err error)
+	Create(context.Context, *v1alpha1.TrainingJob) (*v1alpha1.TrainingJob, error)
+	Update(context.Context, *v1alpha1.TrainingJob) (*v1alpha1.TrainingJob, error)
+	Delete(ctx context.Context, name string, options *v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(ctx context.Context, name string, options v1.GetOptions) (*v1alpha1.TrainingJob, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.TrainingJobList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TrainingJob, err error)
 	TrainingJobExpansion
 }
 
@@ -57,89 +59,89 @@ func newTrainingJobs(c *PaddlepaddleV1alpha1Client, namespace string) *trainingJ
 }
 
 // Get takes name of the trainingJob, and returns the corresponding trainingJob object, and an error if there is any.
-func (c *trainingJobs) Get(name string, options v1.GetOptions) (result *v1alpha1.TrainingJob, err error) {
+func (c *trainingJobs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.TrainingJob, err error) {
 	result = &v1alpha1.TrainingJob{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of TrainingJobs that match those selectors.
-func (c *trainingJobs) List(opts v1.ListOptions) (result *v1alpha1.TrainingJobList, err error) {
+func (c *trainingJobs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.TrainingJobList, err error) {
 	result = &v1alpha1.TrainingJobList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested trainingJobs.
-func (c *trainingJobs) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *trainingJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a trainingJob and creates it.  Returns the server's representation of the trainingJob, and an error, if there is any.
-func (c *trainingJobs) Create(trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
+func (c *trainingJobs) Create(ctx context.Context, trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
 	result = &v1alpha1.TrainingJob{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		Body(trainingJob).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a trainingJob and updates it. Returns the server's representation of the trainingJob, and an error, if there is any.
-func (c *trainingJobs) Update(trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
+func (c *trainingJobs) Update(ctx context.Context, trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
 	result = &v1alpha1.TrainingJob{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		Name(trainingJob.Name).
 		Body(trainingJob).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the trainingJob and deletes it. Returns an error if one occurs.
-func (c *trainingJobs) Delete(name string, options *v1.DeleteOptions) error {
+func (c *trainingJobs) Delete(ctx context.Context, name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		Name(name).
 		Body(options).
-		Do().
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *trainingJobs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *trainingJobs) DeleteCollection(ctx context.Context, options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("trainingjobs").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
-		Do().
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched trainingJob.
-func (c *trainingJobs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TrainingJob, err error) {
+func (c *trainingJobs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TrainingJob, err error) {
 	result = &v1alpha1.TrainingJob{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
@@ -147,7 +149,7 @@ func (c *trainingJobs) Patch(name string, pt types.PatchType, data []byte, subre
 		SubResource(subresources...).
 		Name(name).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

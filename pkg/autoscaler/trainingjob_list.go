@@ -25,12 +25,6 @@ func (ts trainingjobList) Less(a, b int) bool {
 	resA := ts[a].Spec.Trainer.Resources
 	resB := ts[b].Spec.Trainer.Resources
 
-	resALimitsGPU := *resA.Limits.NvidiaGPU()
-	resBLimitsGPU := *resB.Limits.NvidiaGPU()
-	if cmpGPU := resALimitsGPU.Cmp(resBLimitsGPU); cmpGPU != 0 {
-		return cmpGPU == -1
-	}
-
 	resARequestsCPU := *resA.Requests.Cpu()
 	resBRequestsCPU := *resB.Requests.Cpu()
 	if cmpCPU := resARequestsCPU.Cmp(resBRequestsCPU); cmpCPU != 0 {

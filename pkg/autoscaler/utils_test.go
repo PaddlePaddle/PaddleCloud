@@ -25,24 +25,20 @@ import (
 func TestAddResourceList(t *testing.T) {
 	cpu, _ := resource.ParseQuantity("200m")
 	mem, _ := resource.ParseQuantity("500Mi")
-	gpu, _ := resource.ParseQuantity("8")
 	a := v1.ResourceList{
 		"cpu":    cpu,
 		"memory": mem,
 	}
 
 	b := v1.ResourceList{
-		"cpu":                cpu,
-		"memory":             mem,
-		v1.ResourceNvidiaGPU: gpu,
+		"cpu":    cpu,
+		"memory": mem,
 	}
 
 	cpuExpected, _ := resource.ParseQuantity("400m")
 	memExpected, _ := resource.ParseQuantity("1000Mi")
-	gpuExpected, _ := resource.ParseQuantity("8")
 
 	AddResourceList(a, b)
 	assert.Equal(t, cpuExpected.MilliValue(), a.Cpu().MilliValue())
 	assert.Equal(t, memExpected.Value(), a.Memory().Value())
-	assert.Equal(t, gpuExpected.Value(), a.NvidiaGPU().Value())
 }
