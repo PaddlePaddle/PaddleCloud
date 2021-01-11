@@ -1,4 +1,4 @@
-module github.com/paddleflow/elastictraining
+module github.com/paddleflow/paddle-operator
 
 go 1.13
 

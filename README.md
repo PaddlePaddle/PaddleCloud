@@ -1,6 +1,6 @@
-# ElasticTraining
+# Paddle Operator
 
-ElasticTraining is leveraging on EDL & Volcano project currently.
+paddle-operator is leveraging on EDL & Volcano project currently.
 
 * EDL: https://github.com/elasticdeeplearning/edl
 * Volcano: https://github.com/volcano-sh/volcano
@@ -13,7 +13,7 @@ The ability of online/offline service joint deployment is reflected in the produ
 
 ## Use Case Project
 
-PaddleCTR use ElasticTraining to provide the end to end CTR capabilities to the industries.
+PaddleCTR use paddle-operator to provide the end to end CTR capabilities to the industries.
 
 * PaddleCTR: https://github.com/PaddlePaddle/ElasticCTR
 
@@ -27,7 +27,7 @@ EDL's elastic training can solve this problem well. Usually the resources on a c
 
 * Kubernetes Version 1.8+.
 
-ElasticTraining relies on CRD and garbage collection which are supported in Kubernetes 1.8+.
+paddle-operator relies on CRD and garbage collection which are supported in Kubernetes 1.8+.
 
 ## Get Started
 
@@ -41,7 +41,7 @@ For detailed api specifications, please check out [Api](docs/api.md).
 
 ## Overview
 
-The ElasticTraining Operator tries to run PaddlePaddle training job as native as other workloads on Kubernetes. It relies on CRD for specifying the PaddlePaddle training job.
+The paddle-operator tries to run PaddlePaddle training job as native as other workloads on Kubernetes. It relies on CRD for specifying the PaddlePaddle training job.
 
 ## Contributing
 

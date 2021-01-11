@@ -1,7 +1,7 @@
 package autoscaler
 
 import (
-	padv1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
+	padv1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
 )
 
 type trainingjobList []*padv1.TrainingJob

@@ -7,13 +7,13 @@ The easiest way to install Paddle Operator is to use Helm chart.
 ```
 # mkdir -p $GOPATH/src/github.com/baidu/
 # cd $GOPATH/src/github.com/baidu/
-# git clone http://github.com/paddleflow/elastictraining
+# git clone http://github.com/paddleflow/paddle-operator
 
 ```
-Then modify the configurations in `deployment/elastictraining/values.yaml`, change the kubeconfig/location to point to the upper directory of kubeconfig. 
+Then modify the configurations in `deployment/paddle-operator/values.yaml`, change the kubeconfig/location to point to the upper directory of kubeconfig. 
 
 ```
-# helm install $GOPATH/src/github.com/paddleflow/elastictraining/deployment/elastictraining --namespace kube-system
+# helm install $GOPATH/src/github.com/paddleflow/paddle-operator/deployment/paddle-operator --namespace kube-system
 # helm list
 
 ```

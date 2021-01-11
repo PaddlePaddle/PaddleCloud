@@ -17,8 +17,8 @@ limitations under the License.
 import (
 	"context"
 
-	v1alpha1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
-	scheme "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
+	scheme "github.com/paddleflow/paddle-operator/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

@@ -18,8 +18,8 @@ import (
 	"sync"
 	"testing"
 
-	padv1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
-	"github.com/paddleflow/elastictraining/pkg/updater"
+	padv1 "github.com/paddleflow/paddle-operator/pkg/apis/paddlepaddle/v1alpha1"
+	"github.com/paddleflow/paddle-operator/pkg/updater"
 	"github.com/stretchr/testify/assert"
 
 	v1 "k8s.io/api/core/v1"
