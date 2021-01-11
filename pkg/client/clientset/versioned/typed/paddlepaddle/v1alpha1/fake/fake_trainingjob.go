@@ -15,6 +15,8 @@ limitations under the License.
 */package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -35,7 +37,7 @@ var trainingjobsResource = schema.GroupVersionResource{Group: "paddlepaddle.org"
 var trainingjobsKind = schema.GroupVersionKind{Group: "paddlepaddle.org", Version: "v1alpha1", Kind: "TrainingJob"}
 
 // Get takes name of the trainingJob, and returns the corresponding trainingJob object, and an error if there is any.
-func (c *FakeTrainingJobs) Get(name string, options v1.GetOptions) (result *v1alpha1.TrainingJob, err error) {
+func (c *FakeTrainingJobs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.TrainingJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(trainingjobsResource, c.ns, name), &v1alpha1.TrainingJob{})
 
@@ -46,7 +48,7 @@ func (c *FakeTrainingJobs) Get(name string, options v1.GetOptions) (result *v1al
 }
 
 // List takes label and field selectors, and returns the list of TrainingJobs that match those selectors.
-func (c *FakeTrainingJobs) List(opts v1.ListOptions) (result *v1alpha1.TrainingJobList, err error) {
+func (c *FakeTrainingJobs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.TrainingJobList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(trainingjobsResource, trainingjobsKind, c.ns, opts), &v1alpha1.TrainingJobList{})
 
@@ -68,14 +70,14 @@ func (c *FakeTrainingJobs) List(opts v1.ListOptions) (result *v1alpha1.TrainingJ
 }
 
 // Watch returns a watch.Interface that watches the requested trainingJobs.
-func (c *FakeTrainingJobs) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeTrainingJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(trainingjobsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a trainingJob and creates it.  Returns the server's representation of the trainingJob, and an error, if there is any.
-func (c *FakeTrainingJobs) Create(trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
+func (c *FakeTrainingJobs) Create(ctx context.Context, trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(trainingjobsResource, c.ns, trainingJob), &v1alpha1.TrainingJob{})
 
@@ -86,7 +88,7 @@ func (c *FakeTrainingJobs) Create(trainingJob *v1alpha1.TrainingJob) (result *v1
 }
 
 // Update takes the representation of a trainingJob and updates it. Returns the server's representation of the trainingJob, and an error, if there is any.
-func (c *FakeTrainingJobs) Update(trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
+func (c *FakeTrainingJobs) Update(ctx context.Context, trainingJob *v1alpha1.TrainingJob) (result *v1alpha1.TrainingJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(trainingjobsResource, c.ns, trainingJob), &v1alpha1.TrainingJob{})
 
@@ -97,7 +99,7 @@ func (c *FakeTrainingJobs) Update(trainingJob *v1alpha1.TrainingJob) (result *v1
 }
 
 // Delete takes name of the trainingJob and deletes it. Returns an error if one occurs.
-func (c *FakeTrainingJobs) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeTrainingJobs) Delete(ctx context.Context, name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(trainingjobsResource, c.ns, name), &v1alpha1.TrainingJob{})
 
@@ -105,7 +107,7 @@ func (c *FakeTrainingJobs) Delete(name string, options *v1.DeleteOptions) error 
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeTrainingJobs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *FakeTrainingJobs) DeleteCollection(ctx context.Context, options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(trainingjobsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.TrainingJobList{})
@@ -113,9 +115,9 @@ func (c *FakeTrainingJobs) DeleteCollection(options *v1.DeleteOptions, listOptio
 }
 
 // Patch applies the patch and returns the patched trainingJob.
-func (c *FakeTrainingJobs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TrainingJob, err error) {
+func (c *FakeTrainingJobs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TrainingJob, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(trainingjobsResource, c.ns, name, data, subresources...), &v1alpha1.TrainingJob{})
+		Invokes(testing.NewPatchSubresourceAction(trainingjobsResource, c.ns, name, pt, data, subresources...), &v1alpha1.TrainingJob{})
 
 	if obj == nil {
 		return nil, err

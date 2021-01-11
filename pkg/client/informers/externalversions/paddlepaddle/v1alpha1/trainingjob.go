@@ -18,6 +18,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+	"time"
+
 	paddlepaddle_v1alpha1 "github.com/paddleflow/elastictraining/pkg/apis/paddlepaddle/v1alpha1"
 	versioned "github.com/paddleflow/elastictraining/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/paddleflow/elastictraining/pkg/client/informers/externalversions/internalinterfaces"
@@ -26,7 +29,6 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
-	time "time"
 )
 
 // TrainingJobInformer provides access to a shared informer and lister for
@@ -47,10 +49,10 @@ func NewTrainingJobInformer(client versioned.Interface, namespace string, resync
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.PaddlepaddleV1alpha1().TrainingJobs(namespace).List(options)
+				return client.PaddlepaddleV1alpha1().TrainingJobs(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.PaddlepaddleV1alpha1().TrainingJobs(namespace).Watch(options)
+				return client.PaddlepaddleV1alpha1().TrainingJobs(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&paddlepaddle_v1alpha1.TrainingJob{},
