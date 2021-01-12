@@ -13,9 +13,9 @@ The ability of online/offline service joint deployment is reflected in the produ
 
 ## Use Case Project
 
-PaddleCTR use paddle-operator to provide the end to end CTR capabilities to the industries.
+ElasticCTR use paddle-operator to provide the end to end CTR capabilities to the industries.
 
-* PaddleCTR: https://github.com/PaddlePaddle/ElasticCTR
+* ElasticCTR: https://github.com/PaddlePaddle/ElasticCTR
 
 In terms of the definition of the network structure for prediction model, the PaddleCTR model library provides many cutting-edge CTR prediction models. Users can easily call these models to construct their own prediction models.
 
@@ -25,9 +25,9 @@ EDL's elastic training can solve this problem well. Usually the resources on a c
 
 ## Prerequisites
 
-* Kubernetes Version 1.8+.
+* Kubernetes Version 1.19+.
 
-paddle-operator relies on CRD and garbage collection which are supported in Kubernetes 1.8+.
+paddle-operator relies on CRD and garbage collection which are supported in Kubernetes 1.19+.
 
 ## Get Started
 
