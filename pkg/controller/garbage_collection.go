@@ -5,8 +5,8 @@ import (
 	"time"
 
 	log "github.com/inconshreveable/log15"
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	"k8s.io/api/extensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -68,9 +68,9 @@ func (gc *GarbageCollector) cleanOrphanBatchJobs() {
 	}
 }
 
-func (gc *GarbageCollector) findOrphanRelicaSets() ([]v1beta1.ReplicaSet, error) {
-	orphans := make([]v1beta1.ReplicaSet, 0)
-	all, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets("").List(context.TODO(), metav1.ListOptions{})
+func (gc *GarbageCollector) findOrphanRelicaSets() ([]appsv1.ReplicaSet, error) {
+	orphans := make([]appsv1.ReplicaSet, 0)
+	all, err := gc.kubeCli.AppsV1().ReplicaSets("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return orphans, err
 	}
@@ -126,7 +126,7 @@ func (gc *GarbageCollector) findOrphanBatchJobs() ([]batchv1.Job, error) {
 }
 
 func (gc *GarbageCollector) deleteReplicaSet(namespace, name string) error {
-	obj, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	obj, err := gc.kubeCli.AppsV1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -135,12 +135,12 @@ func (gc *GarbageCollector) deleteReplicaSet(namespace, name string) error {
 		var replicas int32
 		replicas = 0
 		obj.Spec.Replicas = &replicas
-		if _, err := gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
+		if _, err := gc.kubeCli.AppsV1().ReplicaSets(namespace).Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
 
-	err = gc.kubeCli.ExtensionsV1beta1().ReplicaSets(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	err = gc.kubeCli.AppsV1().ReplicaSets(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
 	return err
 }
 

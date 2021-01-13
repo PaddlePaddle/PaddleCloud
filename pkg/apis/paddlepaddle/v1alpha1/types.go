@@ -3,9 +3,9 @@ package v1alpha1
 import (
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -81,7 +81,7 @@ type TrainingJobSpec struct {
 type MasterSpec struct {
 	EtcdEndpoint string                      `json:"etcd-endpoint"`
 	Resources    corev1.ResourceRequirements `json:"resources"`
-	ReplicaSpec  *v1beta1.ReplicaSet         `json:"replicaSpec"`
+	ReplicaSpec  *appsv1.ReplicaSet          `json:"replicaSpec"`
 	Envs         map[string]string           `json:"envs"`
 
 	//for preStop
@@ -99,7 +99,7 @@ type PserverSpec struct {
 	MinInstance      int                           `json:"min-instance"`
 	MaxInstance      int                           `json:"max-instance"`
 	Resources        corev1.ResourceRequirements   `json:"resources"`
-	ReplicaSpec      *v1beta1.ReplicaSet           `json:"replicaSpec"`
+	ReplicaSpec      *appsv1.ReplicaSet            `json:"replicaSpec"`
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets"`
 	Envs             map[string]string             `json:"envs"`
 	//for preStop

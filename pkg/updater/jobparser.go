@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -100,21 +100,24 @@ func (p *DefaultJobParser) NewTrainingJob(job *paddlev1.TrainingJob) (*paddlev1.
 }
 
 // parseToPserver generate a pserver replicaset resource according to "TrainingJob" resource specs.
-func parseToPserver(job *paddlev1.TrainingJob, extraEnv []corev1.EnvVar, outter bool) *v1beta1.ReplicaSet {
+func parseToPserver(job *paddlev1.TrainingJob, extraEnv []corev1.EnvVar, outter bool) *appsv1.ReplicaSet {
 	replicas := int32(job.Spec.Pserver.MinInstance)
 	envs := podEnv(job, job.Spec.Pserver.Envs)
 	envs = append(envs, extraEnv...)
-	spec := &v1beta1.ReplicaSet{
+	spec := &appsv1.ReplicaSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "extensions/v1beta1",
-			APIVersion: "ReplicaSet",
+			Kind:       "ReplicaSet",
+			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      job.ObjectMeta.Name + "-pserver",
 			Namespace: job.ObjectMeta.Namespace,
 		},
-		Spec: v1beta1.ReplicaSetSpec{
+		Spec: appsv1.ReplicaSetSpec{
 			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{PserverLabel: job.ObjectMeta.Name},
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      map[string]string{PserverLabel: job.ObjectMeta.Name, "priority": job.Spec.Annotations.Priority},
@@ -284,21 +287,24 @@ func getEtcdPodSpec(job *paddlev1.TrainingJob) *corev1.Container {
 }
 
 // parseToMaster parse TrainingJob to a kubernetes replicaset resource.
-func parseToMaster(job *paddlev1.TrainingJob) *v1beta1.ReplicaSet {
+func parseToMaster(job *paddlev1.TrainingJob) *appsv1.ReplicaSet {
 	replicas := int32(1)
 	command := []string{"paddle_k8s", "start_master"}
 
-	return &v1beta1.ReplicaSet{
+	return &appsv1.ReplicaSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "extensions/v1beta1",
-			APIVersion: "ReplicaSet",
+			Kind:       "ReplicaSet",
+			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      job.ObjectMeta.Name + "-master",
 			Namespace: job.ObjectMeta.Namespace,
 		},
-		Spec: v1beta1.ReplicaSetSpec{
+		Spec: appsv1.ReplicaSetSpec{
 			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{MasterLabel: job.ObjectMeta.Name},
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{MasterLabel: job.ObjectMeta.Name,

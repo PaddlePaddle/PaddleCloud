@@ -217,7 +217,7 @@ It is a helper function for [traceLabelOfPods](#func-(*JobUpdater)-traceLabelOfP
 
 ## func parseToMaster
 ```go
-func parseToMaster(job *paddlev1.TrainingJob) *v1beta1.ReplicaSet
+func parseToMaster(job *paddlev1.TrainingJob) *appsv1.ReplicaSet
 ```
 `parseToMaster` uses `job` information to construct a `ReplicaSet` for master.
 

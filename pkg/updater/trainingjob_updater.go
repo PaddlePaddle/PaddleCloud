@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang/glog"
 	log "github.com/inconshreveable/log15"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -440,7 +440,7 @@ func (j *JobUpdater) createTrainingJob() error {
 }
 
 func (j *JobUpdater) createResource(rt paddlev1.TrainingResourceType) error {
-	resource := new(v1beta1.ReplicaSet)
+	resource := new(appsv1.ReplicaSet)
 	switch rt {
 	case paddlev1.MASTER:
 		resource = j.Job.Spec.Master.ReplicaSpec
@@ -450,9 +450,9 @@ func (j *JobUpdater) createResource(rt paddlev1.TrainingResourceType) error {
 		return ErrorUnkownResourceType
 	}
 
-	if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(context.TODO(), resource.Name, v1.GetOptions{}); err != nil {
+	if _, err := j.kubeCli.AppsV1().ReplicaSets(resource.Namespace).Get(context.TODO(), resource.Name, v1.GetOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
-			if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Create(context.TODO(), resource, v1.CreateOptions{}); err != nil {
+			if _, err := j.kubeCli.AppsV1().ReplicaSets(resource.Namespace).Create(context.TODO(), resource, v1.CreateOptions{}); err != nil {
 				log.Error("Error creating resource", "namespace", resource.Namespace, "name", resource.Name, "err",
 					err.Error())
 				return err
@@ -531,7 +531,7 @@ func (j *JobUpdater) deleteResource(rt paddlev1.TrainingResourceType) error {
 	}
 
 	resourceName := j.Job.Name + "-" + string(rt)
-	if err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Delete(context.TODO(), resourceName, v1.DeleteOptions{GracePeriodSeconds: gracePeriodSeconds}); err != nil {
+	if err := j.kubeCli.AppsV1().ReplicaSets(j.Job.Namespace).Delete(context.TODO(), resourceName, v1.DeleteOptions{GracePeriodSeconds: gracePeriodSeconds}); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("Resource not found, skipped", "namespace", j.Job.Namespace, "name", resourceName)
 			return nil
@@ -591,7 +591,7 @@ func (j *JobUpdater) releaseResource(rt paddlev1.TrainingResourceType) error {
 		return ErrorUnkownResourceType
 	}
 
-	resource, getErr := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Get(context.TODO(), resourceName, v1.GetOptions{})
+	resource, getErr := j.kubeCli.AppsV1().ReplicaSets(j.Job.Namespace).Get(context.TODO(), resourceName, v1.GetOptions{})
 	if getErr != nil {
 		if apierrors.IsNotFound(getErr) {
 			log.Debug("Resouce instance not exist, skipped", "namespace", j.Job.Namespace, "name", resourceName)
@@ -605,7 +605,7 @@ func (j *JobUpdater) releaseResource(rt paddlev1.TrainingResourceType) error {
 		var replicas int32
 		replicas = 0
 		resource.Spec.Replicas = &replicas
-		if _, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Update(context.TODO(), resource, v1.UpdateOptions{}); err != nil {
+		if _, err := j.kubeCli.AppsV1().ReplicaSets(j.Job.Namespace).Update(context.TODO(), resource, v1.UpdateOptions{}); err != nil {
 			log.Error("error setting replicas to 0", "namespace", j.Job.Namespace, "name", resourceName, "err", err.Error())
 			return err
 		}
@@ -702,7 +702,7 @@ func (j *JobUpdater) masterRoleTotalRunning(rt paddlev1.TrainingResourceType) (b
 	default:
 		return false, ErrorUnkownResourceType
 	}
-	resource, err := j.kubeCli.ExtensionsV1beta1().ReplicaSets(j.Job.Namespace).Get(context.TODO(), resourceName, v1.GetOptions{})
+	resource, err := j.kubeCli.AppsV1().ReplicaSets(j.Job.Namespace).Get(context.TODO(), resourceName, v1.GetOptions{})
 	if err != nil {
 		return false, err
 	}

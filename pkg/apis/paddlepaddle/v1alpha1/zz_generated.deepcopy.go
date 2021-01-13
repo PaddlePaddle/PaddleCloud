@@ -21,9 +21,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -63,7 +63,7 @@ func (in *MasterSpec) DeepCopyInto(out *MasterSpec) {
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.ReplicaSpec != nil {
 		in, out := &in.ReplicaSpec, &out.ReplicaSpec
-		*out = new(v1beta1.ReplicaSet)
+		*out = new(appsv1.ReplicaSet)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Envs != nil {
@@ -125,7 +125,7 @@ func (in *PserverSpec) DeepCopyInto(out *PserverSpec) {
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.ReplicaSpec != nil {
 		in, out := &in.ReplicaSpec, &out.ReplicaSpec
-		*out = new(v1beta1.ReplicaSet)
+		*out = new(appsv1.ReplicaSet)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.ImagePullSecrets != nil {
@@ -326,7 +326,7 @@ func (in *TrainingJob) DeepCopyObject() runtime.Object {
 func (in *TrainingJobList) DeepCopyInto(out *TrainingJobList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]TrainingJob, len(*in))
