@@ -153,19 +153,18 @@ func (j *JobUpdater) Reconcile() error {
 		}
 
 		phase, reason, err := j.GetStatus()
-		// FIXME: log seems inappropriate. It may not be an Error.
-		log.Info("Error creating TrainingJob", "job", j.FullName(), "current phase", phase, "reason", reason, "err", err)
 		if err != nil {
 			log.Error("Error get TrainingJob status", "job", j.FullName(), "err", err.Error())
 			return err
 		}
+		log.Info("TrainingJob GetStatus", "job", j.FullName(), "current phase", phase, "reason", reason)
 
 		j.status.Phase = phase
 		j.status.Reason = reason
 
 		if phase == paddlev1.TrainingJobPhaseRunning {
-			j.Job.Status.StartTime = v1.NewTime(time.Now())
-			log.Info("Job started", "job", j.FullName(), "time", j.Job.Status.StartTime.Format("2018-01-01 23:00:00"))
+			j.status.StartTime = v1.NewTime(time.Now())
+			log.Info("Job started", "job", j.FullName(), "time", j.status.StartTime)
 		}
 
 		if err := j.updateCRDStatus(released); err != nil {
