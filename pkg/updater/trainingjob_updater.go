@@ -393,14 +393,13 @@ func (j *JobUpdater) GetStatus() (paddlev1.TrainingJobPhase, string, error) {
 
 	timeLimit := int64(j.Job.Spec.Annotations.Walltime)
 	currentTime := time.Now()
-	if timeLimit != 0 && trainers.Status.Active != 0 && !j.Job.Status.StartTime.IsZero() {
-		if int64((currentTime.Sub(j.Job.Status.StartTime.Time)).Seconds()) > timeLimit {
-			phase = paddlev1.TrainingJobPhaseTimeout
-			reason = "timeout!"
-			log.Warn("Job started", "job", j.Job.Name, "start time",
-				j.Job.Status.StartTime.Format("2018-01-01 23:00:00"), "current time",
-				currentTime.Format("2018-01-01 23:00:00"), "timeLimit", timeLimit)
-		}
+	if timeLimit != 0 && trainers.Status.Active != 0 && !j.Job.Status.StartTime.IsZero() &&
+		int64((currentTime.Sub(j.Job.Status.StartTime.Time)).Seconds()) > timeLimit {
+		phase = paddlev1.TrainingJobPhaseTimeout
+		reason = "timeout!"
+		log.Warn("Job started", "job", j.Job.Name, "start time",
+			j.Job.Status.StartTime.Format("2018-01-01 23:00:00"), "current time",
+			currentTime.Format("2018-01-01 23:00:00"), "timeLimit", timeLimit)
 	}
 
 	if j.Additional != 0 {

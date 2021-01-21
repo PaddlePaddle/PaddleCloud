@@ -1,0 +1,58 @@
+apiVersion: paddlepaddle.org/v1alpha1
+kind: TrainingJob
+metadata:
+  name: exampletj
+spec:
+  image: "ruminateer/paddleworkload:develop"
+  port: 7164
+  ports_num: 1
+  ports_num_for_sparse: 1
+  fault_tolerant: false
+  trainer:
+    entrypoint: " python3 /paddle/start.py"
+    workspace: "/paddle"
+    passes: 25
+    min-instance: 1
+    max-instance: 1
+    resources:
+      limits:
+        cpu: "200m"
+        memory: "200Mi"
+      requests:
+        cpu: "200m"
+        memory: "200Mi"
+  pserver:
+    min-instance: 1
+    max-instance: 1
+    resources:
+      limits:
+        cpu: "800m"
+        memory: "200Mi"
+      requests:
+        cpu: "500m"
+        memory: "200Mi"
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pods-list
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pods-list
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: pods-list
+  apiGroup: rbac.authorization.k8s.io
