@@ -1,0 +1,7 @@
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: paddlejob-sample
+spec:
+  # Add fields here
+  foo: bar
