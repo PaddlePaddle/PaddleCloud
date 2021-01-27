@@ -1,7 +1,13 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: paddlejob-sample
+  name: paddlejob-1
 spec:
-  # Add fields here
-  foo: bar
+  worker:
+    requests: 1
+    template:
+      spec:
+        containers:
+          - name: sample
+            image: nginx
+        restartPolicy: OnFailure
