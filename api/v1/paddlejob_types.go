@@ -26,12 +26,10 @@ import (
 
 const KIND = "PaddleJob"
 
-// PaddleRole defines the role of pod of a job
-type PaddleRole string
-
 const (
-	PaddleRoleServer PaddleRole = "server"
-	PaddleRoleWorker PaddleRole = "worker"
+	ResourceAnnotation = "paddle-resource"
+	ResourcePS         = "ps"
+	ResourceWorker     = "worker"
 )
 
 // PaddleJobMode defines the avaiable mode of a job
@@ -45,17 +43,33 @@ const (
 	PaddleJobModeSingle PaddleJobMode = "Single"
 )
 
+// PaddleJobPhase defines the phase of the job.
+type PaddleJobPhase string
+
+const (
+	Starting    PaddleJobPhase = "Starting"
+	Pending     PaddleJobPhase = "Pending"
+	Scaling     PaddleJobPhase = "Scaling"
+	Aborting    PaddleJobPhase = "Aborting"
+	Aborted     PaddleJobPhase = "Aborted"
+	Running     PaddleJobPhase = "Running"
+	Restarting  PaddleJobPhase = "Restarting"
+	Completing  PaddleJobPhase = "Completing"
+	Completed   PaddleJobPhase = "Completed"
+	Terminating PaddleJobPhase = "Terminating"
+	Terminated  PaddleJobPhase = "Terminated"
+	Failed      PaddleJobPhase = "Failed"
+	Succeed     PaddleJobPhase = "Succeed"
+)
+
 // ElasticStatus defines the status of elastic process
 type ElasticStatus string
 
 const (
-	ElasticStatusNone ElasticStatus = "NONE"
-
-	ElasticStatusING ElasticStatus = "ING"
-
-	ElasticStatusDone ElasticStatus = "DONE"
-
-	ElasticStatusERR ElasticStatus = "ERROR"
+	ElasticStatusNone  ElasticStatus = "NONE"
+	ElasticStatusDoing ElasticStatus = "DOING"
+	ElasticStatusDone  ElasticStatus = "DONE"
+	ElasticStatusError ElasticStatus = "ERROR"
 )
 
 // PaddleJobSpec defines the desired state of PaddleJob
@@ -63,18 +77,19 @@ type PaddleJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Server describes the spec of server base on pod template
-	// PS mode is auto enabled when server is set
-	// Single/Collective is enabled if server is missing
-	Server RoleSpec `json:"server,omitempty"`
+	// PS[erver] describes the spec of server base on pod template
+	PS ResourceSpec `json:"ps,omitempty"`
 
 	// Worker describes the spec of worker base on pod template
-	Worker RoleSpec `json:"worker"`
+	Worker ResourceSpec `json:"worker"`
 }
 
-type RoleSpec struct {
+type ResourceSpec struct {
+	// Replicas replica
+	Replicas int `json:"replicas,omitempty"`
+
 	// Requests set the minimal replicas of server to be run
-	Requests int `json:"requests"`
+	Requests int `json:"requests,omitempty"`
 
 	// Requests set the maximal replicas of server to be run, elastic is auto enbale if limits is set larger than 0
 	Limits int `json:"limits,omitempty"`
@@ -83,19 +98,43 @@ type RoleSpec struct {
 	Template corev1.PodTemplateSpec `json:"template"`
 }
 
+type ResourceStatus struct {
+	// Pending
+	Pending int `json:"pending,omitempty"`
+	// Running
+	Running int `json:"running,omitempty"`
+	// Failed
+	Failed int `json:"failed,omitempty"`
+	// Success
+	Succeeded int `json:"succeeded,omitempty"`
+	// Unknown
+	Unknown int `json:"unknown,omitempty"`
+	// A list of  pointer to pods
+	Refs []corev1.ObjectReference `json:"refs,omitempty"`
+}
+
 // PaddleJobStatus defines the observed state of PaddleJob
 type PaddleJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	//Phase // pod phase ?
+	// The phase of PaddleJob.
+	Phase PaddleJobPhase `json:"phase,omitempty"`
 
 	// Mode indicates in which the PaddleJob run with : PS/Collective/Single
+	// PS mode is enabled when ps is set
+	// Single/Collective is enabled if ps is missing
 	Mode PaddleJobMode `json:"mode,omitempty"`
 
-	Elastic ElasticStatus `json:"elastic,omitempty"`
+	// ResourceStatues of ps
+	PS ResourceStatus `json:"ps,omitempty"`
 
-	Pods []corev1.ObjectReference `json:"pods,omitempty"`
+	// ResourceStatues of worker
+	Worker ResourceStatus `json:"worker,omitempty"`
+
+	// Elastic mix the setting (enable or not) and status of job
+	// TODO(kuizhiqing) hold on
+	Elastic ElasticStatus `json:"elastic,omitempty"`
 }
 
 //+kubebuilder:object:root=true

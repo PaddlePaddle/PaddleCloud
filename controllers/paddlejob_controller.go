@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -46,7 +47,6 @@ type PaddleJobReconciler struct {
 //+kubebuilder:rbac:groups=batch.paddlepaddle.org,resources=paddlejobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch.paddlepaddle.org,resources=paddlejobs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch.paddlepaddle.org,resources=paddlejobs/finalizers,verbs=update
-
 //+kubebuilder:rbac:groups=batch,resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=pods/status,verbs=get
 
@@ -62,11 +62,21 @@ type PaddleJobReconciler struct {
 func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("paddlejob", req.NamespacedName)
 
+	log.V(1).Info("Reconcile start -----------------------------------------------------\n")
+
 	// Obtain the PaddleJob instance we are working on
 	var pdj pdv1.PaddleJob
 	if err := r.Get(ctx, req.NamespacedName, &pdj); err != nil {
 		log.Error(err, "failed to fetch paddlejob")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Assign common status first
+	if pdj.Status.Phase == "" {
+		pdj.Status.Phase = pdv1.Starting
+	}
+	if pdj.Status.Mode == "" {
+		pdj.Status.Mode = getPaddleJobMode(&pdj)
 	}
 
 	// List all associated pods
@@ -76,11 +86,74 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	// Classify the pods by status, calculate the status of PaddleJob
-	for _, pod := range childPods.Items {
-		log.V(1).Info("list child", "", pod)
-
+	fillStatusByChildren := func(ss *pdv1.ResourceStatus, pod *corev1.Pod) {
+		switch pod.Status.Phase {
+		case corev1.PodPending:
+			ss.Pending++
+		case corev1.PodRunning:
+			ss.Running++
+		case corev1.PodFailed:
+			ss.Failed++
+		case corev1.PodSucceeded:
+			ss.Succeeded++
+		}
+		pref, err := ref.GetReference(r.Scheme, pod)
+		if err != nil {
+			log.Error(err, "get reference failed", "pod", pod)
+		}
+		ss.Refs = append(ss.Refs, *pref)
 	}
+
+	pdj.Status.PS = pdv1.ResourceStatus{}
+	pdj.Status.Worker = pdv1.ResourceStatus{}
+	for _, pod := range childPods.Items {
+		resType := pod.Annotations[pdv1.ResourceAnnotation]
+		if resType == pdv1.ResourcePS {
+			fillStatusByChildren(&pdj.Status.PS, &pod)
+		} else if resType == pdv1.ResourceWorker {
+			fillStatusByChildren(&pdj.Status.Worker, &pod)
+		}
+	}
+
+	if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
+		pdj.Status.Phase = pdv1.Running
+	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
+		pdj.Status.Phase = pdv1.Failed
+	} else if pdj.Spec.PS.Replicas >= pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
+		pdj.Status.Phase = pdv1.Completed
+	}
+
+	if err := r.Status().Update(ctx, &pdj); err != nil {
+		log.Error(err, "unable to update status")
+		return ctrl.Result{}, nil
+	}
+
+	if pdj.Status.Phase == pdv1.Failed {
+		log.V(1).Info("job failed, do nothing now")
+		return ctrl.Result{}, nil
+	}
+	if pdj.Status.Phase == pdv1.Completed {
+		log.V(1).Info("job completed, may be clean")
+		return ctrl.Result{}, nil
+	}
+
+	// Ensure PS resource ready
+	if len(pdj.Status.PS.Refs) < pdj.Spec.PS.Replicas {
+		pod, err := constructPS4PaddleJob(&pdj, len(pdj.Status.PS.Refs))
+		err = ctrl.SetControllerReference(&pdj, pod, r.Scheme)
+		err = r.Create(ctx, pod)
+		log.V(1).Info("create worker", "error", err)
+		return ctrl.Result{}, nil
+	}
+
+	if pdj.Status.PS.Running == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) < pdj.Spec.Worker.Replicas {
+		pod, err := constructWorker4PaddleJob(&pdj, len(pdj.Status.Worker.Refs))
+		err = ctrl.SetControllerReference(&pdj, pod, r.Scheme)
+		err = r.Create(ctx, pod)
+		log.V(1).Info("create worker", "error", err)
+		return ctrl.Result{}, nil
+	}
+
 	// if one failed, try restart ? or set failed in fault tolerent mode
 
 	// paddle parameter !!!
@@ -92,31 +165,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// return if have done sth. otherwise continue
 
 	// no childPods then try create, big staff
-
-	/*
-		    // update status if needed
-		    pdj.Status.Mode = getPaddleJobMode(&pdj)
-
-		    err = r.Status().Update(ctx, &pdj)
-			log.V(1).Info(pdj.Name, "update", err)
-
-		    // new, so create
-		    pod := &corev1.Pod{
-		        ObjectMeta: metav1.ObjectMeta{
-		            Labels: make(map[string]string),
-		            Annotations: make(map[string]string),
-		            Name: "tst",
-		            Namespace: pdj.Namespace,
-		        },
-		        Spec: *pdj.Spec.Worker.Template.Spec.DeepCopy(),
-		    }
-		    pod.Annotations["app"] = "one"
-		    // IMPORTANT step, bind the paddlejob with children pods
-		    err = ctrl.SetControllerReference(&pdj, pod, r.Scheme)
-
-		    err = r.Create(ctx, pod)
-			log.V(1).Info(pdj.Name, "create pod", err)
-	*/
 
 	return ctrl.Result{}, nil
 }

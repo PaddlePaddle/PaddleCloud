@@ -4,10 +4,19 @@ metadata:
   name: paddlejob-1
 spec:
   worker:
-    requests: 1
+    replicas: 1
     template:
       spec:
         containers:
           - name: sample
             image: nginx
         restartPolicy: OnFailure
+  ps:
+    replicas: 1
+    template:
+      spec:
+        containers:
+          - name: sample
+            image: nginx
+        restartPolicy: OnFailure
+    

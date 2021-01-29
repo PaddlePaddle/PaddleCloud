@@ -17,9 +17,56 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
 )
 
 func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
-	return pdv1.PaddleJobModeSingle
+	if pdj.Spec.PS.Replicas > 0 {
+		return pdv1.PaddleJobModePS
+	} else if pdj.Spec.Worker.Replicas > 0 {
+		return pdv1.PaddleJobModeCollective
+	} else {
+		return pdv1.PaddleJobModeSingle
+	}
+}
+
+func genPaddlePodName(name string, resType string, idx int) string {
+	return fmt.Sprintf("%s-%s-%d", name, resType, idx)
+}
+
+func constructPS4PaddleJob(pdj *pdv1.PaddleJob, idx int) (*corev1.Pod, error) {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      make(map[string]string),
+			Annotations: make(map[string]string),
+			Name:        genPaddlePodName(pdj.Name, pdv1.ResourcePS, idx),
+			Namespace:   pdj.Namespace,
+		},
+		Spec: *pdj.Spec.Worker.Template.Spec.DeepCopy(),
+	}
+	pod.Annotations[pdv1.ResourceAnnotation] = pdv1.ResourcePS
+	return pod, nil
+}
+
+func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) (*corev1.Pod, error) {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      make(map[string]string),
+			Annotations: make(map[string]string),
+			Name:        genPaddlePodName(pdj.Name, pdv1.ResourceWorker, idx),
+			Namespace:   pdj.Namespace,
+		},
+		Spec: *pdj.Spec.Worker.Template.Spec.DeepCopy(),
+	}
+	pod.Annotations[pdv1.ResourceAnnotation] = pdv1.ResourceWorker
+	return pod, nil
+}
+
+func constructService4Pod(pod *corev1.Pod) (*corev1.Service, error) {
+	svc := &corev1.Service{}
+	return svc, nil
 }
