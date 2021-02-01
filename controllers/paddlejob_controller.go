@@ -63,20 +63,13 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	log := r.Log.WithValues("paddlejob", req.NamespacedName)
 
 	log.V(1).Info("Reconcile start -----------------------------------------------------\n")
+	defer log.V(1).Info("Reconcile end -----------------------------------------------------\n")
 
 	// Obtain the PaddleJob instance we are working on
 	var pdj pdv1.PaddleJob
 	if err := r.Get(ctx, req.NamespacedName, &pdj); err != nil {
 		log.Error(err, "failed to fetch paddlejob")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// Assign common status first
-	if pdj.Status.Phase == "" {
-		pdj.Status.Phase = pdv1.Starting
-	}
-	if pdj.Status.Mode == "" {
-		pdj.Status.Mode = getPaddleJobMode(&pdj)
 	}
 
 	// List all associated pods
@@ -86,6 +79,17 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	// Initialize Status
+	if pdj.Status.Phase == "" {
+		pdj.Status.Phase = pdv1.Starting
+	}
+	if pdj.Status.Mode == "" {
+		pdj.Status.Mode = getPaddleJobMode(&pdj)
+	}
+	pdj.Status.PS = pdv1.ResourceStatus{}
+	pdj.Status.Worker = pdv1.ResourceStatus{}
+
+    // Sync status by pods
 	fillStatusByChildren := func(ss *pdv1.ResourceStatus, pod *corev1.Pod) {
 		switch pod.Status.Phase {
 		case corev1.PodPending:
@@ -103,9 +107,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		ss.Refs = append(ss.Refs, *pref)
 	}
-
-	pdj.Status.PS = pdv1.ResourceStatus{}
-	pdj.Status.Worker = pdv1.ResourceStatus{}
 	for _, pod := range childPods.Items {
 		resType := pod.Annotations[pdv1.ResourceAnnotation]
 		if resType == pdv1.ResourcePS {
@@ -114,7 +115,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			fillStatusByChildren(&pdj.Status.Worker, &pod)
 		}
 	}
-
 	if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
 		pdj.Status.Phase = pdv1.Running
 	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
@@ -122,10 +122,13 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	} else if pdj.Spec.PS.Replicas >= pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
 		pdj.Status.Phase = pdv1.Completed
 	}
+    // more phase HERE
 
+    // split line ---------------------------------
+    // Important action : sync status above, sync task below
 	if err := r.Status().Update(ctx, &pdj); err != nil {
 		log.Error(err, "unable to update status")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	if pdj.Status.Phase == pdv1.Failed {
@@ -142,7 +145,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		pod, err := constructPS4PaddleJob(&pdj, len(pdj.Status.PS.Refs))
 		err = ctrl.SetControllerReference(&pdj, pod, r.Scheme)
 		err = r.Create(ctx, pod)
-		log.V(1).Info("create worker", "error", err)
+		log.V(1).Info("create ps", "error", err)
 		return ctrl.Result{}, nil
 	}
 
@@ -153,18 +156,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		log.V(1).Info("create worker", "error", err)
 		return ctrl.Result{}, nil
 	}
-
-	// if one failed, try restart ? or set failed in fault tolerent mode
-
-	// paddle parameter !!!
-
-	// calculate and update paddleJobStatus  failed running/required  4/6
-
-	// if all finished, trigger clean by policy
-
-	// return if have done sth. otherwise continue
-
-	// no childPods then try create, big staff
 
 	return ctrl.Result{}, nil
 }
