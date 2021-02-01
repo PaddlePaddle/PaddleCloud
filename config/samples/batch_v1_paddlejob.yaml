@@ -4,7 +4,7 @@ metadata:
   name: paddlejob-1
 spec:
   worker:
-    replicas: 1
+    replicas: 2
     template:
       spec:
         containers:
@@ -12,7 +12,7 @@ spec:
             image: nginx
         restartPolicy: OnFailure
   ps:
-    replicas: 1
+    replicas: 2
     template:
       spec:
         containers:

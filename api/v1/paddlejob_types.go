@@ -24,13 +24,28 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-const KIND = "PaddleJob"
+const (
+	KIND        = "PaddleJob"
+	PADDLE_PORT = 2379
+)
 
 const (
+	// LABEL KEYS
+	ResourceName = "paddle-res-name"
+	ResourceType = "paddle-res-type"
+	// Annotation KEY
 	ResourceAnnotation = "paddle-resource"
-	ResourcePS         = "ps"
-	ResourceWorker     = "worker"
 )
+
+const (
+	ResourcePS     = "ps"
+	ResourceWorker = "worker"
+)
+
+var TrainingRole = map[string]string{
+	ResourcePS:     "PSERVER",
+	ResourceWorker: "TRAINER",
+}
 
 // PaddleJobMode defines the avaiable mode of a job
 type PaddleJobMode string
