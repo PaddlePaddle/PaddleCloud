@@ -74,39 +74,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Finalizer for svc
-	if pdj.ObjectMeta.DeletionTimestamp.IsZero() {
-		if !containsString(pdj.ObjectMeta.Finalizers, svcFinalizerName) {
-			pdj.ObjectMeta.Finalizers = append(pdj.ObjectMeta.Finalizers, svcFinalizerName)
-			if err := r.Update(ctx, &pdj); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	} else {
-		if containsString(pdj.ObjectMeta.Finalizers, svcFinalizerName) {
-			for i := 0; i < pdj.Spec.Worker.Replicas; i++ {
-				name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, i)
-				nn := types.NamespacedName{Namespace: pdj.Namespace, Name: name}
-				if err := r.deleteService(ctx, nn); err != nil {
-					log.Error(err, "delete svc failed")
-				}
-			}
-			for i := 0; i < pdj.Spec.PS.Replicas; i++ {
-				name := genPaddleResName(pdj.Name, pdv1.ResourcePS, i)
-				nn := types.NamespacedName{Namespace: pdj.Namespace, Name: name}
-				if err := r.deleteService(ctx, nn); err != nil {
-					log.Error(err, "delete svc failed")
-				}
-			}
-
-			pdj.ObjectMeta.Finalizers = removeString(pdj.ObjectMeta.Finalizers, svcFinalizerName)
-			if err := r.Update(ctx, &pdj); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
-	}
-
 	// List all associated pods
 	var childPods corev1.PodList
 	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
@@ -197,6 +164,43 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
+/*
+func (r *PaddleJobReconciler) finalize(ctx context.Context, nn types.NamespacedName) error {
+	// Finalizer for svc
+	if pdj.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !containsString(pdj.ObjectMeta.Finalizers, svcFinalizerName) {
+			pdj.ObjectMeta.Finalizers = append(pdj.ObjectMeta.Finalizers, svcFinalizerName)
+			if err := r.Update(ctx, &pdj); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	} else {
+		if containsString(pdj.ObjectMeta.Finalizers, svcFinalizerName) {
+			for i := 0; i < pdj.Spec.Worker.Replicas; i++ {
+				name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, i)
+				nn := types.NamespacedName{Namespace: pdj.Namespace, Name: name}
+				if err := r.deleteService(ctx, nn); err != nil {
+					log.Error(err, "delete svc failed")
+				}
+			}
+			for i := 0; i < pdj.Spec.PS.Replicas; i++ {
+				name := genPaddleResName(pdj.Name, pdv1.ResourcePS, i)
+				nn := types.NamespacedName{Namespace: pdj.Namespace, Name: name}
+				if err := r.deleteService(ctx, nn); err != nil {
+					log.Error(err, "delete svc failed")
+				}
+			}
+
+			pdj.ObjectMeta.Finalizers = removeString(pdj.ObjectMeta.Finalizers, svcFinalizerName)
+			if err := r.Update(ctx, &pdj); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+}
+*/
+
 func (r *PaddleJobReconciler) deleteService(ctx context.Context, nn types.NamespacedName) error {
 	svc := corev1.Service{}
 	if err := r.Get(ctx, nn, &svc); err != nil {
@@ -208,29 +212,38 @@ func (r *PaddleJobReconciler) deleteService(ctx context.Context, nn types.Namesp
 	return nil
 }
 
+func indexerFunc(rawObj client.Object) []string {
+	owner := metav1.GetControllerOf(rawObj)
+	if owner == nil {
+		return nil
+	}
+	// ...make sure it's a PaddleJob...
+	if owner.APIVersion != apiGVStr || owner.Kind != pdv1.KIND {
+		return nil
+	}
+
+	// ...and if so, return it
+	return []string{owner.Name}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *PaddleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, ctrlRefKey, func(rawObj client.Object) []string {
-		// grab the job object, extract the owner...
-		job := rawObj.(*corev1.Pod)
-		owner := metav1.GetControllerOf(job)
-		if owner == nil {
-			return nil
-		}
-		// ...make sure it's a PaddleJob...
-		if owner.APIVersion != apiGVStr || owner.Kind != pdv1.KIND {
-			return nil
-		}
+	// index pod
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.Pod{}, ctrlRefKey, indexerFunc); err != nil {
+		return err
+	}
 
-		// ...and if so, return it
-		return []string{owner.Name}
-	}); err != nil {
+	// index service
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.Service{}, ctrlRefKey, indexerFunc); err != nil {
 		return err
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&pdv1.PaddleJob{}).
 		Owns(&corev1.Pod{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }
