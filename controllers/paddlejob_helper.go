@@ -40,7 +40,7 @@ func genPaddleResName(name string, resType string, idx int) string {
 	return fmt.Sprintf("%s-%s-%d", name, resType, idx)
 }
 
-func constructPS4PaddleJob(pdj *pdv1.PaddleJob, idx int) (*corev1.Pod, error) {
+func constructPS4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {
 	name := genPaddleResName(pdj.Name, pdv1.ResourcePS, idx)
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -68,10 +68,10 @@ func constructPS4PaddleJob(pdj *pdv1.PaddleJob, idx int) (*corev1.Pod, error) {
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
 	}
 	pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
-	return pod, nil
+	return pod
 }
 
-func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) (*corev1.Pod, error) {
+func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {
 	name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, idx)
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -102,15 +102,14 @@ func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) (*corev1.Pod, error
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
 	}
 	pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
-	return pod, nil
+	return pod
 }
 
-func constructService4Pod(pdj *pdv1.PaddleJob, idx int) (*corev1.Service, error) {
-	name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, idx)
+func constructService4Pod(pod *corev1.Pod) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: pdj.Namespace,
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
 			Labels:    map[string]string{},
 		},
 		Spec: corev1.ServiceSpec{
@@ -120,12 +119,12 @@ func constructService4Pod(pdj *pdv1.PaddleJob, idx int) (*corev1.Service, error)
 				},
 			},
 			Selector: map[string]string{
-				pdv1.ResourceName: name,
+				pdv1.ResourceName: pod.Name,
 			},
 			ClusterIP: "None",
 		},
 	}
-	return svc, nil
+	return svc
 }
 
 func genEndpoints(name string, resType string, num int, port int) string {
