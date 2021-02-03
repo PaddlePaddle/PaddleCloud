@@ -7,7 +7,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - batch
+  - ""
   resources:
   - pods
   verbs:
@@ -19,9 +19,27 @@ rules:
   - update
   - watch
 - apiGroups:
-  - batch
+  - ""
   resources:
   - pods/status
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
   verbs:
   - get
 - apiGroups:
