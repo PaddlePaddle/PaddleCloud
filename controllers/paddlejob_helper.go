@@ -105,7 +105,7 @@ func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {
 	return pod
 }
 
-func constructService4Pod(pod *corev1.Pod) *corev1.Service {
+func constructService4Pod(pod corev1.Pod) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pod.Name,

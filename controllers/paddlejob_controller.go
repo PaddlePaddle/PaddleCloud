@@ -56,7 +56,7 @@ type PaddleJobReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
+// Reconcile function compares the state specified by
 // the PaddleJob object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
@@ -103,17 +103,17 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			ss.Refs = append(ss.Refs, *pref)
 		}
 	}
-	var podsMap = make(map[string]*corev1.Pod)
+	var podsMap = make(map[string]bool)
 	// Initialize Status before sync
 	pdj.Status.PS = pdv1.ResourceStatus{}
 	pdj.Status.Worker = pdv1.ResourceStatus{}
-	for _, pod := range childPods.Items {
-		podsMap[pod.Name] = &pod
+	for i, pod := range childPods.Items {
+		podsMap[pod.Name] = true
 		resType := pod.Annotations[pdv1.ResourceAnnotation]
 		if resType == pdv1.ResourcePS {
-			syncStatusByPod(&pdj.Status.PS, &pod)
+			syncStatusByPod(&pdj.Status.PS, &childPods.Items[i])
 		} else if resType == pdv1.ResourceWorker {
-			syncStatusByPod(&pdj.Status.Worker, &pod)
+			syncStatusByPod(&pdj.Status.Worker, &childPods.Items[i])
 		}
 	}
 	if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
@@ -149,18 +149,18 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		log.Error(err, "unable to list child Services ")
 		return ctrl.Result{}, err
 	}
-	var svcsMap = make(map[string]*corev1.Service)
+	var svcsMap = make(map[string]bool)
 	for _, svc := range svcs.Items {
-		svcsMap[svc.Name] = &svc
+		svcsMap[svc.Name] = true
 	}
 
 	// Ensure service for running pod
 	for _, pod := range childPods.Items {
 		if pod.Status.Phase == corev1.PodRunning {
-			if svcsMap[pod.Name] != nil {
+			if svcsMap[pod.Name] {
 				continue
 			}
-			svc := constructService4Pod(&pod)
+			svc := constructService4Pod(pod)
 			err := ctrl.SetControllerReference(&pdj, svc, r.Scheme)
 			if err != nil {
 				log.Error(err, "make reference failed")
@@ -179,7 +179,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if len(pdj.Status.PS.Refs) < pdj.Spec.PS.Replicas {
 		for i := 0; i < pdj.Spec.PS.Replicas; i++ {
 			name := genPaddleResName(pdj.Name, pdv1.ResourcePS, i)
-			if podsMap[name] != nil {
+			if podsMap[name] {
 				continue
 			}
 			pod := constructPS4PaddleJob(&pdj, i)
@@ -201,7 +201,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if pdj.Status.PS.Running == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) < pdj.Spec.Worker.Replicas {
 		for i := 0; i < pdj.Spec.Worker.Replicas; i++ {
 			name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, i)
-			if podsMap[name] != nil {
+			if podsMap[name] {
 				continue
 			}
 			pod := constructWorker4PaddleJob(&pdj, i)

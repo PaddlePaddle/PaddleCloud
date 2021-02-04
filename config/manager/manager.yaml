@@ -29,7 +29,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: registry.baidubce.com/kuizhiqing/paddle-operator:v1
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
