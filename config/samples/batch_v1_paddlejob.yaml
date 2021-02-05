@@ -1,0 +1,22 @@
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: paddlejob-1
+spec:
+  worker:
+    replicas: 2
+    template:
+      spec:
+        containers:
+          - name: sample
+            image: nginx
+        restartPolicy: OnFailure
+  ps:
+    replicas: 2
+    template:
+      spec:
+        containers:
+          - name: sample
+            image: nginx
+        restartPolicy: OnFailure
+    
