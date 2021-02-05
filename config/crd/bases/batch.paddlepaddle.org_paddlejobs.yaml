@@ -13,10 +13,25 @@ spec:
     kind: PaddleJob
     listKind: PaddleJobList
     plural: paddlejobs
+    shortNames:
+    - pdj
     singular: paddlejob
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .status.mode
+      name: Mode
+      type: string
+    - jsonPath: .status.ps.ready
+      name: PS
+      type: string
+    - jsonPath: .status.worker.ready
+      name: Worker
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: PaddleJob is the Schema for the paddlejobs API
@@ -13231,6 +13246,9 @@ spec:
                   pending:
                     description: Pending
                     type: integer
+                  ready:
+                    description: Ready
+                    type: string
                   refs:
                     description: A list of  pointer to pods
                     items:
@@ -13315,6 +13333,9 @@ spec:
                   pending:
                     description: Pending
                     type: integer
+                  ready:
+                    description: Ready
+                    type: string
                   refs:
                     description: A list of  pointer to pods
                     items:

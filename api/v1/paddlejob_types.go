@@ -124,6 +124,8 @@ type ResourceStatus struct {
 	Succeeded int `json:"succeeded,omitempty"`
 	// Unknown
 	Unknown int `json:"unknown,omitempty"`
+	// Ready
+	Ready string `json:"ready,omitempty"`
 	// A list of  pointer to pods
 	Refs []corev1.ObjectReference `json:"refs,omitempty"`
 }
@@ -153,7 +155,13 @@ type PaddleJobStatus struct {
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:resource:shortName=pdj
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
+//+kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.status.mode`
+//+kubebuilder:printcolumn:name="PS",type=string,JSONPath=`.status.ps.ready`
+//+kubebuilder:printcolumn:name="Worker",type=string,JSONPath=`.status.worker.ready`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // PaddleJob is the Schema for the paddlejobs API
 type PaddleJob struct {

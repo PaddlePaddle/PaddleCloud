@@ -25,6 +25,21 @@ import (
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
 )
 
+func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
+	if pdj.Status.Phase == pdv1.Completed {
+		return pdv1.Completed
+	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
+		return pdv1.Running
+	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
+		return pdv1.Failed
+	} else if pdj.Spec.PS.Replicas >= pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
+		return pdv1.Completed
+	} else if pdj.Status.PS.Pending > 0 || pdj.Status.Worker.Pending > 0 {
+		return pdv1.Starting
+	}
+	return pdv1.Starting
+}
+
 func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
 	if pdj.Spec.PS.Replicas > 0 {
 		return pdv1.PaddleJobModePS
