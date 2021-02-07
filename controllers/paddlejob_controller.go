@@ -90,7 +90,11 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		case corev1.PodPending:
 			ss.Pending++
 		case corev1.PodRunning:
-			ss.Running++
+			if isPodRealRuning(pod) {
+				ss.Running++
+			} else {
+				ss.Starting++
+			}
 		case corev1.PodFailed:
 			ss.Failed++
 		case corev1.PodSucceeded:
@@ -133,20 +137,42 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if pdj.Status.Phase == pdv1.Failed {
-		log.V(1).Info("job failed, do nothing now")
-		return ctrl.Result{}, nil
-	}
-	if pdj.Status.Phase == pdv1.Completed {
-		log.V(1).Info("job completed, may be clean")
-		return ctrl.Result{}, nil
-	}
-
 	// List all associated svc
 	var svcs corev1.ServiceList
 	if err := r.List(ctx, &svcs, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
 		return ctrl.Result{}, err
 	}
+
+	cleanPaddleJob := func() {
+		for i, pod := range childPods.Items {
+			if err := r.Delete(ctx, &childPods.Items[i], client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
+				log.Error(err, "unable to delete completed pod", "pod", pod)
+			} else {
+				log.V(1).Info("delete completed pod", "pod", pod)
+			}
+			return
+		}
+		for i, svc := range svcs.Items {
+			if err := r.Delete(ctx, &svcs.Items[i], client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
+				log.Error(err, "unable to delete completed svc", "svc", svc)
+			} else {
+				log.V(1).Info("delete completed svc", "svc", svc)
+			}
+			return
+		}
+	}
+
+	if pdj.Status.Phase == pdv1.Failed {
+		log.V(1).Info("job failed, do clean now")
+		cleanPaddleJob()
+		return ctrl.Result{}, nil
+	}
+	if pdj.Status.Phase == pdv1.Completed {
+		log.V(1).Info("job completed, do clean now")
+		cleanPaddleJob()
+		return ctrl.Result{}, nil
+	}
+
 	var svcsMap = make(map[string]bool)
 	for _, svc := range svcs.Items {
 		svcsMap[svc.Name] = true

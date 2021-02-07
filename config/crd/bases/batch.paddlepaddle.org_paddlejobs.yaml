@@ -31,6 +31,9 @@ spec:
     - jsonPath: .status.worker.ready
       name: Worker
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
@@ -13317,6 +13320,9 @@ spec:
                   running:
                     description: Running
                     type: integer
+                  starting:
+                    description: Starting
+                    type: integer
                   succeeded:
                     description: Success
                     type: integer
@@ -13403,6 +13409,9 @@ spec:
                     type: array
                   running:
                     description: Running
+                    type: integer
+                  starting:
+                    description: Starting
                     type: integer
                   succeeded:
                     description: Success

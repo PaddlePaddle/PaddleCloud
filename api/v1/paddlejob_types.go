@@ -116,6 +116,8 @@ type ResourceSpec struct {
 type ResourceStatus struct {
 	// Pending
 	Pending int `json:"pending,omitempty"`
+	// Starting
+	Starting int `json:"starting,omitempty"`
 	// Running
 	Running int `json:"running,omitempty"`
 	// Failed
