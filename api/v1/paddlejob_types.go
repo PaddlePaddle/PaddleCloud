@@ -77,6 +77,15 @@ const (
 	Succeed     PaddleJobPhase = "Succeed"
 )
 
+type CleanPolicy string
+
+const (
+	CleanAll          CleanPolicy = "All"
+	CleanNever        CleanPolicy = "Never"
+	CleanOnFailure    CleanPolicy = "OnFailure"
+	CleanOnCompletion CleanPolicy = "OnCompletion"
+)
+
 // ElasticStatus defines the status of elastic process
 type ElasticStatus string
 
@@ -91,6 +100,8 @@ const (
 type PaddleJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	CleanPolicy CleanPolicy `json:"cleanPolicy,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
 	PS ResourceSpec `json:"ps,omitempty"`

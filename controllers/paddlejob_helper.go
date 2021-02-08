@@ -20,6 +20,7 @@ import (
 	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"strings"
 
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
@@ -28,6 +29,8 @@ import (
 func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	if pdj.Status.Phase == pdv1.Completed {
 		return pdv1.Completed
+	} else if pdj.Status.Phase == pdv1.Failed {
+		return pdv1.Failed
 	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
 		return pdv1.Running
 	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
@@ -53,6 +56,15 @@ func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
 // genPaddleResName generate the identifier for pod and service
 func genPaddleResName(name string, resType string, idx int) string {
 	return fmt.Sprintf("%s-%s-%d", name, resType, idx)
+}
+
+func extractNameIndex(name string) (string, int) {
+	s := strings.Split(name, "-")
+	if i, err := strconv.Atoi(s[len(s)-1]); err != nil {
+		return "", 0
+	} else {
+		return s[len(s)-2], i
+	}
 }
 
 func constructPS4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {

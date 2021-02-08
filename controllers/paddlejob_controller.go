@@ -77,7 +77,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	log.Info("Reconcile", "version", pdj.ResourceVersion)
 
-	// r.finalize(&pdj)
+	//r.finalize(ctx, &pdj)
 
 	// List all associated pods
 	var childPods corev1.PodList
@@ -142,40 +142,51 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.List(ctx, &svcs, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
 		return ctrl.Result{}, err
 	}
+	var svcsMap = make(map[string]bool)
+	for _, svc := range svcs.Items {
+		svcsMap[svc.Name] = true
+	}
 
-	cleanPaddleJob := func() {
-		for i, pod := range childPods.Items {
-			if err := r.Delete(ctx, &childPods.Items[i], client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
-				log.Error(err, "unable to delete completed pod", "pod", pod)
-			} else {
-				log.V(1).Info("delete completed pod", "pod", pod)
-			}
+	cleanOne := func() {
+		for i := range childPods.Items {
+			r.deleteResource(ctx, &pdj, &childPods.Items[i])
 			return
 		}
-		for i, svc := range svcs.Items {
-			if err := r.Delete(ctx, &svcs.Items[i], client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
-				log.Error(err, "unable to delete completed svc", "svc", svc)
-			} else {
-				log.V(1).Info("delete completed svc", "svc", svc)
-			}
+		for i := range svcs.Items {
+			r.deleteResource(ctx, &pdj, &svcs.Items[i])
 			return
 		}
 	}
 
 	if pdj.Status.Phase == pdv1.Failed {
-		log.V(1).Info("job failed, do clean now")
-		cleanPaddleJob()
-		return ctrl.Result{}, nil
+		if pdj.Spec.CleanPolicy == "" || pdj.Spec.CleanPolicy == pdv1.CleanAll || pdj.Spec.CleanPolicy == pdv1.CleanOnFailure {
+			cleanOne()
+			return ctrl.Result{}, nil
+		}
 	}
 	if pdj.Status.Phase == pdv1.Completed {
-		log.V(1).Info("job completed, do clean now")
-		cleanPaddleJob()
-		return ctrl.Result{}, nil
+		if pdj.Spec.CleanPolicy == "" || pdj.Spec.CleanPolicy == pdv1.CleanAll || pdj.Spec.CleanPolicy == pdv1.CleanOnCompletion {
+			cleanOne()
+			return ctrl.Result{}, nil
+		}
 	}
 
-	var svcsMap = make(map[string]bool)
-	for _, svc := range svcs.Items {
-		svcsMap[svc.Name] = true
+	// clean pod unnecessary
+	if len(childPods.Items) > pdj.Spec.PS.Replicas+pdj.Spec.Worker.Replicas {
+		for i, pod := range childPods.Items {
+			resType, idx := extractNameIndex(pod.Name)
+			if resType == pdv1.ResourcePS {
+				if idx >= pdj.Spec.PS.Replicas {
+					r.deleteResource(ctx, &pdj, &childPods.Items[i])
+					return ctrl.Result{RequeueAfter: time.Second}, nil
+				}
+			} else if resType == pdv1.ResourceWorker {
+				if idx >= pdj.Spec.Worker.Replicas {
+					r.deleteResource(ctx, &pdj, &childPods.Items[i])
+					return ctrl.Result{RequeueAfter: time.Second}, nil
+				}
+			}
+		}
 	}
 
 	// Ensure service for running pod
@@ -193,13 +204,8 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err := r.Get(ctx, client.ObjectKeyFromObject(svc), &corev1.Service{}); err == nil {
 				continue
 			}
-			err = r.Create(ctx, svc)
-			if err != nil {
-				r.Recorder.Event(&pdj, corev1.EventTypeWarning, "Error", fmt.Sprintf("service %s create failed", pod.Name))
-				return ctrl.Result{}, err
-			}
-			r.Recorder.Event(&pdj, corev1.EventTypeNormal, "Info", fmt.Sprintf("service %s created", pod.Name))
-			return ctrl.Result{}, nil
+			err = r.createResource(ctx, &pdj, svc)
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -219,13 +225,8 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err := r.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{}); err == nil {
 				continue
 			}
-			err = r.Create(ctx, pod)
-			if err != nil {
-				r.Recorder.Event(&pdj, corev1.EventTypeWarning, "Error", fmt.Sprintf("pserver %s create failed", name))
-				return ctrl.Result{}, err
-			}
-			r.Recorder.Event(&pdj, corev1.EventTypeNormal, "Info", fmt.Sprintf("pserver %s created", name))
-			return ctrl.Result{RequeueAfter: time.Second}, nil
+			err = r.createResource(ctx, &pdj, pod)
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -245,21 +246,40 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err := r.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{}); err == nil {
 				continue
 			}
-			err = r.Create(ctx, pod)
-			if err != nil {
-				r.Recorder.Event(&pdj, corev1.EventTypeWarning, "Error", fmt.Sprintf("worker %s create failed", name))
-				return ctrl.Result{}, err
-			}
-			r.Recorder.Event(&pdj, corev1.EventTypeNormal, "Info", fmt.Sprintf("worker %s created", name))
-			return ctrl.Result{RequeueAfter: time.Second}, nil
+			err = r.createResource(ctx, &pdj, pod)
+			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-/*
-func (r *PaddleJobReconciler) finalize(ctx context.Context, obj client.Object) error {
+func (r *PaddleJobReconciler) deleteResource(ctx context.Context, pdj *pdv1.PaddleJob, obj client.Object) error {
+	if obj.GetDeletionTimestamp() != nil {
+		return nil
+	}
+	tp := obj.GetObjectKind().GroupVersionKind().Kind
+	if err := r.Delete(ctx, obj, client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
+		r.Recorder.Event(pdj, corev1.EventTypeWarning, "Delete", fmt.Sprintf("delete failed %s %s", tp, obj.GetName()))
+		return err
+	} else {
+		r.Recorder.Event(pdj, corev1.EventTypeNormal, "Deleted", fmt.Sprintf("deleted %s %s", tp, obj.GetName()))
+		return nil
+	}
+}
+
+func (r *PaddleJobReconciler) createResource(ctx context.Context, pdj *pdv1.PaddleJob, obj client.Object) error {
+	tp := obj.GetObjectKind().GroupVersionKind().Kind
+	if err := r.Create(ctx, obj); err != nil {
+		r.Recorder.Event(pdj, corev1.EventTypeWarning, "Create", fmt.Sprintf("create failed %s %s", tp, obj.GetName()))
+		return err
+	} else {
+		r.Recorder.Event(pdj, corev1.EventTypeNormal, "Created", fmt.Sprintf("created %s %s", tp, obj.GetName()))
+		return nil
+	}
+}
+
+func (r *PaddleJobReconciler) finalize(ctx context.Context, obj *pdv1.PaddleJob) error {
 	if obj.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !containsString(obj.ObjectMeta.Finalizers, finalizerName) {
 			obj.ObjectMeta.Finalizers = append(obj.ObjectMeta.Finalizers, finalizerName)
@@ -279,8 +299,8 @@ func (r *PaddleJobReconciler) finalize(ctx context.Context, obj client.Object) e
 		}
 		return nil
 	}
+	return nil
 }
-*/
 
 func indexerFunc(rawObj client.Object) []string {
 	owner := metav1.GetControllerOf(rawObj)

@@ -54,6 +54,8 @@ spec:
           spec:
             description: PaddleJobSpec defines the desired state of PaddleJob
             properties:
+              cleanPolicy:
+                type: string
               ps:
                 description: PS[erver] describes the spec of server base on pod template
                 properties:
