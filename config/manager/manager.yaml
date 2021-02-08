@@ -30,6 +30,7 @@ spec:
         args:
         - --leader-elect
         image: registry.baidubce.com/kuizhiqing/paddle-operator:v1
+        imagePullPolicy: Always
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

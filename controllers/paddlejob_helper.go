@@ -130,6 +130,7 @@ func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
 	}
 	pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
+	pod.Spec.RestartPolicy = "Never"
 	return pod
 }
 

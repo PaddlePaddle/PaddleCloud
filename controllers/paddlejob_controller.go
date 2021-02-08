@@ -159,7 +159,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if pdj.Status.Phase == pdv1.Failed {
-		if pdj.Spec.CleanPolicy == "" || pdj.Spec.CleanPolicy == pdv1.CleanAll || pdj.Spec.CleanPolicy == pdv1.CleanOnFailure {
+		if pdj.Spec.CleanPolicy == pdv1.CleanAll || pdj.Spec.CleanPolicy == pdv1.CleanOnFailure {
 			cleanOne()
 			return ctrl.Result{}, nil
 		}
