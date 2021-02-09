@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -84,57 +85,20 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	syncStatusByPod := func(ss *pdv1.ResourceStatus, pod *corev1.Pod) {
-		switch pod.Status.Phase {
-		case corev1.PodPending:
-			ss.Pending++
-		case corev1.PodRunning:
-			if isPodRealRuning(pod) {
-				ss.Running++
-			} else {
-				ss.Starting++
-			}
-		case corev1.PodFailed:
-			ss.Failed++
-		case corev1.PodSucceeded:
-			ss.Succeeded++
-		}
-		pref, err := ref.GetReference(r.Scheme, pod)
-		if err != nil {
-			log.Error(err, "get reference failed", "pod", pod)
-		} else {
-			ss.Refs = append(ss.Refs, *pref)
-		}
-	}
 	var podsMap = make(map[string]bool)
-	// Initialize Status before sync
-	pdj.Status.PS = pdv1.ResourceStatus{}
-	pdj.Status.Worker = pdv1.ResourceStatus{}
-	for i, pod := range childPods.Items {
+	for _, pod := range childPods.Items {
 		podsMap[pod.Name] = true
-		resType := pod.Annotations[pdv1.ResourceAnnotation]
-		if resType == pdv1.ResourcePS {
-			syncStatusByPod(&pdj.Status.PS, &childPods.Items[i])
-		} else if resType == pdv1.ResourceWorker {
-			syncStatusByPod(&pdj.Status.Worker, &childPods.Items[i])
-		}
 	}
-	pdj.Status.PS.Ready = fmt.Sprintf("%d/%d", pdj.Status.PS.Running, pdj.Spec.PS.Replicas)
-	pdj.Status.Worker.Ready = fmt.Sprintf("%d/%d", pdj.Status.Worker.Running, pdj.Spec.Worker.Replicas)
-	pdj.Status.Phase = getPaddleJobPhase(&pdj)
-	pdj.Status.Mode = getPaddleJobMode(&pdj)
 
-	pdjTmp := pdv1.PaddleJob{}
-	if err := r.Get(ctx, req.NamespacedName, &pdjTmp); err == nil && pdjTmp.ResourceVersion != pdj.ResourceVersion {
-		return ctrl.Result{Requeue: true}, nil
-	}
-	// Important action : sync status above, take action below
-	if err := r.Status().Update(ctx, &pdj); err != nil {
-		if apierrors.IsConflict(err) {
-			return ctrl.Result{Requeue: true}, nil
+	newStatus := r.currentStatus(ctx, &pdj, childPods)
+	if !reflect.DeepEqual(newStatus, pdj.Status) {
+		pdj.Status = newStatus
+		if err := r.Status().Update(ctx, &pdj); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+			return ctrl.Result{}, err
 		}
-		return ctrl.Result{}, err
 	}
 
 	// List all associated svc
@@ -252,6 +216,51 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *PaddleJobReconciler) currentStatus(ctx context.Context, pdj *pdv1.PaddleJob, childPods corev1.PodList) pdv1.PaddleJobStatus {
+	syncStatusByPod := func(ss *pdv1.ResourceStatus, pod *corev1.Pod) {
+		switch pod.Status.Phase {
+		case corev1.PodPending:
+			ss.Pending++
+		case corev1.PodRunning:
+			if isPodRealRuning(pod) {
+				ss.Running++
+			} else {
+				ss.Starting++
+			}
+		case corev1.PodFailed:
+			ss.Failed++
+		case corev1.PodSucceeded:
+			ss.Succeeded++
+		}
+		pref, err := ref.GetReference(r.Scheme, pod)
+		if err != nil {
+			return
+		}
+		ss.Refs = append(ss.Refs, *pref)
+	}
+
+	psStatus := pdv1.ResourceStatus{}
+	workerStatus := pdv1.ResourceStatus{}
+	for i, pod := range childPods.Items {
+		resType := pod.Annotations[pdv1.ResourceAnnotation]
+		if resType == pdv1.ResourcePS {
+			syncStatusByPod(&psStatus, &childPods.Items[i])
+		} else if resType == pdv1.ResourceWorker {
+			syncStatusByPod(&workerStatus, &childPods.Items[i])
+		}
+	}
+
+	psStatus.Ready = fmt.Sprintf("%d/%d", psStatus.Running, pdj.Spec.PS.Replicas)
+	workerStatus.Ready = fmt.Sprintf("%d/%d", workerStatus.Running, pdj.Spec.Worker.Replicas)
+
+	return pdv1.PaddleJobStatus{
+		Phase:  getPaddleJobPhase(pdj),
+		Mode:   getPaddleJobMode(pdj),
+		PS:     psStatus,
+		Worker: workerStatus,
+	}
 }
 
 func (r *PaddleJobReconciler) deleteResource(ctx context.Context, pdj *pdv1.PaddleJob, obj client.Object) error {
