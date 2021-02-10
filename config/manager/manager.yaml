@@ -29,6 +29,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - --namespace=paddle-system
         image: registry.baidubce.com/kuizhiqing/paddle-operator:v1
         imagePullPolicy: Always
         name: manager

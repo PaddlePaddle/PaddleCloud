@@ -20,6 +20,13 @@ Create PaddleJob crd,
 kubectl create -f deploy/v1/crd.yaml
 ```
 
+A succeed creation leads to result as follows,
+```
+$ kubectl get crd
+NAME                                    CREATED AT
+paddlejobs.batch.paddlepaddle.org       2021-02-08T07:43:24Z
+```
+
 Then deploy controller,
 
 ```shell

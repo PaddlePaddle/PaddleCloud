@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,6 +58,8 @@ type PaddleJobReconciler struct {
 //+kubebuilder:rbac:groups="",resources=pods/status,verbs=get
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=services/status,verbs=get
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -85,12 +88,8 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
 		return ctrl.Result{}, err
 	}
-	var podsMap = make(map[string]bool)
-	for _, pod := range childPods.Items {
-		podsMap[pod.Name] = true
-	}
 
-	newStatus := r.currentStatus(ctx, &pdj, childPods)
+	newStatus := r.getCurrentStatus(ctx, &pdj, childPods)
 	if !reflect.DeepEqual(newStatus, pdj.Status) {
 		pdj.Status = newStatus
 		if err := r.Status().Update(ctx, &pdj); err != nil {
@@ -101,14 +100,41 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// clean pod unnecessary
+	if len(childPods.Items) > pdj.Spec.PS.Replicas+pdj.Spec.Worker.Replicas {
+		for i, pod := range childPods.Items {
+			resType, idx := extractNameIndex(pod.Name)
+			if resType == pdv1.ResourcePS && idx < pdj.Spec.PS.Replicas {
+				continue
+			} else if resType == pdv1.ResourceWorker && idx < pdj.Spec.Worker.Replicas {
+				continue
+			}
+			r.deleteResource(ctx, &pdj, &childPods.Items[i])
+			return ctrl.Result{RequeueAfter: time.Second}, nil
+		}
+	}
+
 	// List all associated svc
 	var svcs corev1.ServiceList
-	if err := r.List(ctx, &svcs, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
-		return ctrl.Result{}, err
-	}
-	var svcsMap = make(map[string]bool)
-	for _, svc := range svcs.Items {
-		svcsMap[svc.Name] = true
+
+	if pdj.Spec.ServiceMode == pdv1.Service {
+		if err := r.List(ctx, &svcs, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Ensure service for running pod
+		for _, pod := range childPods.Items {
+			svc := constructService4Pod(pod)
+			if err := ctrl.SetControllerReference(&pdj, svc, r.Scheme); err != nil {
+				log.Error(err, "make reference failed")
+				continue
+			}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(svc), &corev1.Service{}); err == nil {
+				continue
+			}
+			err := r.createResource(ctx, &pdj, svc)
+			return ctrl.Result{}, err
+		}
 	}
 
 	cleanOne := func() {
@@ -123,102 +149,75 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if pdj.Status.Phase == pdv1.Failed {
-		if pdj.Spec.CleanPolicy == pdv1.CleanAll || pdj.Spec.CleanPolicy == pdv1.CleanOnFailure {
+		if pdj.Spec.CleanPodPolicy == pdv1.CleanAlways || pdj.Spec.CleanPodPolicy == pdv1.CleanOnFailure {
 			cleanOne()
 			return ctrl.Result{}, nil
 		}
 	}
 	if pdj.Status.Phase == pdv1.Completed {
-		if pdj.Spec.CleanPolicy == "" || pdj.Spec.CleanPolicy == pdv1.CleanAll || pdj.Spec.CleanPolicy == pdv1.CleanOnCompletion {
+		if pdj.Spec.CleanPodPolicy == "" || pdj.Spec.CleanPodPolicy == pdv1.CleanAlways || pdj.Spec.CleanPodPolicy == pdv1.CleanOnCompletion {
 			cleanOne()
 			return ctrl.Result{}, nil
 		}
 	}
 
-	// clean pod unnecessary
-	if len(childPods.Items) > pdj.Spec.PS.Replicas+pdj.Spec.Worker.Replicas {
-		for i, pod := range childPods.Items {
-			resType, idx := extractNameIndex(pod.Name)
-			if resType == pdv1.ResourcePS {
-				if idx >= pdj.Spec.PS.Replicas {
-					r.deleteResource(ctx, &pdj, &childPods.Items[i])
-					return ctrl.Result{RequeueAfter: time.Second}, nil
-				}
-			} else if resType == pdv1.ResourceWorker {
-				if idx >= pdj.Spec.Worker.Replicas {
-					r.deleteResource(ctx, &pdj, &childPods.Items[i])
-					return ctrl.Result{RequeueAfter: time.Second}, nil
-				}
-			}
+	createPod := func(resType string, idx int) bool {
+		name := genPaddleResName(pdj.Name, resType, idx)
+		if err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: pdj.Namespace}, &corev1.Pod{}); err == nil {
+			return false
 		}
-	}
-
-	// Ensure service for running pod
-	for _, pod := range childPods.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			if svcsMap[pod.Name] {
-				continue
-			}
-			svc := constructService4Pod(pod)
-			err := ctrl.SetControllerReference(&pdj, svc, r.Scheme)
-			if err != nil {
-				log.Error(err, "make reference failed")
-				continue
-			}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(svc), &corev1.Service{}); err == nil {
-				continue
-			}
-			err = r.createResource(ctx, &pdj, svc)
-			return ctrl.Result{}, err
+		pod := constructPod(&pdj, resType, idx)
+		if err := ctrl.SetControllerReference(&pdj, pod, r.Scheme); err != nil {
+			log.Error(err, "make reference failed")
+			return false
 		}
+		if err := r.createResource(ctx, &pdj, pod); err != nil {
+			log.Error(err, "make reference failed")
+		}
+		return true
 	}
 
 	// Ensure PS resource ready
 	if len(pdj.Status.PS.Refs) < pdj.Spec.PS.Replicas {
 		for i := 0; i < pdj.Spec.PS.Replicas; i++ {
-			name := genPaddleResName(pdj.Name, pdv1.ResourcePS, i)
-			if podsMap[name] {
-				continue
+			if createPod(pdv1.ResourcePS, i) {
+				return ctrl.Result{}, nil
 			}
-			pod := constructPS4PaddleJob(&pdj, i)
-			err := ctrl.SetControllerReference(&pdj, pod, r.Scheme)
-			if err != nil {
-				log.Error(err, "make reference failed")
-				continue
-			}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{}); err == nil {
-				continue
-			}
-			err = r.createResource(ctx, &pdj, pod)
-			return ctrl.Result{}, err
 		}
 	}
 
 	// Ensure worker resource ready
-	if pdj.Status.PS.Running == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) < pdj.Spec.Worker.Replicas {
+	if len(pdj.Status.Worker.Refs) < pdj.Spec.Worker.Replicas {
 		for i := 0; i < pdj.Spec.Worker.Replicas; i++ {
-			name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, i)
-			if podsMap[name] {
-				continue
+			if createPod(pdv1.ResourceWorker, i) {
+				return ctrl.Result{}, nil
 			}
-			pod := constructWorker4PaddleJob(&pdj, i)
-			err := ctrl.SetControllerReference(&pdj, pod, r.Scheme)
-			if err != nil {
-				log.Error(err, "make reference failed")
-				continue
-			}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{}); err == nil {
-				continue
-			}
-			err = r.createResource(ctx, &pdj, pod)
+		}
+	}
+
+	if len(childPods.Items) == pdj.Spec.PS.Replicas+pdj.Spec.Worker.Replicas {
+		if err := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &corev1.ConfigMap{}); err == nil || !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
+		cm := constructConfigMap(&pdj, childPods)
+		if cm == nil {
+			return ctrl.Result{Requeue: true}, nil
+		}
+		if err := ctrl.SetControllerReference(&pdj, cm, r.Scheme); err != nil {
+			log.Error(err, "make reference failed")
+			return ctrl.Result{Requeue: true}, nil
+		}
+		err := r.createResource(ctx, &pdj, cm)
+		if apierrors.IsConflict(err) {
+			return ctrl.Result{Requeue: true}, nil
+		}
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *PaddleJobReconciler) currentStatus(ctx context.Context, pdj *pdv1.PaddleJob, childPods corev1.PodList) pdv1.PaddleJobStatus {
+func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.PaddleJob, childPods corev1.PodList) pdv1.PaddleJobStatus {
 	syncStatusByPod := func(ss *pdv1.ResourceStatus, pod *corev1.Pod) {
 		switch pod.Status.Phase {
 		case corev1.PodPending:
@@ -288,21 +287,21 @@ func (r *PaddleJobReconciler) createResource(ctx context.Context, pdj *pdv1.Padd
 	}
 }
 
-func (r *PaddleJobReconciler) finalize(ctx context.Context, obj *pdv1.PaddleJob) error {
-	if obj.ObjectMeta.DeletionTimestamp.IsZero() {
-		if !containsString(obj.ObjectMeta.Finalizers, finalizerName) {
-			obj.ObjectMeta.Finalizers = append(obj.ObjectMeta.Finalizers, finalizerName)
-			if err := r.Update(ctx, obj); err != nil {
+func (r *PaddleJobReconciler) finalize(ctx context.Context, pdj *pdv1.PaddleJob) error {
+	if pdj.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !containsString(pdj.ObjectMeta.Finalizers, finalizerName) {
+			pdj.ObjectMeta.Finalizers = append(pdj.ObjectMeta.Finalizers, finalizerName)
+			if err := r.Update(ctx, pdj); err != nil {
 				return err
 			}
 		}
 	} else {
-		if containsString(obj.ObjectMeta.Finalizers, finalizerName) {
+		if containsString(pdj.ObjectMeta.Finalizers, finalizerName) {
 
 			// do before delete
 
-			obj.ObjectMeta.Finalizers = removeString(obj.ObjectMeta.Finalizers, finalizerName)
-			if err := r.Update(ctx, obj); err != nil {
+			pdj.ObjectMeta.Finalizers = removeString(pdj.ObjectMeta.Finalizers, finalizerName)
+			if err := r.Update(ctx, pdj); err != nil {
 				return err
 			}
 		}
@@ -340,9 +339,16 @@ func (r *PaddleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	// index configmap
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.ConfigMap{}, ctrlRefKey, indexerFunc); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&pdv1.PaddleJob{}).
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
+		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }

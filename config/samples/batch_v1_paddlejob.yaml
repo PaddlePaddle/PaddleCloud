@@ -1,7 +1,7 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: paddlejob-2
+  name: paddlejob-podip
 spec:
   worker:
     replicas: 2
@@ -12,7 +12,7 @@ spec:
             image: nginx
         restartPolicy: OnFailure
   ps:
-    replicas: 1
+    replicas: 2
     template:
       spec:
         containers:

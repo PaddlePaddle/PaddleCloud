@@ -26,6 +26,10 @@ import (
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
 )
 
+const (
+	INIT_CONTAINER_NAME = "init-paddle"
+)
+
 func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	if pdj.Status.Phase == pdv1.Completed {
 		return pdv1.Completed
@@ -67,93 +71,105 @@ func extractNameIndex(name string) (string, int) {
 	}
 }
 
-func constructPS4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {
-	name := genPaddleResName(pdj.Name, pdv1.ResourcePS, idx)
+func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.ConfigMap {
+	pservers := make([]string, pdj.Spec.PS.Replicas)
+	workers := make([]string, pdj.Spec.Worker.Replicas)
+	for _, pod := range childPods.Items {
+		if len(strings.Split(pod.Status.PodIP, ".")) != 4 {
+			return nil
+		}
+		resType, idx := extractNameIndex(pod.Name)
+		if resType == pdv1.ResourcePS {
+			if pdj.Spec.ServiceMode == pdv1.Service {
+				pservers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
+			} else {
+				pservers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
+			}
+		} else if resType == pdv1.ResourceWorker {
+			if pdj.Spec.ServiceMode == pdv1.Service {
+				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
+			} else {
+				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
+			}
+		}
+	}
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				pdv1.ResourceName: pdj.Name,
+			},
+			Annotations: map[string]string{},
+			Name:        pdj.Name,
+			Namespace:   pdj.Namespace,
+		},
+		Data: map[string]string{
+			"PADDLE_PSERVERS_IP_PORT_LIST":      strings.Join(pservers, ","),
+			"PADDLE_TRAINERS_NUM":               fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
+			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
+			"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
+			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
+		},
+	}
+}
+
+func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) *corev1.Pod {
+	name := genPaddleResName(pdj.Name, resType, idx)
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				pdv1.ResourceName: name,
-				pdv1.ResourceType: pdv1.ResourcePS,
+				pdv1.ResourceType: resType,
 			},
 			Annotations: map[string]string{
-				pdv1.ResourceAnnotation: pdv1.ResourcePS,
+				pdv1.ResourceAnnotation: resType,
 			},
-			Name:      genPaddleResName(pdj.Name, pdv1.ResourcePS, idx),
+			Name:      genPaddleResName(pdj.Name, resType, idx),
 			Namespace: pdj.Namespace,
 		},
 		Spec: *pdj.Spec.Worker.Template.Spec.DeepCopy(),
 	}
-	envs := map[string]string{
-		"PADDLE_PSERVERS_IP_PORT_LIST":      genEndpoints(pdj.Name, pdv1.ResourcePS, pdj.Spec.PS.Replicas, pdv1.PADDLE_PORT),
-		"PADDLE_TRAINERS_NUM":               fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
-		"TRAINING_ROLE":                     pdv1.TrainingRole[pdv1.ResourcePS],
-		"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
-		"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
-		"POD_IP":                            name,
+	ic := corev1.Container{
+		Name:    "init-paddle",
+		Image:   "busybox:1.28",
+		Command: []string{"sh", "-c", "sleep 20"},
 	}
-	for k, v := range envs {
-		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
+	envIP := corev1.EnvVar{
+		Name: "POD_IP",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.podIP",
+			},
+		},
 	}
-	pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
+	envRank := corev1.EnvVar{
+		Name:  "PADDLE_TRAINER_ID",
+		Value: fmt.Sprintf("%d", idx),
+	}
+	envRole := corev1.EnvVar{
+		Name:  "TRAINING_ROLE",
+		Value: pdv1.TrainingRole[resType],
+	}
+	envRole2 := corev1.EnvVar{
+		Name:  "PADDLE_TRAINING_ROLE",
+		Value: pdv1.TrainingRole[resType],
+	}
+	pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, envIP, envRank, envRole, envRole2)
+
+	envF := corev1.EnvFromSource{
+		ConfigMapRef: &corev1.ConfigMapEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: pdj.Name,
+			},
+		},
+	}
+	pod.Spec.Containers[0].EnvFrom = append(pod.Spec.Containers[0].EnvFrom, envF)
+
+	if pdj.Spec.ServiceMode == pdv1.Service {
+		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
+	}
 	pod.Spec.RestartPolicy = "Never"
 	return pod
-}
-
-func constructWorker4PaddleJob(pdj *pdv1.PaddleJob, idx int) *corev1.Pod {
-	name := genPaddleResName(pdj.Name, pdv1.ResourceWorker, idx)
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				pdv1.ResourceName: name,
-				pdv1.ResourceType: pdv1.ResourceWorker,
-			},
-			Annotations: map[string]string{
-				pdv1.ResourceAnnotation: pdv1.ResourceWorker,
-			},
-			Name:      name,
-			Namespace: pdj.Namespace,
-		},
-		Spec: *pdj.Spec.Worker.Template.Spec.DeepCopy(),
-	}
-	// ugly env, hard to change
-	envs := map[string]string{
-		"PADDLE_PSERVERS_IP_PORT_LIST":      genEndpoints(pdj.Name, pdv1.ResourcePS, pdj.Spec.PS.Replicas, pdv1.PADDLE_PORT),
-		"PADDLE_TRAINERS_NUM":               fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
-		"TRAINING_ROLE":                     pdv1.TrainingRole[pdv1.ResourceWorker],
-		"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
-		"PADDLE_TRAINER_ID":                 fmt.Sprintf("%d", idx),
-		"PADDLE_TRAINING_ROLE":              pdv1.TrainingRole[pdv1.ResourceWorker],
-		"PADDLE_TRAINER_ENDPOINTS":          genEndpoints(pdj.Name, pdv1.ResourcePS, pdj.Spec.Worker.Replicas, pdv1.PADDLE_PORT),
-		"PADDLE_CURRENT_ENDPOINT":           fmt.Sprintf("%s:%d", name, pdv1.PADDLE_PORT),
-	}
-	for k, v := range envs {
-		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
-	}
-	pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
-	pod.Spec.RestartPolicy = "Never"
-	return pod
-}
-
-func constructService4Pod(pod corev1.Pod) *corev1.Service {
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      pod.Name,
-			Namespace: pod.Namespace,
-			Labels:    map[string]string{},
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
-					Port: pdv1.PADDLE_PORT,
-				},
-			},
-			Selector: map[string]string{
-				pdv1.ResourceName: pod.Name,
-			},
-			ClusterIP: "None",
-		},
-	}
-	return svc
 }
 
 func genEndpoints(name string, resType string, num int, port int) string {
@@ -189,7 +205,7 @@ func isPodRealRuning(pod *corev1.Pod) bool {
 	}
 	for i := range pod.Status.InitContainerStatuses {
 		container := pod.Status.InitContainerStatuses[i]
-		if !container.Ready || container.State.Running == nil {
+		if !container.Ready {
 			return false
 		}
 	}
@@ -200,4 +216,39 @@ func isPodRealRuning(pod *corev1.Pod) bool {
 		}
 	}
 	return true
+}
+
+func isPodInitializing(pod *corev1.Pod) bool {
+	if pod.Status.Phase != corev1.PodPending {
+		return false
+	}
+	for i := range pod.Status.InitContainerStatuses {
+		container := pod.Status.InitContainerStatuses[i]
+		if container.Name == INIT_CONTAINER_NAME && container.State.Running != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func constructService4Pod(pod corev1.Pod) *corev1.Service {
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+			Labels:    map[string]string{},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Port: pdv1.PADDLE_PORT,
+				},
+			},
+			Selector: map[string]string{
+				pdv1.ResourceName: pod.Name,
+			},
+			ClusterIP: "None",
+		},
+	}
+	return svc
 }

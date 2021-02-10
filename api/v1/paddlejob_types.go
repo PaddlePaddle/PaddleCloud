@@ -77,13 +77,17 @@ const (
 	Succeed     PaddleJobPhase = "Succeed"
 )
 
-type CleanPolicy string
+type CleanPodPolicy string
 
 const (
-	CleanAll          CleanPolicy = "All"
-	CleanNever        CleanPolicy = "Never"
-	CleanOnFailure    CleanPolicy = "OnFailure"
-	CleanOnCompletion CleanPolicy = "OnCompletion"
+	// CleanAlways policy will always clean pods
+	CleanAlways CleanPodPolicy = "Always"
+	// CleanNever policy will nerver clean pods
+	CleanNever CleanPodPolicy = "Never"
+	// CleanOnFailure policy will clean pods only on job failed
+	CleanOnFailure CleanPodPolicy = "OnFailure"
+	// CleanOnCompletion policy will clean pods only on job completed
+	CleanOnCompletion CleanPodPolicy = "OnCompletion"
 )
 
 // ElasticStatus defines the status of elastic process
@@ -96,12 +100,23 @@ const (
 	ElasticStatusError ElasticStatus = "ERROR"
 )
 
+type ServiceMode string
+
+const (
+	PodIP   ServiceMode = "PodIP"
+	Service ServiceMode = "Service"
+)
+
 // PaddleJobSpec defines the desired state of PaddleJob
 type PaddleJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	CleanPolicy CleanPolicy `json:"cleanPolicy,omitempty"`
+	// CleanPodPolicy defines whether to clean pod after job finished
+	CleanPodPolicy CleanPodPolicy `json:"cleanPodPolicy,omitempty"`
+
+	// ServiceMode defines the communication mode inter pods : PodIP or Service
+	ServiceMode ServiceMode `json:"serviceMode,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
 	PS ResourceSpec `json:"ps,omitempty"`
@@ -165,6 +180,8 @@ type PaddleJobStatus struct {
 	// Elastic mix the setting (enable or not) and status of job
 	// TODO(kuizhiqing) hold on
 	Elastic ElasticStatus `json:"elastic,omitempty"`
+
+	ObservedGeneration int `json:"observedGeneration,omitempty"`
 }
 
 //+kubebuilder:object:root=true
