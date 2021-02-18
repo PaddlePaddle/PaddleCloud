@@ -115,6 +115,9 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.C
 }
 
 func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod) {
+	// metadata is missing due to controller-gen,
+	// c.f. https://github.com/kubernetes-sigs/controller-tools/issues/448
+	// c.f. https://github.com/kubernetes-sigs/controller-tools/pull/539
 	if resType == pdv1.ResourcePS {
 		pod = &corev1.Pod{
 			ObjectMeta: *pdj.Spec.PS.Template.ObjectMeta.DeepCopy(),
@@ -176,6 +179,7 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
 	}
 	pod.Spec.RestartPolicy = "Never"
+
 	return pod
 }
 
