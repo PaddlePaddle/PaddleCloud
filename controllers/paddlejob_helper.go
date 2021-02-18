@@ -108,8 +108,8 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.C
 			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
 			"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
 			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
-			"PADDLE_WITH_GLOO":                  fmt.Sprintf("%d", 2),
-			"PADDLE_GLOO_HTTP_ENDPOINT":         pservers[0],
+			//"PADDLE_WITH_GLOO":                  fmt.Sprintf("%d", 2),
+			//"PADDLE_GLOO_HTTP_ENDPOINT":         pservers[0],
 		},
 	}
 }
