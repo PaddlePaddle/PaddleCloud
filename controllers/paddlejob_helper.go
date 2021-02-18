@@ -108,26 +108,28 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.C
 			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
 			"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
 			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
+			"PADDLE_WITH_GLOO":                  fmt.Sprintf("%d", 2),
+			"PADDLE_GLOO_HTTP_ENDPOINT":         pservers[0],
 		},
 	}
 }
 
-func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) *corev1.Pod {
-	name := genPaddleResName(pdj.Name, resType, idx)
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				pdv1.ResourceName: name,
-				pdv1.ResourceType: resType,
-			},
-			Annotations: map[string]string{
-				pdv1.ResourceAnnotation: resType,
-			},
-			Name:      genPaddleResName(pdj.Name, resType, idx),
-			Namespace: pdj.Namespace,
-		},
-		Spec: *pdj.Spec.Worker.Template.Spec.DeepCopy(),
+func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod) {
+	if resType == pdv1.ResourcePS {
+		pod = &corev1.Pod{
+			ObjectMeta: *pdj.Spec.PS.Template.ObjectMeta.DeepCopy(),
+			Spec:       *pdj.Spec.PS.Template.Spec.DeepCopy(),
+		}
+	} else {
+		pod = &corev1.Pod{
+			ObjectMeta: *pdj.Spec.Worker.Template.ObjectMeta.DeepCopy(),
+			Spec:       *pdj.Spec.Worker.Template.Spec.DeepCopy(),
+		}
 	}
+	name := genPaddleResName(pdj.Name, resType, idx)
+	pod.ObjectMeta.Name = name
+	pod.ObjectMeta.Namespace = pdj.Namespace
+
 	ic := corev1.Container{
 		Name:    "init-paddle",
 		Image:   "busybox:1.28",
