@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= registry.baidubce.com/kuizhiqing/paddle-operator:v1
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,trivialVersions=true,preserveUnknownFields=false"
 
@@ -49,6 +49,10 @@ deploy: manifests kustomize
 # UnDeploy controller from the configured Kubernetes cluster in ~/.kube/config
 undeploy:
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
+
+helm: manifests kustomize
+	$(KUSTOMIZE) build config/crd > charts/paddle-operator/templates/crd.yaml
+	$(KUSTOMIZE) build config/default > charts/paddle-operator/templates/controller.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
