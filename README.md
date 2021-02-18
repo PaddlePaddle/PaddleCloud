@@ -62,6 +62,12 @@ may give you abstract summary of your job.
 
 Fin, you can play with your own job.
 
+## Uninstall
+Simply
+```shell
+kubectl delete -f deploy/v1/crd.yaml -f deploy/v1/operator.yaml
+```
+
 ## Advanced usage
 
 More configuration can be found in Makefile, clone this repo and enjoy it. 

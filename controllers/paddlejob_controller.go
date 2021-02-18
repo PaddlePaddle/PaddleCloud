@@ -117,7 +117,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// List all associated svc
 	var svcs corev1.ServiceList
 
-	if pdj.Spec.ServiceMode == pdv1.Service {
+	if pdj.Spec.Intranet == pdv1.Service {
 		if err := r.List(ctx, &svcs, client.InNamespace(req.Namespace), client.MatchingFields{ctrlRefKey: req.Name}); err != nil {
 			return ctrl.Result{}, err
 		}

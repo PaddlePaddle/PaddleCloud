@@ -100,11 +100,11 @@ const (
 	ElasticStatusError ElasticStatus = "ERROR"
 )
 
-type ServiceMode string
+type Intranet string
 
 const (
-	PodIP   ServiceMode = "PodIP"
-	Service ServiceMode = "Service"
+	PodIP   Intranet = "PodIP"
+	Service Intranet = "Service"
 )
 
 // PaddleJobSpec defines the desired state of PaddleJob
@@ -115,8 +115,8 @@ type PaddleJobSpec struct {
 	// CleanPodPolicy defines whether to clean pod after job finished
 	CleanPodPolicy CleanPodPolicy `json:"cleanPodPolicy,omitempty"`
 
-	// ServiceMode defines the communication mode inter pods : PodIP or Service
-	ServiceMode ServiceMode `json:"serviceMode,omitempty"`
+	// Intranet defines the communication mode inter pods : PodIP or Service
+	Intranet Intranet `json:"intranet,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
 	PS ResourceSpec `json:"ps,omitempty"`

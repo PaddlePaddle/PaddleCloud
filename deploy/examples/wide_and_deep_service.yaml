@@ -3,8 +3,8 @@ kind: PaddleJob
 metadata:
   name: wide-ande-deep
 spec:
-  serviceMode: Service
-  cleanPolicy: OnCompletion
+  intranet: Service
+  cleanPodPolicy: Nerver
   worker:
     replicas: 2
     template:

@@ -58,6 +58,10 @@ spec:
                 description: CleanPodPolicy defines whether to clean pod after job
                   finished
                 type: string
+              intranet:
+                description: 'Intranet defines the communication mode inter pods :
+                  PodIP or Service'
+                type: string
               ps:
                 description: PS[erver] describes the spec of server base on pod template
                 properties:
@@ -6642,10 +6646,6 @@ spec:
                 required:
                 - template
                 type: object
-              serviceMode:
-                description: 'ServiceMode defines the communication mode inter pods
-                  : PodIP or Service'
-                type: string
               worker:
                 description: Worker describes the spec of worker base on pod template
                 properties:

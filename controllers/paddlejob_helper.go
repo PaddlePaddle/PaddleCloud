@@ -80,13 +80,13 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.C
 		}
 		resType, idx := extractNameIndex(pod.Name)
 		if resType == pdv1.ResourcePS {
-			if pdj.Spec.ServiceMode == pdv1.Service {
+			if pdj.Spec.Intranet == pdv1.Service {
 				pservers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
 			} else {
 				pservers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
 			}
 		} else if resType == pdv1.ResourceWorker {
-			if pdj.Spec.ServiceMode == pdv1.Service {
+			if pdj.Spec.Intranet == pdv1.Service {
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
 			} else {
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
@@ -136,11 +136,15 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) *corev1.Pod {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 	envIP := corev1.EnvVar{
 		Name: "POD_IP",
-		ValueFrom: &corev1.EnvVarSource{
+	}
+	if pdj.Spec.Intranet == pdv1.Service {
+		envIP.ValueFrom = &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "status.podIP",
 			},
-		},
+		}
+	} else {
+		envIP.Value = name
 	}
 	envRank := corev1.EnvVar{
 		Name:  "PADDLE_TRAINER_ID",
@@ -165,7 +169,7 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) *corev1.Pod {
 	}
 	pod.Spec.Containers[0].EnvFrom = append(pod.Spec.Containers[0].EnvFrom, envF)
 
-	if pdj.Spec.ServiceMode == pdv1.Service {
+	if pdj.Spec.Intranet == pdv1.Service {
 		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
 	}
 	pod.Spec.RestartPolicy = "Never"

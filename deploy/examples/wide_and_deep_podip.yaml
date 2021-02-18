@@ -1,9 +1,10 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: wide-ande-deep
+  name: wide-ande-deep-podip
 spec:
-  cleanPolicy: OnCompletion
+  intranet: PodIP
+  cleanPodPolicy: Nerver
   worker:
     replicas: 2
     template:
