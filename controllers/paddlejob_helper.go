@@ -134,17 +134,18 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) *corev1.Pod {
 		Command: []string{"sh", "-c", "sleep 20"},
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
+
 	envIP := corev1.EnvVar{
 		Name: "POD_IP",
 	}
 	if pdj.Spec.Intranet == pdv1.Service {
+		envIP.Value = name
+	} else {
 		envIP.ValueFrom = &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "status.podIP",
 			},
 		}
-	} else {
-		envIP.Value = name
 	}
 	envRank := corev1.EnvVar{
 		Name:  "PADDLE_TRAINER_ID",
