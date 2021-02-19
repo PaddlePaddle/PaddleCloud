@@ -2866,6 +2866,8 @@ spec:
                 required:
                 - template
                 type: object
+              withGloo:
+                type: integer
               worker:
                 properties:
                   limits:

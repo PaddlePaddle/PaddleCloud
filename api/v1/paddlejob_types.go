@@ -118,6 +118,9 @@ type PaddleJobSpec struct {
 	// Intranet defines the communication mode inter pods : PodIP or Service
 	Intranet Intranet `json:"intranet,omitempty"`
 
+	//
+	WithGloo int `json:"withGloo,omitempty"`
+
 	// PS[erver] describes the spec of server base on pod template
 	PS ResourceSpec `json:"ps,omitempty"`
 

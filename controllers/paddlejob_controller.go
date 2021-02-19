@@ -172,7 +172,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return false
 		}
 		if err := r.createResource(ctx, &pdj, pod); err != nil {
-			log.Error(err, "make reference failed")
+			log.Error(err, "create pod failed")
 		}
 		return true
 	}
@@ -195,7 +195,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	if len(childPods.Items) == pdj.Spec.PS.Replicas+pdj.Spec.Worker.Replicas {
+	if getPaddleJobAlivePods(&pdj) == getPaddleJobReplicas(&pdj) {
 		if err := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &corev1.ConfigMap{}); err == nil || !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
@@ -219,6 +219,9 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.PaddleJob, childPods corev1.PodList) pdv1.PaddleJobStatus {
 	syncStatusByPod := func(ss *pdv1.ResourceStatus, pod *corev1.Pod) {
+		if pod.CreationTimestamp.Before(&pdj.CreationTimestamp) {
+			return
+		}
 		switch pod.Status.Phase {
 		case corev1.PodPending:
 			ss.Pending++

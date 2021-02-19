@@ -30,7 +30,16 @@ const (
 	INIT_CONTAINER_NAME = "init-paddle"
 )
 
+func getPaddleJobAlivePods(pdj *pdv1.PaddleJob) int {
+	return len(pdj.Status.PS.Refs) + len(pdj.Status.Worker.Refs)
+}
+
+func getPaddleJobReplicas(pdj *pdv1.PaddleJob) int {
+	return pdj.Spec.PS.Replicas + pdj.Spec.Worker.Replicas
+}
+
 func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
+
 	if pdj.Status.Phase == pdv1.Completed {
 		return pdv1.Completed
 	} else if pdj.Status.Phase == pdv1.Failed {
@@ -44,6 +53,7 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	} else if pdj.Status.PS.Pending > 0 || pdj.Status.Worker.Pending > 0 {
 		return pdv1.Starting
 	}
+
 	return pdv1.Starting
 }
 
@@ -71,9 +81,10 @@ func extractNameIndex(name string) (string, int) {
 	}
 }
 
-func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.ConfigMap {
+func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *corev1.ConfigMap) {
 	pservers := make([]string, pdj.Spec.PS.Replicas)
 	workers := make([]string, pdj.Spec.Worker.Replicas)
+
 	for _, pod := range childPods.Items {
 		if len(strings.Split(pod.Status.PodIP, ".")) != 4 {
 			return nil
@@ -93,7 +104,7 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.C
 			}
 		}
 	}
-	return &corev1.ConfigMap{
+	cm = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				pdv1.ResourceName: pdj.Name,
@@ -108,35 +119,49 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) *corev1.C
 			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
 			"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
 			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
-			//"PADDLE_WITH_GLOO":                  fmt.Sprintf("%d", 2),
-			//"PADDLE_GLOO_HTTP_ENDPOINT":         pservers[0],
 		},
 	}
+	if pdj.Spec.WithGloo > 0 && pdj.Spec.Intranet != pdv1.Service {
+		cm.Data["PADDLE_WITH_GLOO"] = fmt.Sprintf("%d", pdj.Spec.WithGloo)
+		cm.Data["PADDLE_GLOO_HTTP_ENDPOINT"] = strings.Replace(pservers[0],
+			fmt.Sprintf(":%d", pdv1.PADDLE_PORT),
+			fmt.Sprintf(":%d", pdv1.PADDLE_PORT+10),
+			1)
+	}
+	return cm
 }
 
 func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod) {
 	// metadata is missing due to controller-gen,
 	// c.f. https://github.com/kubernetes-sigs/controller-tools/issues/448
 	// c.f. https://github.com/kubernetes-sigs/controller-tools/pull/539
-	if resType == pdv1.ResourcePS {
-		pod = &corev1.Pod{
-			ObjectMeta: *pdj.Spec.PS.Template.ObjectMeta.DeepCopy(),
-			Spec:       *pdj.Spec.PS.Template.Spec.DeepCopy(),
-		}
-	} else {
-		pod = &corev1.Pod{
-			ObjectMeta: *pdj.Spec.Worker.Template.ObjectMeta.DeepCopy(),
-			Spec:       *pdj.Spec.Worker.Template.Spec.DeepCopy(),
-		}
-	}
 	name := genPaddleResName(pdj.Name, resType, idx)
-	pod.ObjectMeta.Name = name
-	pod.ObjectMeta.Namespace = pdj.Namespace
+	pod = &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				pdv1.ResourceName: name,
+				pdv1.ResourceType: resType,
+			},
+			Annotations: map[string]string{
+				pdv1.ResourceAnnotation: resType,
+			},
+			Name:      name,
+			Namespace: pdj.Namespace,
+		},
+	}
+	if resType == pdv1.ResourcePS {
+		pod.Spec = *pdj.Spec.PS.Template.Spec.DeepCopy()
+	} else {
+		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
+	}
 
+    // TODO(kuizhiqing)
+    // initContainer will ensure pods are ready, then create cm to remove resource not ready error
+    // Now it simply wait, since kubernetes ensure cm created before pod running indeed
 	ic := corev1.Container{
 		Name:    "init-paddle",
 		Image:   "busybox:1.28",
-		Command: []string{"sh", "-c", "sleep 20"},
+		Command: []string{"sh", "-c", "sleep 12"},
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 
