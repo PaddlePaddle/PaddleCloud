@@ -123,6 +123,7 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 	}
 	if pdj.Spec.WithGloo > 0 && pdj.Spec.Intranet != pdv1.Service {
 		cm.Data["PADDLE_WITH_GLOO"] = fmt.Sprintf("%d", pdj.Spec.WithGloo)
+		cm.Data["PADDLE_GLOO_RENDEZVOUS"] = "3"
 		cm.Data["PADDLE_GLOO_HTTP_ENDPOINT"] = strings.Replace(pservers[0],
 			fmt.Sprintf(":%d", pdv1.PADDLE_PORT),
 			fmt.Sprintf(":%d", pdv1.PADDLE_PORT+10),
@@ -155,9 +156,9 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
 	}
 
-    // TODO(kuizhiqing)
-    // initContainer will ensure pods are ready, then create cm to remove resource not ready error
-    // Now it simply wait, since kubernetes ensure cm created before pod running indeed
+	// TODO(kuizhiqing)
+	// initContainer will ensure pods are ready, then create cm to remove resource not ready error
+	// Now it simply wait, since kubernetes ensure cm created before pod running indeed
 	ic := corev1.Container{
 		Name:    "init-paddle",
 		Image:   "busybox:1.28",

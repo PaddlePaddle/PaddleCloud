@@ -3,7 +3,8 @@ kind: PaddleJob
 metadata:
   name: wide-ande-deep
 spec:
-  cleanPodPolicy: OnCompletion
+  cleanPodPolicy: Never
+  withGloo: 1
   worker:
     replicas: 2
     template:
