@@ -50,9 +50,16 @@ deploy: manifests kustomize
 undeploy:
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+TEMPLATES_DIR ?= charts/paddle-operator/templates
 helm: manifests kustomize
-	$(KUSTOMIZE) build config/crd > charts/paddle-operator/templates/crd.yaml
-	$(KUSTOMIZE) build config/default > charts/paddle-operator/templates/controller.yaml
+	$(KUSTOMIZE) build config/crd > $(TEMPLATES_DIR)/crd.yaml
+	$(KUSTOMIZE) build config/default > $(TEMPLATES_DIR)/controller.yaml
+	# The last sed command is not clean, need more advanced scripting to be robust
+	sed -i  -e "s/image:.*/image: {{ .Values.image }}/g" \
+			-e "s/--namespace=.*/--namespace={{ .Values.jobnamespace }}/g" \
+			-e "s/namespace:.*/namespace: {{ .Values.controllernamespace }}/g" \
+			-e "s/name: paddle-system/name: {{ .Values.controllernamespace }}/g" \
+			$(TEMPLATES_DIR)/controller.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
