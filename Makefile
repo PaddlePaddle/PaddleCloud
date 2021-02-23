@@ -37,9 +37,11 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-gen-deploy: manifests kustomize
+gen-deploy: manifests kustomize crd-v1beta1
 	$(KUSTOMIZE) build config/crd > deploy/v1/crd.yaml
 	$(KUSTOMIZE) build config/operator > deploy/v1/operator.yaml
+	cp config/crd/v1beta1/batch.paddlepaddle.org_paddlejobs.yaml deploy/v1beta1/crd.yaml
+	$(KUSTOMIZE) build config/operator > deploy/v1beta1/operator.yaml
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
@@ -64,6 +66,9 @@ helm: manifests kustomize
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+crd-v1beta1:
+	$(CONTROLLER_GEN) "crd:crdVersions=v1beta1,allowDangerousTypes=false,maxDescLen=0,preserveUnknownFields=false" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/v1beta1
 
 # Run go fmt against code
 fmt:
