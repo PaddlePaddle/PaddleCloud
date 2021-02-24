@@ -1,7 +1,7 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: paddlejob-1
+  name: paddlejob-podip
 spec:
   worker:
     replicas: 2

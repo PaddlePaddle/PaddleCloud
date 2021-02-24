@@ -29,7 +29,9 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: registry.baidubce.com/kuizhiqing/paddle-operator:v1
+        - --namespace=paddle-system
+        image: controller:latest
+        imagePullPolicy: Always
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

@@ -1,0 +1,24 @@
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: wide-ande-deep
+spec:
+  cleanPodPolicy: Never
+  withGloo: 1
+  worker:
+    replicas: 2
+    template:
+      spec:
+        restartPolicy: "Never"
+        schedulerName: volcano
+        containers:
+          - name: paddle
+            image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
+  ps:
+    replicas: 2
+    template:
+      spec:
+        restartPolicy: "Never"
+        containers:
+          - name: paddle
+            image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1

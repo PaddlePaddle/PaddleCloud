@@ -77,6 +77,19 @@ const (
 	Succeed     PaddleJobPhase = "Succeed"
 )
 
+type CleanPodPolicy string
+
+const (
+	// CleanAlways policy will always clean pods
+	CleanAlways CleanPodPolicy = "Always"
+	// CleanNever policy will nerver clean pods
+	CleanNever CleanPodPolicy = "Never"
+	// CleanOnFailure policy will clean pods only on job failed
+	CleanOnFailure CleanPodPolicy = "OnFailure"
+	// CleanOnCompletion policy will clean pods only on job completed
+	CleanOnCompletion CleanPodPolicy = "OnCompletion"
+)
+
 // ElasticStatus defines the status of elastic process
 type ElasticStatus string
 
@@ -87,10 +100,26 @@ const (
 	ElasticStatusError ElasticStatus = "ERROR"
 )
 
+type Intranet string
+
+const (
+	PodIP   Intranet = "PodIP"
+	Service Intranet = "Service"
+)
+
 // PaddleJobSpec defines the desired state of PaddleJob
 type PaddleJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// CleanPodPolicy defines whether to clean pod after job finished
+	CleanPodPolicy CleanPodPolicy `json:"cleanPodPolicy,omitempty"`
+
+	// Intranet defines the communication mode inter pods : PodIP or Service
+	Intranet Intranet `json:"intranet,omitempty"`
+
+	//
+	WithGloo int `json:"withGloo,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
 	PS ResourceSpec `json:"ps,omitempty"`
@@ -116,6 +145,8 @@ type ResourceSpec struct {
 type ResourceStatus struct {
 	// Pending
 	Pending int `json:"pending,omitempty"`
+	// Starting
+	Starting int `json:"starting,omitempty"`
 	// Running
 	Running int `json:"running,omitempty"`
 	// Failed
@@ -124,6 +155,8 @@ type ResourceStatus struct {
 	Succeeded int `json:"succeeded,omitempty"`
 	// Unknown
 	Unknown int `json:"unknown,omitempty"`
+	// Ready
+	Ready string `json:"ready,omitempty"`
 	// A list of  pointer to pods
 	Refs []corev1.ObjectReference `json:"refs,omitempty"`
 }
@@ -150,10 +183,18 @@ type PaddleJobStatus struct {
 	// Elastic mix the setting (enable or not) and status of job
 	// TODO(kuizhiqing) hold on
 	Elastic ElasticStatus `json:"elastic,omitempty"`
+
+	ObservedGeneration int `json:"observedGeneration,omitempty"`
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:resource:shortName=pdj
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
+//+kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.status.mode`
+//+kubebuilder:printcolumn:name="PS",type=string,JSONPath=`.status.ps.ready`
+//+kubebuilder:printcolumn:name="Worker",type=string,JSONPath=`.status.worker.ready`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // PaddleJob is the Schema for the paddlejobs API
 type PaddleJob struct {
