@@ -27,7 +27,9 @@ import (
 )
 
 const (
-	INIT_CONTAINER_NAME = "init-paddle"
+	INIT_CONTAINER_NAME          = "init-paddle"
+	schedulingPodGroupAnnotation = "scheduling.k8s.io/group-name"
+	schedulerNameVolcano         = "volcano"
 )
 
 func getPaddleJobAlivePods(pdj *pdv1.PaddleJob) int {
@@ -154,6 +156,11 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		pod.Spec = *pdj.Spec.PS.Template.Spec.DeepCopy()
 	} else {
 		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
+	}
+
+	if pdj.Spec.Worker.Template.Spec.SchedulerName == schedulerNameVolcano {
+		pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
+		pod.Spec.SchedulerName = schedulerNameVolcano
 	}
 
 	// TODO(kuizhiqing)

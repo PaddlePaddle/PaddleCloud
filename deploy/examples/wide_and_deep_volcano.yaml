@@ -1,3 +1,4 @@
+---
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
@@ -22,3 +23,11 @@ spec:
         containers:
           - name: paddle
             image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
+
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: PodGroup
+metadata:
+  name: wide-ande-deep
+spec:
+  minMember: 4
