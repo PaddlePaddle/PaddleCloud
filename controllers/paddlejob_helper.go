@@ -18,27 +18,20 @@ package controllers
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
 )
 
 const (
-	INIT_CONTAINER_NAME          = "init-paddle"
+	initContainerName            = "init-paddle"
 	schedulingPodGroupAnnotation = "scheduling.k8s.io/group-name"
 	schedulerNameVolcano         = "volcano"
 )
-
-func getPaddleJobAlivePods(pdj *pdv1.PaddleJob) int {
-	return len(pdj.Status.PS.Refs) + len(pdj.Status.Worker.Refs)
-}
-
-func getPaddleJobReplicas(pdj *pdv1.PaddleJob) int {
-	return pdj.Spec.PS.Replicas + pdj.Spec.Worker.Replicas
-}
 
 func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 
@@ -268,7 +261,7 @@ func isPodInitializing(pod *corev1.Pod) bool {
 	}
 	for i := range pod.Status.InitContainerStatuses {
 		container := pod.Status.InitContainerStatuses[i]
-		if container.Name == INIT_CONTAINER_NAME && container.State.Running != nil {
+		if container.Name == initContainerName && container.State.Running != nil {
 			return true
 		}
 	}
@@ -284,7 +277,7 @@ func constructService4Pod(pod corev1.Pod) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
+				{
 					Port: pdv1.PADDLE_PORT,
 				},
 			},
