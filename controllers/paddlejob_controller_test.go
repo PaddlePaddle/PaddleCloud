@@ -41,11 +41,6 @@ var _ = Describe("PaddleJob controller", func() {
 		},
 	}
 
-	resSpec := paddlev1.ResourceSpec{
-		Replicas: 2,
-		Template: podSpec,
-	}
-
 	wideAndDeepService := paddlev1.PaddleJob{
 		TypeMeta: jobTypeMeta,
 		ObjectMeta: metav1.ObjectMeta{
@@ -55,38 +50,50 @@ var _ = Describe("PaddleJob controller", func() {
 		Spec: paddlev1.PaddleJobSpec{
 			CleanPodPolicy: paddlev1.CleanNever,
 			Intranet:       paddlev1.Service,
-			Worker:         resSpec,
-			PS:             resSpec,
+			PS: paddlev1.ResourceSpec{
+				Replicas: 3,
+				Template: podSpec,
+			},
+			Worker: paddlev1.ResourceSpec{
+				Replicas: 2,
+				Template: podSpec,
+			},
 		},
 	}
 
 	test := func() {
+		paddleJob := wideAndDeepService.DeepCopy()
 		ctx := context.Background()
-		Expect(k8sClient.Create(ctx, &wideAndDeepService)).Should(Succeed())
-
 		jobKey := types.NamespacedName{
-			Name:      wideAndDeepService.ObjectMeta.Name,
-			Namespace: wideAndDeepService.ObjectMeta.Namespace,
+			Name:      paddleJob.ObjectMeta.Name,
+			Namespace: paddleJob.ObjectMeta.Namespace,
 		}
 		createdPaddleJob := &paddlev1.PaddleJob{}
 
-		Eventually(func() bool {
-			err := k8sClient.Get(ctx, jobKey, createdPaddleJob)
-			if err != nil {
-				return false
+		makeStateTest := func(PsReplica, WorkerReplica int) func() bool {
+			return func() bool {
+				if err := k8sClient.Get(ctx, jobKey, createdPaddleJob); err != nil {
+					return false
+				}
+				// Ensure pod number
+				if len(createdPaddleJob.Status.PS.Refs) != PsReplica ||
+					len(createdPaddleJob.Status.Worker.Refs) != WorkerReplica {
+					return false
+				}
+				// TODO: add more test here
+				return true
 			}
-			return true
-		}, timeout, interval).Should(BeTrue())
+		}
 
-		Eventually(func() int {
-			err := k8sClient.Get(ctx, jobKey, createdPaddleJob)
-			if err != nil {
-				return -1
-			}
-			return len(createdPaddleJob.Status.PS.Refs)
-		}, timeout, interval).Should(Equal(resSpec.Replicas))
+		Expect(k8sClient.Create(ctx, paddleJob)).Should(Succeed())
+		Eventually(makeStateTest(3, 2), timeout, interval).Should(BeTrue())
+		Expect(createdPaddleJob.Status.Mode).Should(Equal(paddlev1.PaddleJobModePS))
 
+		createdPaddleJob.Spec.PS.Replicas = 1
+		createdPaddleJob.Spec.Worker.Replicas = 4
+		Expect(k8sClient.Update(ctx, createdPaddleJob)).Should(Succeed())
+		Eventually(makeStateTest(1, 4), timeout, interval).Should(BeTrue())
 	}
 
-	It("test wide-and-deep", test)
+	It("test wide-and-deep in service mode", test)
 })
