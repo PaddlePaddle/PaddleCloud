@@ -10,7 +10,6 @@ spec:
     template:
       spec:
         restartPolicy: "Never"
-        schedulerName: volcano
         containers:
           - name: paddle
             image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
