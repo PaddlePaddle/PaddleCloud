@@ -196,6 +196,11 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas {
+		if pdj.Spec.Intranet == pdv1.Service {
+			if len(pdj.Status.PS.Refs)+len(pdj.Status.Worker.Refs) != len(svcs.Items) {
+				return ctrl.Result{}, nil
+			}
+		}
 		if err := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &corev1.ConfigMap{}); err == nil || !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
