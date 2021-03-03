@@ -13,14 +13,14 @@ spec:
         schedulerName: volcano
         containers:
           - name: paddle
-            image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
+            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
   ps:
     replicas: 2
     template:
       spec:
         containers:
           - name: paddle
-            image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
+            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
 
 ---
 apiVersion: scheduling.volcano.sh/v1beta1

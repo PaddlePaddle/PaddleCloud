@@ -245,7 +245,7 @@ spec:
         - --namespace=paddle-system
         command:
         - /manager
-        image: registry.baidubce.com/kuizhiqing/paddle-operator:v1
+        image: registry.baidubce.com/paddle-operator/controller:v1
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

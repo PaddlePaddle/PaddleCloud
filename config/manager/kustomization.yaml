@@ -14,5 +14,5 @@ configMapGenerator:
 
 images:
 - name: controller
-  newName: registry.baidubce.com/kuizhiqing/paddle-operator
+  newName: registry.baidubce.com/paddle-operator/controller
   newTag: v1
