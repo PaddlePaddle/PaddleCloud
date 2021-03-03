@@ -219,25 +219,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas {
-		if err := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &corev1.ConfigMap{}); err == nil || !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-		cm := constructConfigMap(&pdj, childPods)
-		if cm == nil {
-			return ctrl.Result{Requeue: true}, nil
-		}
-		if err := ctrl.SetControllerReference(&pdj, cm, r.Scheme); err != nil {
-			log.Error(err, "make reference failed")
-			return ctrl.Result{Requeue: true}, nil
-		}
-		err := r.createResource(ctx, &pdj, cm)
-		if apierrors.IsConflict(err) {
-			return ctrl.Result{Requeue: true}, nil
-		}
-		return ctrl.Result{}, err
-	}
-
 	return ctrl.Result{}, nil
 }
 
