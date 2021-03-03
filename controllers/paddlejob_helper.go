@@ -205,11 +205,11 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
 	}
 
-	if pod.Spec.RestartPolicy != "" {
-		if resType == pdv1.ResourcePS {
-			pod.Spec.RestartPolicy = "Never"
-		} else {
+	if pod.Spec.RestartPolicy == "" {
+		if resType == pdv1.ResourceWorker && pdj.Spec.Intranet == pdv1.Service {
 			pod.Spec.RestartPolicy = "OnFailure"
+		} else {
+			pod.Spec.RestartPolicy = "Never"
 		}
 	}
 

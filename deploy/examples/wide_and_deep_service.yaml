@@ -3,13 +3,12 @@ kind: PaddleJob
 metadata:
   name: wide-ande-deep-service
 spec:
-  intranet: Service
+  intranet: Service # default: PodIP
   cleanPodPolicy: Nerver
   worker:
     replicas: 2
     template:
       spec:
-        restartPolicy: "Never"
         containers:
           - name: paddle
             image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
@@ -17,7 +16,6 @@ spec:
     replicas: 2
     template:
       spec:
-        restartPolicy: "Never"
         containers:
           - name: paddle
             image: registry.baidubce.com/kuizhiqing/demo-wide-and-deep:v1
