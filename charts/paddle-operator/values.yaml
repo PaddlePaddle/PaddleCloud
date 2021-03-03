@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-image: registry.baidubce.com/kuizhiqing/paddle-operator:v1
+image: registry.baidubce.com/paddle-operator/controller:v1
 
 controllernamespace: paddle-system
 jobnamespace: paddle-system
