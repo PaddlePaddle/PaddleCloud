@@ -79,6 +79,7 @@ func extractNameIndex(name string) (string, int) {
 func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *corev1.ConfigMap) {
 	pservers := make([]string, pdj.Spec.PS.Replicas)
 	workers := make([]string, pdj.Spec.Worker.Replicas)
+	workerHosts := make([]string, pdj.Spec.Worker.Replicas)
 
 	for _, pod := range childPods.Items {
 		if len(strings.Split(pod.Status.PodIP, ".")) != 4 {
@@ -96,6 +97,7 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
 			} else {
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
+				workerHosts[idx] = fmt.Sprintf("%s", pod.Status.PodIP)
 			}
 		}
 	}
@@ -111,9 +113,11 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		Data: map[string]string{
 			"PADDLE_PSERVERS_IP_PORT_LIST":      strings.Join(pservers, ","),
 			"PADDLE_TRAINERS_NUM":               fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
+			"TRAINER_PORTS_NUM":                 fmt.Sprintf("%d", 32), // ugly env
 			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
 			"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
 			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
+			"PADDLE_TRAINERS":                   strings.Join(workerHosts, ","),
 		},
 	}
 	if pdj.Spec.WithGloo > 0 && pdj.Spec.Intranet != pdv1.Service {
