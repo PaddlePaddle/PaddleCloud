@@ -95,6 +95,7 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		} else if resType == pdv1.ResourceWorker {
 			if pdj.Spec.Intranet == pdv1.Service {
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
+				workerHosts[idx] = fmt.Sprintf("%s", pod.Name)
 			} else {
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
 				workerHosts[idx] = fmt.Sprintf("%s", pod.Status.PodIP)
