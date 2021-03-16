@@ -6,7 +6,6 @@ import (
 
 	kubeutil "hostport-manager/pkg/utils/kubernetes"
 	"hostport-manager/pkg/utils/portparse"
-	"strconv"
 
 	paddlejob "github.com/PaddlePaddle/cloud/go/api"
 	"github.com/golang/glog"
@@ -18,12 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	clientv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/registry/core/service/portallocator"
 )
 
@@ -93,7 +90,7 @@ func NewHostPortManager(opts HostPortManagerOptions,
 }
 
 func (c *HostPortManager) addPaddleInformer(stopCh <-chan struct{}) {
-	source := cache.NewListWatchFromClient(c.restClient, paddlejob.TrainingJobs, api.NamespaceAll, fields.Everything())
+	source := cache.NewListWatchFromClient(c.restClient, paddlejob.TrainingJobs, "", fields.Everything())
 
 	_, paddleInformer := cache.NewInformer(
 		source,
@@ -117,6 +114,7 @@ func (c *HostPortManager) addPaddleInformer(stopCh <-chan struct{}) {
 
 }
 
+/*
 func (c *HostPortManager) addReplicationControllerInformer(kubeInformerFactory kubeinformers.SharedInformerFactory) {
 	rcInformer := kubeInformerFactory.Core().V1().ReplicationControllers()
 	rcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -143,6 +141,7 @@ func (c *HostPortManager) addReplicationControllerInformer(kubeInformerFactory k
 
 	c.replicationControllerSynced = rcInformer.Informer().HasSynced
 }
+*/
 
 // Run will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
