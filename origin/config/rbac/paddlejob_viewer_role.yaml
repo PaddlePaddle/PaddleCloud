@@ -1,0 +1,20 @@
+# permissions for end users to view paddlejobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: paddlejob-viewer-role
+rules:
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - paddlejobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - paddlejobs/status
+  verbs:
+  - get

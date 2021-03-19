@@ -1,0 +1,32 @@
+---
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: wide-ande-deep
+spec:
+  cleanPodPolicy: Never
+  withGloo: 1
+  worker:
+    replicas: 2
+    template:
+      spec:
+        schedulerName: volcano
+        containers:
+          - name: paddle
+            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
+  ps:
+    replicas: 2
+    template:
+      spec:
+        containers:
+          - name: paddle
+            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
+
+
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: PodGroup
+metadata:
+  name: wide-ande-deep # name should be the same with PaddleJob
+spec:
+  minMember: 4

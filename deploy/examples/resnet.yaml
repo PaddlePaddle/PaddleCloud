@@ -1,0 +1,29 @@
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: resnet
+spec:
+  cleanPodPolicy: Never
+  worker:
+    replicas: 2
+    template:
+      spec:
+        containers:
+          - name: resnet
+            image: registry.baidubce.com/paddle-operator/demo-resnet:v1
+            command:
+            - python
+            args:
+            - "-m"
+            - "paddle.distributed.launch"
+            - "train_fleet.py"
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            resources:
+              limits:
+                nvidia.com/gpu: 1
+        volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
