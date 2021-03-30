@@ -19,6 +19,8 @@ package main
 import (
 	"flag"
 	"os"
+	"strconv"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -53,9 +55,11 @@ func main() {
 	var namespace string
 	var enableLeaderElection bool
 	var probeAddr string
+	var hostPortRange string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&namespace, "namespace", "", "The namespace the controller binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&hostPortRange, "port-range", "35000,65000", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -81,11 +85,29 @@ func main() {
 		os.Exit(1)
 	}
 
+	hostPosts := strings.Split(hostPortRange, ",")
+	portStart, err := strconv.Atoi(hostPosts[0])
+	if err != nil {
+		setupLog.Error(err, "port should have int type")
+		os.Exit(1)
+	}
+
+	portEnd, err := strconv.Atoi(hostPosts[1])
+	if err != nil {
+		setupLog.Error(err, "port should have int type")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.PaddleJobReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("PaddleJob"),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("paddlejob-controller"),
+		HostPortMap: map[string]int{
+			controllers.HOST_PORT_START: portStart,
+			controllers.HOST_PORT_CUR:   portStart,
+			controllers.HOST_PORT_END:   portEnd,
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PaddleJob")
 		os.Exit(1)

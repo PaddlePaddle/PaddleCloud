@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -37,18 +38,29 @@ import (
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
 )
 
+const (
+	HOST_PORT_START = "port.start"
+	HOST_PORT_END   = "port.end"
+	HOST_PORT_CUR   = "port.cur"
+	HOST_PORT_NS    = "namespace"
+	HOST_PORT_NUM   = 20
+	PADDLE_PORT     = 2379
+)
+
 var (
 	ctrlRefKey    = ".metadata.controller"
 	apiGVStr      = pdv1.GroupVersion.String()
 	finalizerName = "finalizers.paddlepaddle.org"
+	hostPort      = "host-port"
 )
 
 // PaddleJobReconciler reconciles a PaddleJob object
 type PaddleJobReconciler struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log         logr.Logger
+	Scheme      *runtime.Scheme
+	Recorder    record.EventRecorder
+	HostPortMap map[string]int
 }
 
 //+kubebuilder:rbac:groups=batch.paddlepaddle.org,resources=paddlejobs,verbs=get;list;watch;create;update;patch;delete
@@ -135,6 +147,10 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			err := r.createResource(ctx, &pdj, svc)
 			return ctrl.Result{}, err
 		}
+	} else if pdj.Spec.Intranet == pdv1.HostNetwork {
+		if r.allocHostPortForJob(ctx, &pdj) {
+			return ctrl.Result{}, nil
+		}
 	}
 
 	cleanOne := func() {
@@ -195,6 +211,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// Create configmap of global env for all pods after all pods are running
 	if len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas {
 		if pdj.Spec.Intranet == pdv1.Service {
 			if len(pdj.Status.PS.Refs)+len(pdj.Status.Worker.Refs) != len(svcs.Items) {
@@ -292,6 +309,44 @@ func (r *PaddleJobReconciler) createResource(ctx context.Context, pdj *pdv1.Padd
 	r.Recorder.Event(pdj, corev1.EventTypeNormal, "Created", fmt.Sprintf("created %s %s", tp, obj.GetName()))
 	return nil
 
+}
+
+func (r *PaddleJobReconciler) allocHostPortForJob(ctx context.Context, pdj *pdv1.PaddleJob) bool {
+	if pdj.Spec.Intranet != pdv1.HostNetwork {
+		return false
+	}
+	if port, ok := pdj.ObjectMeta.Annotations[hostPort]; ok {
+		iport, err := strconv.Atoi(port)
+		if err == nil && iport > r.HostPortMap[HOST_PORT_CUR] {
+			// this will happen after controller restart
+			r.HostPortMap[HOST_PORT_CUR] = iport
+			return true
+		}
+	} else {
+		pdj.ObjectMeta.Annotations[hostPort] = fmt.Sprintf("%d", r.allocNewPort())
+		r.Update(ctx, pdj)
+		return true
+	}
+	return false
+}
+
+// allocNewPort globally
+func (r *PaddleJobReconciler) allocNewPort() int {
+	// all nodes should use the same port according to paddle launch
+	// so, alloc port by job instead by node now
+	return r.allocNewHostPort(HOST_PORT_CUR)
+}
+
+// allocNewHostPort alloc new hostport by key, key may refer to host, job, or global key
+func (r *PaddleJobReconciler) allocNewHostPort(key string) int {
+	if port, ok := r.HostPortMap[key]; ok {
+		if port+HOST_PORT_NUM < r.HostPortMap[HOST_PORT_END] {
+			r.HostPortMap[key] = port + HOST_PORT_NUM
+			return r.HostPortMap[key]
+		}
+	}
+	r.HostPortMap[key] = r.HostPortMap[HOST_PORT_START]
+	return r.HostPortMap[key]
 }
 
 func (r *PaddleJobReconciler) finalize(ctx context.Context, pdj *pdv1.PaddleJob) error {

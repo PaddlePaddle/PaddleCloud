@@ -25,8 +25,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	KIND        = "PaddleJob"
-	PADDLE_PORT = 2379
+	KIND = "PaddleJob"
 )
 
 const (
@@ -103,8 +102,9 @@ const (
 type Intranet string
 
 const (
-	PodIP   Intranet = "PodIP"
-	Service Intranet = "Service"
+	PodIP       Intranet = "PodIP"
+	Service     Intranet = "Service"
+	HostNetwork Intranet = "Host"
 )
 
 // PaddleJobSpec defines the desired state of PaddleJob
