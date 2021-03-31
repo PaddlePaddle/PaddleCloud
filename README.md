@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paddle Operator makes it easy to run [padddle](https://www.paddlepaddle.org.cn/)
+Paddle Operator makes it easy to run [paddle](https://www.paddlepaddle.org.cn/)
 distributed training job on kubernetes by providing PaddleJob custom resource etc.
 
 ## Quick Start
