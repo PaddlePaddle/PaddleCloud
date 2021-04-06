@@ -290,7 +290,7 @@ func isPodInitializing(pod *corev1.Pod) bool {
 
 func constructService4Pod(pod corev1.Pod) *corev1.Service {
 	var ports = []corev1.ServicePort{}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < HOST_PORT_NUM; i++ {
 		ports = append(ports, corev1.ServicePort{
 			Name: fmt.Sprintf("p-%d", i),
 			Port: int32(PADDLE_PORT + i),

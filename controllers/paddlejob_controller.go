@@ -20,12 +20,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,7 +42,6 @@ const (
 	HOST_PORT_START = "port.start"
 	HOST_PORT_END   = "port.end"
 	HOST_PORT_CUR   = "port.cur"
-	HOST_PORT_NS    = "namespace"
 	HOST_PORT_NUM   = 20
 	PADDLE_PORT     = 2379
 )
@@ -93,7 +92,15 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	log.Info("Reconcile", "version", pdj.ResourceVersion)
 
-	//r.finalize(ctx, &pdj)
+	// bug fix
+	// c.f. https://github.com/elastic/cloud-on-k8s/issues/1822
+	if pdj.Spec.PS.Template.Spec.Containers == nil {
+		pdj.Spec.PS.Template.Spec.Containers = []corev1.Container{}
+	}
+
+	if r.finalize(ctx, &pdj) {
+		return ctrl.Result{RequeueAfter: time.Second}, nil
+	}
 
 	// List all associated pods
 	var childPods corev1.PodList
@@ -106,7 +113,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		pdj.Status = newStatus
 		if err := r.Status().Update(ctx, &pdj); err != nil {
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{RequeueAfter: time.Second}, nil
 			}
 			return ctrl.Result{}, err
 		}
@@ -149,7 +156,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	} else if pdj.Spec.Intranet == pdv1.HostNetwork {
 		if r.allocHostPortForJob(ctx, &pdj) {
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 	}
 
@@ -316,15 +323,26 @@ func (r *PaddleJobReconciler) allocHostPortForJob(ctx context.Context, pdj *pdv1
 		return false
 	}
 	if port, ok := pdj.ObjectMeta.Annotations[hostPort]; ok {
-		iport, err := strconv.Atoi(port)
-		if err == nil && iport > r.HostPortMap[HOST_PORT_CUR] {
-			// this will happen after controller restart
-			r.HostPortMap[HOST_PORT_CUR] = iport
+		// this will happen after the controler restart
+		if _, okk := r.HostPortMap[port]; okk {
+			return false
+		} else if pdj.ObjectMeta.DeletionTimestamp.IsZero() {
+			r.HostPortMap[port] = 1
 			return true
 		}
 	} else {
 		pdj.ObjectMeta.Annotations[hostPort] = fmt.Sprintf("%d", r.allocNewPort())
 		r.Update(ctx, pdj)
+		// ensure annotation updated
+		wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+			var tmp pdv1.PaddleJob
+			if errr := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &tmp); errr != nil {
+				if _, okkk := tmp.ObjectMeta.Annotations[hostPort]; okkk {
+					return true, nil
+				}
+			}
+			return false, nil
+		})
 		return true
 	}
 	return false
@@ -332,44 +350,59 @@ func (r *PaddleJobReconciler) allocHostPortForJob(ctx context.Context, pdj *pdv1
 
 // allocNewPort globally
 func (r *PaddleJobReconciler) allocNewPort() int {
-	// all nodes should use the same port according to paddle launch
-	// so, alloc port by job instead by node now
-	return r.allocNewHostPort(HOST_PORT_CUR)
-}
-
-// allocNewHostPort alloc new hostport by key, key may refer to host, job, or global key
-func (r *PaddleJobReconciler) allocNewHostPort(key string) int {
-	if port, ok := r.HostPortMap[key]; ok {
-		if port+HOST_PORT_NUM < r.HostPortMap[HOST_PORT_END] {
-			r.HostPortMap[key] = port + HOST_PORT_NUM
-			return r.HostPortMap[key]
+	if len(r.HostPortMap)*HOST_PORT_NUM > r.HostPortMap[HOST_PORT_END]-r.HostPortMap[HOST_PORT_START] {
+		r.Log.Error(nil, "no available port")
+		return 40000
+	}
+	if port, ok := r.HostPortMap[HOST_PORT_CUR]; ok {
+		// new port prepare to allocate
+		var iport = port + HOST_PORT_NUM
+		if iport > r.HostPortMap[HOST_PORT_END] {
+			iport = r.HostPortMap[HOST_PORT_START]
+		}
+		r.HostPortMap[HOST_PORT_CUR] = iport
+		if _, okk := r.HostPortMap[fmt.Sprintf("%d", iport)]; okk {
+			// reallocate if exists
+			return r.allocNewPort()
+		} else {
+			r.HostPortMap[fmt.Sprintf("%d", iport)] = 1
+			r.Log.V(4).Info("new port allocated", "port", iport)
+			return iport
 		}
 	}
-	r.HostPortMap[key] = r.HostPortMap[HOST_PORT_START]
-	return r.HostPortMap[key]
+	r.Log.Error(nil, "something wrong with hostport allocator")
+	return 40000
 }
 
-func (r *PaddleJobReconciler) finalize(ctx context.Context, pdj *pdv1.PaddleJob) error {
+func (r *PaddleJobReconciler) finalize(ctx context.Context, pdj *pdv1.PaddleJob) bool {
 	if pdj.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !containsString(pdj.ObjectMeta.Finalizers, finalizerName) {
 			pdj.ObjectMeta.Finalizers = append(pdj.ObjectMeta.Finalizers, finalizerName)
 			if err := r.Update(ctx, pdj); err != nil {
-				return err
+				return true
 			}
 		}
 	} else {
 		if containsString(pdj.ObjectMeta.Finalizers, finalizerName) {
 
 			// do before delete
+			if pdj.Spec.Intranet == pdv1.HostNetwork {
+				if port, ok := pdj.ObjectMeta.Annotations[hostPort]; ok {
+					if _, exist := r.HostPortMap[port]; exist {
+						delete(r.HostPortMap, port)
+						return true
+					}
+				}
+			}
 
 			pdj.ObjectMeta.Finalizers = removeString(pdj.ObjectMeta.Finalizers, finalizerName)
 			if err := r.Update(ctx, pdj); err != nil {
-				return err
+				return true
 			}
 		}
-		return nil
+		return false
 	}
-	return nil
+	return false
 }
 
 func indexerFunc(rawObj client.Object) []string {

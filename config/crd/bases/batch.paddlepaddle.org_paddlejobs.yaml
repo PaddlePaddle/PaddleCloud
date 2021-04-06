@@ -2863,8 +2863,6 @@ spec:
                         - containers
                         type: object
                     type: object
-                required:
-                - template
                 type: object
               withGloo:
                 type: integer
@@ -5681,8 +5679,6 @@ spec:
                         - containers
                         type: object
                     type: object
-                required:
-                - template
                 type: object
             required:
             - worker

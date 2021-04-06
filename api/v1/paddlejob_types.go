@@ -139,7 +139,7 @@ type ResourceSpec struct {
 	Limits int `json:"limits,omitempty"`
 
 	// Template specifies the podspec of a server
-	Template corev1.PodTemplateSpec `json:"template"`
+	Template corev1.PodTemplateSpec `json:"template,omitempty"`
 }
 
 type ResourceStatus struct {
