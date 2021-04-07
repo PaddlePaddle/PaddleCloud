@@ -88,19 +88,25 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		resType, idx := extractNameIndex(pod.Name)
 		if resType == pdv1.ResourcePS {
 			if pdj.Spec.Intranet == pdv1.Service {
-				pservers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
+				pservers[idx] = fmt.Sprintf("%s:%d", pod.Name, PADDLE_PORT)
 			} else {
-				pservers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
+				pservers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, PADDLE_PORT)
 			}
 		} else if resType == pdv1.ResourceWorker {
 			if pdj.Spec.Intranet == pdv1.Service {
-				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, pdv1.PADDLE_PORT)
+				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, PADDLE_PORT)
 				workerHosts[idx] = fmt.Sprintf("%s", pod.Name)
 			} else {
-				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, pdv1.PADDLE_PORT)
+				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, PADDLE_PORT)
 				workerHosts[idx] = fmt.Sprintf("%s", pod.Status.PodIP)
 			}
 		}
+	}
+	var paddle_port string
+	if pdj.Spec.Intranet == pdv1.HostNetwork {
+		paddle_port = pdj.ObjectMeta.Annotations[hostPort]
+	} else {
+		paddle_port = fmt.Sprintf("%d", PADDLE_PORT)
 	}
 	cm = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -114,9 +120,9 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		Data: map[string]string{
 			"PADDLE_PSERVERS_IP_PORT_LIST":      strings.Join(pservers, ","),
 			"PADDLE_TRAINERS_NUM":               fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
-			"TRAINER_PORTS_NUM":                 fmt.Sprintf("%d", 32), // ugly env
+			"TRAINER_PORTS_NUM":                 fmt.Sprintf("%d", HOST_PORT_NUM),
 			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
-			"PADDLE_PORT":                       fmt.Sprintf("%d", pdv1.PADDLE_PORT),
+			"PADDLE_PORT":                       paddle_port,
 			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
 			"PADDLE_TRAINERS":                   strings.Join(workerHosts, ","),
 		},
@@ -125,8 +131,8 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		cm.Data["PADDLE_WITH_GLOO"] = fmt.Sprintf("%d", pdj.Spec.WithGloo)
 		cm.Data["PADDLE_GLOO_RENDEZVOUS"] = "3"
 		cm.Data["PADDLE_GLOO_HTTP_ENDPOINT"] = strings.Replace(pservers[0],
-			fmt.Sprintf(":%d", pdv1.PADDLE_PORT),
-			fmt.Sprintf(":%d", pdv1.PADDLE_PORT+10),
+			fmt.Sprintf(":%d", PADDLE_PORT),
+			fmt.Sprintf(":%d", PADDLE_PORT+HOST_PORT_NUM-2),
 			1)
 	}
 	return cm
@@ -207,7 +213,9 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	pod.Spec.Containers[0].EnvFrom = append(pod.Spec.Containers[0].EnvFrom, envF)
 
 	if pdj.Spec.Intranet == pdv1.Service {
-		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: pdv1.PADDLE_PORT})
+		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: PADDLE_PORT})
+	} else if pdj.Spec.Intranet == pdv1.HostNetwork {
+		pod.Spec.HostNetwork = true
 	}
 
 	if pod.Spec.RestartPolicy == "" {
@@ -281,6 +289,13 @@ func isPodInitializing(pod *corev1.Pod) bool {
 }
 
 func constructService4Pod(pod corev1.Pod) *corev1.Service {
+	var ports = []corev1.ServicePort{}
+	for i := 0; i < HOST_PORT_NUM; i++ {
+		ports = append(ports, corev1.ServicePort{
+			Name: fmt.Sprintf("p-%d", i),
+			Port: int32(PADDLE_PORT + i),
+		})
+	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pod.Name,
@@ -288,11 +303,7 @@ func constructService4Pod(pod corev1.Pod) *corev1.Service {
 			Labels:    map[string]string{},
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Port: pdv1.PADDLE_PORT,
-				},
-			},
+			Ports: ports,
 			Selector: map[string]string{
 				pdv1.ResourceName: pod.Name,
 			},
