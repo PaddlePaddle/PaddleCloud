@@ -171,12 +171,14 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	// TODO(kuizhiqing)
 	// initContainer will ensure pods are ready, then create cm to remove resource not ready error
 	// Now it simply wait, since kubernetes ensure cm created before pod running indeed
+    /*
 	ic := corev1.Container{
 		Name:    "init-paddle",
 		Image:   "busybox:1.28",
 		Command: []string{"sh", "-c", "sleep 12"},
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
+    */
 
 	envIP := corev1.EnvVar{
 		Name: "POD_IP",
