@@ -74,6 +74,7 @@ const (
 	Terminated  PaddleJobPhase = "Terminated"
 	Failed      PaddleJobPhase = "Failed"
 	Succeed     PaddleJobPhase = "Succeed"
+	Unknown     PaddleJobPhase = "Unknown"
 )
 
 type CleanPodPolicy string
@@ -183,6 +184,12 @@ type PaddleJobStatus struct {
 	// Elastic mix the setting (enable or not) and status of job
 	// TODO(kuizhiqing) hold on
 	Elastic ElasticStatus `json:"elastic,omitempty"`
+
+	// StartTime indicate when the job started
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// CompletionTime indicate when the job completed/failed
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
 	ObservedGeneration int `json:"observedGeneration,omitempty"`
 }
