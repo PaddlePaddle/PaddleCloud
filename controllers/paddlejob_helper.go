@@ -40,18 +40,21 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	} else if pdj.Status.Phase == pdv1.Failed {
 		return pdv1.Failed
 	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
-		if pdj.Status.StartTime.IsZero() {
-			pdj.Status.StartTime = metav1.Now()
+		if pdj.Status.StartTime != nil {
+			tmp := metav1.Now()
+			pdj.Status.StartTime = &tmp
 		}
 		return pdv1.Running
 	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
-		if pdj.Status.CompletionTime.IsZero() {
-			pdj.Status.CompletionTime = metav1.Now()
+		if pdj.Status.CompletionTime != nil {
+			tmp := metav1.Now()
+			pdj.Status.CompletionTime = &tmp
 		}
 		return pdv1.Failed
 	} else if pdj.Spec.PS.Replicas >= pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
-		if pdj.Status.CompletionTime.IsZero() {
-			pdj.Status.CompletionTime = metav1.Now()
+		if pdj.Status.CompletionTime != nil {
+			tmp := metav1.Now()
+			pdj.Status.CompletionTime = &tmp
 		}
 		return pdv1.Completed
 	} else if pdj.Status.PS.Pending > 0 || pdj.Status.Worker.Pending > 0 {

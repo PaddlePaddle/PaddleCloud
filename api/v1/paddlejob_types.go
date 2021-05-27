@@ -185,10 +185,10 @@ type PaddleJobStatus struct {
 	Elastic ElasticStatus `json:"elastic,omitempty"`
 
 	// StartTime indicate when the job started
-	StartTime metav1.Time `json:"startTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
 
 	// CompletionTime indicate when the job completed/failed
-	CompletionTime metav1.Time `json:"completionTime,omitempty"`
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
 	ObservedGeneration int `json:"observedGeneration,omitempty"`
 }
