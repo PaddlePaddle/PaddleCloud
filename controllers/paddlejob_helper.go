@@ -160,9 +160,18 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		pod.ObjectMeta = *pdj.Spec.Worker.Template.ObjectMeta.DeepCopy()
 		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
 	}
+
+	if pod.ObjectMeta.Labels == nil {
+		pod.ObjectMeta.Labels = map[string]string{}
+	}
 	pod.ObjectMeta.Labels[pdv1.ResourceName] = name
 	pod.ObjectMeta.Labels[pdv1.ResourceType] = resType
+
+	if pod.ObjectMeta.Annotations == nil {
+		pod.ObjectMeta.Annotations = map[string]string{}
+	}
 	pod.ObjectMeta.Annotations[pdv1.ResourceAnnotation] = resType
+
 	pod.ObjectMeta.Name = name
 	pod.ObjectMeta.Namespace = pdj.Namespace
 
