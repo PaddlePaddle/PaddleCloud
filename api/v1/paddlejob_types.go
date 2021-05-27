@@ -74,6 +74,7 @@ const (
 	Terminated  PaddleJobPhase = "Terminated"
 	Failed      PaddleJobPhase = "Failed"
 	Succeed     PaddleJobPhase = "Succeed"
+	Unknown     PaddleJobPhase = "Unknown"
 )
 
 type CleanPodPolicy string

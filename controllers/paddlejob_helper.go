@@ -39,18 +39,18 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 		return pdv1.Completed
 	} else if pdj.Status.Phase == pdv1.Failed {
 		return pdv1.Failed
-	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
-		if pdj.Status.StartTime != nil {
-			tmp := metav1.Now()
-			pdj.Status.StartTime = &tmp
-		}
-		return pdv1.Running
 	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
 		if pdj.Status.CompletionTime != nil {
 			tmp := metav1.Now()
 			pdj.Status.CompletionTime = &tmp
 		}
 		return pdv1.Failed
+	} else if pdj.Status.PS.Running > 0 || pdj.Status.Worker.Running > 0 {
+		if pdj.Status.StartTime != nil {
+			tmp := metav1.Now()
+			pdj.Status.StartTime = &tmp
+		}
+		return pdv1.Running
 	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
 		if pdj.Status.CompletionTime != nil {
 			tmp := metav1.Now()
@@ -61,7 +61,7 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 		return pdv1.Starting
 	}
 
-	return pdv1.Starting
+	return pdv1.Unknown
 }
 
 func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
