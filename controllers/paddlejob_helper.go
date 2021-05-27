@@ -40,10 +40,19 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	} else if pdj.Status.Phase == pdv1.Failed {
 		return pdv1.Failed
 	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Running && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running {
+		if pdj.Status.StartTime.IsZero() {
+			pdj.Status.StartTime = metav1.Now()
+		}
 		return pdv1.Running
 	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
+		if pdj.Status.CompletionTime.IsZero() {
+			pdj.Status.CompletionTime = metav1.Now()
+		}
 		return pdv1.Failed
 	} else if pdj.Spec.PS.Replicas >= pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
+		if pdj.Status.CompletionTime.IsZero() {
+			pdj.Status.CompletionTime = metav1.Now()
+		}
 		return pdv1.Completed
 	} else if pdj.Status.PS.Pending > 0 || pdj.Status.Worker.Pending > 0 {
 		return pdv1.Starting
@@ -140,43 +149,26 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 }
 
 func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod) {
-	// metadata is missing due to controller-gen,
-	// c.f. https://github.com/kubernetes-sigs/controller-tools/issues/448
-	// c.f. https://github.com/kubernetes-sigs/controller-tools/pull/539
 	name := genPaddleResName(pdj.Name, resType, idx)
-	pod = &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				pdv1.ResourceName: name,
-				pdv1.ResourceType: resType,
-			},
-			Annotations: map[string]string{
-				pdv1.ResourceAnnotation: resType,
-			},
-			Name:      name,
-			Namespace: pdj.Namespace,
-		},
-	}
+
+	pod = &corev1.Pod{}
 	if resType == pdv1.ResourcePS {
+		pod.ObjectMeta = *pdj.Spec.PS.Template.ObjectMeta.DeepCopy()
 		pod.Spec = *pdj.Spec.PS.Template.Spec.DeepCopy()
 	} else {
+		pod.ObjectMeta = *pdj.Spec.Worker.Template.ObjectMeta.DeepCopy()
 		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
 	}
+	pod.ObjectMeta.Labels[pdv1.ResourceName] = name
+	pod.ObjectMeta.Labels[pdv1.ResourceType] = resType
+	pod.ObjectMeta.Annotations[pdv1.ResourceAnnotation] = resType
+	pod.ObjectMeta.Name = name
+	pod.ObjectMeta.Namespace = pdj.Namespace
 
 	if pdj.Spec.Worker.Template.Spec.SchedulerName == schedulerNameVolcano {
 		pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
 		pod.Spec.SchedulerName = schedulerNameVolcano
 	}
-
-	// TODO(kuizhiqing)
-	// initContainer will ensure pods are ready, then create cm to remove resource not ready error
-	// Now it simply wait, since kubernetes ensure cm created before pod running indeed
-	//ic := corev1.Container{
-	//	Name:    "init-paddle",
-	//	Image:   "busybox:1.28",
-	//	Command: []string{"sh", "-c", "sleep 12"},
-	//}
-	//pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 
 	envIP := corev1.EnvVar{
 		Name: "POD_IP",
