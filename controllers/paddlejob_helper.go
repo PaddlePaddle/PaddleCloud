@@ -51,7 +51,7 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 			pdj.Status.CompletionTime = &tmp
 		}
 		return pdv1.Failed
-	} else if pdj.Spec.PS.Replicas >= pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
+	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
 		if pdj.Status.CompletionTime != nil {
 			tmp := metav1.Now()
 			pdj.Status.CompletionTime = &tmp
