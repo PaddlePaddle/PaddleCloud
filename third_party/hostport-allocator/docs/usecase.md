@@ -60,7 +60,7 @@ type TrainingJobSpec struct {
 	// Job components.
 	Trainer TrainerSpec `json:"trainer"`
 	Pserver PserverSpec `json:"pserver"`
-	Master  MasterSpec  `json:"master,omitempty"`
+	Coordinator  CoordinatorSpec  `json:"coordinator,omitempty"`
 }
 
 // TrainerSpec defination
@@ -81,9 +81,9 @@ type PserverSpec struct {
 	Resources   v1.ResourceRequirements `json:"resources"`
 }
 
-// MasterSpec defination
+// CoordinatorSpec defination
 // +k8s:deepcopy-gen=true
-type MasterSpec struct {
+type CoordinatorSpec struct {
 	EtcdEndpoint string                  `json:"etcd-endpoint"`
 	Resources    v1.ResourceRequirements `json:"resources"`
 }

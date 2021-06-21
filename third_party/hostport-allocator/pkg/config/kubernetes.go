@@ -106,7 +106,7 @@ func GetKubeClientConfig(uri *url.URL) (*kube_rest.Config, error) {
 		}
 	}
 	if len(kubeConfig.Host) == 0 {
-		return nil, fmt.Errorf("invalid kubernetes master url specified")
+		return nil, fmt.Errorf("invalid kubernetes url specified")
 	}
 	if len(kubeConfig.GroupVersion.Version) == 0 {
 		return nil, fmt.Errorf("invalid kubernetes API version specified")

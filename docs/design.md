@@ -107,7 +107,7 @@ spec:
 * Here you need to add shared memory to mount to prevent cache errors;
 * This example uses the built-in data set. After the program is started, it will be downloaded. Depending on the network environment, it may wait a long time.
 
-### Resulting Master
+### Resulting coordinator
 ```yaml
 apiVersion: v1
 kind: Service
@@ -209,7 +209,7 @@ spec:
     image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
 ```
 
-The worker spec generates a pod. Currently worker will communicate to the master through the master's service name, we'll use a service registry for service discovery.
+The worker spec generates a pod. Currently worker will communicate to the coordinator through the coordinator's service name, we'll use a service registry for service discovery.
 
 ## Feautre highlists
 
