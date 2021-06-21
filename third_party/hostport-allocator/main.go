@@ -25,8 +25,8 @@ var (
 	hostPortRange               utilnet.PortRange
 
 	address            = flag.String("address", ":8085", "The address to expose prometheus metrics.")
-	kubeConfigFile     = flag.String("kubeconfig", "", "Path to kubeconfig file with authorization and master location information.")
-	kubernetes         = flag.String("kubernetes", "", "Kuberentes master location. Leave blank for default")
+	kubeConfigFile     = flag.String("kubeconfig", "", "Path to kubeconfig file with authorization and server location information.")
+	kubernetes         = flag.String("kubernetes", "", "Kuberentes location. Leave blank for default")
 	useServiceNodePort = flag.Bool("use-service-nodeport", true, "If true, will create a service with nodeport and need to stop kube-proxy first.")
 )
 

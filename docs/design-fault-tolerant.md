@@ -2,7 +2,7 @@
 
 Originally from [EDL Design Doc](https://github.com/PaddlePaddle/Paddle/blob/develop/doc/v2/design/cluster_train/README.md#fault-tolerant)
 
-The training job will pause if the master server processes is dead, or any of the parameter server process is dead. They will be started by [Kubernetes](https://kubernetes.io/) and recover in few minutes. Please refer to [fault recovery](#fault-recovery).
+The training job will pause if the coordinator server processes is dead, or any of the parameter server process is dead. They will be started by [Kubernetes](https://kubernetes.io/) and recover in few minutes. Please refer to [fault recovery](#fault-recovery).
 
 The training job will continue to make progress if there is at least one training process running. The strategy depends on the type of optimization algorithm:
 
@@ -19,26 +19,26 @@ The training job will continue to make progress if there is at least one trainin
 PaddlePaddle uses [etcd](https://github.com/coreos/etcd) to keep track of the states of processes. Because etcd is a distributed reliable key-value store, the restarted process can recover its states from etcd. The model parameters are periodically saved into distributed file system, so a restarted parameter server can recover its parameters from the saved file.
 
 
-### Master Server Process
+### Coordinator Server Process
 
-When the master is started by the Kubernetes, it executes the following steps at startup:
+When the coordinator is started by the Kubernetes, it executes the following steps at startup:
 
-1. Grabs a unique *master* lock in etcd, which prevents concurrent master instantiations.
-1. Recovers the task queues from etcd if they already exist, otherwise, the master will create them.
-1. Write its ip address to */master/addr* so that trainers can discover it.
+1. Grabs a unique *coordinator* lock in etcd, which prevents concurrent coordinator instantiations.
+1. Recovers the task queues from etcd if they already exist, otherwise, the coordinator will create them.
+1. Write its ip address to */coordinator/addr* so that trainers can discover it.
 1. Listens to trainers' request of task, dispatch one upon request, and updates task queue using an etcd transaction to ensure lock is held during the update.
 
-When the master server process is dead for any reason, Kubernetes will restart it. It will be online again with all states recovered from etcd in few minutes.
+When the coordinator server process is dead for any reason, Kubernetes will restart it. It will be online again with all states recovered from etcd in few minutes.
 
 ### Trainer Process
 
 When the trainer is started by the Kubernetes, it executes the following steps at startup:
 
 1. Watches the available parameter server prefix keys `/ps/` on etcd and waits until the count of parameter servers reaches the desired count */ps_desired*.
-1. Finds and watches */master/addr* to get master's address.
-1. Requests for tasks from the master to start training.
+1. Finds and watches */coordinator/addr* to get coordinator's address.
+1. Requests for tasks from the coordinator to start training.
 
-When a trainer fails, Kuberentes would try to restart it. The recovered trainer would fetch tasks from master and go on training.
+When a trainer fails, Kuberentes would try to restart it. The recovered trainer would fetch tasks from coordinator and go on training.
 
 ### Parameter Server Process
 
