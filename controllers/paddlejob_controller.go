@@ -287,10 +287,12 @@ func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.Pa
 	workerStatus.Ready = fmt.Sprintf("%d/%d", workerStatus.Running, pdj.Spec.Worker.Replicas)
 
 	return pdv1.PaddleJobStatus{
-		Phase:  getPaddleJobPhase(pdj),
-		Mode:   getPaddleJobMode(pdj),
-		PS:     psStatus,
-		Worker: workerStatus,
+		Phase:          getPaddleJobPhase(pdj),
+		Mode:           getPaddleJobMode(pdj),
+		PS:             psStatus,
+		Worker:         workerStatus,
+		StartTime:      getPaddleJobStartTime(pdj),
+		CompletionTime: getPaddleJobCompleteTime(pdj),
 	}
 }
 
