@@ -49,27 +49,19 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 }
 
 func getPaddleJobStartTime(pdj *pdv1.PaddleJob) *metav1.Time {
-	if pdj.Status.Phase == pdv1.Running {
-		if pdj.Status.StartTime.IsZero() {
-			tmp := metav1.Now()
-			return &tmp
-		} else {
-			return pdj.Status.StartTime
-		}
+	if pdj.Status.StartTime.IsZero() && pdj.Status.Phase == pdv1.Running {
+		tmp := metav1.Now()
+		return &tmp
 	}
-	return nil
+	return pdj.Status.StartTime
 }
 
 func getPaddleJobCompleteTime(pdj *pdv1.PaddleJob) *metav1.Time {
-	if pdj.Status.Phase == pdv1.Completed || pdj.Status.Phase == pdv1.Failed {
-		if pdj.Status.CompletionTime.IsZero() {
-			tmp := metav1.Now()
-			return &tmp
-		} else {
-			return pdj.Status.CompletionTime
-		}
+	if pdj.Status.CompletionTime.IsZero() && (pdj.Status.Phase == pdv1.Completed || pdj.Status.Phase == pdv1.Failed) {
+		tmp := metav1.Now()
+		return &tmp
 	}
-	return nil
+	return pdj.Status.CompletionTime
 }
 
 func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
