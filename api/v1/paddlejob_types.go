@@ -118,46 +118,30 @@ type PaddleJobSpec struct {
 	Intranet Intranet `json:"intranet,omitempty"`
 
 	//
-	WithGloo int `json:"withGloo,omitempty"`
+	WithGloo *int `json:"withGloo,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
-	PS ResourceSpec `json:"ps,omitempty"`
+	PS *ResourceSpec `json:"ps,omitempty"`
 
 	// Worker describes the spec of worker base on pod template
-	Worker ResourceSpec `json:"worker"`
+	Worker *ResourceSpec `json:"worker,omitempty"`
+
+	// Heter describes the spec of heter worker base on pod temlate
+	Heter *ResourceSpec `json:"heter,omitempty"`
 }
 
 type ResourceSpec struct {
 	// Replicas replica
-	Replicas int `json:"replicas,omitempty"`
+	Replicas int `json:"replicas"`
 
 	// Requests set the minimal replicas of server to be run
-	Requests int `json:"requests,omitempty"`
+	Requests *int `json:"requests,omitempty"`
 
 	// Requests set the maximal replicas of server to be run, elastic is auto enbale if limits is set larger than 0
-	Limits int `json:"limits,omitempty"`
+	Limits *int `json:"limits,omitempty"`
 
 	// Template specifies the podspec of a server
 	Template corev1.PodTemplateSpec `json:"template,omitempty"`
-}
-
-type ResourceStatus struct {
-	// Pending
-	Pending int `json:"pending,omitempty"`
-	// Starting
-	Starting int `json:"starting,omitempty"`
-	// Running
-	Running int `json:"running,omitempty"`
-	// Failed
-	Failed int `json:"failed,omitempty"`
-	// Success
-	Succeeded int `json:"succeeded,omitempty"`
-	// Unknown
-	Unknown int `json:"unknown,omitempty"`
-	// Ready
-	Ready string `json:"ready,omitempty"`
-	// A list of  pointer to pods
-	Refs []corev1.ObjectReference `json:"refs,omitempty"`
 }
 
 // PaddleJobStatus defines the observed state of PaddleJob
@@ -190,6 +174,25 @@ type PaddleJobStatus struct {
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
 	ObservedGeneration int `json:"observedGeneration,omitempty"`
+}
+
+type ResourceStatus struct {
+	// Pending
+	Pending int `json:"pending,omitempty"`
+	// Starting
+	Starting int `json:"starting,omitempty"`
+	// Running
+	Running int `json:"running,omitempty"`
+	// Failed
+	Failed int `json:"failed,omitempty"`
+	// Success
+	Succeeded int `json:"succeeded,omitempty"`
+	// Unknown
+	Unknown int `json:"unknown,omitempty"`
+	// Ready
+	Ready string `json:"ready,omitempty"`
+	// A list of pointer to pods
+	Refs []corev1.ObjectReference `json:"refs,omitempty"`
 }
 
 //+kubebuilder:object:root=true

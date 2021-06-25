@@ -64,11 +64,11 @@ var _ = Describe("PaddleJob controller", func() {
 		Spec: paddlev1.PaddleJobSpec{
 			CleanPodPolicy: paddlev1.CleanNever,
 			Intranet:       paddlev1.Service,
-			PS: paddlev1.ResourceSpec{
+			PS: &paddlev1.ResourceSpec{
 				Replicas: 3,
 				Template: podSpec,
 			},
-			Worker: paddlev1.ResourceSpec{
+			Worker: &paddlev1.ResourceSpec{
 				Replicas: 2,
 				Template: podSpec,
 			},

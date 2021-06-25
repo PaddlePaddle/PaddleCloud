@@ -90,12 +90,6 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	log.Info("Reconcile", "version", pdj.ResourceVersion)
 
-	// bug fix
-	// c.f. https://github.com/elastic/cloud-on-k8s/issues/1822
-	if pdj.Spec.PS.Template.Spec.Containers == nil {
-		pdj.Spec.PS.Template.Spec.Containers = []corev1.Container{}
-	}
-
 	if r.finalize(ctx, &pdj) {
 		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
@@ -152,7 +146,8 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			err := r.createResource(ctx, &pdj, svc)
 			return ctrl.Result{}, err
 		}
-	} else if pdj.Spec.Intranet == pdv1.HostNetwork {
+	}
+	if pdj.Spec.Intranet == pdv1.HostNetwork {
 		if r.allocHostPortForJob(ctx, &pdj) {
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
@@ -281,8 +276,16 @@ func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.Pa
 		}
 	}
 
-	psStatus.Ready = fmt.Sprintf("%d/%d", psStatus.Running, pdj.Spec.PS.Replicas)
-	workerStatus.Ready = fmt.Sprintf("%d/%d", workerStatus.Running, pdj.Spec.Worker.Replicas)
+	if pdj.Spec.PS == nil {
+		psStatus.Ready = "0/0"
+	} else {
+		psStatus.Ready = fmt.Sprintf("%d/%d", psStatus.Running, pdj.Spec.PS.Replicas)
+	}
+	if pdj.Spec.Worker == nil {
+		workerStatus.Ready = "0/0"
+	} else {
+		workerStatus.Ready = fmt.Sprintf("%d/%d", workerStatus.Running, pdj.Spec.Worker.Replicas)
+	}
 
 	return pdv1.PaddleJobStatus{
 		Phase:          getPaddleJobPhase(pdj),
