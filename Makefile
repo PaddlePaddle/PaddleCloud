@@ -38,10 +38,13 @@ uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 gen-deploy: manifests kustomize crd-v1beta1
-	$(KUSTOMIZE) build config/crd > deploy/v1/crd.yaml
-	$(KUSTOMIZE) build config/operator > deploy/v1/operator.yaml
-	cp config/crd/v1beta1/batch.paddlepaddle.org_paddlejobs.yaml deploy/v1beta1/crd.yaml
-	$(KUSTOMIZE) build config/operator > deploy/v1beta1/operator.yaml
+	cat COPYRIGHT.YAML > deploy/v1/crd.yaml
+	$(KUSTOMIZE) build config/crd >> deploy/v1/crd.yaml
+	cat COPYRIGHT.YAML > deploy/v1/operator.yaml
+	$(KUSTOMIZE) build config/operator >> deploy/v1/operator.yaml
+	cat COPYRIGHT.YAML config/crd/v1beta1/batch.paddlepaddle.org_paddlejobs.yaml > deploy/v1beta1/crd.yaml
+	cat COPYRIGHT.YAML > deploy/v1beta1/operator.yaml
+	$(KUSTOMIZE) build config/operator >> deploy/v1beta1/operator.yaml
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
