@@ -112,14 +112,10 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// clean pod unnecessary
-	if len(childPods.Items) > pdj.Spec.PS.Replicas+pdj.Spec.Worker.Replicas {
-		for i, pod := range childPods.Items {
-			resType, idx := extractNameIndex(pod.Name)
-			if resType == pdv1.ResourcePS && idx < pdj.Spec.PS.Replicas {
-				continue
-			} else if resType == pdv1.ResourceWorker && idx < pdj.Spec.Worker.Replicas {
-				continue
-			}
+	for i, pod := range childPods.Items {
+		resType, idx := extractNameIndex(pod.Name)
+		if (resType == pdv1.ResourcePS && pdj.Spec.PS != nil && idx >= pdj.Spec.PS.Replicas) ||
+			(resType == pdv1.ResourceWorker && pdj.Spec.Worker != nil && idx >= pdj.Spec.Worker.Replicas) {
 			r.deleteResource(ctx, &pdj, &childPods.Items[i])
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
@@ -194,7 +190,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Ensure PS resource ready
-	if len(pdj.Status.PS.Refs) < pdj.Spec.PS.Replicas {
+	if pdj.Spec.PS != nil && len(pdj.Status.PS.Refs) < pdj.Spec.PS.Replicas {
 		for i := 0; i < pdj.Spec.PS.Replicas; i++ {
 			if createPod(pdv1.ResourcePS, i) {
 				return ctrl.Result{}, nil
@@ -203,7 +199,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Ensure worker resource ready
-	if len(pdj.Status.Worker.Refs) < pdj.Spec.Worker.Replicas {
+	if pdj.Spec.Worker != nil && len(pdj.Status.Worker.Refs) < pdj.Spec.Worker.Replicas {
 		for i := 0; i < pdj.Spec.Worker.Replicas; i++ {
 			if createPod(pdv1.ResourceWorker, i) {
 				return ctrl.Result{}, nil
@@ -212,7 +208,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Create configmap of global env for all pods after all pods are running
-	if len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas && len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas {
+	if (pdj.Spec.PS == nil || len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas) && (pdj.Spec.Worker == nil || len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas) {
 		if pdj.Spec.Intranet == pdv1.Service {
 			if len(pdj.Status.PS.Refs)+len(pdj.Status.Worker.Refs) != len(svcs.Items) {
 				return ctrl.Result{}, nil

@@ -39,7 +39,7 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 		return pdv1.Failed
 	} else if pdj.Status.PS.Running > 0 || pdj.Status.Worker.Running > 0 {
 		return pdv1.Running
-	} else if pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded {
+	} else if (pdj.Spec.PS == nil || pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded) && (pdj.Spec.Worker == nil || pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded) {
 		return pdv1.Completed
 	} else if pdj.Status.PS.Pending > 0 || pdj.Status.Worker.Pending > 0 {
 		return pdv1.Starting
@@ -65,9 +65,9 @@ func getPaddleJobCompleteTime(pdj *pdv1.PaddleJob) *metav1.Time {
 }
 
 func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
-	if pdj.Spec.PS.Replicas > 0 {
+	if pdj.Spec.PS != nil {
 		return pdv1.PaddleJobModePS
-	} else if pdj.Spec.Worker.Replicas > 0 {
+	} else if pdj.Spec.Worker != nil {
 		return pdv1.PaddleJobModeCollective
 	} else {
 		return pdv1.PaddleJobModeSingle
@@ -89,9 +89,16 @@ func extractNameIndex(name string) (string, int) {
 }
 
 func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *corev1.ConfigMap) {
-	pservers := make([]string, pdj.Spec.PS.Replicas)
-	workers := make([]string, pdj.Spec.Worker.Replicas)
-	workerHosts := make([]string, pdj.Spec.Worker.Replicas)
+	var pservers []string
+	if pdj.Spec.PS != nil {
+		pservers = make([]string, pdj.Spec.PS.Replicas)
+	}
+
+	var workers, workerHosts []string
+	if pdj.Spec.Worker != nil {
+		workers = make([]string, pdj.Spec.Worker.Replicas)
+		workerHosts = make([]string, pdj.Spec.Worker.Replicas)
+	}
 
 	for _, pod := range childPods.Items {
 		if len(strings.Split(pod.Status.PodIP, ".")) != 4 {
@@ -130,14 +137,18 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 			Namespace:   pdj.Namespace,
 		},
 		Data: map[string]string{
-			"PADDLE_PSERVERS_IP_PORT_LIST":      strings.Join(pservers, ","),
-			"PADDLE_TRAINERS_NUM":               fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
-			"TRAINER_PORTS_NUM":                 fmt.Sprintf("%d", HOST_PORT_NUM),
-			"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
-			"PADDLE_PORT":                       paddle_port,
-			"PADDLE_TRAINER_ENDPOINTS":          strings.Join(workers, ","),
-			"PADDLE_TRAINERS":                   strings.Join(workerHosts, ","),
+			"TRAINER_PORTS_NUM": fmt.Sprintf("%d", HOST_PORT_NUM),
+			"PADDLE_PORT":       paddle_port,
+			//"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
 		},
+	}
+	if pdj.Spec.PS != nil {
+		cm.Data["PADDLE_PSERVERS_IP_PORT_LIST"] = strings.Join(pservers, ",")
+	}
+	if pdj.Spec.Worker != nil {
+		cm.Data["PADDLE_TRAINER_ENDPOINTS"] = strings.Join(workers, ",")
+		cm.Data["PADDLE_TRAINERS"] = strings.Join(workerHosts, ",")
+		cm.Data["PADDLE_TRAINERS_NUM"] = fmt.Sprintf("%d", pdj.Spec.Worker.Replicas)
 	}
 
 	if pdj.Spec.WithGloo != nil && *pdj.Spec.WithGloo > 0 && pdj.Spec.Intranet != pdv1.Service && len(pservers) > 0 {
