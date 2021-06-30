@@ -287,22 +287,6 @@ func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.Pa
 		}
 	}
 
-	if pdj.Spec.PS == nil {
-		psStatus.Ready = "0/0"
-	} else {
-		psStatus.Ready = fmt.Sprintf("%d/%d", psStatus.Running, pdj.Spec.PS.Replicas)
-	}
-	if pdj.Spec.Worker == nil {
-		workerStatus.Ready = "0/0"
-	} else {
-		workerStatus.Ready = fmt.Sprintf("%d/%d", workerStatus.Running, pdj.Spec.Worker.Replicas)
-	}
-	if pdj.Spec.Heter == nil {
-		heterStatus.Ready = "0/0"
-	} else {
-		heterStatus.Ready = fmt.Sprintf("%d/%d", heterStatus.Running, pdj.Spec.Heter.Replicas)
-	}
-
 	return pdv1.PaddleJobStatus{
 		Phase:          getPaddleJobPhase(pdj),
 		Mode:           getPaddleJobMode(pdj),

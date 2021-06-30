@@ -116,10 +116,10 @@ type PaddleJobSpec struct {
 	// CleanPodPolicy defines whether to clean pod after job finished
 	CleanPodPolicy CleanPodPolicy `json:"cleanPodPolicy,omitempty"`
 
-	// Intranet defines the communication mode inter pods : PodIP or Service
+	// Intranet defines the communication mode inter pods : PodIP, Service or Host
 	Intranet Intranet `json:"intranet,omitempty"`
 
-	//
+	// WithGloo indicate whether enable gloo, 0/1/2 for disable/enable for worker/enable for server
 	WithGloo *int `json:"withGloo,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
@@ -130,6 +130,9 @@ type PaddleJobSpec struct {
 
 	// Heter describes the spec of heter worker base on pod temlate
 	Heter *ResourceSpec `json:"heter,omitempty"`
+
+	// Elastic indicate the elastic level
+	Elastic *int `json:"elastic,omitempty"`
 }
 
 type ResourceSpec struct {
@@ -194,8 +197,6 @@ type ResourceStatus struct {
 	Succeeded int `json:"succeeded,omitempty"`
 	// Unknown
 	Unknown int `json:"unknown,omitempty"`
-	// Ready
-	Ready string `json:"ready,omitempty"`
 	// A list of pointer to pods
 	Refs []corev1.ObjectReference `json:"refs,omitempty"`
 }
@@ -205,9 +206,6 @@ type ResourceStatus struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 //+kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.status.mode`
-//+kubebuilder:printcolumn:name="PS",type=string,JSONPath=`.status.ps.ready`
-//+kubebuilder:printcolumn:name="Worker",type=string,JSONPath=`.status.worker.ready`
-//+kubebuilder:printcolumn:name="Heter",type=string,JSONPath=`.status.heter.ready`
 //+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // PaddleJob is the Schema for the paddlejobs API

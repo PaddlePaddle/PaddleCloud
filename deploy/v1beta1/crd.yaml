@@ -29,15 +29,6 @@ spec:
   - JSONPath: .status.mode
     name: Mode
     type: string
-  - JSONPath: .status.ps.ready
-    name: PS
-    type: string
-  - JSONPath: .status.worker.ready
-    name: Worker
-    type: string
-  - JSONPath: .status.heter.ready
-    name: Heter
-    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -66,6 +57,8 @@ spec:
           properties:
             cleanPodPolicy:
               type: string
+            elastic:
+              type: integer
             heter:
               properties:
                 limits:
@@ -8523,8 +8516,6 @@ spec:
                   type: integer
                 pending:
                   type: integer
-                ready:
-                  type: string
                 refs:
                   items:
                     properties:
@@ -8565,8 +8556,6 @@ spec:
                   type: integer
                 pending:
                   type: integer
-                ready:
-                  type: string
                 refs:
                   items:
                     properties:
@@ -8604,8 +8593,6 @@ spec:
                   type: integer
                 pending:
                   type: integer
-                ready:
-                  type: string
                 refs:
                   items:
                     properties:
