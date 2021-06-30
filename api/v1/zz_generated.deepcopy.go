@@ -122,6 +122,7 @@ func (in *PaddleJobStatus) DeepCopyInto(out *PaddleJobStatus) {
 	*out = *in
 	in.PS.DeepCopyInto(&out.PS)
 	in.Worker.DeepCopyInto(&out.Worker)
+	in.Heter.DeepCopyInto(&out.Heter)
 	if in.StartTime != nil {
 		in, out := &in.StartTime, &out.StartTime
 		*out = (*in).DeepCopy()

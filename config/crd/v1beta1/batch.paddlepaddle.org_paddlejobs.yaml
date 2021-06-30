@@ -21,6 +21,9 @@ spec:
   - JSONPath: .status.worker.ready
     name: Worker
     type: string
+  - JSONPath: .status.heter.ready
+    name: Heter
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -8500,6 +8503,42 @@ spec:
               type: string
             elastic:
               type: string
+            heter:
+              properties:
+                failed:
+                  type: integer
+                pending:
+                  type: integer
+                ready:
+                  type: string
+                refs:
+                  items:
+                    properties:
+                      apiVersion:
+                        type: string
+                      fieldPath:
+                        type: string
+                      kind:
+                        type: string
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      resourceVersion:
+                        type: string
+                      uid:
+                        type: string
+                    type: object
+                  type: array
+                running:
+                  type: integer
+                starting:
+                  type: integer
+                succeeded:
+                  type: integer
+                unknown:
+                  type: integer
+              type: object
             mode:
               type: string
             observedGeneration:

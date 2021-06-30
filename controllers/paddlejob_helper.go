@@ -35,13 +35,21 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 		return pdv1.Completed
 	} else if pdj.Status.Phase == pdv1.Failed {
 		return pdv1.Failed
-	} else if pdj.Status.PS.Failed > 0 || pdj.Status.Worker.Failed > 0 {
+	} else if pdj.Status.PS.Failed > 0 ||
+		pdj.Status.Worker.Failed > 0 ||
+		pdj.Status.Heter.Failed > 0 {
 		return pdv1.Failed
-	} else if pdj.Status.PS.Running > 0 || pdj.Status.Worker.Running > 0 {
+	} else if pdj.Status.PS.Running > 0 ||
+		pdj.Status.Worker.Running > 0 ||
+		pdj.Status.Heter.Running > 0 {
 		return pdv1.Running
-	} else if (pdj.Spec.PS == nil || pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded) && (pdj.Spec.Worker == nil || pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded) {
+	} else if (pdj.Spec.PS == nil || pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded) &&
+		(pdj.Spec.Worker == nil || pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded) &&
+		(pdj.Spec.Heter == nil || pdj.Spec.Heter.Replicas == pdj.Status.Heter.Succeeded) {
 		return pdv1.Completed
-	} else if pdj.Status.PS.Pending > 0 || pdj.Status.Worker.Pending > 0 {
+	} else if pdj.Status.PS.Pending > 0 ||
+		pdj.Status.Worker.Pending > 0 ||
+		pdj.Status.Heter.Pending > 0 {
 		return pdv1.Starting
 	}
 
@@ -100,24 +108,35 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		workerHosts = make([]string, pdj.Spec.Worker.Replicas)
 	}
 
+	var heters []string
+	if pdj.Spec.Heter != nil {
+		heters = make([]string, pdj.Spec.Heter.Replicas)
+	}
+
 	for _, pod := range childPods.Items {
 		if len(strings.Split(pod.Status.PodIP, ".")) != 4 {
 			return nil
 		}
 		resType, idx := extractNameIndex(pod.Name)
-		if resType == pdv1.ResourcePS {
-			if pdj.Spec.Intranet == pdv1.Service {
+		if pdj.Spec.Intranet == pdv1.Service {
+			switch resType {
+			case pdv1.ResourcePS:
 				pservers[idx] = fmt.Sprintf("%s:%d", pod.Name, PADDLE_PORT)
-			} else {
-				pservers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, PADDLE_PORT)
-			}
-		} else if resType == pdv1.ResourceWorker {
-			if pdj.Spec.Intranet == pdv1.Service {
+			case pdv1.ResourceWorker:
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Name, PADDLE_PORT)
 				workerHosts[idx] = fmt.Sprintf("%s", pod.Name)
-			} else {
+			case pdv1.ResourceHeter:
+				heters[idx] = fmt.Sprintf("%s:%d", pod.Name, PADDLE_PORT)
+			}
+		} else {
+			switch resType {
+			case pdv1.ResourcePS:
+				pservers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, PADDLE_PORT)
+			case pdv1.ResourceWorker:
 				workers[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, PADDLE_PORT)
 				workerHosts[idx] = fmt.Sprintf("%s", pod.Status.PodIP)
+			case pdv1.ResourceHeter:
+				heters[idx] = fmt.Sprintf("%s:%d", pod.Status.PodIP, PADDLE_PORT)
 			}
 		}
 	}
@@ -139,7 +158,6 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		Data: map[string]string{
 			"TRAINER_PORTS_NUM": fmt.Sprintf("%d", HOST_PORT_NUM),
 			"PADDLE_PORT":       paddle_port,
-			//"PADDLE_HETER_TRAINER_IP_PORT_LIST": "",
 		},
 	}
 	if pdj.Spec.PS != nil {
@@ -149,6 +167,9 @@ func constructConfigMap(pdj *pdv1.PaddleJob, childPods corev1.PodList) (cm *core
 		cm.Data["PADDLE_TRAINER_ENDPOINTS"] = strings.Join(workers, ",")
 		cm.Data["PADDLE_TRAINERS"] = strings.Join(workerHosts, ",")
 		cm.Data["PADDLE_TRAINERS_NUM"] = fmt.Sprintf("%d", pdj.Spec.Worker.Replicas)
+	}
+	if pdj.Spec.Heter != nil {
+		cm.Data["PADDLE_HETER_ENDPOINTS"] = strings.Join(heters, ",")
 	}
 
 	if pdj.Spec.WithGloo != nil && *pdj.Spec.WithGloo > 0 && pdj.Spec.Intranet != pdv1.Service && len(pservers) > 0 {
@@ -169,9 +190,14 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	if resType == pdv1.ResourcePS {
 		pod.ObjectMeta = *pdj.Spec.PS.Template.ObjectMeta.DeepCopy()
 		pod.Spec = *pdj.Spec.PS.Template.Spec.DeepCopy()
-	} else {
+	} else if resType == pdv1.ResourceWorker {
 		pod.ObjectMeta = *pdj.Spec.Worker.Template.ObjectMeta.DeepCopy()
 		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
+	} else if resType == pdv1.ResourceHeter {
+		pod.ObjectMeta = *pdj.Spec.Heter.Template.ObjectMeta.DeepCopy()
+		pod.Spec = *pdj.Spec.Heter.Template.Spec.DeepCopy()
+	} else {
+		return nil
 	}
 
 	if pod.ObjectMeta.Labels == nil {

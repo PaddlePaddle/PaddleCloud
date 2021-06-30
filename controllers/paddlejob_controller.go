@@ -115,7 +115,8 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	for i, pod := range childPods.Items {
 		resType, idx := extractNameIndex(pod.Name)
 		if (resType == pdv1.ResourcePS && pdj.Spec.PS != nil && idx >= pdj.Spec.PS.Replicas) ||
-			(resType == pdv1.ResourceWorker && pdj.Spec.Worker != nil && idx >= pdj.Spec.Worker.Replicas) {
+			(resType == pdv1.ResourceWorker && pdj.Spec.Worker != nil && idx >= pdj.Spec.Worker.Replicas) ||
+			(resType == pdv1.ResourceHeter && pdj.Spec.Heter != nil && idx >= pdj.Spec.Heter.Replicas) {
 			r.deleteResource(ctx, &pdj, &childPods.Items[i])
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
@@ -207,10 +208,21 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// Ensure heter resource ready
+	if pdj.Spec.Heter != nil && len(pdj.Status.Heter.Refs) < pdj.Spec.Heter.Replicas {
+		for i := 0; i < pdj.Spec.Heter.Replicas; i++ {
+			if createPod(pdv1.ResourceHeter, i) {
+				return ctrl.Result{}, nil
+			}
+		}
+	}
+
 	// Create configmap of global env for all pods after all pods are running
-	if (pdj.Spec.PS == nil || len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas) && (pdj.Spec.Worker == nil || len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas) {
+	if (pdj.Spec.PS == nil || len(pdj.Status.PS.Refs) == pdj.Spec.PS.Replicas) &&
+		(pdj.Spec.Worker == nil || len(pdj.Status.Worker.Refs) == pdj.Spec.Worker.Replicas) &&
+		(pdj.Spec.Heter == nil || len(pdj.Status.Heter.Refs) == pdj.Spec.Heter.Replicas) {
 		if pdj.Spec.Intranet == pdv1.Service {
-			if len(pdj.Status.PS.Refs)+len(pdj.Status.Worker.Refs) != len(svcs.Items) {
+			if len(pdj.Status.PS.Refs)+len(pdj.Status.Worker.Refs)+len(pdj.Status.Heter.Refs) != len(svcs.Items) {
 				return ctrl.Result{}, nil
 			}
 		}
@@ -263,12 +275,15 @@ func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.Pa
 
 	psStatus := pdv1.ResourceStatus{}
 	workerStatus := pdv1.ResourceStatus{}
+	heterStatus := pdv1.ResourceStatus{}
 	for i, pod := range childPods.Items {
 		resType := pod.Annotations[pdv1.ResourceAnnotation]
 		if resType == pdv1.ResourcePS {
 			syncStatusByPod(&psStatus, &childPods.Items[i])
 		} else if resType == pdv1.ResourceWorker {
 			syncStatusByPod(&workerStatus, &childPods.Items[i])
+		} else if resType == pdv1.ResourceHeter {
+			syncStatusByPod(&heterStatus, &childPods.Items[i])
 		}
 	}
 
@@ -282,12 +297,18 @@ func (r *PaddleJobReconciler) getCurrentStatus(ctx context.Context, pdj *pdv1.Pa
 	} else {
 		workerStatus.Ready = fmt.Sprintf("%d/%d", workerStatus.Running, pdj.Spec.Worker.Replicas)
 	}
+	if pdj.Spec.Heter == nil {
+		heterStatus.Ready = "0/0"
+	} else {
+		heterStatus.Ready = fmt.Sprintf("%d/%d", heterStatus.Running, pdj.Spec.Heter.Replicas)
+	}
 
 	return pdv1.PaddleJobStatus{
 		Phase:          getPaddleJobPhase(pdj),
 		Mode:           getPaddleJobMode(pdj),
 		PS:             psStatus,
 		Worker:         workerStatus,
+		Heter:          heterStatus,
 		StartTime:      getPaddleJobStartTime(pdj),
 		CompletionTime: getPaddleJobCompleteTime(pdj),
 	}

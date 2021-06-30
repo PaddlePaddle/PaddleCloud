@@ -37,11 +37,13 @@ const (
 const (
 	ResourcePS     = "ps"
 	ResourceWorker = "worker"
+	ResourceHeter  = "heter"
 )
 
 var TrainingRole = map[string]string{
 	ResourcePS:     "PSERVER",
 	ResourceWorker: "TRAINER",
+	ResourceHeter:  "HETER",
 }
 
 // PaddleJobMode defines the avaiable mode of a job
@@ -163,6 +165,9 @@ type PaddleJobStatus struct {
 	// ResourceStatues of worker
 	Worker ResourceStatus `json:"worker,omitempty"`
 
+	// ResourceStatues of worker
+	Heter ResourceStatus `json:"heter,omitempty"`
+
 	// Elastic mix the setting (enable or not) and status of job
 	// TODO(kuizhiqing) hold on
 	Elastic ElasticStatus `json:"elastic,omitempty"`
@@ -202,6 +207,7 @@ type ResourceStatus struct {
 //+kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.status.mode`
 //+kubebuilder:printcolumn:name="PS",type=string,JSONPath=`.status.ps.ready`
 //+kubebuilder:printcolumn:name="Worker",type=string,JSONPath=`.status.worker.ready`
+//+kubebuilder:printcolumn:name="Heter",type=string,JSONPath=`.status.heter.ready`
 //+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // PaddleJob is the Schema for the paddlejobs API
