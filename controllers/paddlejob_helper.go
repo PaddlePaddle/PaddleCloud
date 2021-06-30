@@ -67,7 +67,7 @@ func getPaddleJobCompleteTime(pdj *pdv1.PaddleJob) *metav1.Time {
 func getPaddleJobMode(pdj *pdv1.PaddleJob) pdv1.PaddleJobMode {
 	if pdj.Spec.PS != nil {
 		return pdv1.PaddleJobModePS
-	} else if pdj.Spec.Worker != nil {
+	} else if pdj.Spec.Worker != nil && pdj.Spec.Worker.Replicas > 1 {
 		return pdv1.PaddleJobModeCollective
 	} else {
 		return pdv1.PaddleJobModeSingle
