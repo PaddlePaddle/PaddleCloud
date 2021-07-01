@@ -29,31 +29,51 @@ const (
 	initContainerName = "init-paddle"
 )
 
+func isAllPodsReady(pdj *pdv1.PaddleJob) bool {
+	return isPodReady(pdj.Spec.PS, pdj.Status.PS) &&
+		isPodReady(pdj.Spec.Worker, pdj.Status.Worker) &&
+		isPodReady(pdj.Spec.Heter, pdj.Status.Heter)
+}
+
+func isPodReady(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
+	if spec == nil {
+		return true
+	}
+	if status != nil && len(status.Refs) == spec.Replicas {
+		return true
+	}
+	return false
+}
+
 func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 
 	if pdj.Status.Phase == pdv1.Completed {
 		return pdv1.Completed
 	} else if pdj.Status.Phase == pdv1.Failed {
 		return pdv1.Failed
-	} else if pdj.Status.PS.Failed > 0 ||
-		pdj.Status.Worker.Failed > 0 ||
-		pdj.Status.Heter.Failed > 0 {
+	} else if (pdj.Status.PS != nil && pdj.Status.PS.Failed > 0) ||
+		(pdj.Status.Worker != nil && pdj.Status.Worker.Failed > 0) ||
+		(pdj.Status.Heter != nil && pdj.Status.Heter.Failed > 0) {
 		return pdv1.Failed
-	} else if pdj.Status.PS.Running > 0 ||
-		pdj.Status.Worker.Running > 0 ||
-		pdj.Status.Heter.Running > 0 {
+	} else if (pdj.Spec.PS == nil || (pdj.Status.PS != nil && pdj.Spec.PS.Replicas == pdj.Status.PS.Running)) &&
+		(pdj.Spec.Worker == nil || (pdj.Status.Worker != nil && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running)) &&
+		(pdj.Spec.Heter == nil || (pdj.Status.Heter != nil && pdj.Spec.Heter.Replicas == pdj.Status.Heter.Running)) {
 		return pdv1.Running
-	} else if (pdj.Spec.PS == nil || pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded) &&
-		(pdj.Spec.Worker == nil || pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded) &&
-		(pdj.Spec.Heter == nil || pdj.Spec.Heter.Replicas == pdj.Status.Heter.Succeeded) {
+	} else if (pdj.Spec.PS == nil || (pdj.Status.PS != nil && pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded)) &&
+		(pdj.Spec.Worker == nil || (pdj.Status.Worker != nil && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded)) &&
+		(pdj.Spec.Heter == nil || (pdj.Status.Heter != nil && pdj.Spec.Heter.Replicas == pdj.Status.Heter.Succeeded)) {
 		return pdv1.Completed
-	} else if pdj.Status.PS.Pending > 0 ||
-		pdj.Status.Worker.Pending > 0 ||
-		pdj.Status.Heter.Pending > 0 {
+	} else if (pdj.Status.PS != nil && pdj.Status.PS.Pending > 0) ||
+		(pdj.Status.Worker != nil && pdj.Status.Worker.Pending > 0) ||
+		(pdj.Status.Heter != nil && pdj.Status.Heter.Pending > 0) {
+		return pdv1.Pending
+	} else if (pdj.Status.PS != nil && pdj.Status.PS.Starting > 0) ||
+		(pdj.Status.Worker != nil && pdj.Status.Worker.Starting > 0) ||
+		(pdj.Status.Heter != nil && pdj.Status.Heter.Starting > 0) {
 		return pdv1.Starting
 	}
 
-	return pdv1.Starting
+	return pdv1.Pending
 }
 
 func getPaddleJobStartTime(pdj *pdv1.PaddleJob) *metav1.Time {

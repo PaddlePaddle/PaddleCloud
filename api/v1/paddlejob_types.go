@@ -163,17 +163,16 @@ type PaddleJobStatus struct {
 	Mode PaddleJobMode `json:"mode,omitempty"`
 
 	// ResourceStatues of ps
-	PS ResourceStatus `json:"ps,omitempty"`
+	PS *ResourceStatus `json:"ps,omitempty"`
 
 	// ResourceStatues of worker
-	Worker ResourceStatus `json:"worker,omitempty"`
+	Worker *ResourceStatus `json:"worker,omitempty"`
 
 	// ResourceStatues of worker
-	Heter ResourceStatus `json:"heter,omitempty"`
+	Heter *ResourceStatus `json:"heter,omitempty"`
 
-	// Elastic mix the setting (enable or not) and status of job
-	// TODO(kuizhiqing) hold on
-	Elastic ElasticStatus `json:"elastic,omitempty"`
+	// Elastic
+	Elastic *ElasticStatus `json:"elastic,omitempty"`
 
 	// StartTime indicate when the job started
 	StartTime *metav1.Time `json:"startTime,omitempty"`
