@@ -2,9 +2,11 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: wide-ande-deep
+  name: wide-ande-deep-volcano
 spec:
   cleanPodPolicy: Never
+  schedulingPolicy:
+    queue: default
   withGloo: 1
   worker:
     replicas: 2
@@ -14,6 +16,9 @@ spec:
         containers:
           - name: paddle
             image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
+            resources:
+              requests:
+                cpu: 200m
   ps:
     replicas: 2
     template:
@@ -22,5 +27,6 @@ spec:
         containers:
           - name: paddle
             image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
-
-
+            resources:
+              limits:
+                cpu: 300m

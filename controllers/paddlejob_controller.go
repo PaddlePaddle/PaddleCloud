@@ -121,6 +121,10 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.Get(ctx, client.ObjectKeyFromObject(&pdj), pg); err != nil {
 			if apierrors.IsNotFound(err) {
 				pg = constructPodGroup(&pdj)
+				if err = ctrl.SetControllerReference(&pdj, pg, r.Scheme); err != nil {
+					log.Error(err, "make reference failed")
+					return ctrl.Result{Requeue: true}, nil
+				}
 				if err = r.createResource(ctx, &pdj, pg); err != nil {
 					log.Error(err, "create podgroup failed")
 				}
@@ -153,11 +157,11 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		// Ensure service for running pod
 		for _, pod := range childPods.Items {
 			svc := constructService4Pod(pod)
-			if err := ctrl.SetControllerReference(&pdj, svc, r.Scheme); err != nil {
-				log.Error(err, "make reference failed")
+			if err := r.Get(ctx, client.ObjectKeyFromObject(svc), &corev1.Service{}); err == nil {
 				continue
 			}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(svc), &corev1.Service{}); err == nil {
+			if err := ctrl.SetControllerReference(&pdj, svc, r.Scheme); err != nil {
+				log.Error(err, "make reference failed")
 				continue
 			}
 			err := r.createResource(ctx, &pdj, svc)
@@ -475,5 +479,6 @@ func (r *PaddleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
+		Owns(&volcano.PodGroup{}).
 		Complete(r)
 }
