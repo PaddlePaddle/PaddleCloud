@@ -117,7 +117,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// scheduling with volcano
-	if r.Scheduling == schedulerNameVolcano && withVolcano(&pdj) {
+	if r.Scheduling == schedulerNameVolcano && !withoutVolcano(&pdj) {
 		pg := &volcano.PodGroup{}
 		if err := r.Get(ctx, client.ObjectKeyFromObject(&pdj), pg); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -205,6 +205,12 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return false
 		}
 		pod := constructPod(&pdj, resType, idx)
+
+		if r.Scheduling == schedulerNameVolcano && !withoutVolcano(&pdj) {
+			pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
+			pod.Spec.SchedulerName = schedulerNameVolcano
+		}
+
 		if err := ctrl.SetControllerReference(&pdj, pod, r.Scheme); err != nil {
 			log.Error(err, "make reference failed")
 			return false

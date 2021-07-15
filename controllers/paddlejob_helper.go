@@ -234,10 +234,6 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	}
 	pod.ObjectMeta.Annotations[pdv1.ResourceAnnotation] = resType
 
-	if withVolcano(pdj) {
-		pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
-	}
-
 	pod.ObjectMeta.Name = name
 	pod.ObjectMeta.Namespace = pdj.Namespace
 
@@ -379,9 +375,11 @@ func constructService4Pod(pod corev1.Pod) *corev1.Service {
 
 // for volcano
 
-func withVolcano(pdj *pdv1.PaddleJob) bool {
+func withoutVolcano(pdj *pdv1.PaddleJob) bool {
 	check := func(rs *pdv1.ResourceSpec) bool {
-		if rs != nil && rs.Template.Spec.SchedulerName == schedulerNameVolcano {
+		if rs != nil &&
+			rs.Template.Spec.SchedulerName != "" &&
+			rs.Template.Spec.SchedulerName != schedulerNameVolcano {
 			return true
 		} else {
 			return false
