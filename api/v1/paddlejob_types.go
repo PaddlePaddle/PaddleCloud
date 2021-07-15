@@ -108,6 +108,16 @@ const (
 	HostNetwork Intranet = "Host"
 )
 
+// SchedulingPolicy embed schedule policy of volcano
+type SchedulingPolicy struct {
+	MinAvailable  *int32 `json:"minAvailable,omitempty"`
+	Queue         string `json:"queue,omitempty"`
+	PriorityClass string `json:"priorityClass,omitempty"`
+	// pointer may cause deepcopy error
+	// api/v1/zz_generated.deepcopy.go:230:8: cannot use new(map["k8s.io/api/core/v1".ResourceName]resource.Quantity) (type *map["k8s.io/api/core/v1".ResourceName]resource.Quantity) as type *"k8s.io/api/core/v1".ResourceList in assignment
+	MinResources corev1.ResourceList `json:"minResources,omitempty"`
+}
+
 // PaddleJobSpec defines the desired state of PaddleJob
 type PaddleJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -115,6 +125,10 @@ type PaddleJobSpec struct {
 
 	// CleanPodPolicy defines whether to clean pod after job finished
 	CleanPodPolicy CleanPodPolicy `json:"cleanPodPolicy,omitempty"`
+
+	// SchedulingPolicy defines the policy related to scheduling, for volcano
+	// +optional
+	SchedulingPolicy *SchedulingPolicy `json:"schedulingPolicy,omitempty"`
 
 	// Intranet defines the communication mode inter pods : PodIP, Service or Host
 	Intranet Intranet `json:"intranet,omitempty"`

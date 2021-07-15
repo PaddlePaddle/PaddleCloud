@@ -23,10 +23,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
+	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 )
 
 const (
-	initContainerName = "init-paddle"
+	initContainerName            = "init-paddle"
+	schedulerNameVolcano         = "volcano"
+	schedulingPodGroupAnnotation = "scheduling.k8s.io/group-name"
 )
 
 func isAllPodsReady(pdj *pdv1.PaddleJob) bool {
@@ -231,6 +234,10 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	}
 	pod.ObjectMeta.Annotations[pdv1.ResourceAnnotation] = resType
 
+	if withVolcano(pdj) {
+		pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
+	}
+
 	pod.ObjectMeta.Name = name
 	pod.ObjectMeta.Namespace = pdj.Namespace
 
@@ -368,4 +375,95 @@ func constructService4Pod(pod corev1.Pod) *corev1.Service {
 		},
 	}
 	return svc
+}
+
+// for volcano
+
+func withVolcano(pdj *pdv1.PaddleJob) bool {
+	check := func(rs *pdv1.ResourceSpec) bool {
+		if rs != nil && rs.Template.Spec.SchedulerName == schedulerNameVolcano {
+			return true
+		} else {
+			return false
+		}
+	}
+	if check(pdj.Spec.PS) || check(pdj.Spec.Worker) || check(pdj.Spec.Heter) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func constructPodGroup(pdj *pdv1.PaddleJob) *volcano.PodGroup {
+	pg := &volcano.PodGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: pdj.Namespace,
+			Name:      pdj.Name,
+		},
+	}
+
+	if pdj.Spec.SchedulingPolicy != nil {
+		// minAvailable specified by user which not equals to total replicas
+		// DO NOT make sense in current paddle scenario
+		if pdj.Spec.SchedulingPolicy.MinAvailable != nil {
+			pg.Spec.MinMember = *pdj.Spec.SchedulingPolicy.MinAvailable
+		}
+		if pdj.Spec.SchedulingPolicy.Queue != "" {
+			pg.Spec.Queue = pdj.Spec.SchedulingPolicy.Queue
+		}
+		if pdj.Spec.SchedulingPolicy.PriorityClass != "" {
+			pg.Spec.PriorityClassName = pdj.Spec.SchedulingPolicy.PriorityClass
+		}
+		if pdj.Spec.SchedulingPolicy.MinResources != nil {
+			pg.Spec.MinResources = &pdj.Spec.SchedulingPolicy.MinResources
+		} else {
+			pg.Spec.MinResources = getPGMinResource(pdj)
+		}
+	} else {
+		pg.Spec.MinMember = getTotalReplicas(pdj)
+		pg.Spec.MinResources = getPGMinResource(pdj)
+	}
+
+	return pg
+}
+
+func getTotalReplicas(pdj *pdv1.PaddleJob) int32 {
+	count := func(rs *pdv1.ResourceSpec) int32 {
+		if rs != nil {
+			return int32(rs.Replicas)
+		} else {
+			return 0
+		}
+	}
+	return count(pdj.Spec.PS) + count(pdj.Spec.Worker) + count(pdj.Spec.Heter)
+}
+
+func getPGMinResource(pdj *pdv1.PaddleJob) *corev1.ResourceList {
+	addRes := func(crr, res corev1.ResourceList) {
+		for name, quantity := range res {
+			if value, ok := crr[name]; !ok {
+				crr[name] = quantity.DeepCopy()
+			} else {
+				value.Add(quantity)
+				crr[name] = value
+			}
+		}
+	}
+	// consider only the case minMember == minAvailable
+	totalRes := corev1.ResourceList{}
+	countRes := func(rs *pdv1.ResourceSpec) {
+		for i := 0; i < rs.Replicas; i++ {
+			for _, c := range rs.Template.Spec.Containers {
+				if c.Resources.Requests != nil {
+					addRes(totalRes, c.Resources.Requests)
+				} else {
+					addRes(totalRes, c.Resources.Limits)
+				}
+			}
+		}
+	}
+	countRes(pdj.Spec.PS)
+	countRes(pdj.Spec.Worker)
+	countRes(pdj.Spec.Heter)
+	return &totalRes
 }

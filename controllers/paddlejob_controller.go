@@ -33,6 +33,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
+
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
 )
 
@@ -69,6 +71,8 @@ type PaddleJobReconciler struct {
 //+kubebuilder:rbac:groups="",resources=services/status,verbs=get
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get
+//+kubebuilder:rbac:groups=scheduling.volcano.sh,resources=podgroups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=scheduling.volcano.sh,resources=podgroups/status,verbs=get;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -108,6 +112,22 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{RequeueAfter: time.Second}, nil
 			}
 			return ctrl.Result{}, err
+		}
+	}
+
+	// scheduling with volcano
+	if withVolcano(&pdj) {
+		pg := &volcano.PodGroup{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(&pdj), pg); err != nil {
+			if apierrors.IsNotFound(err) {
+				pg = constructPodGroup(&pdj)
+				if err = r.createResource(ctx, &pdj, pg); err != nil {
+					log.Error(err, "create podgroup failed")
+				}
+				return ctrl.Result{RequeueAfter: time.Second}, nil
+			} else {
+				return ctrl.Result{Requeue: true}, nil
+			}
 		}
 	}
 
@@ -441,6 +461,12 @@ func (r *PaddleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// index configmap
 	if err := mgr.GetFieldIndexer().
 		IndexField(context.Background(), &corev1.ConfigMap{}, ctrlRefKey, indexerFunc); err != nil {
+		return err
+	}
+
+	// index volcano pogGroup
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &volcano.PodGroup{}, ctrlRefKey, indexerFunc); err != nil {
 		return err
 	}
 

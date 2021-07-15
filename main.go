@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
+
 	batchv1 "github.com/paddleflow/paddle-operator/api/v1"
 	"github.com/paddleflow/paddle-operator/controllers"
 	//+kubebuilder:scaffold:imports
@@ -45,6 +47,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(batchv1.AddToScheme(scheme))
+	utilruntime.Must(volcano.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
