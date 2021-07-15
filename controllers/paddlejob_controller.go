@@ -59,6 +59,7 @@ type PaddleJobReconciler struct {
 	Log         logr.Logger
 	Scheme      *runtime.Scheme
 	Recorder    record.EventRecorder
+	Scheduling  string
 	HostPortMap map[string]int
 }
 
@@ -116,7 +117,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// scheduling with volcano
-	if withVolcano(&pdj) {
+	if r.Scheduling == schedulerNameVolcano && withVolcano(&pdj) {
 		pg := &volcano.PodGroup{}
 		if err := r.Get(ctx, client.ObjectKeyFromObject(&pdj), pg); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -468,17 +469,20 @@ func (r *PaddleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// index volcano pogGroup
-	if err := mgr.GetFieldIndexer().
-		IndexField(context.Background(), &volcano.PodGroup{}, ctrlRefKey, indexerFunc); err != nil {
-		return err
-	}
-
-	return ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&pdv1.PaddleJob{}).
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
-		Owns(&corev1.ConfigMap{}).
-		Owns(&volcano.PodGroup{}).
-		Complete(r)
+		Owns(&corev1.ConfigMap{})
+
+	if r.Scheduling == schedulerNameVolcano {
+		// index volcano pogGroup
+		if err := mgr.GetFieldIndexer().
+			IndexField(context.Background(), &volcano.PodGroup{}, ctrlRefKey, indexerFunc); err != nil {
+			return err
+		}
+		return builder.Owns(&volcano.PodGroup{}).Complete(r)
+	}
+
+	return builder.Complete(r)
 }
