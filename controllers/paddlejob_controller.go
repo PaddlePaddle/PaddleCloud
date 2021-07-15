@@ -129,10 +129,10 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				if err = r.createResource(ctx, &pdj, pg); err != nil {
 					log.Error(err, "create podgroup failed")
 				}
-				return ctrl.Result{RequeueAfter: time.Second}, nil
-			} else {
-				return ctrl.Result{Requeue: true}, nil
 			}
+			return ctrl.Result{Requeue: true}, nil
+		} else if pg.Status.Phase != volcano.PodGroupRunning && pg.Status.Phase != volcano.PodGroupInqueue {
+			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 

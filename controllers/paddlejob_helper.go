@@ -402,6 +402,9 @@ func constructPodGroup(pdj *pdv1.PaddleJob) *volcano.PodGroup {
 		},
 	}
 
+	pg.Spec.MinMember = getTotalReplicas(pdj)
+	pg.Spec.MinResources = getPGMinResource(pdj)
+
 	if pdj.Spec.SchedulingPolicy != nil {
 		// minAvailable specified by user which not equals to total replicas
 		// DO NOT make sense in current paddle scenario
@@ -416,12 +419,7 @@ func constructPodGroup(pdj *pdv1.PaddleJob) *volcano.PodGroup {
 		}
 		if pdj.Spec.SchedulingPolicy.MinResources != nil {
 			pg.Spec.MinResources = &pdj.Spec.SchedulingPolicy.MinResources
-		} else {
-			pg.Spec.MinResources = getPGMinResource(pdj)
 		}
-	} else {
-		pg.Spec.MinMember = getTotalReplicas(pdj)
-		pg.Spec.MinResources = getPGMinResource(pdj)
 	}
 
 	return pg
