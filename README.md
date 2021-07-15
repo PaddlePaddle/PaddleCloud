@@ -41,7 +41,7 @@ NAME                                         READY   STATUS    RESTARTS   AGE
 paddle-controller-manager-698dd7b855-n65jr   1/1     Running   0          1m
 ```
 
-By default, paddle controller runs in namespace *paddle-system* and only controll jobs in that namespace.
+By default, paddle controller runs in namespace *paddle-system* and only controls jobs in that namespace.
 To run controller in a different namespace or controll jobs in other namespaces, you can edit `charts/paddle-operator/values.yaml` and install the helm chart.
 You can also edit kustomization files or edit `deploy/v1/operator.yaml` directly for that purpose.
 
@@ -61,6 +61,21 @@ Check paddle job status
 ```shell
 $ kubectl -n paddle-system get pdj
 ```
+
+### Work with Volcano
+
+Enable volcano before installation, add the following args in *deploy/v1/operator.yaml*
+```
+containers:
+- args:
+  - --leader-elect
+  - --namespace=paddle-system # watch this ns only
+  - --scheduling=volcano      # enable volcano
+  command:
+  - /manager
+```
+
+then, job as in *deploy/examples/wide_and_deep_volcano.yaml* can be handled correctly.
 
 ### Uninstall
 Simply
