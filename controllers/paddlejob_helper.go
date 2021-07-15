@@ -452,6 +452,9 @@ func getPGMinResource(pdj *pdv1.PaddleJob) *corev1.ResourceList {
 	// consider only the case minMember == minAvailable
 	totalRes := corev1.ResourceList{}
 	countRes := func(rs *pdv1.ResourceSpec) {
+		if rs == nil {
+			return
+		}
 		for i := 0; i < rs.Replicas; i++ {
 			for _, c := range rs.Template.Spec.Containers {
 				if c.Resources.Requests != nil {
