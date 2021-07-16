@@ -33,6 +33,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	volcanoBatch "volcano.sh/apis/pkg/apis/batch/v1alpha1"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
@@ -207,8 +208,16 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		pod := constructPod(&pdj, resType, idx)
 
 		if r.Scheduling == schedulerNameVolcano && !withoutVolcano(&pdj) {
-			pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
 			pod.Spec.SchedulerName = schedulerNameVolcano
+			pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
+			pod.ObjectMeta.Annotations[volcanoBatch.TaskSpecKey] = fmt.Sprintf("%s-%s", pdj.Name, resType)
+			pod.ObjectMeta.Annotations[volcanoBatch.JobNameKey] = pdj.Name
+			pod.ObjectMeta.Annotations[volcanoBatch.JobVersion] = fmt.Sprintf("%d", pdj.Status.ObservedGeneration)
+			if pdj.Spec.SchedulingPolicy != nil {
+				pod.ObjectMeta.Annotations[volcanoBatch.QueueNameKey] = pdj.Spec.SchedulingPolicy.Queue
+			} else {
+				pod.ObjectMeta.Annotations[volcanoBatch.QueueNameKey] = ""
+			}
 		}
 
 		if err := ctrl.SetControllerReference(&pdj, pod, r.Scheme); err != nil {
