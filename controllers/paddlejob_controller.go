@@ -210,7 +210,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if r.Scheduling == schedulerNameVolcano && !withoutVolcano(&pdj) {
 			pod.Spec.SchedulerName = schedulerNameVolcano
 			pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
-			pod.ObjectMeta.Annotations[volcanoBatch.TaskSpecKey] = fmt.Sprintf("%s-%s", pdj.Name, resType)
+			pod.ObjectMeta.Annotations[volcanoBatch.TaskSpecKey] = resType
 			pod.ObjectMeta.Annotations[volcanoBatch.JobNameKey] = pdj.Name
 			pod.ObjectMeta.Annotations[volcanoBatch.JobVersion] = fmt.Sprintf("%d", pdj.Status.ObservedGeneration)
 			if pdj.Spec.SchedulingPolicy != nil {
