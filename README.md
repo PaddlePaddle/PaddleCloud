@@ -18,12 +18,12 @@ With kubernetes ready, you can install paddle operator with configuration in *de
 
 Create PaddleJob crd,
 ```shell
-$ kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/crd.yaml
+kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/crd.yaml
 ```
 
 A succeed creation leads to result as follows,
 ```shell
-$ kubectl get crd
+kubectl get crd
 NAME                                    CREATED AT
 paddlejobs.batch.paddlepaddle.org       2021-02-08T07:43:24Z
 ```
@@ -31,12 +31,12 @@ paddlejobs.batch.paddlepaddle.org       2021-02-08T07:43:24Z
 Then deploy controller,
 
 ```shell
-$ kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/operator.yaml
 ```
 
 the ready state of controller would be as follow,
 ```shell
-$ kubectl -n paddle-system get pods
+kubectl -n paddle-system get pods
 NAME                                         READY   STATUS    RESTARTS   AGE
 paddle-controller-manager-698dd7b855-n65jr   1/1     Running   0          1m
 ```
@@ -49,17 +49,17 @@ You can also edit kustomization files or edit `deploy/v1/operator.yaml` directly
 
 Deploy your first paddlejob demo with
 ```shell
-$ kubectl -n paddle-system apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/examples/wide_and_deep.yaml
+kubectl -n paddle-system apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/examples/wide_and_deep.yaml
 ```
 
 Check pods status
 ```shell
-$ kubectl -n paddle-system get pods
+kubectl -n paddle-system get pods
 ```
 
 Check paddle job status
 ```shell
-$ kubectl -n paddle-system get pdj
+kubectl -n paddle-system get pdj
 ```
 
 ### Work with Volcano
@@ -69,18 +69,27 @@ Enable volcano before installation, add the following args in *deploy/v1/operato
 containers:
 - args:
   - --leader-elect
-  - --namespace=paddle-system # watch this ns only
-  - --scheduling=volcano      # enable volcano
+  - --namespace=paddle-system  # watch this ns only
+  - --scheduling=volcano       # enable volcano
   command:
   - /manager
 ```
 
 then, job as in *deploy/examples/wide_and_deep_volcano.yaml* can be handled correctly.
 
+### Elastic Trainning
+
+Elastic feature depend on etcd present, which should be set for controller as args,
+```
+  --etcd-server=paddle-elastic-etcd.paddle-system.svc.cluster.local:2379      # enable elastic
+```
+
+then, job as in *deploy/elastic/resnet.yaml* can be handled correctly.
+
 ### Uninstall
 Simply
 ```shell
-$ kubectl delete -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/crd.yaml -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/operator.yaml
+kubectl delete -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/crd.yaml -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/operator.yaml
 ```
 ## Advanced usage
 

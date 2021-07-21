@@ -1,0 +1,37 @@
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: resnet-elastic
+spec:
+  cleanPodPolicy: Never
+  elastic: 1
+  worker:
+    replicas: 3
+    template:
+      spec:
+        containers:
+          - name: resnet
+            image: registry.baidubce.com/paddle-operator/demo-resnet:elastic
+            imagePullPolicy: Always
+            command:
+            - python
+            args:
+            - "-m"
+            - "paddle.distributed.launch"
+            - "train_fleet_dygraph_ckpt.py"
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            - mountPath: /checkpoint
+              name: chkpt
+            resources:
+              limits:
+                nvidia.com/gpu: 1
+        volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        - name: chkpt
+          hostPath:
+            path: /tmp/checkpoint
+

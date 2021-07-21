@@ -19,6 +19,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -31,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	clientv3 "go.etcd.io/etcd/client/v3"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 
 	batchv1 "github.com/paddleflow/paddle-operator/api/v1"
@@ -58,6 +60,8 @@ func main() {
 	var scheduling string
 	var probeAddr string
 	var hostPortRange string
+	var etcdServer string
+	flag.StringVar(&etcdServer, "etcd-server", "", "The etcd server endpoints.")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&namespace, "namespace", "", "The namespace the controller binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -101,6 +105,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	var etcdCli *clientv3.Client
+	if etcdServer != "" {
+		etcdEndpoints := strings.Split(etcdServer, ",")
+		etcdCli, err = clientv3.New(clientv3.Config{
+			Endpoints:   etcdEndpoints,
+			DialTimeout: 2 * time.Second,
+		})
+		if err != nil {
+			setupLog.Error(err, "etcd connect failed")
+			os.Exit(1)
+		}
+	}
+
 	if err = (&controllers.PaddleJobReconciler{
 		Client:     mgr.GetClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("PaddleJob"),
@@ -112,6 +129,7 @@ func main() {
 			controllers.HOST_PORT_CUR:   portStart,
 			controllers.HOST_PORT_END:   portEnd,
 		},
+		EtcdCli: etcdCli,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PaddleJob")
 		os.Exit(1)

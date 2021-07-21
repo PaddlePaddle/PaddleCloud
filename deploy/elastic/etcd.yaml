@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paddle-elastic-etcd
+  namespace: paddle-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elastic-etcd
+  template:
+    metadata:
+      labels:
+        app: elastic-etcd
+    spec:
+      containers:
+      - name: etcd
+        image: bitnami/etcd:3-debian-10
+        env:
+        - name: ALLOW_NONE_AUTHENTICATION
+          value: "yes"
+        ports:
+        - containerPort: 2379
+        - containerPort: 2380
+        resources:
+          requests:
+            memory: "100m"
+            cpu: "1"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paddle-elastic-etcd
+  namespace: paddle-system
+spec:
+  ports:
+  - port: 2379
+    protocol: TCP
+    name: p1
+  - port: 2380
+    protocol: TCP
+    name: p2
+  selector:
+    app: elastic-etcd

@@ -263,14 +263,32 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	}
 	pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, envIP, envRank, envRole, envRole2)
 
-	envF := corev1.EnvFromSource{
-		ConfigMapRef: &corev1.ConfigMapEnvSource{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: pdj.Name,
+	if pdj.Spec.Elastic != nil {
+		envJobID := corev1.EnvVar{
+			Name:  "PADDLE_ELASTIC_JOB_ID",
+			Value: fmt.Sprintf("%s-%s", pdj.Namespace, pdj.Name),
+		}
+		envNP := corev1.EnvVar{
+			Name:  "PADDLE_ELASTIC_NP",
+			Value: fmt.Sprintf("%d", pdj.Spec.Worker.Replicas),
+		}
+		envTimeout := corev1.EnvVar{
+			Name:  "PADDLE_ELASTIC_TIMEOUT",
+			Value: "60",
+		}
+
+		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, envJobID, envNP, envTimeout)
+	} else {
+		envF := corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: pdj.Name,
+				},
 			},
-		},
+		}
+
+		pod.Spec.Containers[0].EnvFrom = append(pod.Spec.Containers[0].EnvFrom, envF)
 	}
-	pod.Spec.Containers[0].EnvFrom = append(pod.Spec.Containers[0].EnvFrom, envF)
 
 	if pdj.Spec.Intranet == pdv1.Service {
 		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, corev1.ContainerPort{ContainerPort: PADDLE_PORT})
@@ -278,7 +296,9 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		pod.Spec.HostNetwork = true
 	}
 
-	if pod.Spec.RestartPolicy == "" {
+	if pdj.Spec.Elastic != nil {
+		pod.Spec.RestartPolicy = "OnFailure"
+	} else if pod.Spec.RestartPolicy == "" {
 		if resType == pdv1.ResourceWorker && pdj.Spec.Intranet == pdv1.Service {
 			pod.Spec.RestartPolicy = "OnFailure"
 		} else {
