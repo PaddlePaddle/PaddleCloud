@@ -76,7 +76,7 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 		return pdv1.Starting
 	}
 
-	return pdv1.Pending
+	return pdj.Status.Phase
 }
 
 func getPaddleJobStartTime(pdj *pdv1.PaddleJob) *metav1.Time {
