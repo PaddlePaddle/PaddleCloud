@@ -15,4 +15,4 @@ configMapGenerator:
 images:
 - name: controller
   newName: registry.baidubce.com/paddle-operator/controller
-  newTag: v0.3-beta
+  newTag: v0.3.0

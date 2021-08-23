@@ -76,6 +76,10 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 		return pdv1.Starting
 	}
 
+	if pdj.Status.Phase == "" {
+		return pdv1.Pending
+	}
+
 	return pdj.Status.Phase
 }
 
