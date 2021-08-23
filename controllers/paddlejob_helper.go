@@ -33,9 +33,14 @@ const (
 )
 
 func isAllPodsReady(pdj *pdv1.PaddleJob) bool {
-	return isPodReady(pdj.Spec.PS, pdj.Status.PS) &&
-		isPodReady(pdj.Spec.Worker, pdj.Status.Worker) &&
-		isPodReady(pdj.Spec.Heter, pdj.Status.Heter)
+	specs := pdj.GetSpecs()
+	statuses := pdj.GetStatuses()
+	for k, _ := range specs {
+		if !isPodReady(specs[k], statuses[k]) {
+			return false
+		}
+	}
+	return true
 }
 
 func isPodReady(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
@@ -48,32 +53,55 @@ func isPodReady(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
 	return false
 }
 
+func isFailed(status *pdv1.ResourceStatus) bool {
+	return status != nil && status.Failed > 0
+}
+func isPending(status *pdv1.ResourceStatus) bool {
+	return status != nil && status.Pending > 0
+}
+func isStarting(status *pdv1.ResourceStatus) bool {
+	return status != nil && status.Starting > 0
+}
+func isRunning(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
+	return spec == nil || (status != nil && spec.Replicas == status.Running)
+}
+func isCompleted(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
+	return spec == nil || (status != nil && spec.Replicas == status.Succeeded)
+}
+
 func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 
+	// final phase won't change any more
 	if pdj.Status.Phase == pdv1.Completed {
 		return pdv1.Completed
 	} else if pdj.Status.Phase == pdv1.Failed {
 		return pdv1.Failed
-	} else if (pdj.Status.PS != nil && pdj.Status.PS.Failed > 0) ||
-		(pdj.Status.Worker != nil && pdj.Status.Worker.Failed > 0) ||
-		(pdj.Status.Heter != nil && pdj.Status.Heter.Failed > 0) {
-		return pdv1.Failed
-	} else if (pdj.Spec.PS == nil || (pdj.Status.PS != nil && pdj.Spec.PS.Replicas == pdj.Status.PS.Running)) &&
-		(pdj.Spec.Worker == nil || (pdj.Status.Worker != nil && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Running)) &&
-		(pdj.Spec.Heter == nil || (pdj.Status.Heter != nil && pdj.Spec.Heter.Replicas == pdj.Status.Heter.Running)) {
+	}
+
+	specs := pdj.GetSpecs()
+	statuses := pdj.GetStatuses()
+	for _, status := range statuses {
+		if isFailed(status) {
+			return pdv1.Failed
+		} else if isPending(status) {
+			return pdv1.Pending
+		} else if isStarting(status) {
+			return pdv1.Starting
+		}
+	}
+	checkAll := func(check func(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool) bool {
+		for k, _ := range statuses {
+			if !check(specs[k], statuses[k]) {
+				return false
+			}
+		}
+		return true
+	}
+	if checkAll(isRunning) {
 		return pdv1.Running
-	} else if (pdj.Spec.PS == nil || (pdj.Status.PS != nil && pdj.Spec.PS.Replicas == pdj.Status.PS.Succeeded)) &&
-		(pdj.Spec.Worker == nil || (pdj.Status.Worker != nil && pdj.Spec.Worker.Replicas == pdj.Status.Worker.Succeeded)) &&
-		(pdj.Spec.Heter == nil || (pdj.Status.Heter != nil && pdj.Spec.Heter.Replicas == pdj.Status.Heter.Succeeded)) {
+	}
+	if checkAll(isCompleted) {
 		return pdv1.Completed
-	} else if (pdj.Status.PS != nil && pdj.Status.PS.Pending > 0) ||
-		(pdj.Status.Worker != nil && pdj.Status.Worker.Pending > 0) ||
-		(pdj.Status.Heter != nil && pdj.Status.Heter.Pending > 0) {
-		return pdv1.Pending
-	} else if (pdj.Status.PS != nil && pdj.Status.PS.Starting > 0) ||
-		(pdj.Status.Worker != nil && pdj.Status.Worker.Starting > 0) ||
-		(pdj.Status.Heter != nil && pdj.Status.Heter.Starting > 0) {
-		return pdv1.Starting
 	}
 
 	if pdj.Status.Phase == "" {
@@ -214,18 +242,10 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	name := genPaddleResName(pdj.Name, resType, idx)
 
 	pod = &corev1.Pod{}
-	if resType == pdv1.ResourcePS {
-		pod.ObjectMeta = *pdj.Spec.PS.Template.ObjectMeta.DeepCopy()
-		pod.Spec = *pdj.Spec.PS.Template.Spec.DeepCopy()
-	} else if resType == pdv1.ResourceWorker {
-		pod.ObjectMeta = *pdj.Spec.Worker.Template.ObjectMeta.DeepCopy()
-		pod.Spec = *pdj.Spec.Worker.Template.Spec.DeepCopy()
-	} else if resType == pdv1.ResourceHeter {
-		pod.ObjectMeta = *pdj.Spec.Heter.Template.ObjectMeta.DeepCopy()
-		pod.Spec = *pdj.Spec.Heter.Template.Spec.DeepCopy()
-	} else {
-		return nil
-	}
+	specs := pdj.GetSpecs()
+
+	pod.ObjectMeta = *specs[resType].Template.ObjectMeta.DeepCopy()
+	pod.Spec = *specs[resType].Template.Spec.DeepCopy()
 
 	if pod.ObjectMeta.Labels == nil {
 		pod.ObjectMeta.Labels = map[string]string{}
@@ -409,11 +429,13 @@ func withoutVolcano(pdj *pdv1.PaddleJob) bool {
 			return false
 		}
 	}
-	if check(pdj.Spec.PS) || check(pdj.Spec.Worker) || check(pdj.Spec.Heter) {
-		return true
-	} else {
-		return false
+	specs := pdj.GetSpecs()
+	for _, spec := range specs {
+		if check(spec) {
+			return true
+		}
 	}
+	return false
 }
 
 func constructPodGroup(pdj *pdv1.PaddleJob) *volcano.PodGroup {
@@ -448,14 +470,19 @@ func constructPodGroup(pdj *pdv1.PaddleJob) *volcano.PodGroup {
 }
 
 func getTotalReplicas(pdj *pdv1.PaddleJob) int32 {
-	count := func(rs *pdv1.ResourceSpec) int32 {
+	count := func(rs *pdv1.ResourceSpec) int {
 		if rs != nil {
-			return int32(rs.Replicas)
+			return rs.Replicas
 		} else {
 			return 0
 		}
 	}
-	return count(pdj.Spec.PS) + count(pdj.Spec.Worker) + count(pdj.Spec.Heter)
+	specs := pdj.GetSpecs()
+	total := 0
+	for _, spec := range specs {
+		total += count(spec)
+	}
+	return int32(total)
 }
 
 func getPGMinResource(pdj *pdv1.PaddleJob) *corev1.ResourceList {
@@ -471,12 +498,13 @@ func getPGMinResource(pdj *pdv1.PaddleJob) *corev1.ResourceList {
 	}
 	// consider only the case minMember == minAvailable
 	totalRes := corev1.ResourceList{}
-	countRes := func(rs *pdv1.ResourceSpec) {
-		if rs == nil {
-			return
+	specs := pdj.GetSpecs()
+	for _, spec := range specs {
+		if spec == nil {
+			continue
 		}
-		for i := 0; i < rs.Replicas; i++ {
-			for _, c := range rs.Template.Spec.Containers {
+		for i := 0; i < spec.Replicas; i++ {
+			for _, c := range spec.Template.Spec.Containers {
 				if c.Resources.Requests != nil {
 					addRes(totalRes, c.Resources.Requests)
 				} else {
@@ -485,8 +513,5 @@ func getPGMinResource(pdj *pdv1.PaddleJob) *corev1.ResourceList {
 			}
 		}
 	}
-	countRes(pdj.Spec.PS)
-	countRes(pdj.Spec.Worker)
-	countRes(pdj.Spec.Heter)
 	return &totalRes
 }

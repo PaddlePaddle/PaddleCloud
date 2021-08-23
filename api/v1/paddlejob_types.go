@@ -230,6 +230,22 @@ type PaddleJob struct {
 	Status PaddleJobStatus `json:"status,omitempty"`
 }
 
+func (pdj *PaddleJob) GetSpecs() map[string]*ResourceSpec {
+	return map[string]*ResourceSpec{
+		ResourcePS:     pdj.Spec.PS,
+		ResourceWorker: pdj.Spec.Worker,
+		ResourceHeter:  pdj.Spec.Heter,
+	}
+}
+
+func (pdj *PaddleJob) GetStatuses() map[string]*ResourceStatus {
+	return map[string]*ResourceStatus{
+		ResourcePS:     pdj.Status.PS,
+		ResourceWorker: pdj.Status.Worker,
+		ResourceHeter:  pdj.Status.Heter,
+	}
+}
+
 //+kubebuilder:object:root=true
 
 // PaddleJobList contains a list of PaddleJob
