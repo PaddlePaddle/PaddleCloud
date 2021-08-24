@@ -470,17 +470,12 @@ func constructPodGroup(pdj *pdv1.PaddleJob) *volcano.PodGroup {
 }
 
 func getTotalReplicas(pdj *pdv1.PaddleJob) int32 {
-	count := func(rs *pdv1.ResourceSpec) int {
-		if rs != nil {
-			return rs.Replicas
-		} else {
-			return 0
-		}
-	}
 	specs := pdj.GetSpecs()
 	total := 0
 	for _, spec := range specs {
-		total += count(spec)
+		if spec != nil {
+			total += spec.Replicas
+		}
 	}
 	return int32(total)
 }
