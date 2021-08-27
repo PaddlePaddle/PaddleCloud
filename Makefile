@@ -3,6 +3,7 @@
 IMG ?= registry.baidubce.com/paddle-operator/controller:v0.3.0
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
+CRD_OPTIONS_V1BETA1 ?= "crd:crdVersions=v1beta1,allowDangerousTypes=false,maxDescLen=0,preserveUnknownFields=false" 
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -37,7 +38,7 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-gen-deploy: manifests kustomize crd-v1beta1
+gen-deploy: manifests kustomize
 	cat COPYRIGHT.YAML > deploy/v1/crd.yaml
 	$(KUSTOMIZE) build config/crd >> deploy/v1/crd.yaml
 	cat COPYRIGHT.YAML > deploy/v1/operator.yaml
@@ -60,18 +61,16 @@ helm: manifests kustomize
 	$(KUSTOMIZE) build config/crd > $(TEMPLATES_DIR)/crd.yaml
 	$(KUSTOMIZE) build config/default > $(TEMPLATES_DIR)/controller.yaml
 	# The last sed command is not clean, need more advanced scripting to be robust
-	sed -i  -e "s/image:.*/image: {{ .Values.image }}/g" \
-			-e "s/--namespace=.*/--namespace={{ .Values.jobnamespace }}/g" \
-			-e "s/namespace:.*/namespace: {{ .Values.controllernamespace }}/g" \
-			-e "s/name: paddle-system/name: {{ .Values.controllernamespace }}/g" \
-			$(TEMPLATES_DIR)/controller.yaml
+	ex -sc "%s/image:.*/image: {{ .Values.image }}/g|x" $(TEMPLATES_DIR)/controller.yaml
+	ex -sc "%s/--namespace=.*/--namespace={{ .Values.jobnamespace }}/g|x" $(TEMPLATES_DIR)/controller.yaml
+	ex -sc "%s/namespace:.*/namespace: {{ .Values.controllernamespace }}/g|x" $(TEMPLATES_DIR)/controller.yaml
+	ex -sc "%s/name: paddle-system/name: {{ .Values.controllernamespace }}/g|x" $(TEMPLATES_DIR)/controller.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
-crd-v1beta1:
-	$(CONTROLLER_GEN) "crd:crdVersions=v1beta1,allowDangerousTypes=false,maxDescLen=0,preserveUnknownFields=false" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/v1beta1
+	$(CONTROLLER_GEN) $(CRD_OPTIONS_V1BETA1) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/v1beta1
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Run go fmt against code
 fmt:

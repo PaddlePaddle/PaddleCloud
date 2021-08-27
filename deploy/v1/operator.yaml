@@ -19,6 +19,12 @@ metadata:
     control-plane: controller-manager
   name: paddle-system
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paddle-manager-sa
+  namespace: paddle-system
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -162,34 +168,6 @@ rules:
   - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: paddle-metrics-reader
-rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: paddle-proxy-role
-rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: paddle-leader-election-rolebinding
@@ -200,7 +178,7 @@ roleRef:
   name: paddle-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: paddle-manager-sa
   namespace: paddle-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -213,20 +191,7 @@ roleRef:
   name: paddle-manager-role
 subjects:
 - kind: ServiceAccount
-  name: default
-  namespace: paddle-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: paddle-proxy-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: paddle-proxy-role
-subjects:
-- kind: ServiceAccount
-  name: default
+  name: paddle-manager-sa
   namespace: paddle-system
 ---
 apiVersion: v1
@@ -247,21 +212,6 @@ kind: ConfigMap
 metadata:
   name: paddle-manager-config
   namespace: paddle-system
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    control-plane: controller-manager
-  name: paddle-controller-manager-metrics-service
-  namespace: paddle-system
-spec:
-  ports:
-  - name: https
-    port: 8443
-    targetPort: https
-  selector:
-    control-plane: controller-manager
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -312,4 +262,5 @@ spec:
           allowPrivilegeEscalation: false
       securityContext:
         runAsUser: 65532
+      serviceAccountName: paddle-manager-sa
       terminationGracePeriodSeconds: 10
