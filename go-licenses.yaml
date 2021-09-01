@@ -1,0 +1,6 @@
+module:
+  go:
+    version: master
+  overrides:
+  - name: github.com/paddleflow/paddle-operator
+    skip: true

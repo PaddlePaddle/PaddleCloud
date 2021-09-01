@@ -19,11 +19,10 @@ COPY controllers/ controllers/
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM bitnami/minideb:stretch
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY third_party/licenses/licenses.csv /workspace/licenses.csv
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
