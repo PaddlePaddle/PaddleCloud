@@ -5,6 +5,7 @@ metadata:
 spec:
   intranet: Service # default: PodIP
   cleanPodPolicy: Nerver
+  withGloo: 1
   worker:
     replicas: 2
     template:
