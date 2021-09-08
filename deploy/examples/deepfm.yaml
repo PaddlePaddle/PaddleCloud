@@ -1,0 +1,31 @@
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: deepfm
+spec:
+  cleanPodPolicy: OnFailed
+  withGloo: 1
+  worker:
+    replicas: 2
+    template:
+      spec:
+        containers:
+          - name: paddle
+            image: registry.baidubce.com/paddle-operator/demo-deepfm:v1
+            imagePullPolicy: Always
+            command:
+            - python3
+            args:
+            - train.py
+  ps:
+    replicas: 2
+    template:
+      spec:
+        containers:
+          - name: paddle
+            image: registry.baidubce.com/paddle-operator/demo-deepfm:v1
+            imagePullPolicy: Always
+            command:
+            - python3
+            args:
+            - train.py
