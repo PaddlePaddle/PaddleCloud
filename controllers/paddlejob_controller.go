@@ -171,7 +171,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				continue
 			}
 			err := r.createResource(ctx, &pdj, svc)
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 	}
 	if pdj.Spec.Intranet == pdv1.HostNetwork {
@@ -260,7 +260,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if !isPodReady(specs[res], statuses[res]) {
 			for i := 0; i < specs[res].Replicas; i++ {
 				if createPod(res, i) {
-					return ctrl.Result{Requeue: true}, nil
+					return ctrl.Result{}, nil
 				}
 			}
 		}
