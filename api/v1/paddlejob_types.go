@@ -40,6 +40,7 @@ const (
 	ResourceHeter  = "heter"
 )
 
+// TrainingRole defines the role of node which will be set in environ
 var TrainingRole = map[string]string{
 	ResourcePS:     "PSERVER",
 	ResourceWorker: "TRAINER",
@@ -244,6 +245,18 @@ func (pdj *PaddleJob) GetStatuses() map[string]*ResourceStatus {
 		ResourceWorker: pdj.Status.Worker,
 		ResourceHeter:  pdj.Status.Heter,
 	}
+}
+
+func (pdj *PaddleJob) SetStatus(resType string, status *ResourceStatus) {
+	switch resType {
+	case ResourcePS:
+		pdj.Status.PS = status
+	case ResourceWorker:
+		pdj.Status.Worker = status
+	case ResourceHeter:
+		pdj.Status.Heter = status
+	}
+
 }
 
 //+kubebuilder:object:root=true
