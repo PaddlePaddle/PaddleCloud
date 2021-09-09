@@ -43,9 +43,9 @@ github.com/spf13/pflag, https://github.com/spf13/pflag/blob/v1.0.5/LICENSE, BSD-
 go.etcd.io/etcd/api/v3, https://github.com/etcd-io/etcd/blob/v3.5.0/LICENSE, Apache-2.0
 go.etcd.io/etcd/client/pkg/v3, https://github.com/etcd-io/etcd/blob/v3.5.0/LICENSE, Apache-2.0
 go.etcd.io/etcd/client/v3, https://github.com/etcd-io/etcd/blob/v3.5.0/LICENSE, Apache-2.0
-go.uber.org/atomic, https://github.com/uber-go/atomic/blob/v1.7.0/LICENSE, MIT
-go.uber.org/multierr, https://github.com/uber-go/multierr/blob/v1.6.0/LICENSE, MIT
-go.uber.org/zap, https://github.com/uber-go/zap/blob/v1.17.0/LICENSE, MIT
+go.uber.org/atomic, https://github.com/uber-go/atomic/blob/v1.7.0/LICENSE.txt, MIT
+go.uber.org/multierr, https://github.com/uber-go/multierr/blob/v1.6.0/LICENSE.txt, MIT
+go.uber.org/zap, https://github.com/uber-go/zap/blob/v1.17.0/LICENSE.txt, MIT
 golang.org/x/crypto, https://github.com/golang/crypto/blob/75b288015ac9/LICENSE, BSD-3-Clause
 golang.org/x/net, https://github.com/golang/net/blob/a5a99cb37ef4/LICENSE, BSD-3-Clause
 golang.org/x/oauth2, https://github.com/golang/oauth2/blob/bf48bf16ab8d/LICENSE, BSD-3-Clause

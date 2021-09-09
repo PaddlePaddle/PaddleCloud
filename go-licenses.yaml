@@ -74,16 +74,19 @@ module:
     license:
       path: LICENSE
       spdxId: MIT
+      url: https://github.com/uber-go/atomic/blob/v1.7.0/LICENSE.txt
   - name: go.uber.org/zap
     version: v1.17.0
     license:
       path: LICENSE
       spdxId: MIT
+      url: https://github.com/uber-go/zap/blob/v1.17.0/LICENSE.txt
   - name: go.uber.org/multierr
     version: v1.6.0
     license:
       path: LICENSE
       spdxId: MIT
+      url: https://github.com/uber-go/multierr/blob/v1.6.0/LICENSE.txt
   - name: github.com/Azure/go-autorest/autorest
     version: v0.9.6
     license:
