@@ -19,11 +19,18 @@ COPY controllers/ controllers/
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
+COPY hack/install-go-licenses.sh hack/
+COPY go-licenses.yaml $WORKDIR
+RUN bash ./hack/install-go-licenses.sh 
+
+COPY third_party/licenses/licenses.csv third_party/licenses/licenses.csv 
+RUN go-licenses save third_party/licenses/licenses.csv --save_path /tmp/NOTICES 
+
 FROM bitnami/minideb:stretch
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY third_party/licenses/licenses.csv /workspace/licenses.csv
+COPY --from=builder /tmp/NOTICES /third_party/NOTICES
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
