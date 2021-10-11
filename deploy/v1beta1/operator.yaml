@@ -236,7 +236,7 @@ spec:
         - --namespace=paddle-system
         command:
         - /manager
-        image: registry.baidubce.com/paddle-operator/controller:v0.3.0
+        image: registry.baidubce.com/paddlecloud/controller:v0.3.0
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

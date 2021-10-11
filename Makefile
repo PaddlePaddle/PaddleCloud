@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.baidubce.com/paddle-operator/controller:v0.3.0
+IMG ?= registry.baidubce.com/paddlecloud/controller:v0.3.0
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
 CRD_OPTIONS_V1BETA1 ?= "crd:crdVersions=v1beta1,allowDangerousTypes=false,maxDescLen=0,preserveUnknownFields=false" 
