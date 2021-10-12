@@ -247,6 +247,14 @@ func (pdj *PaddleJob) GetStatuses() map[string]*ResourceStatus {
 	}
 }
 
+func (pdj *PaddleJob) GetResourceOrder() []string {
+	return []string{
+		ResourcePS,
+		ResourceWorker,
+		ResourceHeter,
+	}
+}
+
 func (pdj *PaddleJob) SetStatus(resType string, status *ResourceStatus) {
 	switch resType {
 	case ResourcePS:

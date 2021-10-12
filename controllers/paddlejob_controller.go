@@ -17,6 +17,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -29,6 +31,9 @@ import (
 	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,9 +64,12 @@ var (
 // PaddleJobReconciler reconciles a PaddleJob object
 type PaddleJobReconciler struct {
 	client.Client
-	Log         logr.Logger
-	Scheme      *runtime.Scheme
-	Recorder    record.EventRecorder
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	Recorder   record.EventRecorder
+	RESTClient rest.Interface
+	RESTConfig *rest.Config
+
 	Scheduling  string
 	HostPortMap map[string]int
 	EtcdCli     *clientv3.Client
@@ -257,7 +265,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// the order of create pod never guarantee the ready order of pods, so leave it
 	statuses := pdj.GetStatuses()
 	for res := range statuses {
-		if !isPodReady(specs[res], statuses[res]) {
+		if !isPodCreated(specs[res], statuses[res]) {
 			for i := 0; i < specs[res].Replicas; i++ {
 				if createPod(res, i) {
 					return ctrl.Result{}, nil
@@ -267,23 +275,45 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Create configmap of global env for all pods after all pods are running
-	if pdj.Spec.Elastic == nil && isAllPodsReady(&pdj) {
-		if err := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &corev1.ConfigMap{}); err == nil || !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
+	if pdj.Spec.Elastic == nil && isAllPodsReady(&pdj, childPods) {
+		if err := r.Get(ctx, types.NamespacedName{Name: pdj.Name, Namespace: pdj.Namespace}, &corev1.ConfigMap{}); err != nil && apierrors.IsNotFound(err) {
+			cm := constructConfigMap(&pdj, childPods)
+			if cm == nil {
+				return ctrl.Result{Requeue: true}, nil
+			}
+			if err := ctrl.SetControllerReference(&pdj, cm, r.Scheme); err != nil {
+				log.Error(err, "make reference failed")
+				return ctrl.Result{Requeue: true}, nil
+			}
+			err := r.createResource(ctx, &pdj, cm)
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
 		}
-		cm := constructConfigMap(&pdj, childPods)
-		if cm == nil {
-			return ctrl.Result{Requeue: true}, nil
+	}
+
+	runResource := func(resType string) {
+		for i, pod := range childPods.Items {
+			if resType == "*" || resType == pod.Annotations[pdv1.ResourceAnnotation] {
+				if isCoordContainerRunning(&childPods.Items[i]) {
+					r.execInPod(pdj.Namespace, pod.Name, coordContainerName, []string{"touch", "goon"})
+				}
+			}
 		}
-		if err := ctrl.SetControllerReference(&pdj, cm, r.Scheme); err != nil {
-			log.Error(err, "make reference failed")
-			return ctrl.Result{Requeue: true}, nil
+	}
+
+	// coordinate ensure pod run in the defined order
+	if pdj.Status.Phase == pdv1.Starting {
+		ress := pdj.GetResourceOrder()
+		for i := 0; i < len(ress); i++ {
+			if statuses[ress[i]].Running < specs[ress[i]].Replicas {
+				if i == 0 && !isAllCoordContainerRunning(childPods, "*") {
+					return ctrl.Result{Requeue: true}, nil
+				}
+				runResource(ress[i])
+				return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
+			}
 		}
-		err := r.createResource(ctx, &pdj, cm)
-		if apierrors.IsConflict(err) {
-			return ctrl.Result{Requeue: true}, nil
-		}
-		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -297,7 +327,11 @@ func (r *PaddleJobReconciler) syncCurrentStatus(ctx context.Context, pdj *pdv1.P
 
 		switch pod.Status.Phase {
 		case corev1.PodPending:
-			ss.Pending++
+			if isCoordContainerRunning(pod) {
+				ss.Starting++
+			} else {
+				ss.Pending++
+			}
 		case corev1.PodRunning:
 			if isPodRealRuning(pod) {
 				ss.Running++
@@ -445,6 +479,35 @@ func (r *PaddleJobReconciler) finalize(ctx context.Context, pdj *pdv1.PaddleJob)
 		return false
 	}
 	return false
+}
+
+func (r *PaddleJobReconciler) execInPod(namespace string, podName string, containerName string, cmd []string) error {
+	execReq := r.RESTClient.
+		Post().
+		Namespace(namespace).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Container: containerName,
+			Command:   cmd,
+			Stdout:    true,
+			Stderr:    true,
+		}, runtime.NewParameterCodec(r.Scheme))
+
+	exec, err := remotecommand.NewSPDYExecutor(r.RESTConfig, http.MethodPost, execReq.URL())
+	if err != nil {
+		return err
+	}
+
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+		Tty:    false,
+	})
+
+	return err
 }
 
 func indexerFunc(rawObj client.Object) []string {
