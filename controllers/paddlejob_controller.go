@@ -124,7 +124,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if !reflect.DeepEqual(oldStatus, pdj.Status) {
 		if err := r.Status().Update(ctx, &pdj); err != nil {
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{RequeueAfter: time.Second}, nil
+				return ctrl.Result{}, nil
 			}
 			return ctrl.Result{}, err
 		}
@@ -138,7 +138,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				pg = constructPodGroup(&pdj)
 				if err = ctrl.SetControllerReference(&pdj, pg, r.Scheme); err != nil {
 					log.Error(err, "make reference failed")
-					return ctrl.Result{Requeue: true}, nil
+					return ctrl.Result{}, err
 				}
 				if err = r.createResource(ctx, &pdj, pg); err != nil {
 					log.Error(err, "create podgroup failed")
@@ -157,7 +157,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		resType, idx := extractNameIndex(pod.Name)
 		if specs[resType] != nil && idx >= specs[resType].Replicas {
 			r.deleteResource(ctx, &pdj, &childPods.Items[i])
-			return ctrl.Result{RequeueAfter: time.Second}, nil
+			return ctrl.Result{}, nil
 		}
 	}
 
@@ -204,7 +204,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if pdj.Spec.Elastic != nil && r.EtcdCli != nil {
 		if np, err := syncNP(r.EtcdCli, &pdj); err != nil {
 			log.Error(err, "sync np failed")
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{}, err
 		} else if np != nil {
 			r.Recorder.Event(&pdj, corev1.EventTypeNormal, "Scaled", fmt.Sprintf("scaled replicas to %s", *np))
 			log.Info("Scaled", "new replicas", *np)
@@ -263,7 +263,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return true
 	}
 
-	// the order of create pod never guarantee the ready order of pods, so leave it
+	// the order of create pod never guarantee the ready order of pods, coordinator does
 	statuses := pdj.GetStatuses()
 	for res := range statuses {
 		if !isPodCreated(specs[res], statuses[res]) {
@@ -284,12 +284,13 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 			if err := ctrl.SetControllerReference(&pdj, cm, r.Scheme); err != nil {
 				log.Error(err, "make reference failed")
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{}, err
 			}
 			err := r.createResource(ctx, &pdj, cm)
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{}, nil
 			}
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -308,11 +309,11 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		ress := pdj.GetResourceOrder()
 		for i := 0; i < len(ress); i++ {
 			if statuses[ress[i]].Running < specs[ress[i]].Replicas {
-				if i == 0 && !isAllCoordContainerRunning(childPods, "*") {
-					return ctrl.Result{Requeue: true}, nil
+				if i == 0 && statuses[ress[i]].Running == 0 && !isAllCoordContainerRunning(childPods, "*") {
+					return ctrl.Result{}, nil
 				}
 				runResource(ress[i])
-				return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
+				return ctrl.Result{}, nil
 			}
 		}
 	}
