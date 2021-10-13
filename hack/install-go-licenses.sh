@@ -16,12 +16,29 @@
 
 set -ex
 
-DOWNLOAD_URL="https://github.com/Bobgy/go-licenses/releases/download/v0.0.0-2021-06-27/go-licenses-linux.tar.gz"
-if which wget; then
-	wget "${DOWNLOAD_URL}"
-else
-	curl -LO "${DOWNLOAD_URL}"
+if ! [ -f go-licenses.yaml ]; then
+    echo "go-licenses.yaml not found"
+    exit 1
 fi
-tar xvf go-licenses-linux.tar.gz
-mv go-licenses /usr/local/bin
-mv licenses /usr/local/bin
+
+if [ ! -f bin/go-licenses ] || [ ! -d bin/licenses ]; then
+
+    DOWNLOAD_URL="https://github.com/Bobgy/go-licenses/releases/download/v0.0.0-2021-06-27/go-licenses-linux.tar.gz"
+    if which wget; then
+    	wget "${DOWNLOAD_URL}"
+    else
+    	curl -LO "${DOWNLOAD_URL}"
+    fi
+    
+    tar xvf go-licenses-linux.tar.gz
+    mv go-licenses bin/
+    mv licenses bin/
+    rm -f go-licenses-linux.tar.gz
+
+fi
+
+if [ -d third_party/NOTICES ]; then
+    rm -rf third_party/NOTICES 
+fi
+
+bin/go-licenses save third_party/licenses/licenses.csv --save_path third_party/NOTICES 
