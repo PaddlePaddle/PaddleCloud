@@ -240,6 +240,9 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 	pod.ObjectMeta.Name = name
 	pod.ObjectMeta.Namespace = pdj.Namespace
 
+	pod.Spec.Hostname = name
+	pod.Spec.Subdomain = name
+
 	envIP := corev1.EnvVar{
 		Name: "POD_IP",
 	}
