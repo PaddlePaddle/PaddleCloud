@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
@@ -27,23 +28,43 @@ import (
 )
 
 const (
-	initContainerName            = "init-paddle"
 	schedulerNameVolcano         = "volcano"
 	schedulingPodGroupAnnotation = "scheduling.k8s.io/group-name"
+
+	coordContainerName  = "coord-paddle"
+	coordContainerImage = "busybox:1"
+	coordContainerCpu   = "10m"
+	coordContainerMem   = "10m"
 )
 
-func isAllPodsReady(pdj *pdv1.PaddleJob) bool {
-	specs := pdj.GetSpecs()
-	statuses := pdj.GetStatuses()
-	for k, _ := range specs {
-		if !isPodReady(specs[k], statuses[k]) {
+var (
+	coordContainerCmd = []string{"sh", "-c", "while true; do if [ -f goon ]; then exit 0; else sleep 0.1; fi; done"}
+)
+
+func isAllPodsReady(pdj *pdv1.PaddleJob, childPods corev1.PodList) bool {
+	if !isAllPodsCreated(pdj) {
+		return false
+	}
+	for _, pod := range childPods.Items {
+		if pod.Status.PodIP == "" {
 			return false
 		}
 	}
 	return true
 }
 
-func isPodReady(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
+func isAllPodsCreated(pdj *pdv1.PaddleJob) bool {
+	specs := pdj.GetSpecs()
+	statuses := pdj.GetStatuses()
+	for k, _ := range specs {
+		if !isPodCreated(specs[k], statuses[k]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isPodCreated(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool {
 	if spec == nil {
 		return true
 	}
@@ -83,10 +104,10 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	for _, status := range statuses {
 		if isFailed(status) {
 			return pdv1.Failed
-		} else if isPending(status) {
-			return pdv1.Pending
 		} else if isStarting(status) {
 			return pdv1.Starting
+		} else if isPending(status) {
+			return pdv1.Pending
 		}
 	}
 	checkAll := func(check func(spec *pdv1.ResourceSpec, status *pdv1.ResourceStatus) bool) bool {
@@ -109,6 +130,49 @@ func getPaddleJobPhase(pdj *pdv1.PaddleJob) pdv1.PaddleJobPhase {
 	}
 
 	return pdj.Status.Phase
+}
+
+func isPodRealRuning(pod *corev1.Pod) bool {
+	if pod.Status.Phase != corev1.PodRunning {
+		return false
+	}
+	for i := range pod.Status.InitContainerStatuses {
+		container := pod.Status.InitContainerStatuses[i]
+		if !container.Ready {
+			return false
+		}
+	}
+	for i := range pod.Status.ContainerStatuses {
+		container := pod.Status.ContainerStatuses[i]
+		if !container.Ready || container.State.Running == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func isAllCoordContainerRunning(childPods corev1.PodList, resType string) bool {
+	for i, pod := range childPods.Items {
+		if resType == "*" || resType == pod.Annotations[pdv1.ResourceAnnotation] {
+			if !isCoordContainerRunning(&childPods.Items[i]) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func isCoordContainerRunning(pod *corev1.Pod) bool {
+	if pod.Status.Phase != corev1.PodPending {
+		return false
+	}
+	for i := range pod.Status.InitContainerStatuses {
+		container := pod.Status.InitContainerStatuses[i]
+		if container.Name == coordContainerName && container.State.Running != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func getPaddleJobStartTime(pdj *pdv1.PaddleJob) *metav1.Time {
@@ -312,7 +376,27 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		}
 	}
 
+	coInit := genCoordinateInitContainer()
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, coInit)
+
 	return pod
+}
+
+func genCoordinateInitContainer() corev1.Container {
+	c := corev1.Container{
+		Name:            coordContainerName,
+		Image:           coordContainerImage,
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Command:         coordContainerCmd,
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse(coordContainerCpu),
+				corev1.ResourceMemory: resource.MustParse(coordContainerMem),
+				//corev1.ResourceEphemeralStorage: resource.MustParse(),
+			},
+		},
+	}
+	return c
 }
 
 func endpoints2hosts(eps []string) string {
@@ -349,38 +433,6 @@ func removeString(slice []string, s string) (result []string) {
 		result = append(result, item)
 	}
 	return
-}
-
-func isPodRealRuning(pod *corev1.Pod) bool {
-	if pod.Status.Phase != corev1.PodRunning {
-		return false
-	}
-	for i := range pod.Status.InitContainerStatuses {
-		container := pod.Status.InitContainerStatuses[i]
-		if !container.Ready {
-			return false
-		}
-	}
-	for i := range pod.Status.ContainerStatuses {
-		container := pod.Status.ContainerStatuses[i]
-		if !container.Ready || container.State.Running == nil {
-			return false
-		}
-	}
-	return true
-}
-
-func isPodInitializing(pod *corev1.Pod) bool {
-	if pod.Status.Phase != corev1.PodPending {
-		return false
-	}
-	for i := range pod.Status.InitContainerStatuses {
-		container := pod.Status.InitContainerStatuses[i]
-		if container.Name == initContainerName && container.State.Running != nil {
-			return true
-		}
-	}
-	return false
 }
 
 func constructService4Pod(pod corev1.Pod) *corev1.Service {

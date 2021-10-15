@@ -32,6 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
 	clientv3 "go.etcd.io/etcd/client/v3"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 
@@ -118,11 +122,24 @@ func main() {
 		}
 	}
 
+	// restClient for exec
+	gvk := schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    "Pod",
+	}
+	restClient, err := apiutil.RESTClientForGVK(gvk, false, mgr.GetConfig(), serializer.NewCodecFactory(mgr.GetScheme()))
+	if err != nil {
+		setupLog.Error(err, "unable to create REST client")
+	}
+
 	if err = (&controllers.PaddleJobReconciler{
 		Client:     mgr.GetClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("PaddleJob"),
 		Scheme:     mgr.GetScheme(),
 		Recorder:   mgr.GetEventRecorderFor("paddlejob-controller"),
+		RESTClient: restClient,
+		RESTConfig: mgr.GetConfig(),
 		Scheduling: scheduling,
 		HostPortMap: map[string]int{
 			controllers.HOST_PORT_START: portStart,
