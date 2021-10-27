@@ -296,7 +296,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	runResource := func(resType string) {
 		for i, pod := range childPods.Items {
-			if resType == "*" || resType == pod.Annotations[pdv1.ResourceAnnotation] {
+			if resType == pod.Annotations[pdv1.ResourceAnnotation] {
 				if isCoordContainerRunning(&childPods.Items[i]) {
 					r.execInPod(pdj.Namespace, pod.Name, coordContainerName, []string{"touch", "goon"})
 				}
@@ -308,8 +308,8 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if pdj.Status.Phase == pdv1.Starting {
 		ress := pdj.GetResourceOrder()
 		for i := 0; i < len(ress); i++ {
-			if statuses[ress[i]].Running < specs[ress[i]].Replicas {
-				if i == 0 && statuses[ress[i]].Running == 0 && !isAllCoordContainerRunning(childPods, "*") {
+			if statuses[ress[i]] != nil && statuses[ress[i]].Running < specs[ress[i]].Replicas {
+				if i == 0 && statuses[ress[i]].Running == 0 && !isAllCoordContainerRunning(childPods) {
 					return ctrl.Result{}, nil
 				}
 				runResource(ress[i])

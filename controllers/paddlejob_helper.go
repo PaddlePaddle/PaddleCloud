@@ -151,12 +151,10 @@ func isPodRealRuning(pod *corev1.Pod) bool {
 	return true
 }
 
-func isAllCoordContainerRunning(childPods corev1.PodList, resType string) bool {
-	for i, pod := range childPods.Items {
-		if resType == "*" || resType == pod.Annotations[pdv1.ResourceAnnotation] {
-			if !isCoordContainerRunning(&childPods.Items[i]) {
-				return false
-			}
+func isAllCoordContainerRunning(childPods corev1.PodList) bool {
+	for i, _ := range childPods.Items {
+		if !isCoordContainerRunning(&childPods.Items[i]) {
+			return false
 		}
 	}
 	return true
