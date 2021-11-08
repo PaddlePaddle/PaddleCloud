@@ -1,9 +1,9 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.baidubce.com/paddlecloud/controller:v0.3.0
+IMG ?= registry.baidubce.com/paddlecloud/controller:v0.3.1
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
-CRD_OPTIONS_V1BETA1 ?= "crd:crdVersions=v1beta1,allowDangerousTypes=false,maxDescLen=0,preserveUnknownFields=false" 
+CRD_OPTIONS_V1BETA1 ?= "crd:crdVersions=v1beta1,allowDangerousTypes=false,maxDescLen=0" 
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

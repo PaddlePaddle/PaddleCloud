@@ -26,7 +26,6 @@ spec:
     shortNames:
     - pdj
     singular: paddlejob
-  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}

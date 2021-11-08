@@ -124,7 +124,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if !reflect.DeepEqual(oldStatus, pdj.Status) {
 		if err := r.Status().Update(ctx, &pdj); err != nil {
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: time.Second}, nil
 			}
 			return ctrl.Result{}, err
 		}
@@ -157,7 +157,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		resType, idx := extractNameIndex(pod.Name)
 		if specs[resType] != nil && idx >= specs[resType].Replicas {
 			r.deleteResource(ctx, &pdj, &childPods.Items[i])
-			return ctrl.Result{}, nil
+			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
@@ -204,7 +204,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if pdj.Spec.Elastic != nil && r.EtcdCli != nil {
 		if np, err := syncNP(r.EtcdCli, &pdj); err != nil {
 			log.Error(err, "sync np failed")
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		} else if np != nil {
 			r.Recorder.Event(&pdj, corev1.EventTypeNormal, "Scaled", fmt.Sprintf("scaled replicas to %s", *np))
 			log.Info("Scaled", "new replicas", *np)
@@ -284,11 +284,11 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 			if err := ctrl.SetControllerReference(&pdj, cm, r.Scheme); err != nil {
 				log.Error(err, "make reference failed")
-				return ctrl.Result{}, err
+				return ctrl.Result{Requeue: true}, err
 			}
 			err := r.createResource(ctx, &pdj, cm)
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{}, nil
+				return ctrl.Result{Requeue: true}, nil
 			}
 			return ctrl.Result{}, err
 		}
@@ -310,10 +310,10 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		for i := 0; i < len(ress); i++ {
 			if statuses[ress[i]] != nil && statuses[ress[i]].Running < specs[ress[i]].Replicas {
 				if i == 0 && statuses[ress[i]].Running == 0 && !isAllCoordContainerRunning(childPods) {
-					return ctrl.Result{}, nil
+					return ctrl.Result{RequeueAfter: time.Second}, nil
 				}
 				runResource(ress[i])
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: time.Second}, nil
 			}
 		}
 	}
