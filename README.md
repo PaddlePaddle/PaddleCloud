@@ -86,6 +86,18 @@ Elastic feature depend on etcd present, which should be set for controller as ar
 
 then, job as in *deploy/elastic/resnet.yaml* can be handled correctly.
 
+### Deploy args
+Change the following args in *deploy/v1/operator.yaml* before deployment,
+```
+- args:
+  - --leader-elect             # enable leader election
+  - --namespace=paddle-system  # watch this ns only, set to "" for all namespace
+  - --scheduling=volcano       # enable volcano
+  - --initImage=""             # init container image, default to busybox, "" to disable
+  command:
+  - /manager
+```
+
 ### Uninstall
 Simply
 ```shell

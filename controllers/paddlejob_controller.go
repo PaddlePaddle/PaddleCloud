@@ -71,6 +71,7 @@ type PaddleJobReconciler struct {
 	RESTConfig *rest.Config
 
 	Scheduling  string
+	InitImage   string
 	HostPortMap map[string]int
 	EtcdCli     *clientv3.Client
 }
@@ -232,6 +233,11 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		pod := constructPod(&pdj, resType, idx)
 
+		if r.InitImage != "" {
+			coInit := genCoordinateInitContainer(r.InitImage)
+			pod.Spec.InitContainers = append(pod.Spec.InitContainers, coInit)
+		}
+
 		if r.Scheduling == schedulerNameVolcano && !withoutVolcano(&pdj) {
 			pod.Spec.SchedulerName = schedulerNameVolcano
 			pod.ObjectMeta.Annotations[schedulingPodGroupAnnotation] = pdj.Name
@@ -305,7 +311,7 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// coordinate ensure pod run in the defined order
-	if pdj.Status.Phase == pdv1.Starting {
+	if pdj.Status.Phase == pdv1.Starting && r.InitImage != "" {
 		ress := pdj.GetResourceOrder()
 		for i := 0; i < len(ress); i++ {
 			if statuses[ress[i]] != nil && statuses[ress[i]].Running < specs[ress[i]].Replicas {

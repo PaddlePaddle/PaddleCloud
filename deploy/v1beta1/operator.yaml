@@ -240,7 +240,6 @@ spec:
       containers:
       - args:
         - --leader-elect
-        - --namespace=paddle-system
         command:
         - /manager
         image: registry.baidubce.com/paddlecloud/controller:v0.3.1

@@ -31,10 +31,9 @@ const (
 	schedulerNameVolcano         = "volcano"
 	schedulingPodGroupAnnotation = "scheduling.k8s.io/group-name"
 
-	coordContainerName  = "coord-paddle"
-	coordContainerImage = "busybox:1"
-	coordContainerCpu   = "10m"
-	coordContainerMem   = "10m"
+	coordContainerName = "coord-paddle"
+	coordContainerCpu  = "10m"
+	coordContainerMem  = "10m"
 )
 
 var (
@@ -374,13 +373,10 @@ func constructPod(pdj *pdv1.PaddleJob, resType string, idx int) (pod *corev1.Pod
 		}
 	}
 
-	coInit := genCoordinateInitContainer()
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, coInit)
-
 	return pod
 }
 
-func genCoordinateInitContainer() corev1.Container {
+func genCoordinateInitContainer(coordContainerImage string) corev1.Container {
 	c := corev1.Container{
 		Name:            coordContainerName,
 		Image:           coordContainerImage,

@@ -62,6 +62,7 @@ func main() {
 	var namespace string
 	var enableLeaderElection bool
 	var scheduling string
+	var initImage string
 	var probeAddr string
 	var hostPortRange string
 	var etcdServer string
@@ -74,6 +75,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&scheduling, "scheduling", "", "The scheduler to take, e.g. volcano")
+	flag.StringVar(&initImage, "initImage", "docker.io/library/busybox:1", "The image used for init container, default to busybox")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -141,6 +143,7 @@ func main() {
 		RESTClient: restClient,
 		RESTConfig: mgr.GetConfig(),
 		Scheduling: scheduling,
+		InitImage:  initImage,
 		HostPortMap: map[string]int{
 			controllers.HOST_PORT_START: portStart,
 			controllers.HOST_PORT_CUR:   portStart,

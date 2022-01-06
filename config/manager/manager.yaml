@@ -29,7 +29,6 @@ spec:
         - /manager
         args:
         - --leader-elect
-        - --namespace=paddle-system
         image: controller:latest
         imagePullPolicy: Always
         name: manager
