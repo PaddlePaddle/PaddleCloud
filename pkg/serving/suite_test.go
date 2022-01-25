@@ -40,7 +40,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	elasticservingv1 "ElasticServing/pkg/apis/serving/v1"
+	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
 	// +kubebuilder:scaffold:imports
 )
 

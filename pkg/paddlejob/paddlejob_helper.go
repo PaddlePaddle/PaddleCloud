@@ -15,6 +15,7 @@
 package paddlejob
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
+	pdv1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 )
 
@@ -546,4 +547,66 @@ func getPGMinResource(pdj *pdv1.PaddleJob) *corev1.ResourceList {
 		}
 	}
 	return &totalRes
+}
+
+type SampleSetContext struct {
+	RuntimeLabel  string
+	RuntimePrefix string
+	RuntimeNames  []string
+	Context       context.Context
+}
+
+func constructPodWithSampleSet(pdj *pdv1.PaddleJob, resType string, idx int, ctx *SampleSetContext) (pod *corev1.Pod) {
+	pod = constructPod(pdj, resType, idx)
+	// 1. add volume and volume mounts to pod
+	pvcs := &corev1.PersistentVolumeClaimVolumeSource{
+		ClaimName: pdj.Spec.SampleSetRef.Name,
+	}
+	volume := corev1.Volume{
+		Name: pdj.Spec.SampleSetRef.Name,
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: pvcs,
+		},
+	}
+	volumeMount := corev1.VolumeMount{
+		Name:      pdj.Spec.SampleSetRef.Name,
+		MountPath: pdj.Spec.SampleSetRef.MountPath,
+	}
+	pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+	volumeMounts := pod.Spec.Containers[0].VolumeMounts
+	volumeMounts = append(volumeMounts, volumeMount)
+	pod.Spec.Containers[0].VolumeMounts = volumeMounts
+
+	// 2. add node affinity to pod with the same index
+	if len(ctx.RuntimeNames) == 0 {
+		return pod
+	}
+	runtimeName := fmt.Sprintf("%s-%d", ctx.RuntimePrefix, idx)
+	if !containsString(ctx.RuntimeNames, runtimeName) {
+		return pod
+	}
+
+	if pod.Spec.Affinity == nil {
+		pod.Spec.Affinity = &corev1.Affinity{}
+	}
+	if pod.Spec.Affinity.NodeAffinity == nil {
+		pod.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
+	}
+	if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{}
+	}
+	nodeSelectorTerms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+
+	requirement := corev1.NodeSelectorRequirement{
+		Key:      ctx.RuntimeLabel,
+		Operator: corev1.NodeSelectorOpIn,
+		Values:   []string{runtimeName},
+	}
+	nodeSelectorTerm := corev1.NodeSelectorTerm{
+		MatchExpressions: []corev1.NodeSelectorRequirement{requirement},
+	}
+	nodeSelectorTerms = append(nodeSelectorTerms, nodeSelectorTerm)
+	pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = nodeSelectorTerms
+
+	return pod
 }

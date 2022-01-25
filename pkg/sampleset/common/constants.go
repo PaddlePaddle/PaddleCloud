@@ -14,7 +14,7 @@
 
 package common
 
-import "github.com/paddleflow/paddle-operator/api/v1alpha1"
+import "github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
 
 const (
 	// MediumTypeMEM use

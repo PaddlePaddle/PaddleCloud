@@ -29,7 +29,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	batchv1 "github.com/paddleflow/paddle-operator/api/v1"
+	batchv1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
 	//+kubebuilder:scaffold:imports
 )
 

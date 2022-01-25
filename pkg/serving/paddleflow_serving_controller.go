@@ -19,8 +19,8 @@ package controllers
 import (
 	"context"
 
-	elasticservingv1 "ElasticServing/pkg/apis/serving/v1"
-	"ElasticServing/pkg/controllers/elasticserving/reconcilers/knative"
+	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
+	"github.com/paddleflow/kopad/pkg/serving/reconcilers/knative"
 
 	"github.com/go-logr/logr"
 	apps "k8s.io/api/apps/v1"

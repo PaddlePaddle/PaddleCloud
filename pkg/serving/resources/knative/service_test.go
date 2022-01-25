@@ -1,8 +1,8 @@
 package knative
 
 import (
-	elasticservingv1 "ElasticServing/pkg/apis/serving/v1"
-	"ElasticServing/pkg/constants"
+	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
+	"github.com/paddleflow/kopad/pkg/serving/constants"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

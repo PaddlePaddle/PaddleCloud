@@ -31,10 +31,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/paddleflow/paddle-operator/api/v1alpha1"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/common"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/driver"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/utils"
+	"github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddleflow/kopad/pkg/sampleset/common"
+	"github.com/paddleflow/kopad/pkg/sampleset/driver"
+	"github.com/paddleflow/kopad/pkg/sampleset/utils"
 )
 
 // SampleJobReconciler reconciles a SampleJob object

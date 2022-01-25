@@ -2,7 +2,7 @@ module:
   go:
     version: master
   overrides:
-  - name: github.com/paddleflow/paddle-operator
+  - name: github.com/paddleflow/kopad
     skip: true
   - name: cloud.google.com/go/storage
     version: v1.12.0

@@ -1,8 +1,8 @@
 package knative
 
 import (
-	"ElasticServing/pkg/constants"
-	"ElasticServing/pkg/controllers/elasticserving/resources/knative"
+	"github.com/paddleflow/kopad/pkg/serving/constants"
+	"github.com/paddleflow/kopad/pkg/serving/resources/knative"
 	"context"
 	"time"
 
@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	elasticservingv1 "ElasticServing/pkg/apis/serving/v1"
+	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
 )
 
 var log = logf.Log.WithName("ServiceReconciler")

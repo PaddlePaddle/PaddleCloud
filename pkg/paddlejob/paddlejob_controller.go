@@ -43,7 +43,9 @@ import (
 	volcanoBatch "volcano.sh/apis/pkg/apis/batch/v1alpha1"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 
-	pdv1 "github.com/paddleflow/paddle-operator/api/v1"
+	pdv1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
+	"github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddleflow/kopad/pkg/sampleset/driver"
 )
 
 const (
@@ -89,6 +91,10 @@ type PaddleJobReconciler struct {
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=scheduling.volcano.sh,resources=podgroups,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=scheduling.volcano.sh,resources=podgroups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=batch.paddlepaddle.org,resources=samplesets,verbs=get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups=batch.paddlepaddle.org,resources=samplesets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -226,12 +232,25 @@ func (r *PaddleJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// If SampleSetRef is specified, get sampleset and list node with label
+	sampleSetCtx := &SampleSetContext{Context: ctx}
+	if pdj.Spec.SampleSetRef != nil {
+		if err := r.dealWithSampleSet(sampleSetCtx, &pdj); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	createPod := func(resType string, idx int) bool {
 		name := genPaddleResName(pdj.Name, resType, idx)
 		if err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: pdj.Namespace}, &corev1.Pod{}); err == nil {
 			return false
 		}
-		pod := constructPod(&pdj, resType, idx)
+		var pod *corev1.Pod
+		if pdj.Spec.SampleSetRef != nil {
+			pod = constructPodWithSampleSet(&pdj, resType, idx, sampleSetCtx)
+		} else {
+			pod = constructPod(&pdj, resType, idx)
+		}
 
 		if r.InitImage != "" {
 			coInit := genCoordinateInitContainer(r.InitImage)
@@ -570,3 +589,54 @@ func (r *PaddleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return builder.Complete(r)
 }
+
+func (r *PaddleJobReconciler) dealWithSampleSet(ctx *SampleSetContext, pdj *pdv1.PaddleJob) error {
+	namespace := pdj.Namespace
+	if pdj.Spec.SampleSetRef.Namespace != "" {
+		namespace = pdj.Spec.SampleSetRef.Namespace
+	}
+	// 1. get SampleSet by the name specified in SampleSetRef
+	name := pdj.Spec.SampleSetRef.Name
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	sampleSet := &v1alpha1.SampleSet{}
+	if err := r.Get(ctx.Context, key, sampleSet); err != nil {
+		r.Recorder.Eventf(pdj, corev1.EventTypeWarning, "Create", "sampleset %s is not exists", key.String())
+		return fmt.Errorf("sampleset %s is not exists, please create it and try again", key.String())
+	}
+	// 2. get csi driver to obtain runtime label and runtime server pods name
+	var driverName v1alpha1.DriverName = ""
+	if sampleSet.Spec.CSI != nil && sampleSet.Spec.CSI.Driver != "" {
+		driverName = sampleSet.Spec.CSI.Driver
+	}
+	csiDriver, err := driver.GetDriver(driverName)
+	if err != nil {
+		r.Recorder.Eventf(pdj, corev1.EventTypeWarning, "Create", "driver %s is not exists", key.String())
+		return fmt.Errorf("get csi driver %s error: %s", sampleSet.Spec.CSI.Driver, err.Error())
+	}
+	nodeList := &corev1.NodeList{}
+	ctx.RuntimeLabel = csiDriver.GetLabel(name)
+	ctx.RuntimePrefix = csiDriver.GetRuntimeName(name)
+	if err = r.List(ctx.Context, nodeList, client.HasLabels{ctx.RuntimeLabel}); err != nil {
+		r.Recorder.Event(pdj, corev1.EventTypeWarning, "Create", "list nodes error")
+		return fmt.Errorf("list nodes with label %s error: %s", ctx.RuntimeLabel, err.Error())
+	}
+	for _, node := range nodeList.Items {
+		runtimeName, exists := node.Labels[ctx.RuntimeLabel]
+		if !exists {
+			continue
+		}
+		ctx.RuntimeNames = append(ctx.RuntimeNames, runtimeName)
+	}
+	// 3. update SampleSet cache status to trigger SampleSet controller collect cache info
+	if sampleSet.Status.CacheStatus != nil {
+		sampleSet.Status.CacheStatus.DiskUsageRate = ""
+		if err := r.Status().Update(ctx.Context, sampleSet); err != nil {
+			return fmt.Errorf("update sampleset %s cache status error: %s", key.String(), err.Error())
+		}
+	}
+	return nil
+}
+

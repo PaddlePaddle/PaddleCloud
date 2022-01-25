@@ -119,6 +119,18 @@ type SchedulingPolicy struct {
 	MinResources corev1.ResourceList `json:"minResources,omitempty"`
 }
 
+type SampleSetRef struct {
+	// Name of the SampleSet.
+	// +kubebuilder:validation:Required
+	Name string `json:"name,omitempty"`
+	// Namespace of the SampleSet.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+	// Path within the container at which the volume should be mounted.  Must not contain ':'.
+	// +kubebuilder:validation:Required
+	MountPath string `json:"mountPath"`
+}
+
 // PaddleJobSpec defines the desired state of PaddleJob
 type PaddleJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -136,6 +148,10 @@ type PaddleJobSpec struct {
 
 	// WithGloo indicate whether enable gloo, 0/1/2 for disable/enable for worker/enable for server
 	WithGloo *int `json:"withGloo,omitempty"`
+
+	// SampleSetRef defines the sample data set used for training and its mount path in worker pods
+	// +optional
+	SampleSetRef *SampleSetRef `json:"sampleSetRef,omitempty"`
 
 	// PS[erver] describes the spec of server base on pod template
 	PS *ResourceSpec `json:"ps,omitempty"`
