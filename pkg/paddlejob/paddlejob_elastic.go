@@ -21,7 +21,7 @@ import (
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 
-	pdv1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
+	pdv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
 )
 
 func syncEtcd(ctx context.Context, etcdCli *clientv3.Client, path string, np string) (error, bool) {

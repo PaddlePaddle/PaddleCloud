@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	paddlev1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
+	paddlev1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
 )
 
 // +kubebuilder:docs-gen:collapse=Imports

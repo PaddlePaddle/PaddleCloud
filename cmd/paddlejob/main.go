@@ -39,8 +39,8 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 
-	batchv1 "github.com/paddleflow/paddle-operator/api/v1"
-	"github.com/paddleflow/paddle-operator/controllers"
+	batchv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
+	controllers "github.com/paddlepaddle/paddlecloud/pkg/paddlejob"
 	//+kubebuilder:scaffold:imports
 )
 

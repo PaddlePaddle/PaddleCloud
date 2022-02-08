@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -19,9 +17,6 @@ package controllers
 import (
 	"context"
 
-	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
-	"github.com/paddleflow/kopad/pkg/serving/reconcilers/knative"
-
 	"github.com/go-logr/logr"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -31,6 +26,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	elasticservingv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/serving/v1"
+	"github.com/paddlepaddle/paddlecloud/pkg/serving/reconcilers/knative"
 )
 
 // PaddleServiceReconciler reconciles a PaddleService object
@@ -46,8 +44,7 @@ type PaddleServiceReconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
-func (r *PaddleServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *PaddleServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("paddlesvc", req.NamespacedName)
 
 	// your logic here

@@ -30,11 +30,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	batchv1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
-	"github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
-	"github.com/paddleflow/kopad/pkg/sampleset/common"
-	"github.com/paddleflow/kopad/pkg/sampleset/driver"
-	"github.com/paddleflow/kopad/pkg/sampleset/utils"
+	batchv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
+	"github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/common"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/driver"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/utils"
 )
 
 // SampleSetReconciler reconciles a SampleSet object

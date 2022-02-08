@@ -1,4 +1,4 @@
-module github.com/paddleflow/kopad
+module github.com/paddlepaddle/paddlecloud
 
 go 1.15
 

@@ -22,10 +22,10 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/paddleflow/paddle-operator/api/v1alpha1"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/common"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/driver"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/manager"
+	"github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/common"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/driver"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/manager"
 )
 
 var (

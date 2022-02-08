@@ -1,7 +1,7 @@
 domain: paddlepaddle.org
 layout: go.kubebuilder.io/v3
-projectName: tmp
-repo: github.com/paddleflow/kopad
+projectName: PaddleCloud
+repo: github.com/paddlepaddle/paddlecloud
 resources:
 - api:
     crdVersion: v1

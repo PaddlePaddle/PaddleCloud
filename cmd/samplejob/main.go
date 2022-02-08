@@ -16,9 +16,6 @@ package main
 
 import (
 	"flag"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/ctrls"
-	"go.uber.org/zap/zapcore"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -26,14 +23,17 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	zapOpt "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	v1 "github.com/paddleflow/paddle-operator/api/v1"
-	v1alpha1 "github.com/paddleflow/paddle-operator/api/v1alpha1"
+	v1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
+	v1alpha1 "github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/ctrls"
 	//+kubebuilder:scaffold:imports
 )
 

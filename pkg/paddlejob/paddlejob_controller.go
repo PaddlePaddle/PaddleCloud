@@ -43,9 +43,9 @@ import (
 	volcanoBatch "volcano.sh/apis/pkg/apis/batch/v1alpha1"
 	volcano "volcano.sh/apis/pkg/apis/scheduling/v1beta1"
 
-	pdv1 "github.com/paddleflow/kopad/pkg/apis/paddlejob/v1"
-	"github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
-	"github.com/paddleflow/kopad/pkg/sampleset/driver"
+	pdv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
+	"github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/driver"
 )
 
 const (

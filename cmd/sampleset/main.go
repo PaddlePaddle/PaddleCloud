@@ -31,9 +31,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	v1 "github.com/paddleflow/paddle-operator/api/v1"
-	"github.com/paddleflow/paddle-operator/api/v1alpha1"
-	"github.com/paddleflow/paddle-operator/controllers/extensions/ctrls"
+	v1 "github.com/paddlepaddle/paddlecloud/pkg/apis/paddlejob/v1"
+	"github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/ctrls"
 	//+kubebuilder:scaffold:imports
 )
 

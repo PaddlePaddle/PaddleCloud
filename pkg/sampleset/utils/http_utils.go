@@ -27,8 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 
-	"github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
-	"github.com/paddleflow/kopad/pkg/sampleset/common"
+	"github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/common"
 )
 
 var DefaultClient = &HttpClient{}

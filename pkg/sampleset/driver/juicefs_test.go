@@ -28,9 +28,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/paddleflow/kopad/pkg/apis/sampleset/v1alpha1"
-	"github.com/paddleflow/kopad/pkg/sampleset/common"
-	"github.com/paddleflow/kopad/pkg/sampleset/utils"
+	"github.com/paddlepaddle/paddlecloud/pkg/apis/sampleset/v1alpha1"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/common"
+	"github.com/paddlepaddle/paddlecloud/pkg/sampleset/utils"
 )
 
 func TestJuiceFS_getMountOptions(t *testing.T) {

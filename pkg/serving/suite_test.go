@@ -40,7 +40,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
+	elasticservingv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/serving/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -60,7 +60,9 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	logf.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -104,9 +106,7 @@ var _ = AfterSuite(func() {
 // Call this function at the start of each of your tests.
 func SetupNs(ctx context.Context) *core.Namespace {
 	ns := &core.Namespace{}
-	var stopCh chan struct{}
 	BeforeEach(func() {
-		stopCh = make(chan struct{})
 
 		*ns = core.Namespace{
 			ObjectMeta: metav1.ObjectMeta{Name: "testns-" + randStringRunes(5)},
@@ -128,16 +128,13 @@ func SetupNs(ctx context.Context) *core.Namespace {
 		Expect(err).NotTo(HaveOccurred(), "failed to setup controller")
 
 		go func() {
-			err := mgr.Start(stopCh)
+			err := mgr.Start(ctx)
 			Expect(err).NotTo(HaveOccurred(), "failed to start manager")
 		}()
 	})
 
 	AfterEach(func() {
-
 		k8sClient.Delete(ctx, ns)
-		close(stopCh)
-
 	})
 	return ns
 }

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/paddleflow/kopad/pkg/serving/constants"
-
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +11,8 @@ import (
 	"knative.dev/serving/pkg/apis/autoscaling"
 	knservingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
-	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
+	elasticservingv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/serving/v1"
+	"github.com/paddlepaddle/paddlecloud/pkg/serving/constants"
 )
 
 type EndpointConfig struct {

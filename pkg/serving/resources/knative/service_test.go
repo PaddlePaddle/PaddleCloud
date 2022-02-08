@@ -1,8 +1,6 @@
 package knative
 
 import (
-	elasticservingv1 "github.com/paddleflow/kopad/pkg/apis/serving/v1"
-	"github.com/paddleflow/kopad/pkg/serving/constants"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,6 +9,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	knservingv1 "knative.dev/serving/pkg/apis/serving/v1"
+
+	elasticservingv1 "github.com/paddlepaddle/paddlecloud/pkg/apis/serving/v1"
+	"github.com/paddlepaddle/paddlecloud/pkg/serving/constants"
 )
 
 const (
