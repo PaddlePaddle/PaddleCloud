@@ -1,17 +1,18 @@
 # Build the manager binary
-FROM golang:1.13 as builder
+FROM golang:1.17 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
+
+ENV GOPROXY="https://goproxy.cn,direct"
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-ENV GOPROXY="https://goproxy.cn,https://goproxy.cn,direct"
 RUN go mod download
 
 # Copy the go source
-COPY main.go main.go
+COPY cmd/sampleset/main.go main.go
 COPY pkg/ pkg/
 
 # Build
@@ -21,6 +22,13 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM bitnami/minideb:stretch
 WORKDIR /
+
+ARG RUNTIME_IMG
+ARG GIT_VERSION
+
+ENV RUNTIME_IMAGE=$RUNTIME_IMG:$GIT_VERSION
+
 COPY --from=builder /workspace/manager .
+USER 65532:65532
 
 ENTRYPOINT ["/manager"]

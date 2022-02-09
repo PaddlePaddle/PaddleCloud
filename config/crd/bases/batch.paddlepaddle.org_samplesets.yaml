@@ -1,0 +1,303 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: samplesets.batch.paddlepaddle.org
+spec:
+  group: batch.paddlepaddle.org
+  names:
+    kind: SampleSet
+    listKind: SampleSetList
+    plural: samplesets
+    singular: sampleset
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.cacheStatus.totalSize
+      name: TOTAL SIZE
+      type: string
+    - jsonPath: .status.cacheStatus.cachedSize
+      name: CACHED SIZE
+      type: string
+    - jsonPath: .status.cacheStatus.diskAvail
+      name: AVAIL SPACE
+      type: string
+    - jsonPath: .status.runtimeStatus.runtimeReady
+      name: Runtime
+      type: string
+    - jsonPath: .status.phase
+      name: PHASE
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              cache:
+                properties:
+                  levels:
+                    items:
+                      properties:
+                        cacheSize:
+                          type: integer
+                        mediumType:
+                          enum:
+                          - MEM
+                          - SSD
+                          - HDD
+                          type: string
+                        path:
+                          minLength: 1
+                          type: string
+                      type: object
+                    minItems: 1
+                    type: array
+                type: object
+              csi:
+                properties:
+                  driver:
+                    default: juicefs
+                    enum:
+                    - juicefs
+                    type: string
+                  juiceFSMountOptions:
+                    properties:
+                      attr-cache:
+                        type: integer
+                      buffer-size:
+                        type: integer
+                      cache-dir:
+                        type: string
+                      cache-partial-only:
+                        type: boolean
+                      cache-size:
+                        type: integer
+                      dir-entry-cache:
+                        type: integer
+                      enable-xattr:
+                        type: boolean
+                      entry-cache:
+                        type: integer
+                      free-space-ratio:
+                        type: string
+                      get-timeout:
+                        type: integer
+                      io-retries:
+                        type: integer
+                      max-uploads:
+                        type: integer
+                      metrics:
+                        type: string
+                      open-cache:
+                        type: integer
+                      prefetch:
+                        type: integer
+                      put-timeout:
+                        type: integer
+                      sub-dir:
+                        type: string
+                      writeback:
+                        type: boolean
+                    type: object
+                type: object
+              noSync:
+                type: boolean
+              nodeAffinity:
+                properties:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    items:
+                      properties:
+                        preference:
+                          properties:
+                            matchExpressions:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  values:
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                            matchFields:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  values:
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                          type: object
+                        weight:
+                          format: int32
+                          type: integer
+                      required:
+                      - preference
+                      - weight
+                      type: object
+                    type: array
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    properties:
+                      nodeSelectorTerms:
+                        items:
+                          properties:
+                            matchExpressions:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  values:
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                            matchFields:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  values:
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                          type: object
+                        type: array
+                    required:
+                    - nodeSelectorTerms
+                    type: object
+                type: object
+              partitions:
+                format: int32
+                minimum: 1
+                type: integer
+              secretRef:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                type: object
+              source:
+                properties:
+                  secretRef:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                  uri:
+                    minLength: 10
+                    type: string
+                type: object
+              tolerations:
+                items:
+                  properties:
+                    effect:
+                      type: string
+                    key:
+                      type: string
+                    operator:
+                      type: string
+                    tolerationSeconds:
+                      format: int64
+                      type: integer
+                    value:
+                      type: string
+                  type: object
+                type: array
+            type: object
+          status:
+            properties:
+              cacheStatus:
+                properties:
+                  cachedSize:
+                    type: string
+                  diskAvail:
+                    type: string
+                  diskSize:
+                    type: string
+                  diskUsageRate:
+                    type: string
+                  diskUsed:
+                    type: string
+                  errorMassage:
+                    type: string
+                  totalFiles:
+                    type: string
+                  totalSize:
+                    type: string
+                type: object
+              jobsName:
+                properties:
+                  syncJobName:
+                    type: string
+                  warmupJobName:
+                    type: string
+                type: object
+              phase:
+                type: string
+              runtimeStatus:
+                properties:
+                  readyReplicas:
+                    format: int32
+                    type: integer
+                  runtimeReady:
+                    type: string
+                  specReplicas:
+                    format: int32
+                    type: integer
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

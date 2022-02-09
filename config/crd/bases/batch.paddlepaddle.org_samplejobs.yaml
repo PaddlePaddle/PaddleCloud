@@ -1,0 +1,153 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: samplejobs.batch.paddlepaddle.org
+spec:
+  group: batch.paddlepaddle.org
+  names:
+    kind: SampleJob
+    listKind: SampleJobList
+    plural: samplejobs
+    singular: samplejob
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: PHASE
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              clearOptions:
+                properties:
+                  paths:
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                type: object
+              rmrOptions:
+                properties:
+                  paths:
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                type: object
+              sampleSetRef:
+                properties:
+                  name:
+                    type: string
+                type: object
+              secretRef:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                type: object
+              syncOptions:
+                properties:
+                  bwlimit:
+                    type: integer
+                  delete-dst:
+                    type: boolean
+                  delete-src:
+                    type: boolean
+                  destination:
+                    type: string
+                  dirs:
+                    type: boolean
+                  dry:
+                    type: boolean
+                  end:
+                    type: string
+                  exclude:
+                    type: string
+                  force-update:
+                    type: boolean
+                  http-port:
+                    type: integer
+                  include:
+                    type: string
+                  manager:
+                    type: string
+                  no-https:
+                    type: boolean
+                  perms:
+                    type: boolean
+                  source:
+                    type: string
+                  start:
+                    type: string
+                  threads:
+                    type: integer
+                  update:
+                    type: boolean
+                  worker:
+                    type: string
+                type: object
+              terminate:
+                type: boolean
+              type:
+                enum:
+                - sync
+                - warmup
+                - rmr
+                - clear
+                type: string
+              warmupOptions:
+                properties:
+                  file:
+                    type: string
+                  partitions:
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  paths:
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                  strategyName:
+                    default: sequence
+                    enum:
+                    - random
+                    - sequence
+                    type: string
+                  threads:
+                    type: integer
+                type: object
+            type: object
+          status:
+            properties:
+              jobName:
+                type: string
+              phase:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

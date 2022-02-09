@@ -114,7 +114,7 @@ type PaddleServiceStatus struct {
 	// Statuses for the canary endpoints of the PaddleService
 	Canary *StatusConfigurationSpec `json:"canary,omitempty"`
 	// Addressable URL for eventing
-	Address *duckv1.Addressable `json:"address,omitempty"`
+	//Address *duckv1.Addressable `json:"address,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=0

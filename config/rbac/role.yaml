@@ -30,12 +30,50 @@ rules:
   - events
   verbs:
   - create
+  - get
+  - list
   - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - ""
   resources:
   - pods
   verbs:
+  - '*'
   - create
   - delete
   - get
@@ -59,8 +97,25 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
   - services
   verbs:
+  - '*'
   - create
   - delete
   - get
@@ -74,6 +129,49 @@ rules:
   - services/status
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - batch.paddlepaddle.org
   resources:
@@ -101,6 +199,74 @@ rules:
   - patch
   - update
 - apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - samplejobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - samplejobs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - samplejobs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - samplesets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - samplesets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - batch.paddlepaddle.org
+  resources:
+  - samplesets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - get
+  - list
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - get
+  - list
+- apiGroups:
   - scheduling.volcano.sh
   resources:
   - podgroups
@@ -116,6 +282,66 @@ rules:
   - scheduling.volcano.sh
   resources:
   - podgroups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - serving.knative.dev
+  resources:
+  - revisions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - serving.knative.dev
+  resources:
+  - revisions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - serving.knative.dev
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - serving.knative.dev
+  resources:
+  - services/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - serving.paddlepaddle.org
+  resources:
+  - paddleservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - serving.paddlepaddle.org
+  resources:
+  - paddleservices/status
   verbs:
   - get
   - patch
