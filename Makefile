@@ -1,9 +1,13 @@
 # Image URL to use all building/pushing image targets
-PADDLEJOB_IMG ?= registry.baidubce.com/paddle-operator/paddlejob
-SAMPLESET_IMG ?= registry.baidubce.com/paddle-operator/sampleset
-SAMPLEJOB_IMG ?= registry.baidubce.com/paddle-operator/samplejob
-RUNTIME_IMG ?= registry.baidubce.com/paddle-operator/runtime
-SERVING_IMG ?= registry.baidubce.com/paddle-operator/serving
+#PADDLEJOB_IMG ?= registry.baidubce.com/paddle-operator/paddlejob
+#SAMPLESET_IMG ?= registry.baidubce.com/paddle-operator/sampleset
+#RUNTIME_IMG ?= registry.baidubce.com/paddle-operator/runtime
+#SERVING_IMG ?= registry.baidubce.com/paddle-operator/serving
+
+PADDLEJOB_IMG ?= xiaolao/paddlejob
+SAMPLESET_IMG ?= xiaolao/sampleset
+RUNTIME_IMG ?= xiaolao/runtime
+SERVING_IMG ?= xiaolao/serving
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
@@ -65,7 +69,6 @@ docker-build-paddlejob: test
 docker-build-sampleset: test
 	docker build . --build-arg RUNTIME_IMG=${RUNTIME_IMG} --build-arg GIT_VERSION=${GIT_VERSION} \
 		-f docker/Dockerfile.sampleset -t ${SAMPLESET_IMG}:${GIT_VERSION}
-	docker build . -f docker/Dockerfile.samplejob -t ${SAMPLEJOB_IMG}:${GIT_VERSION}
 
 docker-build-runtime: test
 	docker build . -f docker/Dockerfile.runtime -t ${RUNTIME_IMG}:${GIT_VERSION}
@@ -83,7 +86,6 @@ docker-push-paddlejob:
 # Push the sampleset docker image
 docker-push-sampleset:
 	docker push ${SAMPLESET_IMG}:${GIT_VERSION}
-	docker push ${SAMPLEJOB_IMG}:${GIT_VERSION}
 
 docker-push-runtime:
 	docker push ${RUNTIME_IMG}:${GIT_VERSION}
