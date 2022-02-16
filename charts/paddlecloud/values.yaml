@@ -1,0 +1,21 @@
+# Default values for paddlecloud.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Default values for paddle-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: paddle-system
+
+paddlejob:
+  enabled: false
+  image: xiaolao/paddlejob
+
+sampleset:
+  enabled: false
+  image: xiaolao/sampleset
+
+serving:
+  enabled: true
+  image: xiaolao/serving
