@@ -1,17 +1,4 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+{{- if or .Values.paddlejob.enabled .Values.sampleset.enabled }}
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -213,6 +200,29 @@ spec:
                                                     type: string
                                                   type: object
                                               type: object
+                                            namespaceSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                    type: object
+                                                  type: array
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
                                             namespaces:
                                               items:
                                                 type: string
@@ -234,6 +244,29 @@ spec:
                                     items:
                                       properties:
                                         labelSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                        namespaceSelector:
                                           properties:
                                             matchExpressions:
                                               items:
@@ -297,6 +330,29 @@ spec:
                                                     type: string
                                                   type: object
                                               type: object
+                                            namespaceSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                    type: object
+                                                  type: array
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
                                             namespaces:
                                               items:
                                                 type: string
@@ -318,6 +374,29 @@ spec:
                                     items:
                                       properties:
                                         labelSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                        namespaceSelector:
                                           properties:
                                             matchExpressions:
                                               items:
@@ -614,6 +693,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -705,6 +787,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -783,6 +868,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -848,6 +935,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -1184,6 +1274,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -1271,6 +1364,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -1349,6 +1445,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -1414,6 +1512,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -1754,6 +1855,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -1845,6 +1949,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -1923,6 +2030,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -1988,6 +2097,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -2046,6 +2158,7 @@ spec:
                             additionalProperties:
                               type: string
                             type: object
+                            x-kubernetes-map-type: atomic
                           overhead:
                             additionalProperties:
                               anyOf:
@@ -2134,6 +2247,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                                 type: object
@@ -2395,8 +2510,6 @@ spec:
                                   type: object
                                 ephemeral:
                                   properties:
-                                    readOnly:
-                                      type: boolean
                                     volumeClaimTemplate:
                                       properties:
                                         metadata:
@@ -2425,6 +2538,18 @@ spec:
                                                 type: string
                                               type: array
                                             dataSource:
+                                              properties:
+                                                apiGroup:
+                                                  type: string
+                                                kind:
+                                                  type: string
+                                                name:
+                                                  type: string
+                                              required:
+                                              - kind
+                                              - name
+                                              type: object
+                                            dataSourceRef:
                                               properties:
                                                 apiGroup:
                                                   type: string
@@ -2763,8 +2888,6 @@ spec:
                                             type: object
                                         type: object
                                       type: array
-                                  required:
-                                  - sources
                                   type: object
                                 quobyte:
                                   properties:
@@ -3065,6 +3188,29 @@ spec:
                                                     type: string
                                                   type: object
                                               type: object
+                                            namespaceSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                    type: object
+                                                  type: array
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
                                             namespaces:
                                               items:
                                                 type: string
@@ -3086,6 +3232,29 @@ spec:
                                     items:
                                       properties:
                                         labelSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                        namespaceSelector:
                                           properties:
                                             matchExpressions:
                                               items:
@@ -3149,6 +3318,29 @@ spec:
                                                     type: string
                                                   type: object
                                               type: object
+                                            namespaceSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                    type: object
+                                                  type: array
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
                                             namespaces:
                                               items:
                                                 type: string
@@ -3170,6 +3362,29 @@ spec:
                                     items:
                                       properties:
                                         labelSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                        namespaceSelector:
                                           properties:
                                             matchExpressions:
                                               items:
@@ -3466,6 +3681,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -3557,6 +3775,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -3635,6 +3856,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -3700,6 +3923,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4036,6 +4262,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4123,6 +4352,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4201,6 +4433,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -4266,6 +4500,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4606,6 +4843,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4697,6 +4937,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4775,6 +5018,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -4840,6 +5085,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -4898,6 +5146,7 @@ spec:
                             additionalProperties:
                               type: string
                             type: object
+                            x-kubernetes-map-type: atomic
                           overhead:
                             additionalProperties:
                               anyOf:
@@ -4986,6 +5235,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                                 type: object
@@ -5247,8 +5498,6 @@ spec:
                                   type: object
                                 ephemeral:
                                   properties:
-                                    readOnly:
-                                      type: boolean
                                     volumeClaimTemplate:
                                       properties:
                                         metadata:
@@ -5277,6 +5526,18 @@ spec:
                                                 type: string
                                               type: array
                                             dataSource:
+                                              properties:
+                                                apiGroup:
+                                                  type: string
+                                                kind:
+                                                  type: string
+                                                name:
+                                                  type: string
+                                              required:
+                                              - kind
+                                              - name
+                                              type: object
+                                            dataSourceRef:
                                               properties:
                                                 apiGroup:
                                                   type: string
@@ -5615,8 +5876,6 @@ spec:
                                             type: object
                                         type: object
                                       type: array
-                                  required:
-                                  - sources
                                   type: object
                                 quobyte:
                                   properties:
@@ -5757,6 +6016,17 @@ spec:
                     type: object
                 required:
                 - replicas
+                type: object
+              sampleSetRef:
+                properties:
+                  mountPath:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - mountPath
                 type: object
               schedulingPolicy:
                 properties:
@@ -5935,6 +6205,29 @@ spec:
                                                     type: string
                                                   type: object
                                               type: object
+                                            namespaceSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                    type: object
+                                                  type: array
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
                                             namespaces:
                                               items:
                                                 type: string
@@ -5956,6 +6249,29 @@ spec:
                                     items:
                                       properties:
                                         labelSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                        namespaceSelector:
                                           properties:
                                             matchExpressions:
                                               items:
@@ -6019,6 +6335,29 @@ spec:
                                                     type: string
                                                   type: object
                                               type: object
+                                            namespaceSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                    type: object
+                                                  type: array
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
                                             namespaces:
                                               items:
                                                 type: string
@@ -6040,6 +6379,29 @@ spec:
                                     items:
                                       properties:
                                         labelSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                        namespaceSelector:
                                           properties:
                                             matchExpressions:
                                               items:
@@ -6336,6 +6698,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -6427,6 +6792,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -6505,6 +6873,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -6570,6 +6940,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -6906,6 +7279,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -6993,6 +7369,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -7071,6 +7450,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -7136,6 +7517,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -7476,6 +7860,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -7567,6 +7954,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -7645,6 +8035,8 @@ spec:
                                           type: string
                                         gmsaCredentialSpecName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         runAsUserName:
                                           type: string
                                       type: object
@@ -7710,6 +8102,9 @@ spec:
                                       required:
                                       - port
                                       type: object
+                                    terminationGracePeriodSeconds:
+                                      format: int64
+                                      type: integer
                                     timeoutSeconds:
                                       format: int32
                                       type: integer
@@ -7768,6 +8163,7 @@ spec:
                             additionalProperties:
                               type: string
                             type: object
+                            x-kubernetes-map-type: atomic
                           overhead:
                             additionalProperties:
                               anyOf:
@@ -7856,6 +8252,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                                 type: object
@@ -8117,8 +8515,6 @@ spec:
                                   type: object
                                 ephemeral:
                                   properties:
-                                    readOnly:
-                                      type: boolean
                                     volumeClaimTemplate:
                                       properties:
                                         metadata:
@@ -8147,6 +8543,18 @@ spec:
                                                 type: string
                                               type: array
                                             dataSource:
+                                              properties:
+                                                apiGroup:
+                                                  type: string
+                                                kind:
+                                                  type: string
+                                                name:
+                                                  type: string
+                                              required:
+                                              - kind
+                                              - name
+                                              type: object
+                                            dataSourceRef:
                                               properties:
                                                 apiGroup:
                                                   type: string
@@ -8485,8 +8893,6 @@ spec:
                                             type: object
                                         type: object
                                       type: array
-                                  required:
-                                  - sources
                                   type: object
                                 quobyte:
                                   properties:
@@ -8759,3 +9165,4 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
+{{- end }}

@@ -13,7 +13,7 @@ SERVING_IMG ?= xiaolao/serving
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
 
 # Set version and get git tag
-VERSION=v0.4
+VERSION=v0.1
 GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
 GIT_VERSION=${VERSION}-${GIT_SHA}
 
@@ -36,12 +36,11 @@ test: generate fmt vet manifests
 #	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.11.0/hack/setup-envtest.sh
 #	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
-gen-deploy: manifests kustomize crd-v1beta1
-	cat COPYRIGHT.YAML > deploy/v1/crd.yaml
-	$(KUSTOMIZE) build config/crd >> deploy/v1/crd.yaml
-	cat COPYRIGHT.YAML > deploy/v1/operator.yaml
-	$(KUSTOMIZE) build config/operator >> deploy/v1/operator.yaml
-	cat COPYRIGHT.YAML > deploy/extensions/controllers.yaml
+gen-deploy: manifests kustomize
+	cat COPYRIGHT.YAML > samples/v1/crd.yaml
+	$(KUSTOMIZE) build config/crd >> samples/v1/crd.yaml
+	cat COPYRIGHT.YAML > samples/v1/operator.yaml
+	$(KUSTOMIZE) build config/operator >> samples/v1/operator.yaml
 
 TEMPLATES_DIR ?= charts/paddle-operator/templates
 helm: manifests kustomize

@@ -1,0 +1,48 @@
+{{- if .Values.serving.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: serving-manager
+    {{- include "paddlecloud.labels" . | nindent 4 }}
+  name: serving-manager
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: serving-manager
+      {{- include "paddlecloud.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        control-plane: serving-manager
+        {{- include "paddlecloud.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=10
+          image: registry.baidubce.com/paddleflow-public/kube-rbac-proxy:v0.5.0
+          name: kube-rbac-proxy
+          ports:
+            - containerPort: 8443
+              name: https
+        - args:
+            - --metrics-addr=127.0.0.1:8080
+            - --enable-leader-election
+          command:
+            - /manager
+          image: {{ .Values.sampleset.image }}:{{ .Chart.AppVersion }}
+          name: manager
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+      terminationGracePeriodSeconds: 10
+{{- end }}

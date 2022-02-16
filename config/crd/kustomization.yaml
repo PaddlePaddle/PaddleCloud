@@ -3,6 +3,9 @@
 # It should be run by config/default
 resources:
 - bases/batch.paddlepaddle.org_paddlejobs.yaml
+- bases/batch.paddlepaddle.org_samplesets.yaml
+- bases/batch.paddlepaddle.org_samplejobs.yaml
+- bases/serving.paddlepaddle.org_paddleservices.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
