@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    {{- include "paddlecloud.labels" . | nindent 4 }}
-  name: {{ .Values.namespace }}

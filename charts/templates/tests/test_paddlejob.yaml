@@ -1,0 +1,28 @@
+{{- if or .Values.global.enablePaddleJob .Values.global.enableSampleSet }}
+apiVersion: batch.paddlepaddle.org/v1
+kind: PaddleJob
+metadata:
+  name: {{ include "paddlecloud.fullname" . }}-test-paddlejob
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "paddlecloud.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  worker:
+    replicas: 1
+    template:
+      spec:
+        containers:
+          - name: sample
+            image: nginx
+        restartPolicy: OnFailure
+  ps:
+    replicas: 1
+    template:
+      spec:
+        containers:
+          - name: sample
+            image: nginx
+        restartPolicy: OnFailure
+{{- end }}

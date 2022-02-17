@@ -36,23 +36,6 @@ test: generate fmt vet manifests
 #	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.11.0/hack/setup-envtest.sh
 #	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
-gen-deploy: manifests kustomize
-	cat COPYRIGHT.YAML > samples/v1/crd.yaml
-	$(KUSTOMIZE) build config/crd >> samples/v1/crd.yaml
-	cat COPYRIGHT.YAML > samples/v1/operator.yaml
-	$(KUSTOMIZE) build config/operator >> samples/v1/operator.yaml
-
-TEMPLATES_DIR ?= charts/paddle-operator/templates
-helm: manifests kustomize
-	$(KUSTOMIZE) build config/crd > $(TEMPLATES_DIR)/crd.yaml
-	$(KUSTOMIZE) build config/default > $(TEMPLATES_DIR)/controller.yaml
-	# The last sed command is not clean, need more advanced scripting to be robust
-	sed -i  -e "s/image:.*/image: {{ .Values.image }}/g" \
-			-e "s/--namespace=.*/--namespace={{ .Values.jobnamespace }}/g" \
-			-e "s/namespace:.*/namespace: {{ .Values.controllernamespace }}/g" \
-			-e "s/name: paddle-system/name: {{ .Values.controllernamespace }}/g" \
-			$(TEMPLATES_DIR)/controller.yaml
-
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
