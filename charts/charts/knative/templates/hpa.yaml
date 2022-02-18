@@ -1,0 +1,52 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: webhook
+  namespace: knative-serving
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: "1.2.0"
+    serving.knative.dev/release: "v1.2.0"
+spec:
+  minReplicas: 1
+  maxReplicas: 5
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: webhook
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Percentage of the requested CPU
+          averageUtilization: 100
+
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: activator
+  namespace: knative-serving
+  labels:
+    app.kubernetes.io/component: activator
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: "1.2.0"
+    serving.knative.dev/release: "v1.2.0"
+spec:
+  minReplicas: 1
+  maxReplicas: 20
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: activator
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Percentage of the requested CPU
+          averageUtilization: 100

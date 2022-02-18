@@ -1,0 +1,241 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: activator-service
+  namespace: knative-serving
+  labels:
+    app: activator
+    app.kubernetes.io/component: activator
+    app.kubernetes.io/version: "1.2.0"
+    app.kubernetes.io/name: knative-serving
+    serving.knative.dev/release: "v1.2.0"
+spec:
+  selector:
+    app: activator
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+    - name: http
+      port: 80
+      targetPort: 8012
+    - name: http2
+      port: 81
+      targetPort: 8013
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: autoscaler
+    app.kubernetes.io/component: autoscaler
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: "1.2.0"
+    serving.knative.dev/release: "v1.2.0"
+  name: autoscaler
+  namespace: knative-serving
+spec:
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: autoscaler
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: controller
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: "1.2.0"
+    serving.knative.dev/release: "v1.2.0"
+  name: controller
+  namespace: knative-serving
+spec:
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+  selector:
+    app: controller
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    role: domainmapping-webhook
+    app.kubernetes.io/component: domain-mapping
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: "1.2.0"
+    serving.knative.dev/release: "v1.2.0"
+  name: domainmapping-webhook
+  namespace: knative-serving
+spec:
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+    - name: https-webhook
+      port: 443
+      targetPort: 8443
+  selector:
+    role: domainmapping-webhook
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook
+  namespace: knative-serving
+  labels:
+    serving.knative.dev/release: "v1.2.0"
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/version: "1.2.0"
+    app.kubernetes.io/name: knative-serving
+spec:
+  selector:
+    matchLabels:
+      app: webhook
+      role: webhook
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app: webhook
+        role: webhook
+        serving.knative.dev/release: "v1.2.0"
+        app.kubernetes.io/component: webhook
+        app.kubernetes.io/version: "1.2.0"
+        app.kubernetes.io/name: knative-serving
+    spec:
+      # To avoid node becoming SPOF, spread our replicas to different nodes.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: webhook
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      serviceAccountName: controller
+      containers:
+        - name: webhook
+          # This is the Go import path for the binary that is containerized
+          # and substituted here.
+          image: gcr.io/knative-releases/knative.dev/serving/cmd/webhook@sha256:7e76260703b2ef866f178e6de196fba5b6125fc34182352a8ad10d3e357e0e59
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONFIG_LOGGING_NAME
+              value: config-logging
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+            - name: WEBHOOK_NAME
+              value: webhook
+            - name: WEBHOOK_PORT
+              value: "8443"
+            # TODO(https://github.com/knative/pkg/pull/953): Remove stackdriver specific config
+            - name: METRICS_DOMAIN
+              value: knative.dev/internal/serving
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - all
+          ports:
+            - name: metrics
+              containerPort: 9090
+            - name: profiling
+              containerPort: 8008
+            - name: https-webhook
+              containerPort: 8443
+          readinessProbe:
+            periodSeconds: 1
+            httpGet:
+              scheme: HTTPS
+              port: 8443
+              httpHeaders:
+                - name: k-kubelet-probe
+                  value: "webhook"
+          livenessProbe:
+            periodSeconds: 1
+            httpGet:
+              scheme: HTTPS
+              port: 8443
+              httpHeaders:
+                - name: k-kubelet-probe
+                  value: "webhook"
+            failureThreshold: 6
+            initialDelaySeconds: 20
+      # Our webhook should gracefully terminate by lame ducking first, set this to a sufficiently
+      # high value that we respect whatever value it has configured for the lame duck grace period.
+      terminationGracePeriodSeconds: 300
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    role: webhook
+    serving.knative.dev/release: "v1.2.0"
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/version: "1.2.0"
+    app.kubernetes.io/name: knative-serving
+  name: webhook
+  namespace: knative-serving
+spec:
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+    - name: https-webhook
+      port: 443
+      targetPort: 8443
+  selector:
+    role: webhook

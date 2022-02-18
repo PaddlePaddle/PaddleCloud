@@ -119,7 +119,7 @@ storageClasses:
   # StorageClass Name. It is important.
 - name: juicefs-sc
   # -- Default is true will create a new StorageClass. It will create Secret and StorageClass used by CSI driver
-  enabled: true
+  enabled: false
   # -- Either Delete or Retain.
   reclaimPolicy: Delete
 
