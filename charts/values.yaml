@@ -10,7 +10,6 @@ global:
   enablePaddleJob: false
   enableSampleSet: true
   enableServing: false
-  enableIstio: false
 
 paddlejob:
   image: xiaolao/paddlejob
