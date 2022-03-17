@@ -1,0 +1,90 @@
+name: Training
+description: Training Operator
+inputs:
+  - {name: Name,                       type: String,                          description: 'The name of DataSet.'}
+  - {name: Namespace,                  type: String,      default: kubeflow,  description: 'The namespace which DataSet components run in'}
+  - {name: Action,                     type: String,      default: apply,     description: 'Action to execute on Dataset.'}
+  - {name: Project,                    type: String,                          description: 'The project name of PaddlePaddle ecosystem such as PaddleOCR.'}
+  - {name: Image,                      type: String,                          description: 'The image of paddle training job which contains model training scripts.'}
+  - {name: Config Path,                type: string,                          description: 'The path of model config, it is relative path from root path of project.'}
+  - {name: Config Changes,             type: string,      optional: true,     description: 'The key value pair of model config items, separate by comma, such as Global.epoch=20.'}
+  - {name: Pretrain Model,             type: string,      optional: true,     description: 'The uri of pretrained models where it store in.'}
+  - {name: Dataset,                    type: string,                          description: 'The name of sample data set.'}
+  - {name: Train Label,                type: string,      optional: true,     description: 'The name of train label file.'}
+  - {name: Test Label,                 type: string,      optional: true,     description: 'The name of test label file.'}
+  - {name: PVC Name,                   type: string,                          description: 'The persistent volume claim name of task-center.'}
+  - {name: Worker Replicas,            type: Integer,                         description: 'The replicas of worker pods.'}
+  - {name: PS Replicas,                type: Integer,     optional: true,     description: 'The replicas of parameter server pods.'}
+  - {name: GPU Per Node,               type: Integer,     optional: true,     description: 'Specified the number of gpu that training job requested.'}
+  - {name: Use VisualDL,               type: Boolean,     optional: true,     description: 'Specified whether use VisualDL, this will be work only when worker replicas is 1.'}
+  - {name: Save Inference,             type: Boolean,     optional: true,     description: 'Convert training model to inference model.'}
+  - {name: Need Convert,               type: Boolean,     optional: true,     description: 'Convert inference model to serving model.'}
+
+implementation:
+  container:
+    image: xiaolao/paddlex-backend:latest
+    command: [python, training.py]
+    args:
+      - --name
+      - {inputValue: Name}
+      - --namespace
+      - {inputValue: Namespace}
+      - --action
+      - {inputValue: Action}
+      - --project
+      - {inputValue: Project}
+      - --image
+      - {inputValue: Image}
+      - --config_path
+      - {inputValue: Config Path}
+      - --dataset
+      - {inputValue: Dataset}
+      - --pvc_name
+      - {inputValue: PVC Name}
+      - --worker_replicas
+      - {inputValue: Worker Replicas}
+      - if:
+          cond: {isPresent: Config Changes}
+          then:
+            - --config_changes
+            - {inputValue: Config Changes}
+      - if:
+          cond: {isPresent: Pretrain Model}
+          then:
+            - --pretrain_model
+            - {inputValue: Pretrain Model}
+      - if:
+          cond: {isPresent: Train Label}
+          then:
+            - --train_label
+            - {inputValue: Train Label}
+      - if:
+          cond: {isPresent: Test Label}
+          then:
+            - --test_label
+            - {inputValue: Test Label}
+      - if:
+          cond: {isPresent: PS Replicas}
+          then:
+            - --ps_replicas
+            - {inputValue: PS Replicas}
+      - if:
+          cond: {isPresent: GPU Per Node}
+          then:
+            - --gpu_per_node
+            - {inputValue: GPU Per Node}
+      - if:
+          cond: {isPresent: Use VisualDL}
+          then:
+            - --use_visualdl
+            - {inputValue: Use VisualDL}
+      - if:
+          cond: {isPresent: Save Inference}
+          then:
+            - --save_inference
+            - {inputValue: Save Inference}
+      - if:
+          cond: {isPresent: Need Convert}
+          then:
+            - --need_convert
+            - {inputValue: Need Convert}

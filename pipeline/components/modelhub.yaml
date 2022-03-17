@@ -1,0 +1,36 @@
+name: ModelHub
+description: ModelHub Operator
+inputs:
+  - {name: Name,                       type: String,                          description: 'The name of DataSet.'}
+  - {name: Namespace,                  type: String,      default: kubeflow,  description: 'The namespace which DataSet components run in'}
+  - {name: Action,                     type: String,      default: apply,     description: 'Action to execute on Dataset.'}
+  - {name: Endpoint,                   type: string,      optional: true,     description: 'The endpoint uri of minio object storage service.'}
+  - {name: Model Name,                 type: string,                          description: 'The name of model.'}
+  - {name: Model Version,              type: string,      optional: true,     description: 'The version of model.'}
+  - {name: PVC Name,                   type: string,                          description: 'The persistent volume claim name of task-center.'}
+
+implementation:
+  container:
+    image: xiaolao/paddlex-backend:latest
+    command: [python, modelhub.py]
+    args:
+      - --name
+      - {inputValue: Name}
+      - --namespace
+      - {inputValue: Namespace}
+      - --action
+      - {inputValue: Action}
+      - --model_name
+      - {inputValue: Model Name}
+      - --pvc_name
+      - {inputValue: PVC Name}
+      - if:
+          cond: {isPresent: Endpoint}
+          then:
+            - --endpoint
+            - {inputValue: Endpoint}
+      - if:
+          cond: {isPresent: Model Version}
+          then:
+            - --model_version
+            - {inputValue: Model Version}
