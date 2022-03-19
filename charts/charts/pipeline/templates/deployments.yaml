@@ -1,0 +1,888 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cache-deployer
+    application-crd-id: kubeflow-pipelines
+  name: cache-deployer-deployment
+  namespace: kubeflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cache-deployer
+      application-crd-id: kubeflow-pipelines
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cache-deployer
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: NAMESPACE_TO_WATCH
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: registry.baidubce.com/paddleflow-public/cache-deployer:1.7.0
+          imagePullPolicy: Always
+          name: main
+      restartPolicy: Always
+      serviceAccountName: kubeflow-pipelines-cache-deployer-sa
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cache-server
+    application-crd-id: kubeflow-pipelines
+  name: cache-server
+  namespace: kubeflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cache-server
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      labels:
+        app: cache-server
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - args:
+            - --db_driver=$(DBCONFIG_DRIVER)
+            - --db_host=$(DBCONFIG_HOST_NAME)
+            - --db_port=$(DBCONFIG_PORT)
+            - --db_name=$(DBCONFIG_DB_NAME)
+            - --db_user=$(DBCONFIG_USER)
+            - --db_password=$(DBCONFIG_PASSWORD)
+            - --namespace_to_watch=$(NAMESPACE_TO_WATCH)
+          env:
+            - name: CACHE_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  key: cacheImage
+                  name: pipeline-install-config
+            - name: CACHE_NODE_RESTRICTIONS
+              valueFrom:
+                configMapKeyRef:
+                  key: cacheNodeRestrictions
+                  name: pipeline-install-config
+            - name: DBCONFIG_DRIVER
+              value: mysql
+            - name: DBCONFIG_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: cacheDb
+                  name: pipeline-install-config
+            - name: DBCONFIG_HOST_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: dbHost
+                  name: pipeline-install-config
+            - name: DBCONFIG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: dbPort
+                  name: pipeline-install-config
+            - name: DBCONFIG_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: mysql-secret
+            - name: DBCONFIG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql-secret
+            - name: NAMESPACE_TO_WATCH
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: registry.baidubce.com/paddleflow-public/cache-server:1.7.0
+          imagePullPolicy: Always
+          name: server
+          ports:
+            - containerPort: 8443
+              name: webhook-api
+          volumeMounts:
+            - mountPath: /etc/webhook/certs
+              name: webhook-tls-certs
+              readOnly: true
+      serviceAccountName: kubeflow-pipelines-cache
+      volumes:
+        - name: webhook-tls-certs
+          secret:
+            secretName: webhook-server-tls
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+    control-plane: controller-manager
+    controller-tools.k8s.io: "1.0"
+  name: controller-manager
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      application-crd-id: kubeflow-pipelines
+      control-plane: controller-manager
+      controller-tools.k8s.io: "1.0"
+  template:
+    metadata:
+      labels:
+        application-crd-id: kubeflow-pipelines
+        control-plane: controller-manager
+        controller-tools.k8s.io: "1.0"
+    spec:
+      containers:
+        - command:
+            - /bin/sh
+            - -c
+            - |
+              echo "logs are hidden because volume is too excessive" &&
+              /root/manager 2> /dev/null
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: registry.baidubce.com/paddleflow-public/application-crd-controller:1.0-beta-non-cluster-role
+          imagePullPolicy: IfNotPresent
+          name: manager
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+      serviceAccountName: application
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+    component: metadata-envoy
+  name: metadata-envoy-deployment
+  namespace: kubeflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      application-crd-id: kubeflow-pipelines
+      component: metadata-envoy
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        application-crd-id: kubeflow-pipelines
+        component: metadata-envoy
+    spec:
+      containers:
+        - image: registry.baidubce.com/paddleflow-public/metadata-envoy:1.7.0
+          name: container
+          ports:
+            - containerPort: 9090
+              name: md-envoy
+            - containerPort: 9901
+              name: envoy-admin
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+    component: metadata-grpc-server
+  name: metadata-grpc-deployment
+  namespace: kubeflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      application-crd-id: kubeflow-pipelines
+      component: metadata-grpc-server
+  template:
+    metadata:
+      labels:
+        application-crd-id: kubeflow-pipelines
+        component: metadata-grpc-server
+    spec:
+      containers:
+        - args:
+            - --grpc_port=8080
+            - --mysql_config_database=$(MYSQL_DATABASE)
+            - --mysql_config_host=$(MYSQL_HOST)
+            - --mysql_config_port=$(MYSQL_PORT)
+            - --mysql_config_user=$(DBCONFIG_USER)
+            - --mysql_config_password=$(DBCONFIG_PASSWORD)
+            - --enable_database_upgrade=true
+          command:
+            - /bin/metadata_store_server
+          env:
+            - name: DBCONFIG_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: mysql-secret
+            - name: DBCONFIG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql-secret
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: mlmdDb
+                  name: pipeline-install-config
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: dbHost
+                  name: pipeline-install-config
+            - name: MYSQL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: dbPort
+                  name: pipeline-install-config
+          image: registry.baidubce.com/paddleflow-public/ml_metadata_store_server:1.0.0
+          livenessProbe:
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            tcpSocket:
+              port: grpc-api
+            timeoutSeconds: 2
+          name: container
+          ports:
+            - containerPort: 8080
+              name: grpc-api
+          readinessProbe:
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            tcpSocket:
+              port: grpc-api
+            timeoutSeconds: 2
+      serviceAccountName: metadata-grpc-server
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: metadata-writer
+    application-crd-id: kubeflow-pipelines
+  name: metadata-writer
+  namespace: kubeflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metadata-writer
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      labels:
+        app: metadata-writer
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: NAMESPACE_TO_WATCH
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: registry.baidubce.com/paddleflow-public/metadata-writer:1.7.0
+          name: main
+      serviceAccountName: kubeflow-pipelines-metadata-writer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: minio
+    application-crd-id: kubeflow-pipelines
+  name: minio
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: minio
+      application-crd-id: kubeflow-pipelines
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minio
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - args:
+            - server
+            - /data
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: accesskey
+                  name: mlpipeline-minio-artifact
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretkey
+                  name: mlpipeline-minio-artifact
+          image: registry.baidubce.com/paddleflow-public/minio:RELEASE.2019-08-14T20-37-41Z-license-compliance
+          name: minio
+          ports:
+            - containerPort: 9000
+          resources:
+            requests:
+              cpu: 20m
+              memory: 100Mi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+              subPath: minio
+#      nodeSelector:
+#        kubernetes.io/hostname: 192.168.48.14
+      volumes:
+        - name: data
+#          hostPath:
+#            path: /dev/shm/minio
+#            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: minio-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ml-pipeline
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: ml-pipeline
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: AUTO_UPDATE_PIPELINE_DEFAULT_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  key: autoUpdatePipelineDefaultVersion
+                  name: pipeline-install-config
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OBJECTSTORECONFIG_SECURE
+              value: "false"
+            - name: OBJECTSTORECONFIG_BUCKETNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: bucketName
+                  name: pipeline-install-config
+            - name: DBCONFIG_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: mysql-secret
+            - name: DBCONFIG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql-secret
+            - name: DBCONFIG_DBNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: pipelineDb
+                  name: pipeline-install-config
+            - name: DBCONFIG_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: dbHost
+                  name: pipeline-install-config
+            - name: DBCONFIG_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: dbPort
+                  name: pipeline-install-config
+            - name: DBCONFIG_CONMAXLIFETIMESEC
+              valueFrom:
+                configMapKeyRef:
+                  key: ConMaxLifeTimeSec
+                  name: pipeline-install-config
+            - name: OBJECTSTORECONFIG_ACCESSKEY
+              valueFrom:
+                secretKeyRef:
+                  key: accesskey
+                  name: mlpipeline-minio-artifact
+            - name: OBJECTSTORECONFIG_SECRETACCESSKEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretkey
+                  name: mlpipeline-minio-artifact
+          image: registry.baidubce.com/paddleflow-public/api-server:1.7.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -S
+                - -O
+                - '-'
+                - http://localhost:8888/apis/v1beta1/healthz
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          name: ml-pipeline-api-server
+          ports:
+            - containerPort: 8888
+              name: http
+            - containerPort: 8887
+              name: grpc
+          readinessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -S
+                - -O
+                - '-'
+                - http://localhost:8888/apis/v1beta1/healthz
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 250m
+              memory: 500Mi
+      serviceAccountName: ml-pipeline
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ml-pipeline-persistenceagent
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-persistenceagent
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline-persistenceagent
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: ml-pipeline-persistenceagent
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TTL_SECONDS_AFTER_WORKFLOW_FINISH
+              value: "86400"
+            - name: NUM_WORKERS
+              value: "2"
+          image: registry.baidubce.com/paddleflow-public/persistenceagent:1.7.0
+          imagePullPolicy: IfNotPresent
+          name: ml-pipeline-persistenceagent
+          resources:
+            requests:
+              cpu: 120m
+              memory: 500Mi
+      serviceAccountName: ml-pipeline-persistenceagent
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ml-pipeline-scheduledworkflow
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-scheduledworkflow
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline-scheduledworkflow
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: ml-pipeline-scheduledworkflow
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CRON_SCHEDULE_TIMEZONE
+              valueFrom:
+                configMapKeyRef:
+                  key: cronScheduleTimezone
+                  name: pipeline-install-config
+          image: registry.baidubce.com/paddleflow-public/scheduledworkflow:1.7.0
+          imagePullPolicy: IfNotPresent
+          name: ml-pipeline-scheduledworkflow
+      serviceAccountName: ml-pipeline-scheduledworkflow
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ml-pipeline-ui
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-ui
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline-ui
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: ml-pipeline-ui
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: VIEWER_TENSORBOARD_POD_TEMPLATE_SPEC_PATH
+              value: /etc/config/viewer-pod-template.json
+            - name: MINIO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: accesskey
+                  name: mlpipeline-minio-artifact
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretkey
+                  name: mlpipeline-minio-artifact
+            - name: ALLOW_CUSTOM_VISUALIZATIONS
+              value: "true"
+          image: registry.baidubce.com/paddleflow-public/frontend:1.7.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -S
+                - -O
+                - '-'
+                - http://localhost:3000/apis/v1beta1/healthz
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          name: ml-pipeline-ui
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -S
+                - -O
+                - '-'
+                - http://localhost:3000/apis/v1beta1/healthz
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 10m
+              memory: 70Mi
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config-volume
+              readOnly: true
+      serviceAccountName: ml-pipeline-ui
+      volumes:
+        - configMap:
+            name: ml-pipeline-ui-configmap
+          name: config-volume
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ml-pipeline-viewer-crd
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-viewer-crd
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline-viewer-crd
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: ml-pipeline-viewer-crd
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - env:
+            - name: MAX_NUM_VIEWERS
+              value: "50"
+            - name: MINIO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: registry.baidubce.com/paddleflow-public/viewer-crd-controller:1.7.0
+          imagePullPolicy: Always
+          name: ml-pipeline-viewer-crd
+      serviceAccountName: ml-pipeline-viewer-crd-service-account
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ml-pipeline-visualizationserver
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-visualizationserver
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline-visualizationserver
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: ml-pipeline-visualizationserver
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - image: registry.baidubce.com/paddleflow-public/visualization-server:1.7.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -S
+                - -O
+                - '-'
+                - http://localhost:8888/
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          name: ml-pipeline-visualizationserver
+          ports:
+            - containerPort: 8888
+              name: http
+          readinessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -S
+                - -O
+                - '-'
+                - http://localhost:8888/
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 30m
+              memory: 500Mi
+      serviceAccountName: ml-pipeline-visualizationserver
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mysql
+    application-crd-id: kubeflow-pipelines
+  name: mysql
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+      application-crd-id: kubeflow-pipelines
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - args:
+            - --ignore-db-dir=lost+found
+            - --datadir
+            - /var/lib/mysql
+          env:
+            - name: MYSQL_ALLOW_EMPTY_PASSWORD
+              value: "true"
+          image: registry.baidubce.com/paddleflow-public/mysql:5.7
+          name: mysql
+          ports:
+            - containerPort: 3306
+              name: mysql
+          resources:
+            requests:
+              cpu: 100m
+              memory: 800Mi
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-persistent-storage
+      serviceAccountName: mysql
+#      nodeSelector:
+#        kubernetes.io/hostname: 192.168.48.14
+      volumes:
+        - name: mysql-persistent-storage
+#          hostPath:
+#            path: /dev/shm/mysql
+#            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: proxy-agent
+    application-crd-id: kubeflow-pipelines
+  name: proxy-agent
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: proxy-agent
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      labels:
+        app: proxy-agent
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - image: registry.baidubce.com/paddleflow-public/inverse-proxy-agent:1.7.0
+          imagePullPolicy: IfNotPresent
+          name: proxy-agent
+      hostNetwork: true
+      serviceAccountName: proxy-agent-runner
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: workflow-controller
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: workflow-controller
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      labels:
+        app: workflow-controller
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - args:
+            - --configmap
+            - workflow-controller-configmap
+            - --executor-image
+            - registry.baidubce.com/paddleflow-public/argoexec:v3.1.6-patch-license-compliance
+            - --namespaced
+          command:
+            - workflow-controller
+          env:
+            - name: LEADER_ELECTION_IDENTITY
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          image: registry.baidubce.com/paddleflow-public/workflow-controller:v3.1.6-patch-license-compliance
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 6060
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 30
+          name: workflow-controller
+          ports:
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 6060
+          resources:
+            requests:
+              cpu: 100m
+              memory: 500Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: argo

@@ -1,0 +1,42 @@
+name: Serving
+description: Serving Operator
+inputs:
+  - {name: Name,                       type: String,                          description: 'The name of DataSet.'}
+  - {name: Namespace,                  type: String,      default: kubeflow,  description: 'The namespace which DataSet components run in'}
+  - {name: Action,                     type: String,      default: apply,     description: 'Action to execute on Dataset.'}
+  - {name: Image,                      type: string,                          description: 'The image of the Paddle Serving.'}
+  - {name: Model Name,                 type: string,                          description: 'The name of model.'}
+  - {name: Model Version,              type: string,      optional: true,     description: 'The version of model.'}
+  - {name: Endpoint,                   type: string,      optional: true,     description: 'The endpoint uri of minio object storage service.'}
+  - {name: Port,                       type: Integer,     optional: true,     description: 'The port of Paddle Serving.'}
+
+implementation:
+  container:
+    image: xiaolao/paddlex-backend:latest
+    command: [python, serving.py]
+    args:
+      - --name
+      - {inputValue: Name}
+      - --namespace
+      - {inputValue: Namespace}
+      - --action
+      - {inputValue: Action}
+      - --image
+      - {inputValue: Image}
+      - --model_name
+      - {inputValue: Model Name}
+      - if:
+          cond: {isPresent: Model Version}
+          then:
+            - --model_version
+            - {inputValue: Model Version}
+      - if:
+          cond: {isPresent: Endpoint}
+          then:
+            - --endpoint
+            - {inputValue: Endpoint}
+      - if:
+          cond: {isPresent: Port}
+          then:
+            - --port
+            - {inputValue: Port}

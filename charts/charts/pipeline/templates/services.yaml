@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cache-server
+    application-crd-id: kubeflow-pipelines
+  name: cache-server
+  namespace: kubeflow
+spec:
+  ports:
+    - port: 443
+      targetPort: webhook-api
+  selector:
+    app: cache-server
+    application-crd-id: kubeflow-pipelines
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+    control-plane: controller-manager
+    controller-tools.k8s.io: "1.0"
+  name: controller-manager-service
+  namespace: kubeflow
+spec:
+  ports:
+    - port: 443
+  selector:
+    application-crd-id: kubeflow-pipelines
+    control-plane: controller-manager
+    controller-tools.k8s.io: "1.0"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: metadata-envoy
+    application-crd-id: kubeflow-pipelines
+  name: metadata-envoy-service
+  namespace: kubeflow
+spec:
+  ports:
+    - name: md-envoy
+      port: 9090
+      protocol: TCP
+  selector:
+    application-crd-id: kubeflow-pipelines
+    component: metadata-envoy
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: metadata
+    application-crd-id: kubeflow-pipelines
+  name: metadata-grpc-service
+  namespace: kubeflow
+spec:
+  ports:
+    - name: grpc-api
+      port: 8080
+      protocol: TCP
+  selector:
+    application-crd-id: kubeflow-pipelines
+    component: metadata-grpc-server
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: minio-service
+  namespace: kubeflow
+spec:
+  ports:
+    - name: http
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+  selector:
+    app: minio
+    application-crd-id: kubeflow-pipelines
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline
+  namespace: kubeflow
+spec:
+  ports:
+    - name: http
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+    - name: grpc
+      port: 8887
+      protocol: TCP
+      targetPort: 8887
+  selector:
+    app: ml-pipeline
+    application-crd-id: kubeflow-pipelines
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ml-pipeline-ui
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-ui
+  namespace: kubeflow
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: ml-pipeline-ui
+    application-crd-id: kubeflow-pipelines
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-visualizationserver
+  namespace: kubeflow
+spec:
+  ports:
+    - name: http
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+  selector:
+    app: ml-pipeline-visualizationserver
+    application-crd-id: kubeflow-pipelines
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: mysql
+  namespace: kubeflow
+spec:
+  ports:
+    - port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: mysql
+    application-crd-id: kubeflow-pipelines
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: workflow-controller
+    application-crd-id: kubeflow-pipelines
+  name: workflow-controller-metrics
+  namespace: kubeflow
+spec:
+  ports:
+    - name: metrics
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: workflow-controller
+    application-crd-id: kubeflow-pipelines

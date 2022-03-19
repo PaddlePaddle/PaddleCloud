@@ -1,0 +1,27 @@
+name: Dataset
+description: Dataset Operator
+inputs:
+  - {name: Name,                       type: String,                          description: 'The name of DataSet.'}
+  - {name: Namespace,                  type: String,      default: kubeflow,  description: 'The namespace which DataSet components run in'}
+  - {name: Action,                     type: String,      default: apply,     description: 'Action to execute on Dataset.'}
+  - {name: Partitions,                 type: Integer,     default: 1,         description: 'Partitions is the number of DataSet partitions, partition means cache node.'}
+  - {name: Source Uri,                 type: string,                          description: 'Source describes the information of data source uri and secret name.'}
+  - {name: Source Secret,              type: string,                          description: 'SecretRef is reference to the authentication secret for source storage and cache engine.'}
+
+implementation:
+  container:
+    image: xiaolao/paddlex-backend:latest
+    command: [python, dataset.py]
+    args:
+      - --name
+      - {inputValue: Name}
+      - --namespace
+      - {inputValue: Namespace}
+      - --action
+      - {inputValue: Action}
+      - --partitions
+      - {inputValue: Partitions}
+      - --source_uri
+      - {inputValue: Source Uri}
+      - --source_secret
+      - {inputValue: Source Secret}

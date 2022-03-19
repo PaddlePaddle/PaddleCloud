@@ -1,0 +1,609 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: kubeflow-pipelines-cache-deployer-clusterrole
+  name: kubeflow-pipelines-cache-deployer-clusterrole
+rules:
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests
+      - certificatesigningrequests/approval
+    verbs:
+      - create
+      - delete
+      - get
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+  - apiGroups:
+      - certificates.k8s.io
+    resourceNames:
+      - kubernetes.io/*
+    resources:
+      - signers
+    verbs:
+      - approve
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeflow-pipelines-cache-deployer-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeflow-pipelines-cache-deployer-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: kubeflow-pipelines-cache-deployer-sa
+    namespace: kubeflow
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: application-manager-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - '*'
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - update
+      - patch
+      - watch
+  - apiGroups:
+      - app.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: argo-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/exec
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - create
+      - delete
+      - get
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+      - workflows/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+      - create
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflowtemplates
+      - workflowtemplates/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - cronworkflows
+      - cronworkflows/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - create
+      - get
+      - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: cache-deployer
+    application-crd-id: kubeflow-pipelines
+  name: kubeflow-pipelines-cache-deployer-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+      - patch
+      - list
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: cache-server
+    application-crd-id: kubeflow-pipelines
+  name: kubeflow-pipelines-cache-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: kubeflow-pipelines-metadata-writer-role
+    application-crd-id: kubeflow-pipelines
+  name: kubeflow-pipelines-metadata-writer-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: ml-pipeline
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - delete
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - scheduledworkflows
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-persistenceagent-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - scheduledworkflows
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: ml-pipeline-scheduledworkflow-role
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-scheduledworkflow-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - scheduledworkflows
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: ml-pipeline-ui
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-ui
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - viewers
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - delete
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - get
+      - list
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: ml-pipeline-viewer-controller-role
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - '*'
+    resources:
+      - deployments
+      - services
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - viewers
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: pipeline-runner
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+      - persistentvolumeclaims
+    verbs:
+      - '*'
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+    verbs:
+      - create
+      - delete
+      - get
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/exec
+      - pods/log
+      - services
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+    resources:
+      - deployments
+      - replicasets
+    verbs:
+      - '*'
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - '*'
+  - apiGroups:
+      - machinelearning.seldon.io
+    resources:
+      - seldondeployments
+    verbs:
+      - '*'
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - paddlejobs
+      - samplesets
+      - samplejobs
+    verbs:
+      - '*'
+  - apiGroups:
+      - elasticserving.paddlepaddle.org
+    resources:
+      - paddleservices
+    verbs:
+      - '*'
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: proxy-agent-runner
+    application-crd-id: kubeflow-pipelines
+  name: proxy-agent-runner
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - '*'
