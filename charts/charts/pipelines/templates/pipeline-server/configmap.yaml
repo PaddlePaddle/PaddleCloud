@@ -1,0 +1,29 @@
+apiVersion: v1
+data:
+  ConMaxLifeTimeSec: "120"
+  appName: pipeline
+  appVersion: 1.7.0
+  autoUpdatePipelineDefaultVersion: "true"
+  bucketName: mlpipeline
+  cacheDb: cachedb
+  cacheImage: registry.baidubce.com/paddleflow-public/busybox
+  cacheNodeRestrictions: "false"
+  cronScheduleTimezone: UTC
+  dbHost: mysql
+  dbPort: "3306"
+  defaultPipelineRoot: ""
+  mlmdDb: metadb
+  pipelineDb: mlpipeline
+  warning: |
+    1. Do not use kubectl to edit this configmap, because some values are used
+    during kustomize build. Instead, change the configmap and apply the entire
+    kustomize manifests again.
+    2. After updating the configmap, some deployments may need to be restarted
+    until the changes take effect. A quick way to restart all deployments in a
+    namespace: `kubectl rollout restart deployment -n <your-namespace>`.
+kind: ConfigMap
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: pipeline-install-config
+  namespace: kubeflow

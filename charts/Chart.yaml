@@ -1,40 +1,53 @@
+annotations:
+  category: mlops
 apiVersion: v2
-name: paddlecloud
-description: A Helm chart to deploy paddle cloud ops in Kubernetes
-
-# A chart can be either an 'application' or a 'library' chart.
-#
-# Application charts are a collection of templates that can be packaged into versioned archives
-# to be deployed.
-#
-# Library charts provide useful utilities or functions for the chart developer. They're included as
-# a dependency of application charts to inject those utilities and functions into the rendering
-# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+appVersion: 0.4.0
 type: application
-
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.1.0
-
-# This is the version number of the application being deployed. This version number should be
-# incremented each time you make changes to the application. Versions are not expected to
-# follow Semantic Versioning. They should reflect the version the application is using.
-appVersion: 0.1.0
-
+description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
 home: https://github.com/PaddlePaddle/PaddleCloud
+icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
+keywords:
+  - paddle
+  - PaddlePaddle
+  - mlops
+  - paddlecloud
+name: paddlecloud
 sources:
   - https://github.com/PaddlePaddle/PaddleCloud
+version: 0.0.1
 
 dependencies:
+  - name: paddle-training
+    version: 0.1.0
+    repository: file://charts/training
+    condition: global.enableTraining
+    alias: training
   - name: juicefs-csi-driver
-    version: v0.8.1
+    version: 0.8.1
     repository: file://charts/juicefs
-    condition: global.enableSampleSet
+    condition: global.enableJuiceFS
     alias: juicefs
-
-keywords:
-  - category:Paddle
-  - Paddle
-  - namespace:paddle-system
-  - releaseName:paddlecloud
+  - name: redis
+    version: 16.5.4
+    repository: file://charts/redis
+    condition: global.enableRedis
+  - name: paddle-serving
+    version: 0.1.0
+    repository: file://charts/kourier
+    condition: global.enableKourier
+    alias: serving
+  - name: knative-serving
+    version: 0.1.0
+    repository: file://charts/knative
+    condition: global.enableKnative
+    alias: knative
+  - name: net-kourier
+    version: 0.1.0
+    repository: file://charts/kourier
+    condition: global.enableKourier
+    alias: kourier
+  - name: kubeflow-pipelines
+    version: 0.1.0
+    repository: file://charts/pipelines
+    condition: global.enablePipelines
+    alias: pipelines

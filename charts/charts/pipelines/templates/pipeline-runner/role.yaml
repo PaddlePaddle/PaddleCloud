@@ -1,0 +1,105 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    application-crd-id: kubeflow-pipelines
+  name: pipeline-runner
+  namespace: kubeflow
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+      - persistentvolumeclaims
+    verbs:
+      - '*'
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+    verbs:
+      - create
+      - delete
+      - get
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflows
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/exec
+      - pods/log
+      - services
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+    resources:
+      - deployments
+      - replicasets
+    verbs:
+      - '*'
+  - apiGroups:
+      - kubeflow.org
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - '*'
+  - apiGroups:
+      - machinelearning.seldon.io
+    resources:
+      - seldondeployments
+    verbs:
+      - '*'
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - paddlejobs
+      - samplesets
+      - samplejobs
+    verbs:
+      - '*'
+  - apiGroups:
+      - elasticserving.paddlepaddle.org
+    resources:
+      - paddleservices
+    verbs:
+      - '*'
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch

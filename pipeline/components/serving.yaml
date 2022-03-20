@@ -12,7 +12,7 @@ inputs:
 
 implementation:
   container:
-    image: xiaolao/paddlex-backend:latest
+    image: registry.baidubce.com/paddleflow-public/paddlecloud/pipeline:latest
     command: [python, serving.py]
     args:
       - --name

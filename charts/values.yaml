@@ -2,23 +2,19 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# Default values for paddle-operator.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+##
 
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.storageClass Global StorageClass for Persistent Volume(s)
 global:
-  enablePaddleJob: false
-  enableSampleSet: true
+  imageRegistry: ""
+  imagePullSecrets: [ ]
+  storageClass: ""
+  enableTraining: true
   enableServing: false
-
-paddlejob:
-  image: xiaolao/paddlejob
-
-sampleset:
-  image: xiaolao/sampleset
-
-serving:
-  image: xiaolao/serving
-
-juicefs:
-  kubeletDir: /var/snap/microk8s/common/var/lib/kubelet/
+  enablePipelines: false

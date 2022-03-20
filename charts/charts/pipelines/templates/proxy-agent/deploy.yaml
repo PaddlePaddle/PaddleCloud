@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: proxy-agent
+    application-crd-id: kubeflow-pipelines
+  name: proxy-agent
+  namespace: kubeflow
+spec:
+  selector:
+    matchLabels:
+      app: proxy-agent
+      application-crd-id: kubeflow-pipelines
+  template:
+    metadata:
+      labels:
+        app: proxy-agent
+        application-crd-id: kubeflow-pipelines
+    spec:
+      containers:
+        - image: registry.baidubce.com/paddleflow-public/inverse-proxy-agent:1.7.0
+          imagePullPolicy: IfNotPresent
+          name: proxy-agent
+      hostNetwork: true
+      serviceAccountName: proxy-agent-runner

@@ -1,0 +1,16 @@
+annotations:
+  category: ingress
+apiVersion: v2
+appVersion: 1.2.0
+type: application
+description: Kourier is an Ingress for Knative Serving. Kourier is a lightweight alternative for the Istio ingress as its deployment consists only of an Envoy proxy and a control plane for it.
+home: https://github.com/knative-sandbox/net-kourier
+icon: https://knative.dev/docs/images/logo/rgb/knative-logo-rgb.png
+keywords:
+  - kourier
+  - knative
+  - ingress
+name: net-kourier
+sources:
+  - https://github.com/knative-sandbox/net-kourier
+version: 0.1.0

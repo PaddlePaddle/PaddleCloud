@@ -130,14 +130,6 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - ""
-  resources:
-  - statefulsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -152,18 +144,6 @@ rules:
   - apps
   resources:
   - statefulsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
   verbs:
   - create
   - delete

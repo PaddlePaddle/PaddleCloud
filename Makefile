@@ -1,21 +1,14 @@
 # Image URL to use all building/pushing image targets
-#PADDLEJOB_IMG ?= registry.baidubce.com/paddle-operator/paddlejob
-#SAMPLESET_IMG ?= registry.baidubce.com/paddle-operator/sampleset
-#RUNTIME_IMG ?= registry.baidubce.com/paddle-operator/runtime
-#SERVING_IMG ?= registry.baidubce.com/paddle-operator/serving
-
-PADDLEJOB_IMG ?= xiaolao/paddlejob
-SAMPLESET_IMG ?= xiaolao/sampleset
-RUNTIME_IMG ?= xiaolao/runtime
-SERVING_IMG ?= xiaolao/serving
+PADDLEJOB_IMG ?= registry.baidubce.com/paddleflow-public/paddlecloud/paddlejob
+SAMPLESET_IMG ?= registry.baidubce.com/paddleflow-public/paddlecloud/sampleset
+RUNTIME_IMG ?= registry.baidubce.com/paddleflow-public/paddlecloud/runtime
+SERVING_IMG ?= registry.baidubce.com/paddleflow-public/paddlecloud/serving
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
 
-# Set version and get git tag
-VERSION=v0.1
-GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
-GIT_VERSION=${VERSION}-${GIT_SHA}
+# Set version
+VERSION=0.4.0
 
 # Run go fmt against code
 fmt:
@@ -45,35 +38,35 @@ docker-build-all: docker-build-paddlejob docker-build-sampleset docker-build-run
 
 # Build paddlejob controller image
 docker-build-paddlejob: test
-	docker build . -f docker/Dockerfile.paddlejob -t ${PADDLEJOB_IMG}:${GIT_VERSION}
+	docker build . -f docker/Dockerfile.paddlejob -t ${PADDLEJOB_IMG}:${VERSION}
 
 # Build sampleset controller image
 docker-build-sampleset: test
-	docker build . --build-arg RUNTIME_IMG=${RUNTIME_IMG} --build-arg GIT_VERSION=${GIT_VERSION} \
-		-f docker/Dockerfile.sampleset -t ${SAMPLESET_IMG}:${GIT_VERSION}
+	docker build . --build-arg RUNTIME_IMG=${RUNTIME_IMG} --build-arg VERSION=${VERSION} \
+		-f docker/Dockerfile.sampleset -t ${SAMPLESET_IMG}:${VERSION}
 
 docker-build-runtime: test
-	docker build . -f docker/Dockerfile.runtime -t ${RUNTIME_IMG}:${GIT_VERSION}
+	docker build . -f docker/Dockerfile.runtime -t ${RUNTIME_IMG}:${VERSION}
 
 docker-build-serving: test
-	docker build . -f docker/Dockerfile.serving -t ${SERVING_IMG}:${GIT_VERSION}
+	docker build . -f docker/Dockerfile.serving -t ${SERVING_IMG}:${VERSION}
 
 # Push all docker images
 docker-push-all: docker-push-paddlejob docker-push-sampleset docker-push-runtime docker-push-serving
 
 # Push the docker image
 docker-push-paddlejob:
-	docker push ${PADDLEJOB_IMG}:${GIT_VERSION}
+	docker push ${PADDLEJOB_IMG}:${VERSION}
 
 # Push the sampleset docker image
 docker-push-sampleset:
-	docker push ${SAMPLESET_IMG}:${GIT_VERSION}
+	docker push ${SAMPLESET_IMG}:${VERSION}
 
 docker-push-runtime:
-	docker push ${RUNTIME_IMG}:${GIT_VERSION}
+	docker push ${RUNTIME_IMG}:${VERSION}
 
 docker-push-serving:
-	docker push ${SERVING_IMG}:${GIT_VERSION}
+	docker push ${SERVING_IMG}:${VERSION}
 
 update-api-doc:
 	bash docs/api-doc-gen/gen_api_doc.sh
