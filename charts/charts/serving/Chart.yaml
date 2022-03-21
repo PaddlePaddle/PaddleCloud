@@ -3,7 +3,7 @@ annotations:
 apiVersion: v2
 appVersion: 0.4.0
 type: application
-description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
+description: The serving operator for PaddlePaddle to
 home: https://github.com/PaddlePaddle/PaddleCloud
 icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
 keywords:

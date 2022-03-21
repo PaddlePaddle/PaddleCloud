@@ -20,7 +20,7 @@ dependencies:
   - name: paddle-training
     version: 0.1.0
     repository: file://charts/training
-    condition: .Values.training.enabled
+    condition: paddle-training.enabled
     alias: training
   - name: juicefs-csi-driver
     version: 0.8.1
@@ -33,8 +33,8 @@ dependencies:
     condition: redis.enabled
   - name: paddle-serving
     version: 0.1.0
-    repository: file://charts/kourier
-    condition: serving.enabled
+    repository: file://charts/serving
+    condition: paddle-serving.enabled
     alias: serving
   - name: knative-serving
     version: 0.1.0
@@ -51,3 +51,4 @@ dependencies:
     repository: file://charts/pipelines
     condition: pipelines.enabled
     alias: pipelines
+  - name:
