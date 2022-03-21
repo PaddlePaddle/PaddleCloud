@@ -1,10 +1,10 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: {{ include "paddlecloud.fullname" . }}-test-paddlejob
+  name: {{ include "common.names.fullname" . }}-test-paddlejob
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    {{- include "paddlecloud.labels" . | nindent 4 }}
+    {{- include "common.labels.standard" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
 spec:

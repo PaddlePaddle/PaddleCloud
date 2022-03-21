@@ -20,34 +20,34 @@ dependencies:
   - name: paddle-training
     version: 0.1.0
     repository: file://charts/training
-    condition: global.enableTraining
+    condition: .Values.training.enabled
     alias: training
   - name: juicefs-csi-driver
     version: 0.8.1
     repository: file://charts/juicefs
-    condition: global.enableJuiceFS
+    condition: juicefs.enabled
     alias: juicefs
   - name: redis
     version: 16.5.4
     repository: file://charts/redis
-    condition: global.enableRedis
+    condition: redis.enabled
   - name: paddle-serving
     version: 0.1.0
     repository: file://charts/kourier
-    condition: global.enableKourier
+    condition: serving.enabled
     alias: serving
   - name: knative-serving
     version: 0.1.0
     repository: file://charts/knative
-    condition: global.enableKnative
+    condition: knative.enabled
     alias: knative
   - name: net-kourier
     version: 0.1.0
     repository: file://charts/kourier
-    condition: global.enableKourier
+    condition: kourier.enabled
     alias: kourier
   - name: kubeflow-pipelines
     version: 0.1.0
     repository: file://charts/pipelines
-    condition: global.enablePipelines
+    condition: pipelines.enabled
     alias: pipelines

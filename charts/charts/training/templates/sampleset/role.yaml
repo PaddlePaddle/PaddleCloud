@@ -1,0 +1,134 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sampleset-role
+  namespace: {{ .Release.Namespace | quote }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - paddlejobs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplejobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplejobs/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplejobs/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplesets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplesets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplesets/status
+    verbs:
+      - get
+      - patch
+      - update

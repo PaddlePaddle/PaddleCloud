@@ -15,6 +15,26 @@ global:
   imageRegistry: ""
   imagePullSecrets: [ ]
   storageClass: ""
-  enableTraining: true
-  enableServing: false
-  enablePipelines: false
+  redis:
+    password: ""
+
+training:
+  enabled: false
+
+juicefs:
+  enabled: false
+
+redis:
+  enabled: false
+
+serving:
+  enabled: false
+
+knative:
+  enabled: false
+
+kourier:
+  enabled: false
+
+pipelines:
+  enabled: false

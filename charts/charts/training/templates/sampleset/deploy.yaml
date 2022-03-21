@@ -2,18 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels: {{- include "common.labels.standard" . | nindent 4 }}
-    control-plane: paddlejob-manager
-  name: paddlejob-manager
+    control-plane: samplejob-manager
+  name: samplejob-manager
   namespace: {{ .Release.Namespace | quote }}
 spec:
   replicas: 1
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
-      control-plane: paddlejob-manager
+      control-plane: samplejob-manager
   template:
     metadata:
       labels: {{- include "common.labels.standard" . | nindent 8 }}
-        control-plane: paddlejob-manager
+        control-plane: samplejob-manager
     spec:
       containers:
         - args:
@@ -21,8 +21,8 @@ spec:
             - --namespace={{ .Release.Namespace | quote }}
           command:
             - /manager
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.paddlejob.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.paddlejob.image.pullPolicy | quote }}
+          image: {{ include "common.images.image" ( dict "imageRoot" .Values.sampleset.image "global" .Values.global) }}
+          imagePullPolicy: Always
           livenessProbe:
             httpGet:
               path: /healthz
@@ -47,5 +47,5 @@ spec:
             allowPrivilegeEscalation: false
       securityContext:
         runAsUser: 65532
-      serviceAccountName: paddlejob-sa
+      serviceAccountName: sampleset-sa
       terminationGracePeriodSeconds: 10
