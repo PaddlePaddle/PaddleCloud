@@ -1,0 +1,7 @@
+{{- if .Values.sampleset.enabled -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sampleset-sa
+  namespace: {{ .Release.Namespace | quote }}
+{{- end -}}

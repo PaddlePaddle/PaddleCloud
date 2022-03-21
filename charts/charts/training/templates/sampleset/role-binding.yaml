@@ -1,0 +1,15 @@
+{{- if .Values.sampleset.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sampleset-rolebinding
+  namespace: {{ .Release.Namespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sampleset-role
+subjects:
+  - kind: ServiceAccount
+    name: sampleset-sa
+    namespace: {{ .Release.Namespace | quote }}
+{{- end -}}

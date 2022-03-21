@@ -10,7 +10,7 @@ inputs:
 
 implementation:
   container:
-    image: xiaolao/paddlex-backend:latest
+    image: registry.baidubce.com/paddleflow-public/paddlecloud/pipeline:latest
     command: [python, dataset.py]
     args:
       - --name

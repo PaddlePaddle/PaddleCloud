@@ -1,0 +1,7 @@
+{{- if .Values.global.enableServing }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paddle-serving-sa
+  namespace: {{ .Release.Namespace | quote }}
+{{- end }}
