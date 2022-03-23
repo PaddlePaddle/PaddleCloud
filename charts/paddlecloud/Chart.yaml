@@ -26,6 +26,7 @@ dependencies:
     version: 0.8.1
     repository: https://juicedata.github.io/juicefs-csi-driver/
     condition: juicefs.enabled
+    alias: juicefs
   - name: redis
     version: 16.5.4
     repository: https://charts.bitnami.com/bitnami
@@ -45,3 +46,8 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
     condition: jupyterhub.enabled
     alias: jupyterhub
+  - name: hostpath-provisioner
+    version: 0.2.13
+    repository: https://charts.rimusz.net
+    condition: hostpath.enabled
+    alias: hostpath

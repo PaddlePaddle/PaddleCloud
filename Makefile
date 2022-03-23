@@ -8,7 +8,7 @@ SERVING_IMG ?= registry.baidubce.com/paddleflow-public/paddlecloud/serving
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,trivialVersions=true,preserveUnknownFields=false"
 
 # Set version
-VERSION=0.4.0
+VERSION=v0.4.0
 
 # Run go fmt against code
 fmt:

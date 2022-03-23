@@ -16,7 +16,7 @@ global:
   ##   - myRegistryKeySecretName
   ##
   imagePullSecrets: []
-  storageClass: ""
+  storageClass: "microk8s-hostpath"
   redis:
     password: "paddlepaddle"
 
@@ -384,16 +384,69 @@ serving:
   tolerations: []
 
 
+## @section parameters for Host Path Provisioner
+## It is particularly handy to use on single-node Kubernetes cluster as .
+## ref: https://artifacthub.io/packages/helm/rimusz/hostpath-provisioner
+##
+hostpath:
+  ## @param hostpath.enabled Enabled hostpath provisioner for PaddleCloud
+  ## This is used
+  enabled: true
+  ## For creating the StorageClass automatically:
+  storageClass:
+    create: true
+    ## Set StorageClass as the default StorageClass
+    ## Ignored if storageClass.create is false
+    defaultClass: true
+    ## Set a StorageClass name
+    name: microk8s-hostpath
+  ## Set the local HostPath to be used on the node
+  nodeHostPath: /mnt/hostpath
+  ## Node selector
+  nodeSelector: {}
+  ## Affinity
+  affinity: {}
+  ## Tolerations
+  tolerations: []
+
+
 ## @section parameters for JuiceFS CSI Driver
 ## ref: https://github.com/juicedata/juicefs-csi-driver
 ##
-juicefs-csi-driver:
+juicefs:
   ## @param juicefs.enabled Enabled juicefs csi driver
   ##
   enabled: false
-  namespace: kube-system
   # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
-  kubeletDir: /var/lib/kubelet/test
+  kubeletDir: /var/lib/kubelet
+
+  storageClasses:
+    # StorageClass Name. It is important.
+    - name: juicefs-sc
+      # -- Default is true will create a new StorageClass. It will create Secret and StorageClass used by CSI driver
+      enabled: false
+      # -- Either Delete or Retain.
+      reclaimPolicy: Delete
+
+      backend:
+        # -- The JuiceFS file system name.
+        name: ""
+        # -- Connection URL for metadata engine (e.g. Redis). Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/databases_for_metadata.md) for more information.
+        metaurl: ""
+        # -- Object storage type, such as `s3`, `gs`, `oss`. Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/how_to_setup_object_storage.md) for the full supported list.
+        storage: ""
+        # -- Access key for object storage
+        accessKey: ""
+        # -- Secret key for object storage
+        secretKey: ""
+        # -- Bucket URL. Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/how_to_setup_object_storage.md) to learn how to setup different object storage.
+        bucket: ""
+        # -- Env for mount pod and format, such as `a: b`
+        envs: ""
+        # -- Config for mount pod. Read [this document](https://github.com/juicedata/juicefs-csi-driver/blob/master/docs/en/examples/config-and-env.md) for more usage.
+        configs: ""
+        # -- Config for trash days
+        trashDays: ""
 
 
 ## @section parameters for Redis which used as metadata storage by JuiceFS CSI Driver
@@ -430,6 +483,99 @@ redis:
     ## @param auth.usePasswordFiles Mount credentials as files instead of using an environment variable
     ##
     usePasswordFiles: false
+
+  master:
+    ## Redis&trade; master service parameters
+    ##
+    service:
+      ## @param master.service.type Redis&trade; master service type
+      ##
+      type: ClusterIP
+      ## @param master.service.ports.redis Redis&trade; master service port
+      ##
+      ports:
+        redis: 6379
+      ## @param master.service.nodePorts.redis Node port for Redis&trade; master
+      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+      ## NOTE: choose port between <30000-32767>
+      ##
+      nodePorts:
+        redis: ""
+      ## @param master.service.externalTrafficPolicy Redis&trade; master service external traffic policy
+      ## ref: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+      ##
+      externalTrafficPolicy: Cluster
+      ## @param master.service.extraPorts Extra ports to expose (normally used with the `sidecar` value)
+      ##
+      extraPorts: []
+      ## @param master.service.clusterIP Redis&trade; master service Cluster IP
+      ##
+      clusterIP: ""
+      ## @param master.service.loadBalancerIP Redis&trade; master service Load Balancer IP
+      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+      ##
+      loadBalancerIP: ""
+      ## @param master.service.loadBalancerSourceRanges Redis&trade; master service Load Balancer sources
+      ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+      ## e.g.
+      ## loadBalancerSourceRanges:
+      ##   - 10.10.10.0/24
+      ##
+      loadBalancerSourceRanges: []
+      ## @param master.service.annotations Additional custom annotations for Redis&trade; master service
+      ##
+      annotations: {}
+    ## Persistence parameters
+    ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+    ##
+    persistence:
+      ## @param master.persistence.enabled Enable persistence on Redis&trade; master nodes using Persistent Volume Claims
+      ##
+      enabled: false
+      ## @param master.persistence.medium Provide a medium for `emptyDir` volumes.
+      ##
+      medium: ""
+      ## @param master.persistence.sizeLimit Set this to enable a size limit for `emptyDir` volumes.
+      ##
+      sizeLimit: ""
+      ## @param master.persistence.path The path the volume will be mounted at on Redis&trade; master containers
+      ## NOTE: Useful when using different Redis&trade; images
+      ##
+      path: /data
+      ## @param master.persistence.subPath The subdirectory of the volume to mount on Redis&trade; master containers
+      ## NOTE: Useful in dev environments
+      ##
+      subPath: ""
+      ## @param master.persistence.storageClass Persistent Volume storage class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
+      ##
+      storageClass: ""
+      ## @param master.persistence.accessModes Persistent Volume access modes
+      ##
+      accessModes:
+        - ReadWriteOnce
+      ## @param master.persistence.size Persistent Volume size
+      ##
+      size: 2Gi
+      ## @param master.persistence.annotations Additional custom annotations for the PVC
+      ##
+      annotations: {}
+      ## @param master.persistence.selector Additional labels to match for the PVC
+      ## e.g:
+      ## selector:
+      ##   matchLabels:
+      ##     app: my-app
+      ##
+      selector: {}
+      ## @param master.persistence.dataSource Custom PVC data source
+      ##
+      dataSource: {}
+      ## @param master.persistence.existingClaim Use a existing PVC which must be created manually before bound
+      ## NOTE: requires master.persistence.enabled: true
+      ##
+      existingClaim: ""
 
 
 ## @section parameters for Knative Serving used by paddle serving operator
