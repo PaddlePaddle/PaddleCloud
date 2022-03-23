@@ -1,0 +1,47 @@
+annotations:
+  category: mlops
+apiVersion: v2
+appVersion: 0.4.0
+type: application
+description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
+home: https://github.com/PaddlePaddle/PaddleCloud
+icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
+keywords:
+  - paddle
+  - PaddlePaddle
+  - mlops
+  - paddlecloud
+name: paddlecloud
+sources:
+  - https://github.com/PaddlePaddle/PaddleCloud
+version: 0.1.0
+
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common
+    version: 1.x.x
+  - name: juicefs-csi-driver
+    version: 0.8.1
+    repository: https://juicedata.github.io/juicefs-csi-driver/
+    condition: juicefs.enabled
+  - name: redis
+    version: 16.5.4
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: knative-serving
+    version: 0.1.24
+    repository: https://helm-charts.wikimedia.org/stable/
+    condition: knative.enabled
+    alias: knative
+  - name: kubeflow-pipelines
+    version: 1.6.2
+    repository: https://getindata.github.io/helm-charts/
+    condition: pipelines.enabled
+    alias: pipelines
+  - name: jupyterhub
+    version: 1.1.2
+    repository: https://charts.bitnami.com/bitnami
+    condition: jupyterhub.enabled
+    alias: jupyterhub

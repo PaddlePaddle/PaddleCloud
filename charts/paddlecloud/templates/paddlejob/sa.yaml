@@ -1,0 +1,7 @@
+{{- if .Values.paddlejob.enabled -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paddlejob-sa
+  namespace: {{ .Release.Namespace | quote }}
+{{- end -}}

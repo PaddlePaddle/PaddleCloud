@@ -1,0 +1,146 @@
+{{- if .Values.serving.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paddle-serving-role
+  namespace: {{ .Release.Namespace | quote }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+    verbs:
+      - create
+      - get
+      - list
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    verbs:
+      - create
+      - get
+      - list
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - revisions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - revisions/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - services/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - serving.paddlepaddle.org
+    resources:
+      - paddleservices
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - serving.paddlepaddle.org
+    resources:
+      - paddleservices/status
+    verbs:
+      - get
+      - patch
+      - update
+{{- end -}}

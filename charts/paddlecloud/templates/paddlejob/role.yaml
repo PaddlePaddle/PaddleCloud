@@ -1,0 +1,172 @@
+{{- if .Values.paddlejob.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paddlejob-role
+  namespace: {{ .Release.Namespace | quote }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - '*'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - '*'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - get
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - paddlejobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - paddlejobs/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - paddlejobs/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplesets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplesets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - batch.paddlepaddle.org
+    resources:
+      - samplesets/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - scheduling.volcano.sh
+    resources:
+      - podgroups
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - scheduling.volcano.sh
+    resources:
+      - podgroups/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+      - coordination.k8s.io
+    resources:
+      - configmaps
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+{{- end -}}
