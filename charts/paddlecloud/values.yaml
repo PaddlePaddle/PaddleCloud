@@ -1,0 +1,457 @@
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+##
+
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.storageClass Global StorageClass for Persistent Volume(s)
+## @param global.redis.password Global Redis&trade; password (overrides `auth.password`)
+##
+global:
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+  storageClass: ""
+  redis:
+    password: "paddlepaddle"
+
+
+## @section Common parameters
+##
+
+## @param kubeVersion Override Kubernetes version
+##
+kubeVersion: ""
+## @param nameOverride String to partially override common.names.fullname
+##
+nameOverride: ""
+## @param fullnameOverride String to fully override common.names.fullname
+##
+fullnameOverride: ""
+## @param commonLabels Labels to add to all deployed objects
+##
+commonLabels: {}
+## @param commonAnnotations Annotations to add to all deployed objects
+##
+commonAnnotations: {}
+## @param clusterDomain Kubernetes cluster domain name
+##
+clusterDomain: cluster.local
+## @param extraDeploy Array of extra objects to deploy with the release
+##
+extraDeploy: []
+
+## Enable diagnostic mode in the deployment
+##
+diagnosticMode:
+  ## @param diagnosticMode.enabled Enable diagnostic mode (all probes will be disabled and the command will be overridden)
+  ##
+  enabled: false
+  ## @param diagnosticMode.command Command to override all containers in the deployment
+  ##
+  command:
+    - sleep
+  ## @param diagnosticMode.args Args to override all containers in the deployment
+  ##
+  args:
+    - infinity
+
+
+## @section PaddleJob Parameters
+##
+paddlejob:
+  ## @param paddlejob.enabled Enabled training operator for PaddlePaddle
+  ##
+  enabled: true
+  ## PaddleJob Controller Manager image version
+  ## ref:
+  ## @param paddlejob.image.registry; PaddleJob image registry
+  ## @param paddlejob.image.repository; PaddleJob image repository
+  ## @param paddlejob.image.tag; PaddleJob image tag (immutable tags are recommended)
+  ## @param paddlejob.image.pullPolicy; PaddleJob image pull policy
+  ## @param paddlejob.image.pullSecrets; PaddleJob image pull secrets
+  ## @param paddlejob.image.debug Enable image debug mode
+  ##
+  image:
+    registry: registry.baidubce.com
+    repository: paddleflow-public/paddlecloud/paddlejob
+    tag: v0.4.0
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+    ## Enable debug mode
+    ##
+    debug: false
+  ## @param paddlejob.command Override default container command (useful when using custom images)
+  ##
+  command: []
+  ## @param paddlejob.args Override default container args (useful when using custom images)
+  ##
+  args: []
+  ## paddle training operator resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the paddle training operators
+  ## @param resources.requests The requested resources for the paddle training operators
+  ##
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    limits: {}
+    #   cpu: 250m
+    #   memory: 256Mi
+    requests: {}
+    #   cpu: 250m
+    #   memory: 256Mi
+  ## @param podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAffinityPreset: ""
+  ## @param podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAntiAffinityPreset: soft
+  ## Node affinity preset
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  ##
+  nodeAffinityPreset:
+    ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+    ##
+    type: ""
+    ## @param nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set
+    ##
+    key: ""
+    ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
+  ## @param affinity Affinity for paddle training operator; pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: `podAffinityPreset`, `.podAntiAffinityPreset`, and `nodeAffinityPreset` will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for paddle training operator
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for paddle training operator
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+
+
+## @section SampleSet Parameters
+##
+sampleset:
+  ## @param sampleset.enabled Enabled distributed sample data set cache for paddle training operator
+  ##
+  enabled: false
+  ## SampleSet Controller Manager image version
+  ## ref:
+  ## @param sampleset.image.registry; SampleSet image registry
+  ## @param sampleset.image.repository; SampleSet image repository
+  ## @param sampleset.image.tag; SampleSet image tag (immutable tags are recommended)
+  ## @param sampleset.image.pullPolicy; SampleSet image pull policy
+  ## @param sampleset.image.pullSecrets; SampleSet image pull secrets
+  ## @param sampleset.image.debug Enable image debug mode
+  ##
+  image:
+    registry: registry.baidubce.com
+    repository: paddleflow-public/paddlecloud/sampleset
+    tag: v0.4.0
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+    ## Enable debug mode
+    ##
+    debug: false
+  ## @param sampleset.command Override default container command (useful when using custom images)
+  ##
+  command: []
+  ## @param sampleset.args Override default container args (useful when using custom images)
+  ##
+  args: []
+  ## paddle training operator resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the paddle training operators
+  ## @param resources.requests The requested resources for the paddle training operators
+  ##
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    limits: {}
+    #   cpu: 250m
+    #   memory: 256Mi
+    requests: {}
+    #   cpu: 250m
+    #   memory: 256Mi
+  ## @param podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAffinityPreset: ""
+  ## @param podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAntiAffinityPreset: soft
+  ## Node affinity preset
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  ##
+  nodeAffinityPreset:
+    ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+    ##
+    type: ""
+    ## @param nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set
+    ##
+    key: ""
+    ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
+  ## @param affinity Affinity for paddle training operator; pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: `podAffinityPreset`, `.podAntiAffinityPreset`, and `nodeAffinityPreset` will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for paddle training operator
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for paddle training operator
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+
+
+## @section Serving Parameters
+##
+serving:
+  ## @param serving.enabled Enabled serving operator for PaddlePaddle
+  ##
+  enabled: false
+  ## Serving Controller Manager image version
+  ## ref:
+  ## @param serving.image.registry; Serving image registry
+  ## @param serving.image.repository; Serving image repository
+  ## @param serving.image.tag; Serving image tag (immutable tags are recommended)
+  ## @param serving.image.pullPolicy; Serving image pull policy
+  ## @param serving.image.pullSecrets; Serving image pull secrets
+  ## @param serving.image.debug Enable image debug mode
+  ##
+  image:
+    registry: registry.baidubce.com
+    repository: paddleflow-public/paddlecloud/serving
+    tag: v0.4.0
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+    ## Enable debug mode
+    ##
+    debug: false
+
+  ## Serving Controller Manager image version
+  ## ref:
+  ## @param serving.proxyImage.registry; Serving image registry
+  ## @param serving.proxyImage.repository; Serving image repository
+  ## @param serving.proxyImage.tag; Serving image tag (immutable tags are recommended)
+  ## @param serving.proxyImage.pullPolicy; Serving image pull policy
+  ## @param serving.proxyImage.pullSecrets; Serving image pull secrets
+  ## @param serving.proxyImage.debug Enable image debug mode
+  ##
+  proxyImage:
+    registry: registry.baidubce.com
+    repository: paddleflow-public/kube-rbac-proxy
+    tag: v0.5.0
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+    ## Enable debug mode
+    ##
+    debug: false
+
+  ## @param serving.command Override default container command (useful when using custom images)
+  ##
+  command: []
+  ## @param serving.args Override default container args (useful when using custom images)
+  ##
+  args: []
+  ## paddle serving operator resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the paddle training operators
+  ## @param resources.requests The requested resources for the paddle training operators
+  ##
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    limits: {}
+    #   cpu: 250m
+    #   memory: 256Mi
+    requests: {}
+    #   cpu: 250m
+    #   memory: 256Mi
+  ## @param serving.podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAffinityPreset: ""
+  ## @param serving.podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAntiAffinityPreset: soft
+  ## Node affinity preset
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  ##
+  nodeAffinityPreset:
+    ## @param serving.nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+    ##
+    type: ""
+    ## @param serving.nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set
+    ##
+    key: ""
+    ## @param serving.nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
+  ## @param serving.affinity Affinity for paddle training operator; pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: `podAffinityPreset`, `.podAntiAffinityPreset`, and `nodeAffinityPreset` will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param serving.nodeSelector Node labels for paddle training operator
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param serving.tolerations Tolerations for paddle serving operator
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+
+
+## @section parameters for JuiceFS CSI Driver
+## ref: https://github.com/juicedata/juicefs-csi-driver
+##
+juicefs-csi-driver:
+  ## @param juicefs.enabled Enabled juicefs csi driver
+  ##
+  enabled: false
+  namespace: kube-system
+  # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
+  kubeletDir: /var/lib/kubelet/test
+
+
+## @section parameters for Redis which used as metadata storage by JuiceFS CSI Driver
+## ref: https://github.com/bitnami/charts/tree/master/bitnami/redis
+##
+redis:
+  ## @param redis.enabled Enabled Redis as metadata storage for JuiceFS
+  ##
+  enabled: false
+  ## @param architecture Redis&trade; architecture. Allowed values: `standalone` or `replication`
+  ##
+  architecture: standalone
+  ## ref: https://github.com/bitnami/bitnami-docker-redis#setting-the-server-password-on-first-run
+  ##
+  auth:
+    ## @param auth.enabled Enable password authentication
+    ##
+    enabled: true
+    ## @param auth.sentinel Enable password authentication on sentinels too
+    ##
+    sentinel: true
+    ## @param auth.password Redis&trade; password
+    ## Defaults to a random 10-character alphanumeric string if not set
+    ##
+    password: ""
+    ## @param auth.existingSecret The name of an existing secret with Redis&trade; credentials
+    ## NOTE: When it's set, the previous `auth.password` parameter is ignored
+    ##
+    existingSecret: ""
+    ## @param auth.existingSecretPasswordKey Password key to be retrieved from existing secret
+    ## NOTE: ignored unless `auth.existingSecret` parameter is set
+    ##
+    existingSecretPasswordKey: ""
+    ## @param auth.usePasswordFiles Mount credentials as files instead of using an environment variable
+    ##
+    usePasswordFiles: false
+
+
+## @section parameters for Knative Serving used by paddle serving operator
+##
+knative:
+  enabled: false
+
+
+### @section parameters for net-kourier used as network ingress by Knative
+###
+#kourier:
+#  enabled: false
+
+
+## @section parameters for kubeflow pipelines
+##
+pipelines:
+  enabled: false
+
+
+## @section parameters for JupyterHub
+## ref:
+##
+jupyterhub:
+  enabled: false

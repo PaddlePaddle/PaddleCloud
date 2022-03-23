@@ -1,0 +1,75 @@
+{{- if .Values.paddlejob.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    control-plane: {{ printf "%s-paddlejob" (include "common.names.fullname" .) }}
+  name: {{ printf "%s-paddlejob" (include "common.names.fullname" .) }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      control-plane: {{ printf "%s-paddlejob" (include "common.names.fullname" .) }}
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        control-plane: {{ printf "%s-paddlejob" (include "common.names.fullname" .) }}
+    spec:
+      {{- if .Values.paddlejob.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.paddlejob.affinity "context" $) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.paddlejob.podAffinityPreset "component" "paddlejob" "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.paddlejob.podAntiAffinityPreset "component" "paddlejob" "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.paddlejob.nodeAffinityPreset.type "key" .Values.paddlejob.nodeAffinityPreset.key "values" .Values.paddlejob.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.paddlejob.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.paddlejob.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.paddlejob.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.paddlejob.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: manager
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.paddlejob.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.paddlejob.image.pullPolicy | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          {{- if .Values.diagnosticMode.enabled }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 12 }}
+          {{- else if .Values.paddlejob.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.paddlejob.command "context" $) | nindent 12 }}
+          {{- else }}
+          command:
+            - /manager
+          {{- end }}
+          {{- if .Values.diagnosticMode.enabled }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 12 }}
+          {{- else if .Values.paddlejob.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.paddlejob.args "context" $) | nindent 12 }}
+          {{- else }}
+          args:
+            - --leader-elect
+            - --namespace={{ .Release.Namespace | quote }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- if .Values.paddlejob.resources }}
+          resources: {{- toYaml .Values.paddlejob.resources | nindent 12 }}
+          {{- end }}
+      securityContext:
+        runAsUser: 65532
+      serviceAccountName: paddlejob-sa
+      terminationGracePeriodSeconds: 10
+{{- end -}}

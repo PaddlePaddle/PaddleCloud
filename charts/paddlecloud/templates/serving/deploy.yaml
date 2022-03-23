@@ -1,0 +1,72 @@
+{{- if .Values.serving.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    control-plane: {{ printf "%s-serving" (include "common.names.fullname" .) }}
+  name: {{ printf "%s-serving" (include "common.names.fullname" .) }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      control-plane: {{ printf "%s-serving" (include "common.names.fullname" .) }}
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        control-plane: {{ printf "%s-serving" (include "common.names.fullname" .) }}
+    spec:
+      {{- if .Values.serving.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.serving.affinity "context" $) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.serving.podAffinityPreset "component" "serving" "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.serving.podAntiAffinityPreset "component" "serving" "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.serving.nodeAffinityPreset.type "key" .Values.serving.nodeAffinityPreset.key "values" .Values.serving.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.serving.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.serving.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.serving.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.serving.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: kube-rbac-proxy
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.serving.proxyImage "global" .Values.global) }}
+            imagePullPolicy: {{ .Values.serving.proxyImage.pullPolicy | quote }}
+          args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=10
+          ports:
+            - containerPort: 8443
+              name: https
+        - name: manager
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.serving.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.serving.image.pullPolicy | quote }}
+          {{- if .Values.diagnosticMode.enabled }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 12 }}
+          {{- else if .Values.serving.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.serving.command "context" $) | nindent 12 }}
+          {{- else }}
+          command:
+            - /manager
+          {{- end }}
+          {{- if .Values.diagnosticMode.enabled }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 12 }}
+          {{- else if .Values.serving.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.serving.args "context" $) | nindent 12 }}
+          {{- else }}
+          args:
+            - --metrics-addr=127.0.0.1:8080
+            - --enable-leader-election
+          {{- end }}
+          {{- if .Values.paddlejob.resources }}
+          resources: {{- toYaml .Values.paddlejob.resources | nindent 12 }}
+          {{- end }}
+      serviceAccountName: paddle-serving-sa
+      securityContext:
+        runAsUser: 65532
+      terminationGracePeriodSeconds: 10
+{{- end -}}

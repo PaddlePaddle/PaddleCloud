@@ -1,0 +1,75 @@
+{{- if .Values.sampleset.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    control-plane: {{ printf "%s-sampleset" (include "common.names.fullname" .) }}
+  name: {{ printf "%s-sampleset" (include "common.names.fullname" .) }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      control-plane: {{ printf "%s-sampleset" (include "common.names.fullname" .) }}
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        control-plane: {{ printf "%s-sampleset" (include "common.names.fullname" .) }}
+    spec:
+      {{- if .Values.sampleset.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.sampleset.affinity "context" $) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.sampleset.podAffinityPreset "component" "sampleset" "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.sampleset.podAntiAffinityPreset "component" "sampleset" "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.sampleset.nodeAffinityPreset.type "key" .Values.sampleset.nodeAffinityPreset.key "values" .Values.sampleset.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.sampleset.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.sampleset.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.sampleset.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.sampleset.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: manager
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.sampleset.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.sampleset.image.pullPolicy | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          {{- if .Values.diagnosticMode.enabled }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 12 }}
+          {{- else if .Values.sampleset.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.sampleset.command "context" $) | nindent 12 }}
+          {{- else }}
+          command:
+            - /manager
+          {{- end }}
+          {{- if .Values.diagnosticMode.enabled }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 12 }}
+          {{- else if .Values.sampleset.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.sampleset.args "context" $) | nindent 12 }}
+          {{- else }}
+          args:
+            - --leader-elect
+            - --namespace={{ .Release.Namespace | quote }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- if .Values.sampleset.resources }}
+          resources: {{- toYaml .Values.sampleset.resources | nindent 12 }}
+          {{- end }}
+      securityContext:
+        runAsUser: 65532
+      serviceAccountName: sampleset-sa
+      terminationGracePeriodSeconds: 10
+{{- end -}}

@@ -1,0 +1,13 @@
+# jupyterhub
+jupyterhub/configurable-http-proxy:4.5.0
+jupyterhub/k8s-hub:1.2.0
+jupyterhub/k8s-image-awaiter:1.2.0
+jupyterhub/k8s-network-tools:1.2.0
+jupyterhub/k8s-secret-sync:1.2.0
+jupyterhub/k8s-singleuser-sample:1.2.0
+k8s.gcr.io/kube-scheduler:v1.19.13
+k8s.gcr.io/pause:3.5
+k8s.gcr.io/pause:3.5
+traefik:v2.4.11
+
+# redis
