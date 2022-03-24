@@ -2,17 +2,20 @@ dependencies:
 - name: common
   repository: https://charts.bitnami.com/bitnami
   version: 1.12.0
+- name: hostpath-provisioner
+  repository: https://charts.rimusz.net
+  version: 0.2.13
 - name: juicefs-csi-driver
   repository: https://juicedata.github.io/juicefs-csi-driver/
   version: 0.8.1
 - name: redis
   repository: https://charts.bitnami.com/bitnami
   version: 16.5.4
-- name: kubeflow-pipelines
-  repository: https://getindata.github.io/helm-charts/
-  version: 1.6.2
+- name: minio
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.1.4
 - name: jupyterhub
   repository: https://charts.bitnami.com/bitnami
   version: 1.1.2
-digest: sha256:48b4c139a8d167a21cf0d4fd93a14e50e67d72c92e8eca1c207cc82399b916c8
-generated: "2022-03-23T12:09:12.135575+08:00"
+digest: sha256:2540a0d0088458bd199a4c79526a5ab68052ceefa99576f6cacc7ceb088a8454
+generated: "2022-03-23T21:26:51.315673+08:00"

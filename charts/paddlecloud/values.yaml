@@ -164,7 +164,7 @@ paddlejob:
 sampleset:
   ## @param sampleset.enabled Enabled distributed sample data set cache for paddle training operator
   ##
-  enabled: false
+  enabled: true
   ## SampleSet Controller Manager image version
   ## ref:
   ## @param sampleset.image.registry; SampleSet image registry
@@ -182,7 +182,7 @@ sampleset:
     ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
     ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
     ##
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
     ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -416,7 +416,7 @@ hostpath:
 juicefs:
   ## @param juicefs.enabled Enabled juicefs csi driver
   ##
-  enabled: false
+  enabled: true
   # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
   kubeletDir: /var/lib/kubelet
 
@@ -430,7 +430,7 @@ juicefs:
 
       backend:
         # -- The JuiceFS file system name.
-        name: ""
+        name: "sampleset"
         # -- Connection URL for metadata engine (e.g. Redis). Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/databases_for_metadata.md) for more information.
         metaurl: ""
         # -- Object storage type, such as `s3`, `gs`, `oss`. Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/how_to_setup_object_storage.md) for the full supported list.
@@ -455,7 +455,7 @@ juicefs:
 redis:
   ## @param redis.enabled Enabled Redis as metadata storage for JuiceFS
   ##
-  enabled: false
+  enabled: true
   ## @param architecture Redis&trade; architecture. Allowed values: `standalone` or `replication`
   ##
   architecture: standalone
@@ -531,7 +531,7 @@ redis:
     persistence:
       ## @param master.persistence.enabled Enable persistence on Redis&trade; master nodes using Persistent Volume Claims
       ##
-      enabled: false
+      enabled: true
       ## @param master.persistence.medium Provide a medium for `emptyDir` volumes.
       ##
       medium: ""
@@ -558,7 +558,7 @@ redis:
         - ReadWriteOnce
       ## @param master.persistence.size Persistent Volume size
       ##
-      size: 2Gi
+      size: 4Gi
       ## @param master.persistence.annotations Additional custom annotations for the PVC
       ##
       annotations: {}
@@ -578,6 +578,70 @@ redis:
       existingClaim: ""
 
 
+## @section parameters for Minio used as object storage for
+## ref: https://github.com/bitnami/charts/tree/master/bitnami/minio
+##
+minio:
+  ## @param minio.enabled Enabled Minio object storage
+  ##
+  enabled: true
+  ## @param mode MinIO&reg; server mode (`standalone` or `distributed`)
+  ## ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
+  ##
+  mode: standalone
+  ## MinIO&reg; authentication parameters
+  ##
+  auth:
+    ## @param auth.rootUser MinIO&reg; root username
+    ##
+    rootUser: minio
+    ## @param auth.rootPassword Password for MinIO&reg; root user
+    ##
+    rootPassword: "minio123"
+    ## @param auth.existingSecret Use existing secret for credentials details (`auth.rootUser` and `auth.rootPassword` will be ignored and picked up from this secret). The secret has to contain the keys `root-user` and `root-password`)
+    ##
+    existingSecret: ""
+    ## @param auth.forcePassword Force users to specify required passwords
+    ##
+    forcePassword: false
+    ## @param auth.useCredentialsFiles Mount credentials as a files instead of using an environment variable
+    ##
+    useCredentialsFiles: false
+    ## @param auth.forceNewKeys Force root credentials (user and password) to be reconfigured every time they change in the secrets
+    ##
+    forceNewKeys: false
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  ##
+  persistence:
+    ## @param persistence.enabled Enable MinIO&reg; data persistence using PVC. If false, use emptyDir
+    ##
+    enabled: true
+    ## @param persistence.storageClass PVC Storage Class for MinIO&reg; data volume
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    storageClass: ""
+    ## @param persistence.mountPath Data volume mount path
+    ##
+    mountPath: /data
+    ## @param persistence.accessModes PVC Access Modes for MinIO&reg; data volume
+    ##
+    accessModes:
+      - ReadWriteOnce
+    ## @param persistence.size PVC Storage Request for MinIO&reg; data volume
+    ##
+    size: 8Gi
+    ## @param persistence.annotations Annotations for the PVC
+    ##
+    annotations: {}
+    ## @param persistence.existingClaim Name of an existing PVC to use (only in `standalone` mode)
+    ##
+    existingClaim: ""
+
 ## @section parameters for Knative Serving used by paddle serving operator
 ##
 knative:
@@ -590,14 +654,61 @@ knative:
 #  enabled: false
 
 
+## @section parameters for JupyterHub
+## ref:
+##
+jupyterhub:
+  enabled: true
+  hub:
+    ## @param hub.adminUser Hub Dummy authenticator admin user
+    ##
+    adminUser: user
+    ## @param hub.password Hub Dummy authenticator password
+    ##
+    password: ""
+  ## PostgreSQL chart configuration
+  ## ref: https://github.com/bitnami/charts/blob/master/bitnami/postgresql/values.yaml
+  ## @param postgresql.enabled Switch to enable or disable the PostgreSQL helm chart
+  ## @param postgresql.auth.username Name for a custom user to create
+  ## @param postgresql.auth.password Password for the custom user to create
+  ## @param postgresql.auth.database Name for a custom database to create
+  ## @param postgresql.auth.existingSecret Name of existing secret to use for PostgreSQL credentials
+  ## @param postgresql.architecture PostgreSQL architecture (`standalone` or `replication`)
+  ## @param postgresql.service.ports.postgresql PostgreSQL service port
+  ##
+  postgresql:
+    enabled: true
+    auth:
+      username: bn_jupyterhub
+      password: ""
+      database: bitnami_jupyterhub
+      existingSecret: ""
+    architecture: standalone
+    service:
+      ports:
+        postgresql: 5432
+  ## External PostgreSQL configuration
+  ## All of these values are only used when postgresql.enabled is set to false
+  ## @param externalDatabase.host Database host
+  ## @param externalDatabase.port Database port number
+  ## @param externalDatabase.user Non-root username for JupyterHub
+  ## @param externalDatabase.password Password for the non-root username for JupyterHub
+  ## @param externalDatabase.database JupyterHub database name
+  ## @param externalDatabase.existingSecret Name of an existing secret resource containing the database credentials
+  ## @param externalDatabase.existingSecretPasswordKey Name of an existing secret key containing the database credentials
+  ##
+  externalDatabase:
+    host: ""
+    port: 5432
+    user: postgres
+    database: jupyterhub
+    password: ""
+    existingSecret: ""
+    existingSecretPasswordKey: ""
+
+
 ## @section parameters for kubeflow pipelines
 ##
 pipelines:
   enabled: false
 
-
-## @section parameters for JupyterHub
-## ref:
-##
-jupyterhub:
-  enabled: false
