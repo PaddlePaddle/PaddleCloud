@@ -22,6 +22,11 @@ dependencies:
     tags:
       - bitnami-common
     version: 1.x.x
+  - name: hostpath-provisioner
+    version: 0.2.13
+    repository: https://charts.rimusz.net
+    condition: hostpath.enabled
+    alias: hostpath
   - name: juicefs-csi-driver
     version: 0.8.1
     repository: https://juicedata.github.io/juicefs-csi-driver/
@@ -31,6 +36,15 @@ dependencies:
     version: 16.5.4
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
+  - name: minio
+    version: 11.1.4
+    repository: https://charts.bitnami.com/bitnami
+    condition: minio.enabled
+  - name: jupyterhub
+    version: 1.1.2
+    repository: https://charts.bitnami.com/bitnami
+    condition: jupyterhub.enabled
+    alias: jupyterhub
   - name: knative-serving
     version: 0.1.24
     repository: https://helm-charts.wikimedia.org/stable/
@@ -41,13 +55,3 @@ dependencies:
     repository: https://getindata.github.io/helm-charts/
     condition: pipelines.enabled
     alias: pipelines
-  - name: jupyterhub
-    version: 1.1.2
-    repository: https://charts.bitnami.com/bitnami
-    condition: jupyterhub.enabled
-    alias: jupyterhub
-  - name: hostpath-provisioner
-    version: 0.2.13
-    repository: https://charts.rimusz.net
-    condition: hostpath.enabled
-    alias: hostpath

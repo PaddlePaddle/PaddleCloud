@@ -179,13 +179,13 @@ func (r *SampleJobReconciler) deleteSampleJob(ctx context.Context, sampleJob *v1
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SampleJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(
-		context.Background(),
-		&v1.Pod{},
-		common.IndexerKeyRuntime,
-		RuntimePodIndexerFunc); err != nil {
-		return err
-	}
+	//if err := mgr.GetFieldIndexer().IndexField(
+	//	context.Background(),
+	//	&v1.Pod{},
+	//	common.IndexerKeyRuntime,
+	//	RuntimePodIndexerFunc); err != nil {
+	//	return err
+	//}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.SampleJob{}).
 		Owns(&v1.Pod{}).
