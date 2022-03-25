@@ -1,0 +1,56 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: config.webhook.serving.knative.dev
+  labels:
+    serving.knative.dev/release: "v0.21.1"
+webhooks:
+  - admissionReviewVersions: ["v1", "v1beta1"]
+    clientConfig:
+      service:
+        name: webhook
+        namespace: knative-serving
+    failurePolicy: Fail
+    sideEffects: None
+    name: config.webhook.serving.knative.dev
+    namespaceSelector:
+      matchExpressions:
+        - key: serving.knative.dev/release
+          operator: Exists
+    timeoutSeconds: 10
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: webhook.serving.knative.dev
+  labels:
+    serving.knative.dev/release: "v0.21.1"
+webhooks:
+  - admissionReviewVersions: ["v1", "v1beta1"]
+    clientConfig:
+      service:
+        name: webhook
+        namespace: knative-serving
+    failurePolicy: Fail
+    sideEffects: None
+    name: webhook.serving.knative.dev
+    timeoutSeconds: 10
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validation.webhook.serving.knative.dev
+  labels:
+    serving.knative.dev/release: "v0.21.1"
+webhooks:
+  - admissionReviewVersions: ["v1", "v1beta1"]
+    clientConfig:
+      service:
+        name: webhook
+        namespace: knative-serving
+    failurePolicy: Fail
+    sideEffects: None
+    name: validation.webhook.serving.knative.dev
+    timeoutSeconds: 10

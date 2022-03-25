@@ -642,6 +642,7 @@ minio:
     ##
     existingClaim: ""
 
+
 ## @section parameters for Knative Serving used by paddle serving operator
 ##
 knative:
@@ -662,10 +663,10 @@ jupyterhub:
   hub:
     ## @param hub.adminUser Hub Dummy authenticator admin user
     ##
-    adminUser: user
+    adminUser: admin
     ## @param hub.password Hub Dummy authenticator password
     ##
-    password: ""
+    password: "admin"
   ## PostgreSQL chart configuration
   ## ref: https://github.com/bitnami/charts/blob/master/bitnami/postgresql/values.yaml
   ## @param postgresql.enabled Switch to enable or disable the PostgreSQL helm chart
