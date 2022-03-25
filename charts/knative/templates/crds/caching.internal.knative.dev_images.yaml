@@ -3,8 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   name: images.caching.internal.knative.dev
   labels:
-    app.kubernetes.io/name: knative-serving
-    app.kubernetes.io/version: "1.2.0"
     knative.dev/crd-install: "true"
 spec:
   group: caching.internal.knative.dev

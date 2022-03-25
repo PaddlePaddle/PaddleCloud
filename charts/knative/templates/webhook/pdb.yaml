@@ -1,0 +1,12 @@
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: webhook-pdb
+  namespace: knative-serving
+  labels:
+    serving.knative.dev/release: "v0.21.1"
+spec:
+  minAvailable: 80%
+  selector:
+    matchLabels:
+      app: webhook

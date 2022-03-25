@@ -1,27 +1,9 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  # Named like this to avoid clashing with eventing's existing `addressable-resolver` role
-  # (which should be identical, but isn't guaranteed to be installed alongside serving).
-  name: knative-serving-aggregated-addressable-resolver
-  labels:
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
-aggregationRule:
-  clusterRoleSelectors:
-    - matchLabels:
-        duck.knative.dev/addressable: "true"
-
----
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: knative-serving-addressable-resolver
   labels:
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
+    serving.knative.dev/release: "v0.21.1"
     # Labeled to facilitate aggregated cluster roles that act on Addressables.
     duck.knative.dev/addressable: "true"
 # Do not use this role directly. These rules will be added to the "addressable-resolver" role.
@@ -38,6 +20,7 @@ rules:
       - list
       - watch
 
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -45,9 +28,7 @@ metadata:
   name: knative-serving-namespaced-admin
   labels:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
+    serving.knative.dev/release: "v0.21.1"
 rules:
   - apiGroups: ["serving.knative.dev"]
     resources: ["*"]
@@ -56,6 +37,7 @@ rules:
     resources: ["*"]
     verbs: ["get", "list", "watch"]
 
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -63,9 +45,7 @@ metadata:
   name: knative-serving-namespaced-edit
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
+    serving.knative.dev/release: "v0.21.1"
 rules:
   - apiGroups: ["serving.knative.dev"]
     resources: ["*"]
@@ -73,6 +53,8 @@ rules:
   - apiGroups: ["networking.internal.knative.dev", "autoscaling.internal.knative.dev", "caching.internal.knative.dev"]
     resources: ["*"]
     verbs: ["get", "list", "watch"]
+
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -80,13 +62,12 @@ metadata:
   name: knative-serving-namespaced-view
   labels:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
+    serving.knative.dev/release: "v0.21.1"
 rules:
   - apiGroups: ["serving.knative.dev", "networking.internal.knative.dev", "autoscaling.internal.knative.dev", "caching.internal.knative.dev"]
     resources: ["*"]
     verbs: ["get", "list", "watch"]
+
 
 ---
 kind: ClusterRole
@@ -94,10 +75,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: knative-serving-core
   labels:
+    serving.knative.dev/release: "v0.21.1"
     serving.knative.dev/controller: "true"
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
 rules:
   - apiGroups: [""]
     resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts"]
@@ -105,9 +84,6 @@ rules:
   - apiGroups: [""]
     resources: ["endpoints/restricted"] # Permission for RestrictedEndpointsAdmission
     verbs: ["create"]
-  - apiGroups: [""]
-    resources: ["namespaces/finalizers"] # finalizers are needed for the owner reference of the webhook
-    verbs: ["update"]
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/finalizers"] # finalizers are needed for the owner reference of the webhook
     verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
@@ -130,15 +106,14 @@ rules:
     resources: ["images"]
     verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: knative-serving-podspecable-binding
   labels:
-    serving.knative.dev/release: "v1.2.0"
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
+    serving.knative.dev/release: "v0.21.1"
     # Labeled to facilitate aggregated cluster roles that act on PodSpecables.
     duck.knative.dev/podspecable: "true"
 # Do not use this role directly. These rules will be added to the "podspecable-binder" role.
@@ -153,16 +128,33 @@ rules:
       - watch
       - patch
 
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: knative-serving-admin
   labels:
-    app.kubernetes.io/name: knative-serving
-    app.kubernetes.io/version: "1.2.0"
-    serving.knative.dev/release: "v1.2.0"
+    serving.knative.dev/release: "v0.21.1"
 aggregationRule:
   clusterRoleSelectors:
     - matchLabels:
         serving.knative.dev/controller: "true"
+rules: [] # Rules are automatically filled in by the controller manager.
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-serving-controller-admin
+  labels:
+    serving.knative.dev/release: "v0.21.1"
+subjects:
+  - kind: ServiceAccount
+    name: controller
+    namespace: knative-serving
+roleRef:
+  kind: ClusterRole
+  name: knative-serving-admin
+  apiGroup: rbac.authorization.k8s.io
