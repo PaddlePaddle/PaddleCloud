@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: knative-local-gateway
+  namespace: istio-system
+  labels:
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+spec:
+  type: ClusterIP
+  selector:
+    istio: ingressgateway
+  ports:
+    - name: http2
+      port: 80
+      targetPort: 8081
+
+
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: istio-webhook
+  namespace: knative-serving
+  labels:
+    role: istio-webhook
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+spec:
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+    - name: https-webhook
+      port: 443
+      targetPort: 8443
+  selector:
+    app: istio-webhook

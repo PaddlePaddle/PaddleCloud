@@ -89,6 +89,7 @@ data:
         pipe:
           path: /tmp/envoy.admin
 
+
 ---
 apiVersion: v1
 kind: ConfigMap
