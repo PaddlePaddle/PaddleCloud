@@ -52,27 +52,6 @@ spec:
       restartPolicy: Always
       serviceAccountName: net-kourier
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: net-kourier-controller
-  namespace: knative-serving
-  labels:
-    networking.knative.dev/ingress-provider: kourier
-    app.kubernetes.io/component: net-kourier
-    app.kubernetes.io/version: "1.2.0"
-    app.kubernetes.io/name: knative-serving
-    serving.knative.dev/release: "v1.2.0"
-spec:
-  ports:
-    - name: grpc-xds
-      port: 18000
-      protocol: TCP
-      targetPort: 18000
-  selector:
-    app: net-kourier-controller
-  type: ClusterIP
 
 ---
 apiVersion: apps/v1

@@ -1,0 +1,51 @@
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "webhook"
+  namespace: "knative-serving"
+  labels:
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+spec:
+  selector:
+    matchLabels:
+      app: webhook
+  portLevelMtls:
+    8443:
+      mode: PERMISSIVE
+
+
+---
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "domainmapping-webhook"
+  namespace: "knative-serving"
+  labels:
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+spec:
+  selector:
+    matchLabels:
+      app: domainmapping-webhook
+  portLevelMtls:
+    8443:
+      mode: PERMISSIVE
+
+
+---
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "istio-webhook"
+  namespace: "knative-serving"
+  labels:
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+spec:
+  selector:
+    matchLabels:
+      app: istio-webhook
+  portLevelMtls:
+    8443:
+      mode: PERMISSIVE

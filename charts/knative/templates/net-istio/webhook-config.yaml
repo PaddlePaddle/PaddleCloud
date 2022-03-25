@@ -1,0 +1,44 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: webhook.istio.networking.internal.knative.dev
+  labels:
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+    clientConfig:
+      service:
+        name: istio-webhook
+        namespace: knative-serving
+    failurePolicy: Fail
+    sideEffects: None
+    objectSelector:
+      matchExpressions:
+        - {key: "serving.knative.dev/configuration", operator: Exists}
+    name: webhook.istio.networking.internal.knative.dev
+
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: config.webhook.istio.networking.internal.knative.dev
+  labels:
+    serving.knative.dev/release: "v0.22.1"
+    networking.knative.dev/ingress-provider: istio
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+    clientConfig:
+      service:
+        name: istio-webhook
+        namespace: knative-serving
+    failurePolicy: Fail
+    sideEffects: None
+    name: config.webhook.istio.networking.internal.knative.dev
+    namespaceSelector:
+      matchExpressions:
+        - key: serving.knative.dev/release
+          operator: Exists
