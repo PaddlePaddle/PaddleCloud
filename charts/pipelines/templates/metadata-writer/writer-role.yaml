@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: kubeflow-pipelines-metadata-writer-role
     application-crd-id: kubeflow-pipelines
   name: kubeflow-pipelines-metadata-writer-role
-  namespace: kubeflow
+  namespace: {{- include "common.names.namespace" . | quote }}
 rules:
   - apiGroups:
       - ""

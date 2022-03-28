@@ -55,3 +55,7 @@ dependencies:
     repository: https://getindata.github.io/helm-charts/
     condition: pipelines.enabled
     alias: pipelines
+  - name: mysql
+    version: 8.8.27
+    repository: https://charts.bitnami.com/bitnami
+    condition: mysql.enabled

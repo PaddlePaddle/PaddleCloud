@@ -1,10 +1,10 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
   name: argo-role
-  namespace: kubeflow
+  namespace: {{- include "common.names.namespace" . | quote }}
 rules:
   - apiGroups:
       - coordination.k8s.io

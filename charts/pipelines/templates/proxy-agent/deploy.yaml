@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: proxy-agent
     application-crd-id: kubeflow-pipelines
-  name: proxy-agent
-  namespace: kubeflow
+  name: {{ printf "%s-proxy-agent" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       app: proxy-agent
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         app: proxy-agent
         application-crd-id: kubeflow-pipelines
     spec:
       containers:
-        - image: registry.baidubce.com/paddleflow-public/inverse-proxy-agent:1.7.0
-          imagePullPolicy: IfNotPresent
+        - image: {{ include "common.images.image" (dict "imageRoot" .Values.proxy-agent.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.proxy-agent.image.pullPolicy | quote }}
           name: proxy-agent
       hostNetwork: true
       serviceAccountName: proxy-agent-runner

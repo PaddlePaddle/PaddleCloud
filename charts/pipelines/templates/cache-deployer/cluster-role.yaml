@@ -1,9 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: kubeflow-pipelines-cache-deployer-clusterrole
-  name: kubeflow-pipelines-cache-deployer-clusterrole
+  name: {{ printf "%s-cache-deployer-clusterrole" (include "common.names.fullname" .) }}
 rules:
   - apiGroups:
       - certificates.k8s.io

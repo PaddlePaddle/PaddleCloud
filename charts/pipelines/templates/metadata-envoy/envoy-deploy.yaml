@@ -1,27 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
     component: metadata-envoy
-  name: metadata-envoy-deployment
-  namespace: kubeflow
+  name: {{ printf "%s-metadata-envoy" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   replicas: 1
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       application-crd-id: kubeflow-pipelines
       component: metadata-envoy
   template:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         application-crd-id: kubeflow-pipelines
         component: metadata-envoy
     spec:
       containers:
-        - image: registry.baidubce.com/paddleflow-public/metadata-envoy:1.7.0
+        - image: {{ include "common.images.image" (dict "imageRoot" .Values.metadata-envoy.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.metadata-envoy.image.pullPolicy | quote }}
           name: container
           ports:
             - containerPort: 9090

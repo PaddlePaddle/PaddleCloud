@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
-  name: workflow-controller
-  namespace: kubeflow
+  name: {{ printf "%s-workflow-controller" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       app: workflow-controller
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         app: workflow-controller
         application-crd-id: kubeflow-pipelines
     spec:
@@ -21,7 +21,7 @@ spec:
             - --configmap
             - workflow-controller-configmap
             - --executor-image
-            - registry.baidubce.com/paddleflow-public/argoexec:v3.1.6-patch-license-compliance
+            - {{ include "common.images.image" (dict "imageRoot" .Values.argoexec.image "global" .Values.global) }}
             - --namespaced
           command:
             - workflow-controller
@@ -31,7 +31,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
-          image: registry.baidubce.com/paddleflow-public/workflow-controller:v3.1.6-patch-license-compliance
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.workflow-controller.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.workflow-controller.image.pullPolicy | quote }}
           livenessProbe:
             failureThreshold: 3
             httpGet:

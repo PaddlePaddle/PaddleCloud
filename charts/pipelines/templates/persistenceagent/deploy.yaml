@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: ml-pipeline-persistenceagent
     application-crd-id: kubeflow-pipelines
-  name: ml-pipeline-persistenceagent
-  namespace: kubeflow
+  name: {{ printf "%s-persistenceagent" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       app: ml-pipeline-persistenceagent
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         app: ml-pipeline-persistenceagent
         application-crd-id: kubeflow-pipelines
     spec:
@@ -29,8 +29,8 @@ spec:
               value: "86400"
             - name: NUM_WORKERS
               value: "2"
-          image: registry.baidubce.com/paddleflow-public/persistenceagent:1.7.0
-          imagePullPolicy: IfNotPresent
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.persistenceagent.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.persistenceagent.image.pullPolicy | quote }}
           name: ml-pipeline-persistenceagent
           resources:
             requests:

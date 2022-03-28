@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
     component: metadata-grpc-server
-  name: metadata-grpc-deployment
-  namespace: kubeflow
+  name: {{ printf "%s-metadata-grpc" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   replicas: 1
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       application-crd-id: kubeflow-pipelines
       component: metadata-grpc-server
   template:
     metadata:
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         application-crd-id: kubeflow-pipelines
         component: metadata-grpc-server
     spec:
@@ -55,7 +55,8 @@ spec:
                 configMapKeyRef:
                   key: dbPort
                   name: pipeline-install-config
-          image: registry.baidubce.com/paddleflow-public/ml_metadata_store_server:1.0.0
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.metadata-grpc.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.metadata-grpc.image.pullPolicy | quote }}
           livenessProbe:
             initialDelaySeconds: 3
             periodSeconds: 5

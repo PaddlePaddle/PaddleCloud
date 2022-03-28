@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: autoscaler
-  namespace: knative-serving
+  name: {{ printf "%s-autoscaler" (include "common.names.fullname" .) }}
+  namespace: {{ .Realse.namespace | queto }}
   labels:
     serving.knative.dev/release: "v0.21.1"
 spec:

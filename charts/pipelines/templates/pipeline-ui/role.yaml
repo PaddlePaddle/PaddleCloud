@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: ml-pipeline-ui
     application-crd-id: kubeflow-pipelines
   name: ml-pipeline-ui
-  namespace: kubeflow
+  namespace: {{- include "common.names.namespace" . | quote }}
 rules:
   - apiGroups:
       - ""
