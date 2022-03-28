@@ -27,7 +27,7 @@ global:
 ## @param kubeVersion Override Kubernetes version
 ##
 kubeVersion: ""
-## @param nameOverride String to partially override common.names.fullname
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
 ##
 nameOverride: ""
 ## @param fullnameOverride String to fully override common.names.fullname
@@ -713,3 +713,124 @@ jupyterhub:
 pipelines:
   enabled: false
 
+
+## @section parameters for MySQL as metadata storage for Kubeflow Pipeline
+##
+mysql:
+  enabled: false
+  ## @param architecture MySQL architecture (`standalone` or `replication`)
+  ##
+  architecture: standalone
+  ## MySQL Authentication parameters
+  ##
+  auth:
+    ## @param auth.rootPassword Password for the `root` user. Ignored if existing secret is provided
+    ## ref: https://github.com/bitnami/bitnami-docker-mysql#setting-the-root-password-on-first-run
+    ##
+    rootPassword: ""
+    ## @param auth.database Name for a custom database to create
+    ## ref: https://github.com/bitnami/bitnami-docker-mysql/blob/master/README.md#creating-a-database-on-first-run
+    ##
+    database: my_database
+    ## @param auth.username Name for a custom user to create
+    ## ref: https://github.com/bitnami/bitnami-docker-mysql/blob/master/README.md#creating-a-database-user-on-first-run
+    ##
+    username: ""
+    ## @param auth.password Password for the new user. Ignored if existing secret is provided
+    ##
+    password: ""
+    ## @param auth.replicationUser MySQL replication user
+    ## ref: https://github.com/bitnami/bitnami-docker-mysql#setting-up-a-replication-cluster
+    ##
+    replicationUser: replicator
+    ## @param auth.replicationPassword MySQL replication user password. Ignored if existing secret is provided
+    ##
+    replicationPassword: ""
+    ## @param auth.existingSecret Use existing secret for password details. The secret has to contain the keys `mysql-root-password`, `mysql-replication-password` and `mysql-password`
+    ## NOTE: When it's set the auth.rootPassword, auth.password, auth.replicationPassword are ignored.
+    ##
+    existingSecret: ""
+    ## @param auth.forcePassword Force users to specify required passwords
+    ##
+    forcePassword: false
+    ## @param auth.usePasswordFiles Mount credentials as files instead of using an environment variable
+    ##
+    usePasswordFiles: false
+    ## @param auth.customPasswordFiles [object] Use custom password files when `auth.usePasswordFiles` is set to `true`. Define path for keys `root` and `user`, also define `replicator` if `architecture` is set to `replication`
+    ## Example:
+    ## customPasswordFiles:
+    ##   root: /vault/secrets/mysql-root
+    ##   user: /vault/secrets/mysql-user
+    ##   replicator: /vault/secrets/mysql-replicator
+    ##
+    customPasswordFiles: {}
+  ## @section MySQL Primary parameters
+  primary:
+    ## MySQL Primary Service parameters
+    ##
+    service:
+      ## @param primary.service.type MySQL Primary K8s service type
+      ##
+      type: ClusterIP
+      ## @param primary.service.port MySQL Primary K8s service port
+      ##
+      port: 3306
+      ## @param primary.service.nodePort MySQL Primary K8s service node port
+      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+      ##
+      nodePort: ""
+      ## @param primary.service.clusterIP MySQL Primary K8s service clusterIP IP
+      ## e.g:
+      ## clusterIP: None
+      ##
+      clusterIP: ""
+      ## @param primary.service.loadBalancerIP MySQL Primary loadBalancerIP if service type is `LoadBalancer`
+      ## Set the LoadBalancer service type to internal only
+      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+      ##
+      loadBalancerIP: ""
+      ## @param primary.service.externalTrafficPolicy Enable client source IP preservation
+      ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+      ##
+      externalTrafficPolicy: Cluster
+      ## @param primary.service.loadBalancerSourceRanges [array] Addresses that are allowed when MySQL Primary service is LoadBalancer
+      ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+      ## E.g.
+      ## loadBalancerSourceRanges:
+      ##   - 10.10.10.0/24
+      ##
+      loadBalancerSourceRanges: []
+      ## @param primary.service.annotations [object] Provide any additional annotations which may be required
+      ##
+      annotations: {}
+    ## Enable persistence using Persistent Volume Claims
+    ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+    ##
+    persistence:
+      ## @param secondary.persistence.enabled Enable persistence on MySQL secondary replicas using a `PersistentVolumeClaim`
+      ##
+      enabled: true
+      ## @param secondary.persistence.storageClass MySQL secondary persistent volume storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+      ##   GKE, AWS & OpenStack)
+      ##
+      storageClass: ""
+      ## @param secondary.persistence.annotations [object] MySQL secondary persistent volume claim annotations
+      ##
+      annotations: {}
+      ## @param secondary.persistence.accessModes MySQL secondary persistent volume access Modes
+      ##
+      accessModes:
+        - ReadWriteOnce
+      ## @param secondary.persistence.size MySQL secondary persistent volume size
+      ##
+      size: 8Gi
+      ## @param secondary.persistence.selector [object] Selector to match an existing Persistent Volume
+      ## selector:
+      ##   matchLabels:
+      ##     app: my-app
+      ##
+      selector: {}

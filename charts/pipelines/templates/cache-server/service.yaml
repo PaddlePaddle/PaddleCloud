@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: cache-server
     application-crd-id: kubeflow-pipelines
   name: cache-server
-  namespace: kubeflow
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   ports:
     - port: 443
       targetPort: webhook-api
-  selector:
+  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
     app: cache-server
     application-crd-id: kubeflow-pipelines

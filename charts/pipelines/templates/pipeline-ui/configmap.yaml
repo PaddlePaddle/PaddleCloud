@@ -8,7 +8,7 @@ data:
     }
 kind: ConfigMap
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
   name: ml-pipeline-ui-configmap
-  namespace: kubeflow
+  namespace: {{- include "common.names.namespace" . | quote }}

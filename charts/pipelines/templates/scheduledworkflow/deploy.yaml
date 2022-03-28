@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: ml-pipeline-scheduledworkflow
     application-crd-id: kubeflow-pipelines
-  name: ml-pipeline-scheduledworkflow
-  namespace: kubeflow
+  name: {{ printf "%s-scheduledworkflow" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       app: ml-pipeline-scheduledworkflow
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         app: ml-pipeline-scheduledworkflow
         application-crd-id: kubeflow-pipelines
     spec:
@@ -30,7 +30,7 @@ spec:
                 configMapKeyRef:
                   key: cronScheduleTimezone
                   name: pipeline-install-config
-          image: registry.baidubce.com/paddleflow-public/scheduledworkflow:1.7.0
-          imagePullPolicy: IfNotPresent
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.scheduledworkflow.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.scheduledworkflow.image.pullPolicy | quote }}
           name: ml-pipeline-scheduledworkflow
       serviceAccountName: ml-pipeline-scheduledworkflow

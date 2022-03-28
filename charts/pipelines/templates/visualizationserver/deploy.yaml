@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: ml-pipeline-visualizationserver
     application-crd-id: kubeflow-pipelines
-  name: ml-pipeline-visualizationserver
-  namespace: kubeflow
+  name: {{ printf "%s-visualizationserver" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       app: ml-pipeline-visualizationserver
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         app: ml-pipeline-visualizationserver
         application-crd-id: kubeflow-pipelines
     spec:
       containers:
-        - image: registry.baidubce.com/paddleflow-public/visualization-server:1.7.0
-          imagePullPolicy: IfNotPresent
+        - image: {{ include "common.images.image" (dict "imageRoot" .Values.visualizationserver.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.visualizationserver.image.pullPolicy | quote }}
           livenessProbe:
             exec:
               command:

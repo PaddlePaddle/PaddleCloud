@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     app: ml-pipeline-ui
     application-crd-id: kubeflow-pipelines
-  name: ml-pipeline-ui
-  namespace: kubeflow
+  name: {{ printf "%s-ui" (include "common.names.fullname" .) }}
+  namespace: {{- include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
       app: ml-pipeline-ui
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-      labels:
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         app: ml-pipeline-ui
         application-crd-id: kubeflow-pipelines
     spec:
@@ -39,8 +39,8 @@ spec:
                   name: mlpipeline-minio-artifact
             - name: ALLOW_CUSTOM_VISUALIZATIONS
               value: "true"
-          image: registry.baidubce.com/paddleflow-public/frontend:1.7.0
-          imagePullPolicy: IfNotPresent
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.pipeline-ui.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.pipeline-ui.image.pullPolicy | quote }}
           livenessProbe:
             exec:
               command:

@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kubeflow-pipelines-cache-deployer-clusterrolebinding
+  name: {{ printf "%s-cache-deployer-clusterrolebinding" (include "common.names.fullname" .) }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: kubeflow-pipelines-cache-deployer-clusterrole
+  name: {{ printf "%s-cache-deployer-clusterrole" (include "common.names.fullname" .) }}
 subjects:
   - kind: ServiceAccount
     name: kubeflow-pipelines-cache-deployer-sa
-    namespace: kubeflow
+    namespace: {{- include "common.names.namespace" . | quote }}

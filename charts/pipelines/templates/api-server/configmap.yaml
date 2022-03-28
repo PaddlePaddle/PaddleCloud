@@ -23,7 +23,7 @@ data:
     namespace: `kubectl rollout restart deployment -n <your-namespace>`.
 kind: ConfigMap
 metadata:
-  labels:
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
   name: pipeline-install-config
-  namespace: kubeflow
+  namespace: {{- include "common.names.namespace" . | quote }}
