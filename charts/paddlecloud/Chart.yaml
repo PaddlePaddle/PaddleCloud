@@ -36,10 +36,6 @@ dependencies:
     version: 16.5.4
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
-  - name: minio
-    version: 11.1.4
-    repository: https://charts.bitnami.com/bitnami
-    condition: minio.enabled
   - name: jupyterhub
     version: 1.1.2
     repository: https://charts.bitnami.com/bitnami
@@ -55,7 +51,3 @@ dependencies:
     repository: https://getindata.github.io/helm-charts/
     condition: pipelines.enabled
     alias: pipelines
-  - name: mysql
-    version: 8.8.27
-    repository: https://charts.bitnami.com/bitnami
-    condition: mysql.enabled

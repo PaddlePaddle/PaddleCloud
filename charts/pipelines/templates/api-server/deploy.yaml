@@ -5,7 +5,7 @@ metadata:
     app: ml-pipeline
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-api-server" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
@@ -77,8 +77,8 @@ spec:
                 secretKeyRef:
                   key: secretkey
                   name: mlpipeline-minio-artifact
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.api-server.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.api-server.image.pullPolicy | quote }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.apiServer.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.apiServer.image.pullPolicy | quote }}
           livenessProbe:
             exec:
               command:

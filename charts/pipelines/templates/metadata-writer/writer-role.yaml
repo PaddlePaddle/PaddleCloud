@@ -5,7 +5,7 @@ metadata:
     app: kubeflow-pipelines-metadata-writer-role
     application-crd-id: kubeflow-pipelines
   name: kubeflow-pipelines-metadata-writer-role
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 rules:
   - apiGroups:
       - ""

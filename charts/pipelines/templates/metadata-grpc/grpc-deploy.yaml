@@ -5,7 +5,7 @@ metadata:
     application-crd-id: kubeflow-pipelines
     component: metadata-grpc-server
   name: {{ printf "%s-metadata-grpc" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   replicas: 1
   selector:
@@ -55,8 +55,8 @@ spec:
                 configMapKeyRef:
                   key: dbPort
                   name: pipeline-install-config
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.metadata-grpc.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.metadata-grpc.image.pullPolicy | quote }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.metadataGrpc.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.metadataGrpc.image.pullPolicy | quote }}
           livenessProbe:
             initialDelaySeconds: 3
             periodSeconds: 5

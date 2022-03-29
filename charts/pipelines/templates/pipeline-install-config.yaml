@@ -6,11 +6,11 @@ data:
   autoUpdatePipelineDefaultVersion: "true"
   bucketName: mlpipeline
   cacheDb: cachedb
-  cacheImage: registry.baidubce.com/paddleflow-public/busybox
+  cacheImage: {{ .Values.apiServer.busybox }}
   cacheNodeRestrictions: "false"
   cronScheduleTimezone: UTC
-  dbHost: mysql
-  dbPort: "3306"
+  dbHost: {{ include "pipeline.mysql.host" . }}
+  dbPort: {{ .Values.mysql.primary.service.port | quote}}
   defaultPipelineRoot: ""
   mlmdDb: metadb
   pipelineDb: mlpipeline
@@ -26,4 +26,4 @@ metadata:
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
   name: pipeline-install-config
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}

@@ -5,7 +5,7 @@ metadata:
     app: ml-pipeline-persistenceagent
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-persistenceagent" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}

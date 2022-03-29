@@ -5,7 +5,7 @@ metadata:
     app: proxy-agent
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-proxy-agent" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
@@ -18,8 +18,8 @@ spec:
         application-crd-id: kubeflow-pipelines
     spec:
       containers:
-        - image: {{ include "common.images.image" (dict "imageRoot" .Values.proxy-agent.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.proxy-agent.image.pullPolicy | quote }}
+        - image: {{ include "common.images.image" (dict "imageRoot" .Values.proxyAgent.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.proxyAgent.image.pullPolicy | quote }}
           name: proxy-agent
       hostNetwork: true
       serviceAccountName: proxy-agent-runner

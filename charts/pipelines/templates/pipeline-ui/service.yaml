@@ -5,13 +5,13 @@ metadata:
     app: ml-pipeline-ui
     application-crd-id: kubeflow-pipelines
   name: ml-pipeline-ui
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   ports:
     - name: http
       port: 80
       protocol: TCP
       targetPort: 3000
-  selector: {{- include "common.labels.matchLabels" . | nindent 6 }}
+  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
     app: ml-pipeline-ui
     application-crd-id: kubeflow-pipelines
