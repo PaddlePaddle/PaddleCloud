@@ -24,4 +24,7 @@ testbin/*
 *.swo
 *~
 
-# helm
+# helm charts
+charts/paddlecloud/charts/*
+charts/pipelines/charts/*
+charts/knative/charts/*
