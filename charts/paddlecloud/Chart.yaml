@@ -21,7 +21,7 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
     tags:
       - bitnami-common
-    version: 1.x.x
+    version: 1.13.0
   - name: hostpath-provisioner
     version: 0.2.13
     repository: https://charts.rimusz.net
