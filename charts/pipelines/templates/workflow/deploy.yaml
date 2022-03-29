@@ -4,7 +4,7 @@ metadata:
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-workflow-controller" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
@@ -21,7 +21,7 @@ spec:
             - --configmap
             - workflow-controller-configmap
             - --executor-image
-            - {{ include "common.images.image" (dict "imageRoot" .Values.argoexec.image "global" .Values.global) }}
+            - {{ include "common.images.image" (dict "imageRoot" .Values.argoexecImage "global" .Values.global) }}
             - --namespaced
           command:
             - workflow-controller
@@ -31,8 +31,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.workflow-controller.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.workflow-controller.image.pullPolicy | quote }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.workflow.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.workflow.image.pullPolicy | quote }}
           livenessProbe:
             failureThreshold: 3
             httpGet:

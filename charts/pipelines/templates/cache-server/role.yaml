@@ -5,7 +5,7 @@ metadata:
     app: cache-server
     application-crd-id: kubeflow-pipelines
   name: kubeflow-pipelines-cache-role
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 rules:
   - apiGroups:
       - ""

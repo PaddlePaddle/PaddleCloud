@@ -8,4 +8,4 @@ metadata:
     application-crd-id: kubeflow-pipelines
     component: metadata-grpc-server
   name: metadata-grpc-configmap
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}

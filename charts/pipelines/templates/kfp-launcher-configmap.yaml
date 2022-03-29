@@ -6,4 +6,4 @@ metadata:
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     application-crd-id: kubeflow-pipelines
   name: kfp-launcher
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}

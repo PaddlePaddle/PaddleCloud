@@ -2,12 +2,6 @@ annotations:
   category: pipeline
 apiVersion: v2
 appVersion: 1.7.0
-dependencies:
-  - name: common
-    repository: https://charts.bitnami.com/bitnami
-    tags:
-      - bitnami-common
-    version: 1.x.x
 description: Kubeflow pipelines are reusable end-to-end ML workflows built using the Kubeflow Pipelines SDK.
 home: https://github.com/kubeflow/pipelines
 icon: https://avatars.githubusercontent.com/u/33164907?s=200&v=4
@@ -19,3 +13,18 @@ name: kubeflow-pipelines
 sources:
   - https://github.com/kubeflow/pipelines
 version: 0.1.0
+
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common
+    version: 1.x.x
+  - name: mysql
+    version: 8.8.27
+    repository: https://charts.bitnami.com/bitnami
+    condition: mysql.enabled
+  - name: minio
+    version: 11.1.4
+    repository: https://charts.bitnami.com/bitnami
+    condition: minio.enabled

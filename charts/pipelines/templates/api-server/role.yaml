@@ -5,7 +5,7 @@ metadata:
     app: ml-pipeline
     application-crd-id: kubeflow-pipelines
   name: ml-pipeline
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 rules:
   - apiGroups:
       - ""

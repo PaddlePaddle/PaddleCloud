@@ -63,14 +63,38 @@ diagnosticMode:
     - infinity
 
 
+## @section parameters for MySQL as metadata storage for Kubeflow Pipeline
+##
 mysql:
-  username:
-  password:
-  dbHost:
+  enabled: true
+  ## MySQL Authentication parameters
+  ##
+  auth:
+    ## @param auth.rootPassword Password for the `root` user. Ignored if existing secret is provided
+    ## ref: https://github.com/bitnami/bitnami-docker-mysql#setting-the-root-password-on-first-run
+    ##
+    rootPassword: "paddlepaddle"
 
 
+## @section parameters for Minio used as object storage for
+## ref: https://github.com/bitnami/charts/tree/master/bitnami/minio
+##
+minio:
+  ## @param minio.enabled Enabled Minio object storage
+  ##
+  enabled: true
+  ## MinIO&reg; authentication parameters
+  ##
+  auth:
+    ## @param auth.rootUser MinIO&reg; root username
+    ##
+    rootUser: minio
+    ## @param auth.rootPassword Password for MinIO&reg; root user
+    ##
+    rootPassword: "minio123"
 
-cache-deployer:
+
+cacheDeployer:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/cache-deployer
@@ -93,7 +117,7 @@ cache-deployer:
     debug: false
 
 
-cache-server:
+cacheServer:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/cache-server
@@ -116,7 +140,7 @@ cache-server:
     debug: false
 
 
-crd-controller:
+crdController:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/application-crd-controller
@@ -139,7 +163,7 @@ crd-controller:
     debug: false
 
 
-metadata-envoy:
+metadataEnvoy:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/metadata-envoy
@@ -162,7 +186,7 @@ metadata-envoy:
     debug: false
 
 
-metadata-grpc:
+metadataGrpc:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/ml_metadata_store_server
@@ -185,7 +209,7 @@ metadata-grpc:
     debug: false
 
 
-metadata-writer:
+metadataWriter:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/metadata-writer
@@ -231,7 +255,8 @@ persistenceagent:
     debug: false
 
 
-api-server:
+apiServer:
+  busybox: registry.baidubce.com/paddleflow-public/busybox
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/api-server
@@ -254,7 +279,7 @@ api-server:
     debug: false
 
 
-pipeline-ui:
+pipelineUI:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/frontend
@@ -277,7 +302,7 @@ pipeline-ui:
     debug: false
 
 
-proxy-agent:
+proxyAgent:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/inverse-proxy-agent
@@ -323,7 +348,7 @@ scheduledworkflow:
     debug: false
 
 
-viewer-crd:
+viewer:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/viewer-crd-controller
@@ -369,7 +394,7 @@ visualizationserver:
     debug: false
 
 
-workflow-controller:
+workflow:
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/workflow-controller
@@ -390,26 +415,26 @@ workflow-controller:
     ## Enable debug mode
     ##
     debug: false
+  keyFormat: "artifacts/{{workflow.name}}/{{workflow.creationTimestamp.Y}}/{{workflow.creationTimestamp.m}}/{{workflow.creationTimestamp.d}}/{{pod.name}}"
 
 
-argoexec:
-  image:
-    registry: registry.baidubce.com
-    repository: paddleflow-public/argoexec
-    tag: v3.1.6-patch-license-compliance
-    ## Specify a imagePullPolicy
-    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
-    ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-    ##
-    pullPolicy: IfNotPresent
-    ## Optionally specify an array of imagePullSecrets.
-    ## Secrets must be manually created in the namespace.
-    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    ## e.g:
-    ## pullSecrets:
-    ##   - myRegistryKeySecretName
-    ##
-    pullSecrets: []
-    ## Enable debug mode
-    ##
-    debug: false
+argoexecImage:
+  registry: registry.baidubce.com
+  repository: paddleflow-public/argoexec
+  tag: v3.1.6-patch-license-compliance
+  ## Specify a imagePullPolicy
+  ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+  ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ## e.g:
+  ## pullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  pullSecrets: []
+  ## Enable debug mode
+  ##
+  debug: false

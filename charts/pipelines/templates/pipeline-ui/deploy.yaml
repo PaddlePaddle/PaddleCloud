@@ -5,7 +5,7 @@ metadata:
     app: ml-pipeline-ui
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-ui" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
@@ -39,8 +39,8 @@ spec:
                   name: mlpipeline-minio-artifact
             - name: ALLOW_CUSTOM_VISUALIZATIONS
               value: "true"
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.pipeline-ui.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.pipeline-ui.image.pullPolicy | quote }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.pipelineUI.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.pipelineUI.image.pullPolicy | quote }}
           livenessProbe:
             exec:
               command:

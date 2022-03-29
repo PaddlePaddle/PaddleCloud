@@ -5,7 +5,7 @@ metadata:
     app: metadata
     application-crd-id: kubeflow-pipelines
   name: metadata-grpc-service
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   ports:
     - name: grpc-api

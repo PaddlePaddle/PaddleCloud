@@ -5,7 +5,7 @@ metadata:
     app: cache-server
     application-crd-id: kubeflow-pipelines
   name: cache-server
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   ports:
     - port: 443

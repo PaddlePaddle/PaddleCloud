@@ -67,7 +67,7 @@ diagnosticMode:
 paddlejob:
   ## @param paddlejob.enabled Enabled training operator for PaddlePaddle
   ##
-  enabled: true
+  enabled: false
   ## PaddleJob Controller Manager image version
   ## ref:
   ## @param paddlejob.image.registry; PaddleJob image registry
@@ -164,7 +164,7 @@ paddlejob:
 sampleset:
   ## @param sampleset.enabled Enabled distributed sample data set cache for paddle training operator
   ##
-  enabled: true
+  enabled: false
   ## SampleSet Controller Manager image version
   ## ref:
   ## @param sampleset.image.registry; SampleSet image registry
@@ -391,7 +391,7 @@ serving:
 hostpath:
   ## @param hostpath.enabled Enabled hostpath provisioner for PaddleCloud
   ## This is used
-  enabled: true
+  enabled: false
   ## For creating the StorageClass automatically:
   storageClass:
     create: true
@@ -402,12 +402,6 @@ hostpath:
     name: microk8s-hostpath
   ## Set the local HostPath to be used on the node
   nodeHostPath: /mnt/hostpath
-  ## Node selector
-  nodeSelector: {}
-  ## Affinity
-  affinity: {}
-  ## Tolerations
-  tolerations: []
 
 
 ## @section parameters for JuiceFS CSI Driver
@@ -416,37 +410,9 @@ hostpath:
 juicefs:
   ## @param juicefs.enabled Enabled juicefs csi driver
   ##
-  enabled: true
+  enabled: false
   # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
   kubeletDir: /var/lib/kubelet
-
-  storageClasses:
-    # StorageClass Name. It is important.
-    - name: juicefs-sc
-      # -- Default is true will create a new StorageClass. It will create Secret and StorageClass used by CSI driver
-      enabled: false
-      # -- Either Delete or Retain.
-      reclaimPolicy: Delete
-
-      backend:
-        # -- The JuiceFS file system name.
-        name: "sampleset"
-        # -- Connection URL for metadata engine (e.g. Redis). Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/databases_for_metadata.md) for more information.
-        metaurl: ""
-        # -- Object storage type, such as `s3`, `gs`, `oss`. Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/how_to_setup_object_storage.md) for the full supported list.
-        storage: ""
-        # -- Access key for object storage
-        accessKey: ""
-        # -- Secret key for object storage
-        secretKey: ""
-        # -- Bucket URL. Read [this document](https://github.com/juicedata/juicefs/blob/main/docs/en/how_to_setup_object_storage.md) to learn how to setup different object storage.
-        bucket: ""
-        # -- Env for mount pod and format, such as `a: b`
-        envs: ""
-        # -- Config for mount pod. Read [this document](https://github.com/juicedata/juicefs-csi-driver/blob/master/docs/en/examples/config-and-env.md) for more usage.
-        configs: ""
-        # -- Config for trash days
-        trashDays: ""
 
 
 ## @section parameters for Redis which used as metadata storage by JuiceFS CSI Driver
@@ -456,191 +422,6 @@ redis:
   ## @param redis.enabled Enabled Redis as metadata storage for JuiceFS
   ##
   enabled: true
-  ## @param architecture Redis&trade; architecture. Allowed values: `standalone` or `replication`
-  ##
-  architecture: standalone
-  ## ref: https://github.com/bitnami/bitnami-docker-redis#setting-the-server-password-on-first-run
-  ##
-  auth:
-    ## @param auth.enabled Enable password authentication
-    ##
-    enabled: true
-    ## @param auth.sentinel Enable password authentication on sentinels too
-    ##
-    sentinel: true
-    ## @param auth.password Redis&trade; password
-    ## Defaults to a random 10-character alphanumeric string if not set
-    ##
-    password: ""
-    ## @param auth.existingSecret The name of an existing secret with Redis&trade; credentials
-    ## NOTE: When it's set, the previous `auth.password` parameter is ignored
-    ##
-    existingSecret: ""
-    ## @param auth.existingSecretPasswordKey Password key to be retrieved from existing secret
-    ## NOTE: ignored unless `auth.existingSecret` parameter is set
-    ##
-    existingSecretPasswordKey: ""
-    ## @param auth.usePasswordFiles Mount credentials as files instead of using an environment variable
-    ##
-    usePasswordFiles: false
-
-  master:
-    ## Redis&trade; master service parameters
-    ##
-    service:
-      ## @param master.service.type Redis&trade; master service type
-      ##
-      type: ClusterIP
-      ## @param master.service.ports.redis Redis&trade; master service port
-      ##
-      ports:
-        redis: 6379
-      ## @param master.service.nodePorts.redis Node port for Redis&trade; master
-      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
-      ## NOTE: choose port between <30000-32767>
-      ##
-      nodePorts:
-        redis: ""
-      ## @param master.service.externalTrafficPolicy Redis&trade; master service external traffic policy
-      ## ref: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
-      ##
-      externalTrafficPolicy: Cluster
-      ## @param master.service.extraPorts Extra ports to expose (normally used with the `sidecar` value)
-      ##
-      extraPorts: []
-      ## @param master.service.clusterIP Redis&trade; master service Cluster IP
-      ##
-      clusterIP: ""
-      ## @param master.service.loadBalancerIP Redis&trade; master service Load Balancer IP
-      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-      ##
-      loadBalancerIP: ""
-      ## @param master.service.loadBalancerSourceRanges Redis&trade; master service Load Balancer sources
-      ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
-      ## e.g.
-      ## loadBalancerSourceRanges:
-      ##   - 10.10.10.0/24
-      ##
-      loadBalancerSourceRanges: []
-      ## @param master.service.annotations Additional custom annotations for Redis&trade; master service
-      ##
-      annotations: {}
-    ## Persistence parameters
-    ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
-    ##
-    persistence:
-      ## @param master.persistence.enabled Enable persistence on Redis&trade; master nodes using Persistent Volume Claims
-      ##
-      enabled: true
-      ## @param master.persistence.medium Provide a medium for `emptyDir` volumes.
-      ##
-      medium: ""
-      ## @param master.persistence.sizeLimit Set this to enable a size limit for `emptyDir` volumes.
-      ##
-      sizeLimit: ""
-      ## @param master.persistence.path The path the volume will be mounted at on Redis&trade; master containers
-      ## NOTE: Useful when using different Redis&trade; images
-      ##
-      path: /data
-      ## @param master.persistence.subPath The subdirectory of the volume to mount on Redis&trade; master containers
-      ## NOTE: Useful in dev environments
-      ##
-      subPath: ""
-      ## @param master.persistence.storageClass Persistent Volume storage class
-      ## If defined, storageClassName: <storageClass>
-      ## If set to "-", storageClassName: "", which disables dynamic provisioning
-      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
-      ##
-      storageClass: ""
-      ## @param master.persistence.accessModes Persistent Volume access modes
-      ##
-      accessModes:
-        - ReadWriteOnce
-      ## @param master.persistence.size Persistent Volume size
-      ##
-      size: 4Gi
-      ## @param master.persistence.annotations Additional custom annotations for the PVC
-      ##
-      annotations: {}
-      ## @param master.persistence.selector Additional labels to match for the PVC
-      ## e.g:
-      ## selector:
-      ##   matchLabels:
-      ##     app: my-app
-      ##
-      selector: {}
-      ## @param master.persistence.dataSource Custom PVC data source
-      ##
-      dataSource: {}
-      ## @param master.persistence.existingClaim Use a existing PVC which must be created manually before bound
-      ## NOTE: requires master.persistence.enabled: true
-      ##
-      existingClaim: ""
-
-
-## @section parameters for Minio used as object storage for
-## ref: https://github.com/bitnami/charts/tree/master/bitnami/minio
-##
-minio:
-  ## @param minio.enabled Enabled Minio object storage
-  ##
-  enabled: true
-  ## @param mode MinIO&reg; server mode (`standalone` or `distributed`)
-  ## ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
-  ##
-  mode: standalone
-  ## MinIO&reg; authentication parameters
-  ##
-  auth:
-    ## @param auth.rootUser MinIO&reg; root username
-    ##
-    rootUser: minio
-    ## @param auth.rootPassword Password for MinIO&reg; root user
-    ##
-    rootPassword: "minio123"
-    ## @param auth.existingSecret Use existing secret for credentials details (`auth.rootUser` and `auth.rootPassword` will be ignored and picked up from this secret). The secret has to contain the keys `root-user` and `root-password`)
-    ##
-    existingSecret: ""
-    ## @param auth.forcePassword Force users to specify required passwords
-    ##
-    forcePassword: false
-    ## @param auth.useCredentialsFiles Mount credentials as a files instead of using an environment variable
-    ##
-    useCredentialsFiles: false
-    ## @param auth.forceNewKeys Force root credentials (user and password) to be reconfigured every time they change in the secrets
-    ##
-    forceNewKeys: false
-  ## Enable persistence using Persistent Volume Claims
-  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
-  ##
-  persistence:
-    ## @param persistence.enabled Enable MinIO&reg; data persistence using PVC. If false, use emptyDir
-    ##
-    enabled: true
-    ## @param persistence.storageClass PVC Storage Class for MinIO&reg; data volume
-    ## If defined, storageClassName: <storageClass>
-    ## If set to "-", storageClassName: "", which disables dynamic provisioning
-    ## If undefined (the default) or set to null, no storageClassName spec is
-    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-    ##   GKE, AWS & OpenStack)
-    ##
-    storageClass: ""
-    ## @param persistence.mountPath Data volume mount path
-    ##
-    mountPath: /data
-    ## @param persistence.accessModes PVC Access Modes for MinIO&reg; data volume
-    ##
-    accessModes:
-      - ReadWriteOnce
-    ## @param persistence.size PVC Storage Request for MinIO&reg; data volume
-    ##
-    size: 8Gi
-    ## @param persistence.annotations Annotations for the PVC
-    ##
-    annotations: {}
-    ## @param persistence.existingClaim Name of an existing PVC to use (only in `standalone` mode)
-    ##
-    existingClaim: ""
 
 
 ## @section parameters for Knative Serving used by paddle serving operator
@@ -649,17 +430,11 @@ knative:
   enabled: false
 
 
-### @section parameters for net-kourier used as network ingress by Knative
-###
-#kourier:
-#  enabled: false
-
-
 ## @section parameters for JupyterHub
 ## ref:
 ##
 jupyterhub:
-  enabled: true
+  enabled: false
   hub:
     ## @param hub.adminUser Hub Dummy authenticator admin user
     ##
@@ -667,170 +442,9 @@ jupyterhub:
     ## @param hub.password Hub Dummy authenticator password
     ##
     password: "admin"
-  ## PostgreSQL chart configuration
-  ## ref: https://github.com/bitnami/charts/blob/master/bitnami/postgresql/values.yaml
-  ## @param postgresql.enabled Switch to enable or disable the PostgreSQL helm chart
-  ## @param postgresql.auth.username Name for a custom user to create
-  ## @param postgresql.auth.password Password for the custom user to create
-  ## @param postgresql.auth.database Name for a custom database to create
-  ## @param postgresql.auth.existingSecret Name of existing secret to use for PostgreSQL credentials
-  ## @param postgresql.architecture PostgreSQL architecture (`standalone` or `replication`)
-  ## @param postgresql.service.ports.postgresql PostgreSQL service port
-  ##
-  postgresql:
-    enabled: true
-    auth:
-      username: bn_jupyterhub
-      password: ""
-      database: bitnami_jupyterhub
-      existingSecret: ""
-    architecture: standalone
-    service:
-      ports:
-        postgresql: 5432
-  ## External PostgreSQL configuration
-  ## All of these values are only used when postgresql.enabled is set to false
-  ## @param externalDatabase.host Database host
-  ## @param externalDatabase.port Database port number
-  ## @param externalDatabase.user Non-root username for JupyterHub
-  ## @param externalDatabase.password Password for the non-root username for JupyterHub
-  ## @param externalDatabase.database JupyterHub database name
-  ## @param externalDatabase.existingSecret Name of an existing secret resource containing the database credentials
-  ## @param externalDatabase.existingSecretPasswordKey Name of an existing secret key containing the database credentials
-  ##
-  externalDatabase:
-    host: ""
-    port: 5432
-    user: postgres
-    database: jupyterhub
-    password: ""
-    existingSecret: ""
-    existingSecretPasswordKey: ""
 
 
 ## @section parameters for kubeflow pipelines
 ##
 pipelines:
   enabled: false
-
-
-## @section parameters for MySQL as metadata storage for Kubeflow Pipeline
-##
-mysql:
-  enabled: false
-  ## @param architecture MySQL architecture (`standalone` or `replication`)
-  ##
-  architecture: standalone
-  ## MySQL Authentication parameters
-  ##
-  auth:
-    ## @param auth.rootPassword Password for the `root` user. Ignored if existing secret is provided
-    ## ref: https://github.com/bitnami/bitnami-docker-mysql#setting-the-root-password-on-first-run
-    ##
-    rootPassword: ""
-    ## @param auth.database Name for a custom database to create
-    ## ref: https://github.com/bitnami/bitnami-docker-mysql/blob/master/README.md#creating-a-database-on-first-run
-    ##
-    database: my_database
-    ## @param auth.username Name for a custom user to create
-    ## ref: https://github.com/bitnami/bitnami-docker-mysql/blob/master/README.md#creating-a-database-user-on-first-run
-    ##
-    username: ""
-    ## @param auth.password Password for the new user. Ignored if existing secret is provided
-    ##
-    password: ""
-    ## @param auth.replicationUser MySQL replication user
-    ## ref: https://github.com/bitnami/bitnami-docker-mysql#setting-up-a-replication-cluster
-    ##
-    replicationUser: replicator
-    ## @param auth.replicationPassword MySQL replication user password. Ignored if existing secret is provided
-    ##
-    replicationPassword: ""
-    ## @param auth.existingSecret Use existing secret for password details. The secret has to contain the keys `mysql-root-password`, `mysql-replication-password` and `mysql-password`
-    ## NOTE: When it's set the auth.rootPassword, auth.password, auth.replicationPassword are ignored.
-    ##
-    existingSecret: ""
-    ## @param auth.forcePassword Force users to specify required passwords
-    ##
-    forcePassword: false
-    ## @param auth.usePasswordFiles Mount credentials as files instead of using an environment variable
-    ##
-    usePasswordFiles: false
-    ## @param auth.customPasswordFiles [object] Use custom password files when `auth.usePasswordFiles` is set to `true`. Define path for keys `root` and `user`, also define `replicator` if `architecture` is set to `replication`
-    ## Example:
-    ## customPasswordFiles:
-    ##   root: /vault/secrets/mysql-root
-    ##   user: /vault/secrets/mysql-user
-    ##   replicator: /vault/secrets/mysql-replicator
-    ##
-    customPasswordFiles: {}
-  ## @section MySQL Primary parameters
-  primary:
-    ## MySQL Primary Service parameters
-    ##
-    service:
-      ## @param primary.service.type MySQL Primary K8s service type
-      ##
-      type: ClusterIP
-      ## @param primary.service.port MySQL Primary K8s service port
-      ##
-      port: 3306
-      ## @param primary.service.nodePort MySQL Primary K8s service node port
-      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
-      ##
-      nodePort: ""
-      ## @param primary.service.clusterIP MySQL Primary K8s service clusterIP IP
-      ## e.g:
-      ## clusterIP: None
-      ##
-      clusterIP: ""
-      ## @param primary.service.loadBalancerIP MySQL Primary loadBalancerIP if service type is `LoadBalancer`
-      ## Set the LoadBalancer service type to internal only
-      ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-      ##
-      loadBalancerIP: ""
-      ## @param primary.service.externalTrafficPolicy Enable client source IP preservation
-      ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
-      ##
-      externalTrafficPolicy: Cluster
-      ## @param primary.service.loadBalancerSourceRanges [array] Addresses that are allowed when MySQL Primary service is LoadBalancer
-      ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
-      ## E.g.
-      ## loadBalancerSourceRanges:
-      ##   - 10.10.10.0/24
-      ##
-      loadBalancerSourceRanges: []
-      ## @param primary.service.annotations [object] Provide any additional annotations which may be required
-      ##
-      annotations: {}
-    ## Enable persistence using Persistent Volume Claims
-    ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
-    ##
-    persistence:
-      ## @param secondary.persistence.enabled Enable persistence on MySQL secondary replicas using a `PersistentVolumeClaim`
-      ##
-      enabled: true
-      ## @param secondary.persistence.storageClass MySQL secondary persistent volume storage Class
-      ## If defined, storageClassName: <storageClass>
-      ## If set to "-", storageClassName: "", which disables dynamic provisioning
-      ## If undefined (the default) or set to null, no storageClassName spec is
-      ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-      ##   GKE, AWS & OpenStack)
-      ##
-      storageClass: ""
-      ## @param secondary.persistence.annotations [object] MySQL secondary persistent volume claim annotations
-      ##
-      annotations: {}
-      ## @param secondary.persistence.accessModes MySQL secondary persistent volume access Modes
-      ##
-      accessModes:
-        - ReadWriteOnce
-      ## @param secondary.persistence.size MySQL secondary persistent volume size
-      ##
-      size: 8Gi
-      ## @param secondary.persistence.selector [object] Selector to match an existing Persistent Volume
-      ## selector:
-      ##   matchLabels:
-      ##     app: my-app
-      ##
-      selector: {}

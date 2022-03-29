@@ -5,7 +5,7 @@ metadata:
     application-crd-id: kubeflow-pipelines
     component: metadata-envoy
   name: {{ printf "%s-metadata-envoy" (include "common.names.fullname" .) }}
-  namespace: {{- include "common.names.namespace" . | quote }}
+  namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   replicas: 1
   selector:
@@ -21,8 +21,8 @@ spec:
         component: metadata-envoy
     spec:
       containers:
-        - image: {{ include "common.images.image" (dict "imageRoot" .Values.metadata-envoy.image "global" .Values.global) }}
-          imagePullPolicy: {{ .Values.metadata-envoy.image.pullPolicy | quote }}
+        - image: {{ include "common.images.image" (dict "imageRoot" .Values.metadataEnvoy.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.metadataEnvoy.image.pullPolicy | quote }}
           name: container
           ports:
             - containerPort: 9090
