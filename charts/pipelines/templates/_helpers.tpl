@@ -10,7 +10,7 @@ Generate endpoint of minio service
 */}}
 {{- define "pipeline.minio.endpoint" -}}
 {{- $port := .Values.minio.service.ports.api | toString -}}
-{{- printf "%s.%s:%s" (include "pipeline.mysql.fullname" .) (include "common.names.namespace" .) $port  -}}
+{{- printf "%s.%s:%s" (include "pipeline.minio.fullname" .) (include "common.names.namespace" .) $port  -}}
 {{- end }}
 
 {{/*

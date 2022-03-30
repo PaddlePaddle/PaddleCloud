@@ -3,7 +3,7 @@ data:
   defaultPipelineRoot: ""
 kind: ConfigMap
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     application-crd-id: kubeflow-pipelines
   name: kfp-launcher
   namespace: {{ include "common.names.namespace" . | quote }}

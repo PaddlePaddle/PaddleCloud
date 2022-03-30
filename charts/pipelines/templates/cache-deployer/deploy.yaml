@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     app: cache-deployer
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-cache-deployer" (include "common.names.fullname" .) }}
@@ -9,14 +9,14 @@ metadata:
 spec:
   replicas: 1
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels:
       app: cache-deployer
       application-crd-id: kubeflow-pipelines
   strategy:
     type: Recreate
   template:
     metadata:
-      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
+      labels:
         app: cache-deployer
         application-crd-id: kubeflow-pipelines
     spec:
