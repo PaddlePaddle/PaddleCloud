@@ -17,5 +17,8 @@ dependencies:
 - name: kubeflow-pipelines
   repository: https://paddleflow-public.hkg.bcebos.com/charts
   version: 0.1.0
-digest: sha256:56a0c51e9b664644406caacadcb82e38dc3743eff668d61d4edaf7a053e22a0b
-generated: "2022-03-30T15:17:33.574402+08:00"
+- name: knative-serving
+  repository: https://paddleflow-public.hkg.bcebos.com/charts
+  version: 0.1.0
+digest: sha256:7b61f93c68e36769fbf922d191ca02cfff111de1aa33a3ed8dd3537f6278f44c
+generated: "2022-03-30T20:10:54.246854+08:00"
