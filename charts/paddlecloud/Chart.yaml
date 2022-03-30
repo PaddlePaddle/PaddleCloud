@@ -49,3 +49,10 @@ dependencies:
     alias: jupyterhub
     tags:
       - all-dep
+  - name: kubeflow-pipelines
+    version: 0.1.0
+    repository: https://paddleflow-public.hkg.bcebos.com/charts
+    condition: pipelines.enabled
+    alias: pipelines
+    tags:
+      - all-dep
