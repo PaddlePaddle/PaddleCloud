@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     app: ml-pipeline-ui
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-ui" (include "common.names.fullname" .) }}
   namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels:
       app: ml-pipeline-ui
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
+      labels:
         app: ml-pipeline-ui
         application-crd-id: kubeflow-pipelines
     spec:

@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-workflow-controller" (include "common.names.fullname" .) }}
   namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels:
       app: workflow-controller
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
-      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
+      labels:
         app: workflow-controller
         application-crd-id: kubeflow-pipelines
     spec:

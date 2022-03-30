@@ -1,19 +1,20 @@
+{{- if .Values.proxyAgent.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     app: proxy-agent
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-proxy-agent" (include "common.names.fullname" .) }}
   namespace: {{ include "common.names.namespace" . | quote }}
 spec:
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels:
       app: proxy-agent
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
-      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
+      labels:
         app: proxy-agent
         application-crd-id: kubeflow-pipelines
     spec:
@@ -23,3 +24,4 @@ spec:
           name: proxy-agent
       hostNetwork: true
       serviceAccountName: proxy-agent-runner
+{{- end -}}

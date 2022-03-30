@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     application-crd-id: kubeflow-pipelines
     component: metadata-grpc-server
   name: {{ printf "%s-metadata-grpc" (include "common.names.fullname" .) }}
@@ -9,12 +9,12 @@ metadata:
 spec:
   replicas: 1
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels:
       application-crd-id: kubeflow-pipelines
       component: metadata-grpc-server
   template:
     metadata:
-      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
+      labels:
         application-crd-id: kubeflow-pipelines
         component: metadata-grpc-server
     spec:

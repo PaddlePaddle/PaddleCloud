@@ -25,7 +25,7 @@ data:
         memory: 512Mi
 kind: ConfigMap
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     application-crd-id: kubeflow-pipelines
   name: workflow-controller-configmap
   namespace: {{ include "common.names.namespace" . | quote }}

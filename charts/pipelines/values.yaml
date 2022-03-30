@@ -275,6 +275,7 @@ pipelineUI:
 
 
 proxyAgent:
+  enabled: false
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/inverse-proxy-agent

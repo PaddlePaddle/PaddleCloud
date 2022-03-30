@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     app: metadata-writer
     application-crd-id: kubeflow-pipelines
   name: {{ printf "%s-metadata-writer" (include "common.names.fullname" .) }}
@@ -9,12 +9,12 @@ metadata:
 spec:
   replicas: 1
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels:
       app: metadata-writer
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
-      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
+      labels:
         app: metadata-writer
         application-crd-id: kubeflow-pipelines
     spec:

@@ -4,7 +4,7 @@ data:
   METADATA_GRPC_SERVICE_PORT: "8080"
 kind: ConfigMap
 metadata:
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels:
     application-crd-id: kubeflow-pipelines
     component: metadata-grpc-server
   name: metadata-grpc-configmap
