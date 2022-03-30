@@ -33,7 +33,7 @@ spec:
       containers:
         - name: kube-rbac-proxy
           image: {{ include "common.images.image" (dict "imageRoot" .Values.serving.proxyImage "global" .Values.global) }}
-            imagePullPolicy: {{ .Values.serving.proxyImage.pullPolicy | quote }}
+          imagePullPolicy: {{ .Values.serving.proxyImage.pullPolicy | quote }}
           args:
             - --secure-listen-address=0.0.0.0:8443
             - --upstream=http://127.0.0.1:8080/

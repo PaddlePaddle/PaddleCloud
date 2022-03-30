@@ -27,27 +27,25 @@ dependencies:
     repository: https://charts.rimusz.net
     condition: hostpath.enabled
     alias: hostpath
+    tags:
+      - all-dep
   - name: juicefs-csi-driver
     version: 0.8.1
     repository: https://juicedata.github.io/juicefs-csi-driver/
     condition: juicefs.enabled
     alias: juicefs
+    tags:
+      - all-dep
   - name: redis
     version: 16.5.4
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
+    tags:
+      - all-dep
   - name: jupyterhub
     version: 1.1.2
     repository: https://charts.bitnami.com/bitnami
     condition: jupyterhub.enabled
     alias: jupyterhub
-  - name: knative-serving
-    version: 0.1.24
-    repository: https://helm-charts.wikimedia.org/stable/
-    condition: knative.enabled
-    alias: knative
-  - name: kubeflow-pipelines
-    version: 1.6.2
-    repository: https://getindata.github.io/helm-charts/
-    condition: pipelines.enabled
-    alias: pipelines
+    tags:
+      - all-dep

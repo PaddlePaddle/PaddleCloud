@@ -16,7 +16,7 @@ global:
   ##   - myRegistryKeySecretName
   ##
   imagePullSecrets: []
-  storageClass: "microk8s-hostpath"
+  storageClass: "hostpath"
   redis:
     password: "paddlepaddle"
 
@@ -67,7 +67,7 @@ diagnosticMode:
 paddlejob:
   ## @param paddlejob.enabled Enabled training operator for PaddlePaddle
   ##
-  enabled: false
+  enabled: true
   ## PaddleJob Controller Manager image version
   ## ref:
   ## @param paddlejob.image.registry; PaddleJob image registry
@@ -164,7 +164,7 @@ paddlejob:
 sampleset:
   ## @param sampleset.enabled Enabled distributed sample data set cache for paddle training operator
   ##
-  enabled: false
+  enabled: true
   ## SampleSet Controller Manager image version
   ## ref:
   ## @param sampleset.image.registry; SampleSet image registry
@@ -261,7 +261,7 @@ sampleset:
 serving:
   ## @param serving.enabled Enabled serving operator for PaddlePaddle
   ##
-  enabled: false
+  enabled: true
   ## Serving Controller Manager image version
   ## ref:
   ## @param serving.image.registry; Serving image registry
@@ -384,22 +384,22 @@ serving:
   tolerations: []
 
 
+####################################################
+## Sections below is for dependencies of PaddleCloud
+####################################################
+
+##@section Tags that used to manager a group of sub-charts
+tags:
+  ## @param tags.all-dep Install all dependencies
+  all-dep: false
+
+
 ## @section parameters for Host Path Provisioner
 ## It is particularly handy to use on single-node Kubernetes cluster as .
 ## ref: https://artifacthub.io/packages/helm/rimusz/hostpath-provisioner
 ##
 hostpath:
-  ## @param hostpath.enabled Enabled hostpath provisioner for PaddleCloud
-  ## This is used
-  enabled: false
-  ## For creating the StorageClass automatically:
-  storageClass:
-    create: true
-    ## Set StorageClass as the default StorageClass
-    ## Ignored if storageClass.create is false
-    defaultClass: true
-    ## Set a StorageClass name
-    name: microk8s-hostpath
+  ## enabled: true
   ## Set the local HostPath to be used on the node
   nodeHostPath: /mnt/hostpath
 
@@ -408,9 +408,7 @@ hostpath:
 ## ref: https://github.com/juicedata/juicefs-csi-driver
 ##
 juicefs:
-  ## @param juicefs.enabled Enabled juicefs csi driver
-  ##
-  enabled: false
+  ## enabled: true
   # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
   kubeletDir: /var/lib/kubelet
 
@@ -419,22 +417,17 @@ juicefs:
 ## ref: https://github.com/bitnami/charts/tree/master/bitnami/redis
 ##
 redis:
-  ## @param redis.enabled Enabled Redis as metadata storage for JuiceFS
+  ## enabled: true
+  ## @param redis.architecture Redis&trade; architecture. Allowed values: `standalone` or `replication`
   ##
-  enabled: true
-
-
-## @section parameters for Knative Serving used by paddle serving operator
-##
-knative:
-  enabled: false
+  architecture: standalone
 
 
 ## @section parameters for JupyterHub
-## ref:
+## ref: https://github.com/bitnami/charts/tree/master/bitnami/jupyterhub
 ##
 jupyterhub:
-  enabled: false
+  ## enabled: true
   hub:
     ## @param hub.adminUser Hub Dummy authenticator admin user
     ##
@@ -444,7 +437,13 @@ jupyterhub:
     password: "admin"
 
 
+## @section parameters for Knative Serving used by paddle serving operator
+##
+knative:
+  ## enabled: true
+
+
 ## @section parameters for kubeflow pipelines
 ##
 pipelines:
-  enabled: false
+  ## enabled: true
