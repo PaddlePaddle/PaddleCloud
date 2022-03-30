@@ -440,10 +440,23 @@ jupyterhub:
 ## @section parameters for Knative Serving used by paddle serving operator
 ##
 knative:
-  ## enabled: true
+  enabled: true
 
 
 ## @section parameters for kubeflow pipelines
 ##
 pipelines:
   ## enabled: true
+  mysql:
+    auth:
+      rootPassword: "paddlepaddle"
+  minio:
+    ## MinIO&reg; authentication parameters
+    ##
+    auth:
+      ## @param auth.rootUser MinIO&reg; root username
+      ##
+      rootUser: minio
+      ## @param auth.rootPassword Password for MinIO&reg; root user
+      ##
+      rootPassword: "minio123"
