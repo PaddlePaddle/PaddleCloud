@@ -1,7 +1,7 @@
 dependencies:
 - name: common
   repository: https://charts.bitnami.com/bitnami
-  version: 1.12.0
+  version: 1.13.0
 - name: hostpath-provisioner
   repository: https://charts.rimusz.net
   version: 0.2.13
@@ -11,11 +11,11 @@ dependencies:
 - name: redis
   repository: https://charts.bitnami.com/bitnami
   version: 16.5.4
-- name: minio
-  repository: https://charts.bitnami.com/bitnami
-  version: 11.1.4
 - name: jupyterhub
   repository: https://charts.bitnami.com/bitnami
   version: 1.1.2
-digest: sha256:2540a0d0088458bd199a4c79526a5ab68052ceefa99576f6cacc7ceb088a8454
-generated: "2022-03-23T21:26:51.315673+08:00"
+- name: kubeflow-pipelines
+  repository: https://paddleflow-public.hkg.bcebos.com/charts
+  version: 0.1.0
+digest: sha256:56a0c51e9b664644406caacadcb82e38dc3743eff668d61d4edaf7a053e22a0b
+generated: "2022-03-30T15:17:33.574402+08:00"

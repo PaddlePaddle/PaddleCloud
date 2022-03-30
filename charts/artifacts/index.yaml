@@ -1,42 +1,87 @@
 apiVersion: v1
 entries:
-  paddlecloud:
+  kubeflow-pipelines:
   - annotations:
-      category: mlops
+      category: pipeline
     apiVersion: v2
-    appVersion: 0.4.0
-    created: "2022-03-23T13:02:51.972509+08:00"
+    appVersion: 1.7.0
+    created: "2022-03-30T15:19:20.05034+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
       tags:
       - bitnami-common
-      version: 1.x.x
-    - condition: juicefs.enabled
+      version: 1.13.0
+    - condition: mysql.enabled
+      name: mysql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.8.27
+    - condition: minio.enabled
+      name: minio
+      repository: https://charts.bitnami.com/bitnami
+      version: 11.1.4
+    description: Kubeflow pipelines are reusable end-to-end ML workflows built using the Kubeflow Pipelines SDK.
+    digest: 0679ddab1640a0564576b4b4ec0c1462bc6fec2828426a830b97c66ccb1f76d9
+    home: https://github.com/kubeflow/pipelines
+    icon: https://avatars.githubusercontent.com/u/33164907?s=200&v=4
+    keywords:
+    - kubeflow
+    - pipelines
+    - workflow
+    name: kubeflow-pipelines
+    sources:
+    - https://github.com/kubeflow/pipelines
+    urls:
+    - kubeflow-pipelines-0.1.0.tgz
+    version: 0.1.0
+  paddlecloud:
+  - annotations:
+      category: mlops
+    apiVersion: v2
+    appVersion: 0.4.0
+    created: "2022-03-30T15:19:20.089849+08:00"
+    dependencies:
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.13.0
+    - alias: hostpath
+      condition: hostpath.enabled
+      name: hostpath-provisioner
+      repository: https://charts.rimusz.net
+      tags:
+      - all-dep
+      version: 0.2.13
+    - alias: juicefs
+      condition: juicefs.enabled
       name: juicefs-csi-driver
       repository: https://juicedata.github.io/juicefs-csi-driver/
+      tags:
+      - all-dep
       version: 0.8.1
     - condition: redis.enabled
       name: redis
       repository: https://charts.bitnami.com/bitnami
+      tags:
+      - all-dep
       version: 16.5.4
-    - alias: knative
-      condition: knative.enabled
-      name: knative-serving
-      repository: https://helm-charts.wikimedia.org/stable/
-      version: 0.1.24
-    - alias: pipelines
-      condition: pipelines.enabled
-      name: kubeflow-pipelines
-      repository: https://getindata.github.io/helm-charts/
-      version: 1.6.2
     - alias: jupyterhub
       condition: jupyterhub.enabled
       name: jupyterhub
       repository: https://charts.bitnami.com/bitnami
+      tags:
+      - all-dep
       version: 1.1.2
+    - alias: pipelines
+      condition: pipelines.enabled
+      name: kubeflow-pipelines
+      repository: https://paddleflow-public.hkg.bcebos.com/charts
+      tags:
+      - all-dep
+      version: 0.1.0
     description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
-    digest: fb000eefc5d4179abe9ecaccddc5428f7caa00e7b117680b25aec81c6d13550d
+    digest: 2a045b47a289fb0b33e79f9232b7c2019aa63e27d39ee75966dc49d000d173bd
     home: https://github.com/PaddlePaddle/PaddleCloud
     icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
     keywords:
@@ -51,4 +96,4 @@ entries:
     urls:
     - paddlecloud-0.1.0.tgz
     version: 0.1.0
-generated: "2022-03-23T13:02:51.932557+08:00"
+generated: "2022-03-30T15:19:20.024691+08:00"
