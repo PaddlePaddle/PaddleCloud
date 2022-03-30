@@ -32,6 +32,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: OBJECTSTORECONFIG_SECURE
               value: "false"
+            - name: OBJECTSTORECONFIG_HOST
+              value: {{ include "pipeline.minio.fullname" . | quote  }}
+            - name: OBJECTSTORECONFIG_PORT
+              value: {{ .Values.minio.service.ports.api }}
             - name: OBJECTSTORECONFIG_BUCKETNAME
               valueFrom:
                 configMapKeyRef:
