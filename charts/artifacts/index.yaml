@@ -1,11 +1,38 @@
 apiVersion: v1
 entries:
+  knative-serving:
+  - annotations:
+      category: serverless
+    apiVersion: v2
+    appVersion: 1.2.0
+    created: "2022-03-30T20:14:17.997466+08:00"
+    dependencies:
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.x.x
+    description: Knative Serving builds on Kubernetes to support deploying and serving of applications and functions as serverless containers. Serving is easy to get started with and scales to support advanced scenarios.
+    digest: e48cbf5fe9fdb85ae746c36184beaedce6215819d419932776309f8f34593463
+    home: https://github.com/knative/serving
+    icon: https://knative.dev/docs/images/logo/rgb/knative-logo-rgb.png
+    keywords:
+    - knative
+    - serving
+    - serverless
+    name: knative-serving
+    sources:
+    - https://github.com/knative/serving
+    type: application
+    urls:
+    - knative-serving-0.1.0.tgz
+    version: 0.1.0
   kubeflow-pipelines:
   - annotations:
       category: pipeline
     apiVersion: v2
     appVersion: 1.7.0
-    created: "2022-03-30T15:19:20.05034+08:00"
+    created: "2022-03-30T20:14:18.013167+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -39,7 +66,7 @@ entries:
       category: mlops
     apiVersion: v2
     appVersion: 0.4.0
-    created: "2022-03-30T15:19:20.089849+08:00"
+    created: "2022-03-30T20:14:18.049257+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -80,8 +107,15 @@ entries:
       tags:
       - all-dep
       version: 0.1.0
+    - alias: knative
+      condition: knative.enabled
+      name: knative-serving
+      repository: https://paddleflow-public.hkg.bcebos.com/charts
+      tags:
+      - all-dep
+      version: 0.1.0
     description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
-    digest: 2a045b47a289fb0b33e79f9232b7c2019aa63e27d39ee75966dc49d000d173bd
+    digest: b3d247f529405224de3f36ab176870b0976c55659937390826972f3eb83ba195
     home: https://github.com/PaddlePaddle/PaddleCloud
     icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
     keywords:
@@ -96,4 +130,4 @@ entries:
     urls:
     - paddlecloud-0.1.0.tgz
     version: 0.1.0
-generated: "2022-03-30T15:19:20.024691+08:00"
+generated: "2022-03-30T20:14:17.991334+08:00"

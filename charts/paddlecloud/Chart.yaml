@@ -56,3 +56,10 @@ dependencies:
     alias: pipelines
     tags:
       - all-dep
+  - name: knative-serving
+    version: 0.1.0
+    repository: https://paddleflow-public.hkg.bcebos.com/charts
+    condition: knative.enabled
+    alias: knative
+    tags:
+      - all-dep
