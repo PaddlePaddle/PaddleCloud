@@ -24,7 +24,8 @@ spec:
         - name: activator
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: registry.baidubce.com/paddleflow-public/knative-serving-activator:246171
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.activator.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.activator.image.pullPolicy | quote}}
           # The numbers are based on performance test results from
           # https://github.com/knative/serving/issues/1625#issuecomment-511930023
           resources:
@@ -79,13 +80,15 @@ spec:
               httpHeaders:
                 - name: k-kubelet-probe
                   value: "activator"
-            failureThreshold: 12
+            periodSeconds: 5
+            failureThreshold: 10
           livenessProbe:
             httpGet:
               port: 8012
               httpHeaders:
                 - name: k-kubelet-probe
                   value: "activator"
+            periodSeconds: 10
             failureThreshold: 12
             initialDelaySeconds: 15
       # The activator (often) sits on the dataplane, and may proxy long (e.g.

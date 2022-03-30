@@ -14,3 +14,10 @@ name: knative-serving
 sources:
   - https://github.com/knative/serving
 version: 0.1.0
+
+dependencies:
+  - name: common
+    version: 1.x.x
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common

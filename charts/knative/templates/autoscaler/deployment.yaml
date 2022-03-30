@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "%s-autoscaler" (include "common.names.fullname" .) }}
-  namespace: {{ .Realse.namespace | queto }}
+  name: autoscaler
+  namespace: knative-serving
   labels:
     serving.knative.dev/release: "v0.21.1"
 spec:
@@ -33,7 +33,8 @@ spec:
         - name: autoscaler
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: registry.baidubce.com/paddleflow-public/knative-serving-autoscaler:9ed4c3
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.autoscaler.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.autoscaler.image.pullPolicy }}
           resources:
             requests:
               cpu: 30m
