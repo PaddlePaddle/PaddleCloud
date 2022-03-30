@@ -32,7 +32,8 @@ spec:
         - name: controller
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: registry.baidubce.com/paddleflow-public/knative-serving-controller:8e8b9e
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.controller.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           resources:
             requests:
               cpu: 100m

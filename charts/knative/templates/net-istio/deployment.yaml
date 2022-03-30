@@ -1,3 +1,4 @@
+{{- if .Values.netIstio.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +28,8 @@ spec:
         - name: networking-istio
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: registry.baidubce.com/paddleflow-public/net-istio-controller:bef57a
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.netIstio.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.netIstio.image.pullPolicy | quote}}
           resources:
             requests:
               cpu: 30m
@@ -120,3 +122,4 @@ spec:
               containerPort: 8008
             - name: https-webhook
               containerPort: 8443
+{{- end -}}

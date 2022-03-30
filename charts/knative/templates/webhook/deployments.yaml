@@ -34,7 +34,8 @@ spec:
         - name: webhook
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: registry.baidubce.com/paddleflow-public/knative-serving-webhook:0f12dc
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.webhook.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.webhook.image.pullPolicy | quote}}
           resources:
             requests:
               cpu: 100m
