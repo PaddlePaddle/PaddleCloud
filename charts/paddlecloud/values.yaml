@@ -411,6 +411,8 @@ juicefs:
   ## enabled: true
   # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
   kubeletDir: /var/lib/kubelet
+  # when use microk8s on linux
+  # kubeletDir: /var/snap/microk8s/common/var/lib/kubelet
 
 
 ## @section parameters for Redis which used as metadata storage by JuiceFS CSI Driver

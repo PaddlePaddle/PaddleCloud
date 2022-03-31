@@ -5,7 +5,7 @@ entries:
       category: serverless
     apiVersion: v2
     appVersion: 1.2.0
-    created: "2022-03-30T20:14:17.997466+08:00"
+    created: "2022-03-31T11:15:37.109844+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -32,7 +32,7 @@ entries:
       category: pipeline
     apiVersion: v2
     appVersion: 1.7.0
-    created: "2022-03-30T20:14:18.013167+08:00"
+    created: "2022-03-31T11:15:37.121953+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -48,7 +48,7 @@ entries:
       repository: https://charts.bitnami.com/bitnami
       version: 11.1.4
     description: Kubeflow pipelines are reusable end-to-end ML workflows built using the Kubeflow Pipelines SDK.
-    digest: 0679ddab1640a0564576b4b4ec0c1462bc6fec2828426a830b97c66ccb1f76d9
+    digest: d36512b2eca39edb573427e4685cc6f63fbba2b3f6a70baf7504168e9b137298
     home: https://github.com/kubeflow/pipelines
     icon: https://avatars.githubusercontent.com/u/33164907?s=200&v=4
     keywords:
@@ -66,7 +66,7 @@ entries:
       category: mlops
     apiVersion: v2
     appVersion: 0.4.0
-    created: "2022-03-30T20:14:18.049257+08:00"
+    created: "2022-03-31T11:15:37.16017+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -115,7 +115,7 @@ entries:
       - all-dep
       version: 0.1.0
     description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
-    digest: b3d247f529405224de3f36ab176870b0976c55659937390826972f3eb83ba195
+    digest: e1c3fcf2827d5bc1e78ba4b633ed1c7af9c4adf4a7b238e32da343be245d28b4
     home: https://github.com/PaddlePaddle/PaddleCloud
     icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
     keywords:
@@ -130,4 +130,4 @@ entries:
     urls:
     - paddlecloud-0.1.0.tgz
     version: 0.1.0
-generated: "2022-03-30T20:14:17.991334+08:00"
+generated: "2022-03-31T11:15:37.100126+08:00"
