@@ -1,4 +1,4 @@
-{{- if .Values.global.enableServing }}
+{{- if .Values.serving.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
