@@ -4,4 +4,4 @@ metadata:
   labels:
     application-crd-id: kubeflow-pipelines
   name: kubeflow-pipelines-metadata-writer
-  namespace: kubeflow
+  namespace: {{ include "common.names.namespace" . | quote }}
