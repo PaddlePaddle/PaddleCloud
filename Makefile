@@ -42,7 +42,7 @@ docker-build-paddlejob: test
 
 # Build sampleset controller image
 docker-build-sampleset: test
-	docker build . --build-arg RUNTIME_IMG=${RUNTIME_IMG} --build-arg VERSION=${VERSION} \
+	docker build . --build-arg RUNTIME_IMG=${RUNTIME_IMG} --build-arg GIT_VERSION=${VERSION} \
 		-f docker/Dockerfile.sampleset -t ${SAMPLESET_IMG}:${VERSION}
 
 docker-build-runtime: test

@@ -1,0 +1,22 @@
+{{- if .Values.sampleset.enabled -}}
+{{- if or (index .Values.tags "all-dep" ) (and .Values.pipelines.enabled .Values.redis.enabled) -}}
+apiVersion: batch.paddlepaddle.org/v1alpha1
+kind: SampleSet
+metadata:
+  name: imagenet
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  # 分区数，一个Kubernetes节点表示一个分区
+  partitions: 1
+  source:
+    uri: bos://paddleflow-public.hkg.bcebos.com/imagenet/demo
+    secretRef:
+      name: none
+  secretRef:
+    name: data-center
+{{- end -}}
+{{- end -}}

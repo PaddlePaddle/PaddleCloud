@@ -2,27 +2,28 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: {{ include "common.names.fullname" . }}-test-paddlejob
+  name: test-paddlejob
   namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
 spec:
+  withGloo: 1
+  intranet: PodIP
+  cleanPodPolicy: OnCompletion
   worker:
     replicas: 1
     template:
       spec:
         containers:
-          - name: sample
-            image: nginx
-        restartPolicy: OnFailure
+          - name: paddle
+            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
   ps:
     replicas: 1
     template:
       spec:
         containers:
-          - name: sample
-            image: nginx
-        restartPolicy: OnFailure
+          - name: paddle
+            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
 {{- end -}}
