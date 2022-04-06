@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: sampleset-clusterrole
+  name: {{ printf "%s-sampleset-clusterrole" (include "common.names.fullname" .) }}
 rules:
   - apiGroups:
       - ""
