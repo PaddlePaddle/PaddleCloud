@@ -2,7 +2,7 @@
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
-  name: {{ include "common.names.fullname" . }}-test-paddlejob
+  name: test-paddlejob
   namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}

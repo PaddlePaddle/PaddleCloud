@@ -321,7 +321,7 @@ func (j *JuiceFS) CreateRuntime(ds *appv1.StatefulSet, ctx *common.RequestContex
 		Image: image,
 		Ports: []v1.ContainerPort{
 			{
-				Name:          ctx.Req.Name,
+				Name:          "runtime",
 				ContainerPort: common.RuntimeServicePort,
 			},
 		},

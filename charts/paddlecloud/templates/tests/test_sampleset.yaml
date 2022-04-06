@@ -3,7 +3,7 @@
 apiVersion: batch.paddlepaddle.org/v1alpha1
 kind: SampleSet
 metadata:
-  name: {{ include "common.names.fullname" . }}-imagenet-sampleset
+  name: imagenet
   namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
@@ -18,52 +18,5 @@ spec:
       name: none
   secretRef:
     name: data-center
----
-apiVersion: batch.paddlepaddle.org/v1alpha1
-kind: SampleJob
-metadata:
-  name: {{ include "common.names.fullname" . }}-imagenet-warmup
-  namespace: {{ .Release.Namespace | quote }}
-  labels:
-    {{- include "common.labels.standard" . | nindent 4 }}
-  annotations:
-    "helm.sh/hook": test
-spec:
-  type: warmup
-  sampleSetRef:
-    name: {{ include "common.names.fullname" . }}-imagenet-sampleset
----
-apiVersion: batch.paddlepaddle.org/v1
-kind: PaddleJob
-metadata:
-  name: {{ include "common.names.fullname" . }}-imagenet-paddlejob
-  namespace: {{ .Release.Namespace | quote }}
-  labels:
-    {{- include "common.labels.standard" . | nindent 4 }}
-  annotations:
-    "helm.sh/hook": test
-spec:
-  withGloo: 1
-  intranet: PodIP
-  sampleSetRef:
-    # 申明要使用的 SampleSet
-    name: {{ include "common.names.fullname" . }}-imagenet-sampleset
-    # SampleSet 样本数据集在 Worker Pods 的挂载路径
-    mountPath: /mnt/imagenet
-  cleanPodPolicy: OnCompletion
-  worker:
-    replicas: 1
-    template:
-      spec:
-        containers:
-          - name: paddle
-            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
-  ps:
-    replicas: 1
-    template:
-      spec:
-        containers:
-          - name: paddle
-            image: registry.baidubce.com/paddle-operator/demo-wide-and-deep:v1
 {{- end -}}
 {{- end -}}
