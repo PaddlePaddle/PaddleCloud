@@ -14,7 +14,8 @@ spec:
   partitions: 1
   source:
     uri: bos://paddleflow-public.hkg.bcebos.com/imagenet/demo
-    secretRef: none
+    secretRef:
+      name: none
   secretRef:
     name: data-center
 ---
