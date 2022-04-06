@@ -5,7 +5,6 @@
 
 ## @param global.imageRegistry Global Docker image registry
 ## @param global.imagePullSecrets [array] Global Docker registry secret names as an array
-## @param global.storageClass Global StorageClass for Persistent Volume(s)
 ##
 global:
   imageRegistry: ""
@@ -14,7 +13,6 @@ global:
   ##   - myRegistryKeySecretName
   ##
   imagePullSecrets: []
-  storageClass: ""
 
 
 ## @param kubeVersion Override Kubernetes version
@@ -26,18 +24,10 @@ nameOverride: ""
 ## @param fullnameOverride String to fully override common.names.fullname
 ##
 fullnameOverride: ""
-## @param commonLabels Labels to add to all deployed objects
-##
-commonLabels: {}
-## @param commonAnnotations Annotations to add to all deployed objects
-##
-commonAnnotations: {}
+
 ## @param clusterDomain Kubernetes cluster domain name
 ##
 clusterDomain: cluster.local
-## @param extraDeploy Array of extra objects to deploy with the release
-##`
-extraDeploy: []
 
 
 activator:
@@ -85,6 +75,7 @@ autoscaler:
     ##
     debug: false
 
+
 controller:
   image:
     registry: registry.baidubce.com
@@ -107,7 +98,6 @@ controller:
     ##
     debug: false
 
-crds:
 
 domainMapping:
   domainMapping:
@@ -155,6 +145,7 @@ domainMapping:
 
 
 kourier:
+  enabled: true
   netKourierController:
     image:
       registry: registry.baidubce.com
@@ -200,6 +191,7 @@ kourier:
 
 
 netIstio:
+  enabled: false
   image:
     registry: registry.baidubce.com
     repository: paddleflow-public/net-istio-controller

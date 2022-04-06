@@ -13,7 +13,7 @@ spec:
       control-plane: {{ printf "%s-serving" (include "common.names.fullname" .) }}
   template:
     metadata:
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      labels: {{- include "common.labels.matchLabels" . | nindent 8 }}
         control-plane: {{ printf "%s-serving" (include "common.names.fullname" .) }}
     spec:
       {{- if .Values.serving.affinity }}

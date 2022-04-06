@@ -42,9 +42,6 @@ commonAnnotations: {}
 ## @param clusterDomain Kubernetes cluster domain name
 ##
 clusterDomain: cluster.local
-## @param extraDeploy Array of extra objects to deploy with the release
-##
-extraDeploy: []
 
 ## Enable diagnostic mode in the deployment
 ##
@@ -411,6 +408,8 @@ juicefs:
   ## enabled: true
   # -- kubelet working directory,can be set using `--root-dir` when starting kubelet
   kubeletDir: /var/lib/kubelet
+  # when use microk8s on linux
+  # kubeletDir: /var/snap/microk8s/common/var/lib/kubelet
 
 
 ## @section parameters for Redis which used as metadata storage by JuiceFS CSI Driver
@@ -429,18 +428,21 @@ redis:
 jupyterhub:
   ## enabled: true
   hub:
-    ## @param hub.adminUser Hub Dummy authenticator admin user
-    ##
-    adminUser: admin
     ## @param hub.password Hub Dummy authenticator password
     ##
-    password: "admin"
+    password: "paddlepaddle"
+  postgresql:
+    auth:
+      password: "paddlepaddle"
 
 
 ## @section parameters for Knative Serving used by paddle serving operator
 ##
 knative:
-  enabled: true
+  kourier:
+    enabled: true
+  netIstio:
+    enabled: false
 
 
 ## @section parameters for kubeflow pipelines
