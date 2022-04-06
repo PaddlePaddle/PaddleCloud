@@ -51,7 +51,7 @@ spec:
           {{- else }}
           args:
             - --leader-elect
-            - --namespace={{ .Release.Namespace | quote }}
+            - --namespace={{ .Release.Namespace }}
           {{- end }}
           livenessProbe:
             httpGet:
