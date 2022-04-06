@@ -5,7 +5,7 @@ entries:
       category: serverless
     apiVersion: v2
     appVersion: 1.2.0
-    created: "2022-04-06T12:11:08.10407+08:00"
+    created: "2022-04-06T12:36:39.237458+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -32,7 +32,7 @@ entries:
       category: pipeline
     apiVersion: v2
     appVersion: 1.7.0
-    created: "2022-04-06T12:11:08.128731+08:00"
+    created: "2022-04-06T12:36:39.259256+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -66,7 +66,7 @@ entries:
       category: mlops
     apiVersion: v2
     appVersion: 0.4.0
-    created: "2022-04-06T12:11:08.159908+08:00"
+    created: "2022-04-06T12:36:39.302232+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -115,7 +115,7 @@ entries:
       - all-dep
       version: 0.1.0
     description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
-    digest: 41d3e673052a9eadf9b465337a040f32fa559689dbfd31102b323070423bf51f
+    digest: c2112e675e218c02c43b835f8e78225885190be18b0621c15c3b13d269c6e081
     home: https://github.com/PaddlePaddle/PaddleCloud
     icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
     keywords:
@@ -130,4 +130,4 @@ entries:
     urls:
     - paddlecloud-0.1.0.tgz
     version: 0.1.0
-generated: "2022-04-06T12:11:08.087996+08:00"
+generated: "2022-04-06T12:36:39.231762+08:00"
