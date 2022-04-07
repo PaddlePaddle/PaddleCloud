@@ -1,4 +1,4 @@
-FROM registry.baidubce.com/paddlepaddle/paddle:2.1.3
+FROM registry.baidubce.com/paddlepaddle/paddle:2.2.2
 
 # PaddleDetection base on Python3.7
 RUN pip3.7 install --upgrade pip -i https://mirror.baidu.com/pypi/simple && \
