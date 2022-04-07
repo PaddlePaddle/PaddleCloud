@@ -1,0 +1,15 @@
+FROM registry.baidubce.com/paddlepaddle/paddle:2.2.2
+
+# PaddleOCR base on Python3.7
+RUN pip3.7 install --upgrade pip -i https://mirror.baidu.com/pypi/simple && \
+    pip3.7 install paddlepaddle==2.2.2 -i https://mirror.baidu.com/pypi/simple && \
+    wget https://github.com/PaddlePaddle/PaddleOCR/archive/refs/heads/release/2.4.zip && \
+    unzip 2.4.zip && mv PaddleOCR-release-2.4 PaddleOCR && rm -rf 2.4.zip
+
+WORKDIR /home/PaddleOCR
+
+RUN pip3.7 install -r requirements.txt -i https://mirror.baidu.com/pypi/simple
+
+CMD ["sleep", "infinity"]
+
+# docker build . -t registry.baidubce.com/paddleflow-public/paddleocr:2.4
