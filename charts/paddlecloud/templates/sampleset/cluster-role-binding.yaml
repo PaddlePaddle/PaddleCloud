@@ -6,7 +6,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: sampleset-clusterrole
+  name: {{ printf "%s-sampleset-clusterrole" (include "common.names.fullname" .) }}
 subjects:
   - kind: ServiceAccount
     name: sampleset-sa
