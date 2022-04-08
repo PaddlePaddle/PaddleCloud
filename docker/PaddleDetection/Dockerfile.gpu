@@ -1,0 +1,14 @@
+FROM registry.baidubce.com/paddlepaddle/paddle:2.2.2-gpu-cuda10.2-cudnn7
+
+RUN pip3.7 install --upgrade pip -i https://mirror.baidu.com/pypi/simple && \
+    pip3.7 install paddlepaddle-gpu==2.2.2 -i https://mirror.baidu.com/pypi/simple && \
+    wget https://github.com/PaddlePaddle/PaddleDetection/archive/refs/heads/release/2.4.zip && \
+    unzip 2.4.zip && mv PaddleDetection-release-2.4 PaddleDetection && rm -rf 2.4.zip
+
+WORKDIR /home/PaddleDetection
+
+RUN pip3.7 install -r requirements.txt -i https://mirror.baidu.com/pypi/simple
+
+CMD ["sleep", "infinity"]
+
+# docker build . -t registry.baidubce.com/paddleflow-public/paddledetection:2.4-gpu-cuda10.2-cudnn7
