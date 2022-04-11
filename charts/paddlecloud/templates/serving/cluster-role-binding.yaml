@@ -1,0 +1,14 @@
+{{- if .Values.serving.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "%s-serving-clusterrolebinding" (include "common.names.fullname" .) }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ printf "%s-serving-clusterrole" (include "common.names.fullname" .) }}
+subjects:
+  - kind: ServiceAccount
+    name: paddle-serving-sa
+    namespace: {{ .Release.Namespace | quote }}
+{{- end -}}
