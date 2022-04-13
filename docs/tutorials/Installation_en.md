@@ -1,14 +1,24 @@
-[toc]
-
+English | [简体中文](./Installation.md)
+- [Installation](#installation)
+  - [1. Prerequisites](#1-prerequisites)
+  - [2. Install charts](#2-install-charts)
+    - [2.1 Quick installation of all components](#21-quick-installation-of-all-components)
+    - [2.2 Custom installation](#22-custom-installation)
+    - [2.3 Install configuration for using volcano](#23-install-configuration-for-using-volcano)
+  - [3. Paddlejob test](#3-paddlejob-test)
+  - [4. Uninstall](#4-uninstall)
+  - [5. Advanced usage](#5-advanced-usage)
 # Installation
 
 ## 1. Prerequisites
 
-* Kubernetes >= 1.8
+* Kubernetes, version: v1.21
 * kubectl
 * helm
 
-If you do not have a Kubernetes environment, you can refer to [microk8s documentation]() for installation. If you are using the macOS system, or encounter installation problems, you can refer to the documentation [macOS installation microk8s]().
+> Major components such as Paddlejob can run on kubernetes v1.16+ and we test all the contents at version v1.21. If you want to experience PaddleCloud in a easy way, it is recommended to use version v1.21 for the stable operation of other dependencies.
+
+If you do not have a Kubernetes environment, you can refer to [microk8s documentation]() for installation. If you are using the macOS system, or encounter installation problems, you can refer to the documentation [macOS installation microk8s](./macOS_install_microk8s.md).
 
 ## 2. Install charts
 
@@ -161,7 +171,7 @@ $ helm install test paddlecloud/paddlecloud -n paddlecloud -f values.yaml
 
 ## 3. Paddlejob test
 
-Here is a simple example to check installation. You can refer to [paddlejob tutorial]() for more detailed instructions and more examples. This example adopts PS mode, uses cpu to train the model. We need to configure PS and worker.
+Here is a simple example to check installation. You can refer to [paddlejob tutorial](./Paddlejob) for more detailed instructions and more examples. This example adopts PS mode, uses cpu to train the model. We need to configure PS and worker.
 
 Deploy paddlejob.
 
@@ -181,7 +191,7 @@ Check PaddleJob state.
 kubectl -n paddlecloud get pdj
 ```
 
-Please click [paddlejob tutorial]() get more about paddlejob.
+Please click [paddlejob tutorial](./Paddlejob_en.md) get more about paddlejob.
 
 ## 4. Uninstall
 

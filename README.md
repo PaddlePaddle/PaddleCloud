@@ -1,10 +1,10 @@
-# PaddleCloud
-
 English | [简体中文](./README-zh_CN.md)
+
+# PaddleCloud
 
 ## Overview
 
-PaddleCloud aims to provide a set of easy-to-use cloud components based on PaddlePaddle and related kits to meet customers' business cloud requirements. In order to get through the whole process from training to deployment, the model training component paddlejob, the model inference component serving, and the sample caching component sampleset for acceleration have been developed. The components provide users with almost zero-based experience tutorials and easy-to-use programming interfaces. You can get a clearer understanding of PaddleCloud through [Architecture Overview](Architecture Overview.md).
+PaddleCloud aims to provide a set of easy-to-use cloud components based on PaddlePaddle and related kits to meet customers' business cloud requirements. In order to get through the whole process from training to deployment, the model training component paddlejob, the model inference component serving, and the sample caching component sampleset for acceleration have been developed. The components provide users with almost zero-based experience tutorials and easy-to-use programming interfaces. You can get a clearer understanding of PaddleCloud through Architecture Overview.
 
 ## Components introduction
 
@@ -16,9 +16,11 @@ PaddleCloud aims to provide a set of easy-to-use cloud components based on Paddl
 
 ### Prerequisites
 
-* Kubernetes, 1.8 <= version <= 2.1
+* Kubernetes,  version: v1.21
 * kubectl
 * helm
+
+> Major components such as Paddlejob can run on kubernetes v1.16+ and we test all the contents at version v1.21. If you want to experience PaddleCloud in a easy way, it is recommended to use version v1.21 for the stable operation of other dependencies.
 
 If you do not have a Kubernetes environment, you can refer to [microk8s official documentation](https://microk8s.io/docs/getting-started) for installation. If you use macOS system, or encounter installation problems, you can refer to the document [macOS install microk8s](./docs/macOS_install_microk8s.md).
 
