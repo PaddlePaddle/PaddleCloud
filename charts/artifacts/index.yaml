@@ -5,7 +5,7 @@ entries:
       category: serverless
     apiVersion: v2
     appVersion: 1.2.0
-    created: "2022-04-11T18:07:36.663005+08:00"
+    created: "2022-04-14T13:47:54.604348+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -13,7 +13,7 @@ entries:
       - bitnami-common
       version: 1.x.x
     description: Knative Serving builds on Kubernetes to support deploying and serving of applications and functions as serverless containers. Serving is easy to get started with and scales to support advanced scenarios.
-    digest: e0a183ddb06f6a35fd79d0221d69d2843e09bc78c4ff98937f59ae75c200605b
+    digest: dafcd2d7daafe1281a53e448158d271e77ae8a014c8d9e1f18b0e77b729a5083
     home: https://github.com/knative/serving
     icon: https://knative.dev/docs/images/logo/rgb/knative-logo-rgb.png
     keywords:
@@ -32,7 +32,7 @@ entries:
       category: pipeline
     apiVersion: v2
     appVersion: 1.7.0
-    created: "2022-04-11T18:07:36.683657+08:00"
+    created: "2022-04-14T13:47:54.625721+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -48,7 +48,7 @@ entries:
       repository: https://charts.bitnami.com/bitnami
       version: 11.1.4
     description: Kubeflow pipelines are reusable end-to-end ML workflows built using the Kubeflow Pipelines SDK.
-    digest: 0a588c3d4ebe17085d200178e86beb30e9b296229681fd1dbf6bcb170b970ee4
+    digest: ac5aae8e758881b551e0c4f5579aecec6516b99a29a8a6573967c3293be029ff
     home: https://github.com/kubeflow/pipelines
     icon: https://avatars.githubusercontent.com/u/33164907?s=200&v=4
     keywords:
@@ -66,7 +66,7 @@ entries:
       category: mlops
     apiVersion: v2
     appVersion: 0.4.0
-    created: "2022-04-11T18:07:36.718939+08:00"
+    created: "2022-04-14T13:47:54.663193+08:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -115,7 +115,7 @@ entries:
       - all-dep
       version: 0.1.0
     description: PaddlePaddle Docker images and K8s operators for PaddleOCR/Detection developers to use on public/private cloud.
-    digest: 8c8db3abaed7576b0ccd1753e949e2dd26c3e43f95fd33d17f329c8705a4b1dc
+    digest: d0bea61caa14322772ca4604e728271b5d4188c2dfc5a4a23cb65568968a361d
     home: https://github.com/PaddlePaddle/PaddleCloud
     icon: https://avatars.githubusercontent.com/u/23534030?s=200&v=4
     keywords:
@@ -130,4 +130,4 @@ entries:
     urls:
     - paddlecloud-0.1.0.tgz
     version: 0.1.0
-generated: "2022-04-11T18:07:36.65684+08:00"
+generated: "2022-04-14T13:47:54.599188+08:00"
