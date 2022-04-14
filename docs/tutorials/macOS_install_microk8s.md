@@ -1,5 +1,14 @@
-[toc]
-
+- [macOS 安装 microk8s](#macos-安装-microk8s)
+  - [安装 microk8s](#安装-microk8s)
+    - [安装虚拟机和 microk8s 服务：](#安装虚拟机和-microk8s-服务)
+      - [官方方法](#官方方法)
+      - [multipass方法（建议）：](#multipass方法建议)
+    - [检查安装情况](#检查安装情况)
+  - [解决安装失败问题](#解决安装失败问题)
+    - [查看问题](#查看问题)
+    - [处理缺失的image](#处理缺失的image)
+    - [打开 dns 服务](#打开-dns-服务)
+    - [查看是否成功](#查看是否成功)
 # macOS 安装 microk8s
 
 ## 安装 microk8s
@@ -13,6 +22,7 @@ ref：https://microk8s.io/docs/install-alternatives#heading--macos
 ```bash
 $ brew install ubuntu/microk8s/microk8s
 $ microk8s install
+$ microk8s enable dns
 ```
 
 #### multipass方法（建议）：
@@ -20,21 +30,40 @@ $ microk8s install
 ```bash
 $ brew install ubuntu/microk8s/microk8s
 $ brew cask install multipass
-# 创建虚拟机，名字一定要是这个，不然microk8s的命令不能用，cpu默认为1，建议设为更大的数
-$ multipass launch --name microk8s-vm --mem 4G --disk 40G --cpus 4
+# 创建虚拟机，名字一定要是这个，不然 microk8s 的命令不能用，--mem 建议 >= 6G, --cpus 建议 > 1
+$ multipass launch --name microk8s-vm --mem 8G --disk 40G --cpus 4
 ```
 
 在虚拟机内安装 microk8s
 
 ```bash
 $ multipass shell microk8s-vm
-######## If your access to the original mirror website is slow, please use the domestic mirror website
-$ sed -i s/archive.ubuntu.com/mirrors.aliyun.com/g /etc/apt/sources.list
-$ sed -i s/security.ubuntu.com/mirrors.aliyun.com/g /etc/apt/sources.list
-$ apt-get update
+######## 根据网络情况选择镜像源
+$ sudo sed -i s/archive.ubuntu.com/mirrors.aliyun.com/g /etc/apt/sources.list
+$ sudo sed -i s/security.ubuntu.com/mirrors.aliyun.com/g /etc/apt/sources.list
+$ sudo apt-get update
 ########
-$ sudo snap install microk8s --classic --channel=1.21/stable		# 1.18<=version<=1.21
+$ sudo snap install microk8s --classic --channel=1.21/stable		# 建议选择 kubernates v1.21
 ```
+
+更改默认用户权限
+
+```bash
+# 默认 ubuntu 账号无权限操作集群，均需要 sudo
+# 可将 ubuntu 账号加入 microk8s 用户组以便简化访问
+$ sudo usermod -a -G microk8s ubuntu
+$ sudo chown -f -R ubuntu ~/.kube
+```
+
+将kubernates 的 config 文件写入本地（在本机终端执行）
+
+```bash
+$ multipass exec microk8s-vm -- /snap/bin/microk8s.config > ~/.kube/config
+```
+
+完成这步后，可直接在本机使用 kubectl, helm等命令访问集群。
+
+如果有多个 k8s 集群，可通过 `kubectl --kubeconfig="$path_to_config"` 的形式指定访问某一集群
 
 ### 检查安装情况
 
@@ -76,8 +105,8 @@ $ docker save k8s.gcr.io/pause:3.1 > pause.tar
 # 将image从本机发送到k8s，或者通过mount，共享存储空间
 $ multipass transfer pause.tar microk8s-vm:
 # import image
-$ microk8s ctr image import pause.tar							# docker v1.18+
-$ microk8s.ctr -n k8s.io image import pause.tar		# docker v1.17-
+$ microk8s ctr image import pause.tar							# microk8s v1.18+
+$ microk8s.ctr -n k8s.io image import pause.tar		# microk8s v1.17-
 ```
 
 更一般性的写法：
@@ -93,6 +122,12 @@ $ microk8s.ctr -n k8s.io image import $imageName.tar		# docker v1.17-
 
 一般下载过这个镜像后，其他的都可以 pull 成功，如有不成功的，可用同样的方法处理
 
+### 打开 dns 服务
+
+```
+microk8s enable dns
+```
+
 ### 查看是否成功
 
 ```bash
@@ -107,25 +142,4 @@ microk8s is running
 ...
 ...
 ```
-
-## 附加操作
-
-### 增加默认账号权限
-
-```bash
-# 默认 ubuntu 账号无权限操作集群，均需要 sudo
-# 可将 ubuntu 账号加入 microk8s 用户组以便简化访问
-$ multipass exec microk8s-vm -- sudo usermod -a -G microk8s ubuntu
-$ multipass exec microk8s-vm -- sudo sudo chown -f -R ubuntu ~/.kube
-```
-
-### 本地快捷访问
-
-将k8s的配置文件写入本机，即可直接用kubectl操作
-
-```bash
-$ multipass exec microk8s-vm -- /snap/bin/microk8s.config > ~/.kube/config
-```
-
-有多个k8s集群的话，可通过 `kubectl --kubeconfig="$path_to_config"` 的形式访问
 

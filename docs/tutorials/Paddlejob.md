@@ -1,5 +1,14 @@
-[toc]
-
+[English](./Paddlejob_en.md) | 简体中文
+- [功能概述](#功能概述)
+- [示例1. CPU 训练 wide & deep 示例](#示例1-cpu-训练-wide--deep-示例)
+  - [制作 docker 镜像](#制作-docker-镜像)
+  - [提交 paddlejob 任务](#提交-paddlejob-任务)
+  - [查看任务状态](#查看任务状态)
+- [示例2. GPU 训练 resnet 示例](#示例2-gpu-训练-resnet-示例)
+- [示例3. GPU 和 nodeselector 训练 wide & deep 示例](#示例3-gpu-和-nodeselector-训练-wide--deep-示例)
+- [示例4. 使用 Volcano 调度任务](#示例4-使用-volcano-调度任务)
+  - [volcano 引起的崩溃问题](#volcano-引起的崩溃问题)
+- [示例5. 挂载外部数据](#示例5-挂载外部数据)
 ## 功能概述
 
 使用 paddjob 自定义训练任务，一般需要三个步骤

@@ -1,10 +1,10 @@
-# PaddleCloud
-
 [English](./README.md) | 简体中文
+
+# PaddleCloud
 
 ## 概述
 
-PaddleCloud 旨在基于飞桨 PaddlePaddle 及相关套件，提供一套简单易用的云上组件，满足客户的业务上云需求。为打通从训练到部署的全流程，目前开发了模型训练组件 paddlejob、模型推理组件 serving 和用于加速的样本缓存组件 sampleset，并为用户提供了几乎零基础的体验教程和简单易用的编程接口，方便用户构建自定义的工作流。您可以通过[架构概览](架构概览.md)更清晰的了解 PaddleCloud。
+PaddleCloud 旨在基于飞桨 PaddlePaddle 及相关套件，提供一套简单易用的云上组件，满足客户的业务上云需求。为打通从训练到部署的全流程，目前开发了模型训练组件 paddlejob、模型推理组件 serving 和用于加速的样本缓存组件 sampleset，并为用户提供了几乎零基础的体验教程和简单易用的编程接口，方便用户构建自定义的工作流。您可以通过架构概览部分更清晰的了解 PaddleCloud。
 
 ## 组件介绍                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 
@@ -16,9 +16,11 @@ PaddleCloud 旨在基于飞桨 PaddlePaddle 及相关套件，提供一套简单
 
 ### 环境需求
 
-* Kubernetes, 1.8 <= version <= 2.1
+* Kubernetes, version: v1.21
 * kubectl
 * helm
+
+> Paddlejob 等主要组件可以在 kubernetes v1.16+ 版本运行。如果您想要体验 PaddleCloud，为了保证其他依赖的稳定运行，建议选取已测试过的 v1.21 版本。
 
 如果您没有Kubernetes环境，可以参考 [microk8s官方文档](https://microk8s.io/docs/getting-started) 进行安装；如果您使用的是 macOS 系统，或遇到了安装问题，可以参考文档 [macOS 安装 microk8s](./docs/macOS_install_microk8s.md)。
 

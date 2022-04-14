@@ -28,3 +28,6 @@ testbin/*
 charts/paddlecloud/charts/*
 charts/pipelines/charts/*
 charts/knative/charts/*
+
+# macOS file
+*/.DS_Store
