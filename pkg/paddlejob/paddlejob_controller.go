@@ -603,8 +603,8 @@ func (r *PaddleJobReconciler) dealWithSampleSet(ctx *SampleSetContext, pdj *pdv1
 	}
 	sampleSet := &v1alpha1.SampleSet{}
 	if err := r.Get(ctx.Context, key, sampleSet); err != nil {
-		r.Recorder.Eventf(pdj, corev1.EventTypeWarning, "Create", "sampleset %s is not exists", key.String())
-		return fmt.Errorf("sampleset %s is not exists, please create it and try again", key.String())
+		r.Recorder.Eventf(pdj, corev1.EventTypeWarning, "Create", "get sampleset %s error", key.String())
+		return fmt.Errorf("get sampleset %s error: %s", key.String(), err.Error())
 	}
 	// 2. get csi driver to obtain runtime label and runtime server pods name
 	var driverName v1alpha1.DriverName = ""

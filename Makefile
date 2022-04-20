@@ -38,18 +38,18 @@ docker-build-all: docker-build-paddlejob docker-build-sampleset docker-build-run
 
 # Build paddlejob controller image
 docker-build-paddlejob: test
-	docker build . -f docker/Dockerfile.paddlejob -t ${PADDLEJOB_IMG}:${VERSION}
+	docker build . -f images/Dockerfile.paddlejob -t ${PADDLEJOB_IMG}:${VERSION}
 
 # Build sampleset controller image
 docker-build-sampleset: test
 	docker build . --build-arg RUNTIME_IMG=${RUNTIME_IMG} --build-arg GIT_VERSION=${VERSION} \
-		-f docker/Dockerfile.sampleset -t ${SAMPLESET_IMG}:${VERSION}
+		-f images/Dockerfile.sampleset -t ${SAMPLESET_IMG}:${VERSION}
 
 docker-build-runtime: test
-	docker build . -f docker/Dockerfile.runtime -t ${RUNTIME_IMG}:${VERSION}
+	docker build . -f images/Dockerfile.runtime -t ${RUNTIME_IMG}:${VERSION}
 
 docker-build-serving: test
-	docker build . -f docker/Dockerfile.serving -t ${SERVING_IMG}:${VERSION}
+	docker build . -f images/Dockerfile.serving -t ${SERVING_IMG}:${VERSION}
 
 # Push all docker images
 docker-push-all: docker-push-paddlejob docker-push-sampleset docker-push-runtime docker-push-serving
