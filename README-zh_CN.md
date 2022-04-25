@@ -72,8 +72,9 @@ kubectl -n paddlecloud get pdj
 
 #### 使用指南
 
+- [飞桨模型套件Docker镜像大礼包](./images/)
 - [安装教程](./docs/tutorials/Installation.md)
--  [paddlejob 使用教程](./docs/tutorials/Paddlejob.md)
+- [paddlejob 使用教程](./docs/tutorials/Paddlejob.md)
 - sampleset 使用教程
 - serving 使用教程
 
