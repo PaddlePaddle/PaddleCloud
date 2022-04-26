@@ -1,0 +1,81 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: cron-listener
+spec:
+  serviceAccountName: tekton-triggers-example-sa
+  triggers:
+    - name: cron-trig
+      bindings:
+      - ref: cron-binding
+      template:
+        ref: pipeline-template
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: pipeline-template
+spec:
+  params:
+  - name: gitrevision
+    description: The git revision
+    default: main
+  - name: gitrepositoryurl
+    description: The git repository url
+  - name: namespace
+    description: The namespace to create the resources
+  - name: message
+    description: The message to print
+    default: This is the default message
+  - name: contenttype
+    description: The Content-Type of the event
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: git-build-pipelinerun-
+      spec:
+        serviceAccountName: tekton-triggers-example-sa
+        pipelineRef:
+          name: git-build-pipeline
+        workspaces:
+          - name: shared-data
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi
+          - name: docker-push
+            secret:
+              secretName: docker-push
+        params:
+        - name: repo-url
+        # value: $(tt.params.gitrepositoryurl)
+          value: https://github.com/freeliuzc/tekton-git
+        - name: revision      # (branch, tag, sha, ref, etc...)
+        # value: $(tt.params.gitrevision)
+          value: main
+        - name: image-name
+          # value: registry.baidubce.com/paddleflow-public/tekton-test
+          value: lzc842650834/jarvis_tekton:from_tekton
+        - name: path-to-image-context
+          value: ./
+        - name: path-to-dockerfile
+          value: ./Dockerfile.cpu
+        # - name: revision
+        #   value: $(tt.params.gitrevision)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: cron-binding
+spec:
+  params:
+  - name: gitrevision
+    value: main
+  - name: gitrepositoryurl
+    value: https://https://github.com/freeliuzc/tekton-git

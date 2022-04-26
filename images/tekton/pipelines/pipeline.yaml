@@ -1,0 +1,141 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: git-build-pipeline
+spec:
+  params:
+  - name: repo-name
+    type: string
+    description: The repo name. (PaddleOCR/PaddleDetection/)
+  - name: repo-url-paddle
+    type: string
+    description: The git repository URL to clone from.
+  - name: repo-url-source
+    type: string
+    description: The git repository containing Dockerfile.
+  - name: revision-paddle
+    type: string
+    description: The git branch to clone.
+  - name: revision-source
+    type: string
+    description: The git branch to clone.
+  - name: image-repo
+    type: string
+    description: The image repo to push.
+  - name: path-to-image-context
+    type: string
+    description: Path to the build context.
+  - name: path-to-dockerfile
+    type: string
+    description: Path to the Dockerfile to build.
+  - name: kaniko-image
+    type: string
+    description: kaniko container image
+    default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+  - name: paddle-base-tag
+    type: string
+    description: Tag of the paddle base image.
+    default: 2.2.2
+  workspaces:
+  - name: shared-data
+    description: "save git repos"
+  tasks:
+  - name: fetch-paddle-repo
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+      subPath: PaddleOCR
+    params:
+    - name: url
+      value: $(params.repo-url-paddle)
+    - name: revision
+      value: $(params.revision-paddle)
+  - name: fetch-source-repo
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+      subPath: repo
+    params:
+    - name: url
+      value: $(params.repo-url-source)
+    - name: revision
+      value: $(params.revision-source)
+  - name: prepare-build-env
+    runAfter: 
+      - fetch-source-repo
+      - fetch-paddle-repo
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params: 
+    - name: revision
+      value: $(params.revision-paddle)
+    - name: paddle-base-tag
+      value:  $(params.paddle-base-tag)
+    taskSpec:
+      workspaces:
+      - name: source
+      params: 
+      - name: revision
+      - name: paddle-base-tag
+      results: 
+      - name: image-tag-branch
+        description: image release version
+      - name: image-tag-env
+        description: The base env of paddlepaddle image.
+      - name: paddle-version
+        description: x.x.x
+      steps:
+      - name: preparing
+        image: zshusers/zsh:4.3.15
+        env:
+        - name: REVISION
+          value: $(params.revision)
+        - name: PADDLE_BASE_TAG
+          value: $(params.paddle-base-tag)
+        script: |
+          #!/usr/bin/env zsh
+          set -x
+          cd $(workspaces.source.path) && mkdir docker
+          mv PaddleOCR docker/ && mv repo/docker/* docker/
+          cd docker
+          echo "current path: `pwd`"
+          echo "file list: `ls`"
+          
+          PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
+
+          if [[ ${PADDLE_BASE_TAG} =~ "-" ]]
+          then
+              IMAGE_TAG_ENV=${PADDLE_BASE_TAG#*"-"}
+          else
+              IMAGE_TAG_ENV="cpu"
+          fi
+
+          printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
+          printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
+          printf "%s" "${REVISION:0-3:3}" > "$(results.image-tag-branch.path)"
+  - name: build-image
+    runAfter: ["prepare-build-env"]
+    taskRef:
+      name: kaniko
+    params:
+      - name: IMAGE
+        value: "$(params.image-repo):$(tasks.prepare-build-env.results.image-tag-branch)-$(tasks.prepare-build-env.results.image-tag-env)-$(tasks.fetch-paddle-repo.results.commit-id)"
+      - name: CONTEXT
+        value: $(params.path-to-image-context)
+      - name: DOCKERFILE
+        value: $(params.path-to-dockerfile)
+      - name: BUILDER_IMAGE
+        value: $(params.kaniko-image)
+      - name: EXTRA_ARGS
+        value: 
+          - --build-arg=IMAGE_TAG=$(params.paddle-base-tag)
+          - --build-arg=PADDLE_VERSION=$(tasks.prepare-build-env.results.paddle-version)
+    workspaces:
+      - name: source
+        workspace: shared-data
+

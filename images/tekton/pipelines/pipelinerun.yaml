@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: git-build-pipelinerun
+spec:
+  serviceAccountName: tekton-triggers-example-sa
+  pipelineRef:
+    name: git-build-pipeline
+  workspaces:
+  - name: shared-data
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+  params:
+  - name: repo-url-paddle
+    value: https://github.com/PaddlePaddle/PaddleOCR
+  - name: repo-url-source
+    value: https://github.com/freeliuzc/tekton-git
+  # - name: kaniko-image
+  #   value: gcr.io/kaniko-project/executor:latest
+  - name: revision-paddle      # (branch, tag, sha, ref, etc...)
+    value: release/2.4
+  - name: revision-source      # (branch, tag, sha, ref, etc...)
+    value: main
+  - name: image-repo
+    value: paddlecloud/paddleocr
+  - name: path-to-image-context
+    value: docker
+  - name: path-to-dockerfile
+    value: Dockerfile.gpu    
+  - name: paddle-base-tag
+    value: 2.2.2-gpu-cuda10.2-cudnn7
+  
+    
