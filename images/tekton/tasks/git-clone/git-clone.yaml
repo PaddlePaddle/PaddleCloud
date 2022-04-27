@@ -110,8 +110,6 @@ spec:
       description: The precise commit SHA that was fetched by this Task.
     - name: commit-time
       description: The last commit time.
-    - name: commit-branch
-      description: Current branch.
     - name: url
       description: The precise URL that was fetched by this Task.
   steps:
@@ -224,14 +222,10 @@ spec:
         cd "${CHECKOUT_DIR}"
         RESULT_SHA="$(git rev-parse HEAD)"
         RESULT_TIME="$(git show --pretty=format:"%ci %cr" | head -1)"
-        # cant get remote branch name for some unknow reason
-        RESULT_BRANCH="$(git branch -r | sed -n '/HEAD/p')"
-        RESULT_BRANCH=${RESULT_BRANCH:0-3:3}
         EXIT_CODE="$?"
         if [ "${EXIT_CODE}" != 0 ] ; then
           exit "${EXIT_CODE}"
         fi
         printf "%s" "${RESULT_SHA:0:6}" > "$(results.commit-id.path)"
         printf "%s" "${RESULT_TIME:0:10}" > "$(results.commit-time.path)"
-        printf "%s" "${RESULT_BRANCH}" > "$(results.commit-branch.path)"
         printf "%s" "${PARAM_URL}" > "$(results.url.path)"

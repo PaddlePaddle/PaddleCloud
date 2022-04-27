@@ -23,7 +23,7 @@ spec:
   - name: toolkit-base-image-tag
     value: 2.2.2-gpu-cuda10.2-cudnn7
   - name: docker-repo-url
-    value: https://github.com/freeliuzc/tekton-git
+    value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision      # (branch, tag, sha, ref, etc...)
     value: main
   - name: dockerfile-path
