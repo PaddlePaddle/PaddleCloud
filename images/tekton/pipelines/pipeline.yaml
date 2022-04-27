@@ -131,12 +131,13 @@ spec:
           printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
           printf "%s" "${REVISION:0-3:3}" > "$(results.image-tag-branch.path)"
   - name: build-image
-    runAfter: ["prepare-build-env"]
+    runAfter:
+      - prepare-build-env
     taskRef:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.prepare-build-env.results.image-tag-branch)-$(tasks.prepare-build-env.results.image-tag-env)-$(tasks.fetch-paddle-repo.results.commit-id)"
+        value: "$(params.image-registry):$(tasks.prepare-build-env.results.image-tag-branch)-$(tasks.prepare-build-env.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
