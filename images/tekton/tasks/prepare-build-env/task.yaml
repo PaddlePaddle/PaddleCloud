@@ -1,6 +1,6 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
-metadate:
+metadata:
   name: prepare-build-env
 spec:
   description: Parse parameters from original infos and prepare env for kaniko task.

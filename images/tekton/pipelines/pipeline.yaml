@@ -60,7 +60,7 @@ spec:
       value: $(params.docker-revision)
     - name: subdirectory
       value: repo-docker
-  - name: parse-info-and-prepare-docker-build
+  - name: parse-and-prepare
     taskRef:
       name: prepare-build-env
     runAfter: 
@@ -80,22 +80,22 @@ spec:
       value: $(params.dockerfile-path)
   - name: build-image
     runAfter:
-      - prepare-build-env
+      - parse-and-prepare
     taskRef:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.prepare-build-env.results.image-tag-branch)-$(tasks.prepare-build-env.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
-        value: $(tasks.prepare-build-env.results.dockerfile-name)
+        value: $(tasks.parse-and-prepare.results.dockerfile-name)
       - name: BUILDER_IMAGE
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
-          - --build-arg=PADDLE_VERSION=$(tasks.prepare-build-env.results.paddle-version)
+          - --build-arg=PADDLE_VERSION=$(tasks.parse-and-prepare.results.paddle-version)
     workspaces:
       - name: source
         workspace: shared-data
