@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: cleanup-previous
+spec:
+  description: Parse parameters from original infos and prepare env for kaniko task.
+  params:
+  - name: namespace
+    type: string
+    default: default
+  - name: pipeline
+    type: string
+    default: auto-build-pipeline
+  steps:
+  - name: delete-pipelinerun
+    image: bitnami/kubectl:latest
+    command: ["sh", "-c"]
+    args: ["kubectl get pod"]
+    volumeMounts:
+      - name: kubeconfig
+        mountPath: /.kube/config
+

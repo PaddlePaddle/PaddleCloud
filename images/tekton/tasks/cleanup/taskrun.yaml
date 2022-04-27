@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: cleanup-previous-run
+spec:
+  taskRef:
+    name: cleanup-previous
+  params:
+  - name: namespace
+    value: default
+  - name: pipeline
+    value: auto-build-pipeline
+  volumes:
+  - name: kubeconfig
+    configMap:
+      name: kubeconfig

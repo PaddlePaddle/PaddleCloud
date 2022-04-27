@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: git-build-pipeline
+  name: auto-build-pipeline
 spec:
   params:
   - name: toolkit-repo-name

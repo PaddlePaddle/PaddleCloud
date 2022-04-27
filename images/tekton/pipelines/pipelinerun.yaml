@@ -1,11 +1,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: git-build-pipelinerun
+  name: auto-build-pipelinerun
 spec:
   serviceAccountName: tekton-triggers-example-sa
   pipelineRef:
-    name: git-build-pipeline
+    name: auto-build-pipeline
   workspaces:
   - name: shared-data
     volumeClaimTemplate:
