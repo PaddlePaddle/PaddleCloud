@@ -4,6 +4,9 @@ metadata:
   name: cleanup-previous
 spec:
   description: Parse parameters from original infos and prepare env for kaniko task.
+  workspaces:
+  - name: kubeconfig
+    mountPath: /.kube/config
   params:
   - name: namespace
     type: string
@@ -16,7 +19,5 @@ spec:
     image: bitnami/kubectl:latest
     command: ["sh", "-c"]
     args: ["kubectl get pod"]
-    volumeMounts:
-      - name: kubeconfig
-        mountPath: /.kube/config
+
 

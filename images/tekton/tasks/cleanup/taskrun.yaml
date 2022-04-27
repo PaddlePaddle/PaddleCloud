@@ -10,7 +10,7 @@ spec:
     value: default
   - name: pipeline
     value: auto-build-pipeline
-  volumes:
+  workspaces:
   - name: kubeconfig
     configMap:
       name: kubeconfig
