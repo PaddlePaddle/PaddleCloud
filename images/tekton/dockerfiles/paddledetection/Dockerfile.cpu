@@ -3,16 +3,13 @@ ARG PADDLE_VERSION=2.2.2
 FROM paddlepaddle/paddle:${IMAGE_TAG}
 
 ARG PADDLE_VERSION
-RUN pip3.7 install --upgrade pip -i https://mirror.baidu.com/pypi/simple && \
-    pip3.7 install paddlepaddle==${PADDLE_VERSION} -i https://mirror.baidu.com/pypi/simple && \
-    wget https://github.com/PaddlePaddle/PaddleDetection/archive/refs/heads/release/2.4.zip && \
-    unzip 2.4.zip && mv PaddleDetection-release-2.4 PaddleDetection && rm -rf 2.4.zip
+RUN pip3.7 install --upgrade pip && \
+    pip3.7 install paddlepaddle==${PADDLE_VERSION}
 
-COPY
+COPY PaddleDetection ./PaddleDetection
+
 WORKDIR /home/PaddleDetection
 
-RUN pip3.7 install -r requirements.txt -i https://mirror.baidu.com/pypi/simple
+RUN pip3.7 install -r requirements.txt
 
 CMD ["sleep", "infinity"]
-
-# docker build . -t registry.baidubce.com/paddleflow-public/paddledetection:2.4

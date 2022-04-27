@@ -14,5 +14,3 @@ RUN pip3.7 install -r requirements.txt && \
     pip3.7 install fasttext==0.8.3
 
 CMD ["sleep", "infinity"]
-
-# docker build . -t registry.baidubce.com/paddleflow-public/paddleocr:2.4-gpu-cuda10.2-cudnn7
