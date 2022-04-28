@@ -2,6 +2,8 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: cron-listener
+  annotations:
+    tekton.dev/payload-validation: "false"
 spec:
   serviceAccountName: tekton-triggers-example-sa
   triggers:
