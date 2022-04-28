@@ -45,9 +45,9 @@ spec:
       - name: toolkit-repo-name
         value: PaddleOCR
       - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
-        value: release/2.4
+        value: release/2.3
       - name: toolkit-base-image-tag
-        value: 2.2.2-gpu-cuda10.2-cudnn7
+        value: 2.2.2
       - name: docker-repo-url
         value: https://github.com/freeliuzc/PaddleCloud.git
       - name: docker-revision      # (branch, tag, sha, ref, etc...)
