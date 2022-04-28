@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: curl-cronjob
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
   jobTemplate:
     spec:
       template:

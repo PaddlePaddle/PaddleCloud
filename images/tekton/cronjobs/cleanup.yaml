@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cleanup-cronjob
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
   jobTemplate:
     spec:
       template:
@@ -29,13 +29,3 @@ spec:
                         || echo "$(date -Is) Unable to delete PipelineRun ${PIPELINE_TO_REMOVE}.";
                   done < <(kubectl get pipelinerun -l tekton.dev/pipeline=${PIPELINE} --sort-by=.metadata.creationTimestamp -o name | head -n -${NUM_TO_KEEP});
                 done < <(kubectl get pipelinerun -o go-template='{{range .items}}{{index .metadata.labels "tekton.dev/pipeline"}}{{"\n"}}{{end}}' | uniq);
-            # resources:
-            #   requests:
-            #     cpu: 50m
-            #     memory: 32Mi
-            #   limits:
-            #     cpu: 100m
-            #     memory: 64Mi
-          
-
-
