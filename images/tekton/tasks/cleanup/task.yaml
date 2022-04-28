@@ -6,7 +6,7 @@ spec:
   description: Parse parameters from original infos and prepare env for kaniko task.
   workspaces:
   - name: kubeconfig
-    mountPath: /.kube/config
+    mountPath: /.kube/
   params:
   - name: namespace
     type: string

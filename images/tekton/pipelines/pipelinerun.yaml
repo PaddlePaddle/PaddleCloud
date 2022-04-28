@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: auto-build-pipelinerun
+  generateName: auto-build-pipelinerun-
 spec:
   serviceAccountName: tekton-triggers-example-sa
   pipelineRef:

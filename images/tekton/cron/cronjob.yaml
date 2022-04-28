@@ -3,16 +3,43 @@ kind: CronJob
 metadata:
   name: cronjob
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/2 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
+          restartPolicy: Never
+          serviceAccount: tekton-pipelinerun-cleaner
           containers:
-          - name: cron-container
+          - name: curl-container
             image: curlimages/curl
             imagePullPolicy: IfNotPresent
             args: ["curl", "-X", "POST", "--data", "{}", "el-cron-listener.default.svc.cluster.local:8080"]
-          restartPolicy: Never
+          - name: kubectl
+            image: docker.io/alpine/k8s:1.21.5
+            imagePullPolicy: IfNotPresent
+            env:
+              - name: NUM_TO_KEEP
+                value: "2"
+            command:
+              - /bin/bash
+              - -c
+              - >
+                while read -r PIPELINE; do
+                  while read -r PIPELINE_TO_REMOVE; do
+                    test -n "${PIPELINE_TO_REMOVE}" || continue;
+                    kubectl delete ${PIPELINE_TO_REMOVE} \
+                        && echo "$(date -Is) PipelineRun ${PIPELINE_TO_REMOVE} deleted." \
+                        || echo "$(date -Is) Unable to delete PipelineRun ${PIPELINE_TO_REMOVE}.";
+                  done < <(kubectl get pipelinerun -l tekton.dev/pipeline=${PIPELINE} --sort-by=.metadata.creationTimestamp -o name | head -n -${NUM_TO_KEEP});
+                done < <(kubectl get pipelinerun -o go-template='{{range .items}}{{index .metadata.labels "tekton.dev/pipeline"}}{{"\n"}}{{end}}' | uniq);
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+              limits:
+                cpu: 100m
+                memory: 64Mi
+          
 
 

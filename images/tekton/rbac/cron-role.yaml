@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-pipelinerun-cleaner
+  labels:
+    app: tekton-pipelinerun-cleaner
+    app.kubernetes.io/name: tekton-pipelinerun-cleaner
+    app.kubernetes.io/component: pipelinerun-cleaner
+    app.kubernetes.io/part-of: tekton
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: tekton-pipelinerun-cleaner
+  labels:
+    app: tekton-pipelinerun-cleaner
+    app.kubernetes.io/name: tekton-pipelinerun-cleaner
+    app.kubernetes.io/component: pipelinerun-cleaner
+    app.kubernetes.io/part-of: tekton
+rules:
+  - apiGroups:
+      - tekton.dev
+    resources:
+      - pipelineruns
+    verbs:
+      - delete
+      - get
+      - watch
+      - list
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: tekton-pipelinerun-cleaner
+  labels:
+    app: tekton-pipelinerun-cleaner
+    app.kubernetes.io/name: tekton-pipelinerun-cleaner
+    app.kubernetes.io/component: pipelinerun-cleaner
+    app.kubernetes.io/part-of: tekton
+roleRef:
+  kind: Role
+  name: tekton-pipelinerun-cleaner
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: tekton-pipelinerun-cleaner
