@@ -43,5 +43,5 @@ roleRef:
   name: tekton-pipelinerun-cleaner
   apiGroup: rbac.authorization.k8s.io
 subjects:
-  - kind: ServiceAccount
-    name: tekton-pipelinerun-cleaner
+- kind: ServiceAccount
+  name: tekton-pipelinerun-cleaner

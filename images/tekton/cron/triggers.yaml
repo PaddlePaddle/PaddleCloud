@@ -5,11 +5,11 @@ metadata:
 spec:
   serviceAccountName: tekton-triggers-example-sa
   triggers:
-    - name: cron-trig
-      bindings:
-      - ref: cron-binding
-      template:
-        ref: pipeline-template
+  - name: cron-trig
+    bindings:
+    - ref: cron-binding
+    template:
+      ref: cron-template
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1
@@ -22,38 +22,38 @@ spec:
     description: Example of spec.
     default: value
   resourcetemplates:
-    - apiVersion: tekton.dev/v1beta1
-      kind: PipelineRun
-      metadata:
-        name: auto-build-pipelinerun
-      spec:
-        serviceAccountName: tekton-triggers-example-sa
-        pipelineRef:
-          name: auto-build-pipeline
-        workspaces:
-        - name: shared-data
-          volumeClaimTemplate:
-            spec:
-              accessModes:
-              - ReadWriteOnce
-              resources:
-                requests:
-                  storage: 10Gi
-        params:
-        - name: toolkit-repo-name
-          value: PaddleOCR
-        - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
-          value: release/2.4
-        - name: toolkit-base-image-tag
-          value: 2.2.2-gpu-cuda10.2-cudnn7
-        - name: docker-repo-url
-          value: https://github.com/freeliuzc/PaddleCloud.git
-        - name: docker-revision      # (branch, tag, sha, ref, etc...)
-          value: main
-        - name: dockerfile-path
-          value: images/tekton/dockerfiles/paddleocr/Dockerfile.cpu
-        - name: image-registry
-          value: paddlecloud/paddleocr
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: auto-build-pipelinerun-
+    spec:
+      serviceAccountName: tekton-triggers-example-sa
+      pipelineRef:
+        name: auto-build-pipeline
+      workspaces:
+      - name: shared-data
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+      params:
+      - name: toolkit-repo-name
+        value: PaddleOCR
+      - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
+        value: release/2.4
+      - name: toolkit-base-image-tag
+        value: 2.2.2-gpu-cuda10.2-cudnn7
+      - name: docker-repo-url
+        value: https://github.com/freeliuzc/PaddleCloud.git
+      - name: docker-revision      # (branch, tag, sha, ref, etc...)
+        value: main
+      - name: dockerfile-path
+        value: images/tekton/dockerfiles/paddleocr/Dockerfile.cpu
+      - name: image-registry
+        value: paddlecloud/paddleocr
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1

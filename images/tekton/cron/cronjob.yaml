@@ -25,6 +25,7 @@ spec:
               - /bin/bash
               - -c
               - >
+                echo "Begin to delete pipelinerun resources"
                 while read -r PIPELINE; do
                   while read -r PIPELINE_TO_REMOVE; do
                     test -n "${PIPELINE_TO_REMOVE}" || continue;
