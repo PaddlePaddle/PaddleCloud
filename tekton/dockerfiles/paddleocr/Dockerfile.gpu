@@ -1,0 +1,16 @@
+ARG IMAGE_TAG=2.2.2
+ARG PADDLE_VERSION=2.2.2
+FROM paddlepaddle/paddle:${IMAGE_TAG}
+
+ARG PADDLE_VERSION
+RUN pip3.7 install --upgrade pip && \
+    pip3.7 install paddlepaddle-gpu==${PADDLE_VERSION}  
+
+COPY PaddleOCR ./PaddleOCR
+
+WORKDIR /home/PaddleOCR
+
+RUN pip3.7 install -r requirements.txt && \
+    pip3.7 install fasttext==0.8.3
+
+CMD ["sleep", "infinity"]

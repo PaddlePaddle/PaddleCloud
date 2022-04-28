@@ -1,0 +1,65 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: prepare-build-env
+spec:
+  description: Parse parameters from original infos and prepare env for kaniko task.
+  workspaces:
+  - name: source
+    description: Containing paddle toolkit repo and docker repo.
+  params:
+  - name: revision
+    description: The branch of paddle toolkit repo.
+    type: string
+  - name: paddle-base-tag
+    description: The tag of paddle base image.
+    type: string
+    default: 2.2.2
+  - name: toolkit-dir
+    description: The dir name of paddle toolkit repo in the workspace.
+  - name: dockerfile-path
+    description: The relative path to Dockerfile within repo.
+  results:
+  - name: dockerfile-name
+    description: The dockerfile's file name.
+  - name: image-tag-branch
+    description: image release version
+  - name: image-tag-env
+    description: The base env of paddlepaddle image.
+  - name: paddle-version
+    description: x.x.x
+  steps:
+  - name: preparing
+    image: zshusers/zsh:4.3.15
+    env:
+    - name: REVISION
+      value: $(params.revision)
+    - name: PADDLE_BASE_TAG
+      value: $(params.paddle-base-tag)
+    - name: TOOLKIT_DIR
+      value: $(params.toolkit-dir)
+    - name: DOCKERFILE_PATH
+      value: $(params.dockerfile-path)
+    script: |
+      #!/usr/bin/env zsh
+      set -x
+      cd $(workspaces.source.path) && mkdir docker
+      mv repo-docker/${DOCKERFILE_PATH} docker/ && DOCKERFILE_NAME=`ls docker`
+      mv ${TOOLKIT_DIR} docker/ && cd docker
+      echo "current path: `pwd`"
+      echo "file list: `ls`"
+
+      PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
+
+      if [[ ${PADDLE_BASE_TAG} =~ "-" ]]
+      then
+          IMAGE_TAG_ENV=${PADDLE_BASE_TAG#*"-"}
+      else
+          IMAGE_TAG_ENV="cpu"
+      fi
+      printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
+      printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
+      printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
+      printf "%s" "${REVISION:0-3:3}" > "$(results.image-tag-branch.path)"
+
+

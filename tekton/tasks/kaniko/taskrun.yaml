@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: kaniko-run
+spec:
+  taskRef:
+    name: kaniko
+  params:
+  - name: IMAGE
+    value: lzc842650834/jarvis_tekton:0.3
+  - name: EXTRA_ARGS
+    value:
+    - "--build-arg=IMAGE_TAG=2.2.2"
+  workspaces:
+  - name: source
+    persistentVolumeClaim:
+      claimName: pvc-kaniko
+  - name: dockerconfig
+    persistentVolumeClaim:
+      claimName: pvc-kaniko
