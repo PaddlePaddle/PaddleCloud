@@ -1,4 +1,4 @@
-English | [简体中文](./Installation.md)
+English | [简体中文](../zh_CN/Installation.md)
 - [Installation](#installation)
   - [1. Prerequisites](#1-prerequisites)
   - [2. Install charts](#2-install-charts)
@@ -18,7 +18,7 @@ English | [简体中文](./Installation.md)
 
 > Major components such as Paddlejob can run on kubernetes v1.16+ and we test all the contents at version v1.21. If you want to experience PaddleCloud in a easy way, it is recommended to use version v1.21 for the stable operation of other dependencies.
 
-If you do not have a Kubernetes environment, you can refer to [microk8s documentation]() for installation. If you are using the macOS system, or encounter installation problems, you can refer to the documentation [macOS installation microk8s](./macOS_install_microk8s.md).
+If you do not have a Kubernetes environment, you can refer to [microk8s documentation]() for installation. If you are using the macOS system, or encounter installation problems, you can refer to the documentation [macOS installation microk8s](../zh_CN/macOS_install_microk8s.md).
 
 ## 2. Install charts
 
@@ -191,7 +191,7 @@ Check PaddleJob state.
 kubectl -n paddlecloud get pdj
 ```
 
-Please click [paddlejob tutorial](./Paddlejob_en.md) get more about paddlejob.
+Please click [paddlejob tutorial](Paddlejob_en.md) get more about paddlejob.
 
 ## 4. Uninstall
 

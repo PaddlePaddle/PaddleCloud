@@ -1,0 +1,23 @@
+apiVersion: elasticserving.paddlepaddle.org/v1
+kind: PaddleService
+metadata:
+  name: paddleservice-sample
+  namespace: paddlecloud
+spec:
+  canary:
+    arg: cd Serving/python/examples/imagenet && python3 resnet50_web_service_canary.py
+      ResNet50_vd_model cpu 9292
+    containerImage: registry.baidubce.com/paddleflow-public/resnetcanary-serving
+    port: 9292
+    tag: latest
+  canaryTrafficPercent: 50
+  default:
+    arg: cd Serving/python/examples/imagenet && python3 resnet50_web_service.py ResNet50_vd_model
+      cpu 9292
+    containerImage: registry.baidubce.com/paddleflow-public/resnet-serving
+    port: 9292
+    tag: latest
+  runtimeVersion: paddleserving
+  service:
+    minScale: 0
+    window: 10s

@@ -1,4 +1,4 @@
-[English](./Installation_en.md) | 简体中文
+[English](../en/Installation_en.md) | 简体中文
 - [安装教程](#安装教程)
   - [1. 环境需求](#1-环境需求)
   - [2. 安装](#2-安装)
@@ -18,7 +18,7 @@
 
 > Paddlejob 等主要组件可以在 kubernetes v1.16+ 版本运行。如果您想要体验 PaddleCloud，为了其他依赖的稳定运行，建议选取已测试过的 v1.21 版本。
 
-如果您没有Kubernetes环境，可以参考 [microk8s官方文档](https://microk8s.io/docs/getting-started) 进行安装；如果您使用的是 macOS 系统，或遇到了安装问题，可以参考文档 [macOS 安装 microk8s](./macOS_install_microk8s.md)
+如果您没有Kubernetes环境，可以参考 [microk8s官方文档](https://microk8s.io/docs/getting-started) 进行安装；如果您使用的是 macOS 系统， 或遇到了安装问题，可以参考文档 [macOS 安装 microk8s](./macOS_install_microk8s.md)。
 
 ## 2. 安装
 
@@ -40,10 +40,8 @@ $ helm repo update
 > 此篇教程内，namespace 默认使用 paddlecloud，如需更改，请自行替换
 
 ```bash
-# create namespace in k8s
-$ kubectl create namespace paddlecloud
 # install
-$ helm install -n paddlecloud test paddlecloud/paddlecloud --set tags.all-dep=true 
+$ helm install pdc paddlecloud/paddlecloud --set tags.all-dep=true -n paddlecloud --create-namespace
 ```
 
 安装完成后，查看安装的各个内容
@@ -169,7 +167,7 @@ $ helm install test paddlecloud/paddlecloud -n paddlecloud -f values.yaml
 
 ## 3. paddlejob 任务测试
 
-这里使用一个简单案例测试组件，查看[paddlejob 使用教程](./Paddlejob.md)获取更详细的使用说明和更多的实验样例。此示例采用 PS 模式，使用 cpu 进行训练，需要配置 PS 和 worker 。
+这里使用一个简单案例测试组件，查看[paddlejob 使用教程](Paddlejob.md)获取更详细的使用说明和更多的实验样例。此示例采用 PS 模式，使用 cpu 进行训练，需要配置 PS 和 worker 。
 
 1. 提交任务：
 
@@ -189,7 +187,7 @@ $ kubectl -n paddlecloud get pods
 $ kubectl -n paddlecloud get pdj
 ```
 
-请点击 [paddlejob 使用教程](./Paddlejob.md) 查看更多使用案例和更为详细的讲解。
+请点击 [paddlejob 使用教程](Paddlejob.md) 查看更多使用案例和更为详细的讲解。
 
 ## 4. 卸载
 

@@ -13,7 +13,7 @@ Due to the high scalability of cloud platforms, more and more machine learning t
 ## Architecture
 
 <div align="center">
-  <img src="http://paddleflow-public.hkg.bcebos.com/Static/ext-arch.png" title="architecture" width="60%" height="60%" alt="">
+  <img src="../images/sampleset-arch.jpeg" title="architecture" width="60%" height="60%" alt="">
 </div>
 
 The figure above is the architecture of Paddle Operator, which is built on Kubernetes and contains the following three main parts:
