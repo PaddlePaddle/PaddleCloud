@@ -40,10 +40,8 @@ $ helm repo update
 > 此篇教程内，namespace 默认使用 paddlecloud，如需更改，请自行替换
 
 ```bash
-# create namespace in k8s
-$ kubectl create namespace paddlecloud
 # install
-$ helm install -n paddlecloud test paddlecloud/paddlecloud --set tags.all-dep=true 
+$ helm install pdc paddlecloud/paddlecloud --set tags.all-dep=true -n paddlecloud --create-namespace
 ```
 
 安装完成后，查看安装的各个内容
