@@ -1,8 +1,6 @@
-# 推理服务组件使用手册
+# 模型推理服务组件（Serving Operator）快速上手
 
-**模型服务部署项目链接：** https://github.com/PaddleFlow/ElasticServing
-
-ElasticServing 通过提供自定义资源 PaddleService，支持用户在 Kubernetes 集群上使用 TensorFlow、onnx、PaddlePaddle 等主流框架部署模型服务。 ElasticServing 构建在 Knative Serving 之上，其提供了自动扩缩容、容错、健康检查等功能，并且支持在异构硬件上部署服务，如 Nvidia GPU 或 昆仑芯片。 ElasticServing 采用的是 serverless 架构，当没有预估请求时，服务规模可以缩容到零，以节约集群资源，同时它还支持并蓝绿发版等功能。
+Serving Operator 通过提供自定义资源 PaddleService，支持用户在 Kubernetes 集群上使用 TensorFlow、onnx、PaddlePaddle 等主流框架部署模型服务。 ElasticServing 构建在 Knative Serving 之上，其提供了自动扩缩容、容错、健康检查等功能，并且支持在异构硬件上部署服务，如 Nvidia GPU 或 昆仑芯片。 ElasticServing 采用的是 serverless 架构，当没有预估请求时，服务规模可以缩容到零，以节约集群资源，同时它还支持并蓝绿发版等功能。
 
 ## 架构概览
 

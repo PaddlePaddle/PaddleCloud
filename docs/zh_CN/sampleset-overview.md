@@ -11,7 +11,7 @@
 ## 整体架构
 
 <div align="center">
-  <img src="http://paddleflow-public.hkg.bcebos.com/Static/ext-arch.png" title="architecture" width="60%" height="60%" alt="">
+  <img src="../images/sampleset-arch.jpeg" title="architecture" width="60%" height="60%" alt="">
 </div>
 
 上图是 Paddle Operator 的整体架构，其构建在 Kubernetes 上，包含如下三个主要部分：
@@ -34,10 +34,10 @@
 - **JuiceFS CSI Driver**：负责样本数据的存储与缓存工作，将样本数据缓存到集群本地并将数据挂载进 PaddleJob 的训练节点。
 
 ## 快速开始
-查看文档 [Paddle Operator 样本缓存组件快速上手](./ext-get-start.md) 来体验下吧。
+查看文档 [样本缓存组件快速上手](./sampleset-tutorails.md) 来体验下吧。
 
 ## 性能测试
-关于性能测试相关的文档请参考：[性能测试](./ext-benchmark.md)
+关于性能测试相关的文档请参考：[性能测试](./sampleset-benchmark.md)
 
 ## 更多资料
 想了解更多关于自定义资源的详细，请查看文档 [API docs](../en/api_doc.md)。
