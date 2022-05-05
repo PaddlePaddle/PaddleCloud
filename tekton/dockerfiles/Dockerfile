@@ -14,7 +14,7 @@ COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
 
 WORKDIR /home/${PADDLE_TOOLKIT}
 
-RUN python3.7 setup.py install
 RUN pip3.7 install -r requirements.txt
+RUN python3.7 setup.py install
 
 CMD ["sleep", "infinity"]
