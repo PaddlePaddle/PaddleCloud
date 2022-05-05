@@ -22,7 +22,7 @@ pdc-jupyterhub-proxy-api          ClusterIP      10.152.183.179   <none>        
 pdc-jupyterhub-proxy-public       LoadBalancer   10.152.183.92    <pending>                    80:30553/TCP   1d
 ```
 
-从上述命令的输出中找到 proxy-public 对应的 EXTERNAL-IP 地址，然后访问 `http://120.48.xx.xx:80` 链接，打开 JupyterHub UI 界面，然后创建用户名和密码即可使用。
+从上述命令的输出中找到 proxy-public 对应的 EXTERNAL-IP 地址，然后访问 `http://<EXTERNAL-IP>:80` 链接，打开 JupyterHub UI 界面，然后创建用户名和密码即可使用。
 如果 proxy-public 对应的 EXTERNAL-IP 地址是 <pending>（如本示例），则意味着您所使用的 Kubernetes 集群的局域网80端口并没有开放，您可以使用下面的命令来启动个临时代理服务。
 
 ```bash
@@ -31,8 +31,9 @@ kubectl port-forward --address 0.0.0.0 svc/pdc-jupyterhub-proxy-public -n paddle
 
 然后访问 `http://localhost:8080` 链接，打开 JupyterHub UI 界面。初试用户名是 `admin`，密码是 `paddlepaddle`。
 
-进入 notebook 页面后，在 work 目录下创建 yaml 文件夹，并将 [Components YAML](https://github.com/PaddleFlow/paddlex-backend/tree/main/operator/yaml) 等文件上传到该目录中，如下图：
-![图片](http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-c5c731354f0f376bbfb52dea6da94fecf13e9b18)
+进入 notebook 页面后，在 work 目录下创建 yaml 文件夹，并将 [Components YAML](../../pipeline/components) 等文件上传到该目录中，如下图：
+
+![图片](./img/jupyter-notebook.png)
 
 然后，在work目录下创建新的 Notebook 用于编写工作流代码。构建工作流需要使用 Python SDK，所以需要安装相关依赖包：
 
@@ -42,9 +43,7 @@ In[1]  !pip install kfp -i https://mirror.baidu.com/pypi/simple
 
 ## 案例：编写 PP-OCR 模型训练与部署工作流代码
 
-PP-OCR 模型训练与部署示例代码：https://github.com/PaddleFlow/paddlex-backend/blob/main/operator/pipeline-demo.py
-
-以下通过 OCR 领域的文本检测场景为例，展示了 PP-OCR 模型云上训练到服务部署工作流的落地实践。
+以下通过 OCR 领域的文本检测场景为例，展示了 PP-OCR 模型云上训练到服务部署工作流的落地实践，完整代码请查看[pipeline-demo](./pipeline-demo.py)
 
 ### 1）准备 PP-OCR Pipeline 的共享盘
 
@@ -160,6 +159,7 @@ def create_serving_op():
 ```
 
 ### 6）编译 PP-OCR Pipeline 并提交任务
+
 通过 Python SDK 构建 PP-OCR 工作流，并将工作流提交到集群上运行。
 其中`ml_pipeline_ip`需要手动获得。
 
@@ -207,13 +207,16 @@ if __name__ == "__main__":
 **获得 ml_pipeline_ip**
 
 命令行输入 `kubectl get service -n kubeflow | grep ml-pipeline`查看kubeflow下的service，得到如下图所示的输出
-![图片](http://agroup.baidu-int.com/file/stream/bj/bj-a11e04a14668ccced0ebfe516409879889dbd13a)
+
+![图片](./img/ml-pipeline-ui-service.png)
+
 找到ml-pipeline对应的Cluster-ip，作为ml_pipeline_ip的值
 
 ### 7）查看 PP-OCR 工作流执行情况
 
 将任务提交后，可以在 Pipeline UI 中查看 PP-OCR 模型工作流的执行情况。
-![图片](http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-79c84aa29e425f8eaeb17e6eb7f7cd1b619a16c5)
+
+![图片](./img/ml-pipeline-ui.png)
 
 ### 8）查看模型训练可视化指标
 
@@ -225,8 +228,8 @@ $ kubectl port-forward svc/ml-pipeline-ui -n kubeflow 8765:80
 
 然后访问 http://localhost:8765 就可以进入 VisualDL 的UI界面了。
 
-![图片](http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-4e44ef0581edccd40ac9db679d32b33ddd188e58)
+![图片](./img/visualdl.png)
 
-**### 9）模型存储中心与版本管理
+### 9）模型存储中心与版本管理
 
-![图片](http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-6f785ac0b0f591b1ffc02ca892ee27b0ee6d965b)
+![图片](./img/model-center.png)
