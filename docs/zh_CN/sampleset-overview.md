@@ -41,10 +41,10 @@
 - **SampleSet Controller**负责管理 SampleSet 的生命周期，其中包括创建 PV/PVC 等资源对象、创建缓存运行时服务、给缓存节点打标签等工作。
 - **SampleJob Controller**负责管理 SampleJob 的生命周期，通过请求缓存运行时服务的接口，触发缓存引擎异步执行数据管理操作，并获取执行结果。
 
-三是缓存引擎（Cache Engine）。缓存引擎由缓存运行时服务（Cache Runtime Server）和 JuiceFS 存储插件（JuiceFS CSI Driver）两部分组成，提供了样本数据存储、缓存、管理的功能。
+三是缓存引擎（Cache Engine）。缓存引擎由缓存运行时服务（Cache Runtime Server）和JuiceFS存储插件（ [JuiceFS CSI Driver](https://github.com/juicedata/juicefs-csi-driver) ）两部分组成，提供了样本数据存储、缓存、管理的功能。
 
 - **Cache Runtime Server**负责样本数据的管理工作，接收来自 SampleSet Controller 和 SampleJob Controller 的数据操作请求，调用 JuiceFS 的命令完成相关操作执行。
-- **JuiceFS CSI Driver**负责样本数据的存储与缓存工作，将样本数据缓存到集群本地并将数据挂载进 PaddleJob 的训练节点。
+- **JuiceFS CSI Driver**是JuiceFS社区提供的CSI插件，负责样本数据的存储与缓存工作，将样本数据缓存到集群本地并将数据挂载进PaddleJob的训练节点。
 
 ## 快速开始
 查看文档 [样本缓存组件快速上手](./sampleset-tutorails.md) 来体验下吧。
