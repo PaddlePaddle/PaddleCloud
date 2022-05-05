@@ -1,15 +1,18 @@
 ARG IMAGE_TAG=2.2.2
 ARG PADDLE_VERSION=2.2.2
+ARG PADDLE_TOOLKIT=PaddleOCR
+ARG GPU=""
 FROM paddlepaddle/paddle:${IMAGE_TAG}
 
 ARG PADDLE_VERSION
+ARG GPU
 RUN pip3.7 install --upgrade pip && \
-    pip3.7 install paddlepaddle==${PADDLE_VERSION}
+    pip3.7 install paddlepaddle${GPU}==${PADDLE_VERSION}
 
-COPY PaddleNLP ./PaddleNLP
+ARG PADDLE_TOOLKIT
+COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
 
-WORKDIR /home/PaddleNLP
+WORKDIR /home/${PADDLE_TOOLKIT}
 
 RUN pip3.7 install -r requirements.txt
-
 CMD ["sleep", "infinity"]

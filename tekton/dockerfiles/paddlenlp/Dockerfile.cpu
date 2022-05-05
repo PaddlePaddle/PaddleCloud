@@ -4,13 +4,12 @@ FROM paddlepaddle/paddle:${IMAGE_TAG}
 
 ARG PADDLE_VERSION
 RUN pip3.7 install --upgrade pip && \
-    pip3.7 install paddlepaddle-gpu==${PADDLE_VERSION}
+    pip3.7 install paddlepaddle==${PADDLE_VERSION} 
 
 COPY PaddleNLP ./PaddleNLP
 
-WORKDIR /home/PaddleDetection
+WORKDIR /home/PaddleNLP
 
-RUN pip3.7 install -r requirements.txt && \
-    pip3.7 install jupyter
+RUN pip3.7 install -r requirements.txt 
 
 CMD ["sleep", "infinity"]

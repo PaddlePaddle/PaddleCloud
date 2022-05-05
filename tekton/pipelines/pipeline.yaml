@@ -14,6 +14,10 @@ spec:
     type: string
     description: Tag of the paddle base image. Found in https://hub.docker.com/r/paddlepaddle/paddle/tags.
     default: 2.2.2
+  - name: toolkit-env
+    type: string
+    description: Toolkit running hardware. gpu or cpu.
+    default: cpu
   - name: docker-repo-url
     type: string
     description: The git repository containing Dockerfile.
@@ -78,6 +82,8 @@ spec:
       value: $(params.toolkit-repo-name)
     - name: dockerfile-path
       value: $(params.dockerfile-path)
+    - name: hardware
+      value: $(params.toolkit-env)
   - name: build-image
     runAfter:
       - parse-and-prepare
@@ -96,6 +102,8 @@ spec:
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
           - --build-arg=PADDLE_VERSION=$(tasks.parse-and-prepare.results.paddle-version)
+          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+          - --build-arg=GPU=$(tasks.parse-and-prepare.results.hardware)
     workspaces:
       - name: source
         workspace: shared-data

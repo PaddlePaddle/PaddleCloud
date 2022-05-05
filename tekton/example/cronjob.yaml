@@ -1,0 +1,120 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: cron-listener
+  annotations:
+    tekton.dev/payload-validation: "false"
+spec:
+  serviceAccountName: tekton-triggers-example-sa
+  triggers:
+  - name: cron-trig
+    bindings:
+    - ref: cron-binding
+    template:
+      ref: cron-template
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: cron-template
+spec:
+  params:
+  - name: key
+    description: Example of spec.
+    default: value
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: auto-build-pipelinerun-
+    spec:
+      serviceAccountName: tekton-triggers-example-sa
+      pipelineRef:
+        name: auto-build-pipeline
+      workspaces:
+      - name: shared-data
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+      params:
+      - name: toolkit-repo-name
+        value: PaddleOCR
+      - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
+        value: release/2.3
+      - name: toolkit-base-image-tag
+        value: 2.2.2
+      - name: docker-repo-url
+        value: https://github.com/freeliuzc/PaddleCloud.git
+      - name: docker-revision      # (branch, tag, sha, ref, etc...)
+        value: main
+      - name: dockerfile-path
+        value: images/tekton/dockerfiles/paddleocr/Dockerfile.cpu
+      - name: image-registry
+        value: paddlecloud/paddleocr
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: cron-binding
+spec:
+  params:
+  - name: key
+    value: value
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-cronjob
+spec:
+  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccount: tekton-pipelinerun-cleaner
+          containers:
+          - name: kubectl
+            image: docker.io/alpine/k8s:1.21.5
+            imagePullPolicy: IfNotPresent
+            env:
+              - name: NUM_TO_KEEP
+                value: "2"
+            command:
+              - /bin/bash
+              - -c
+              - >
+                while read -r PIPELINE; do
+                  while read -r PIPELINE_TO_REMOVE; do
+                    test -n "${PIPELINE_TO_REMOVE}" || continue;
+                    kubectl delete ${PIPELINE_TO_REMOVE} \
+                        && echo "$(date -Is) PipelineRun ${PIPELINE_TO_REMOVE} deleted." \
+                        || echo "$(date -Is) Unable to delete PipelineRun ${PIPELINE_TO_REMOVE}.";
+                  done < <(kubectl get pipelinerun -l tekton.dev/pipeline=${PIPELINE} --sort-by=.metadata.creationTimestamp -o name | head -n -${NUM_TO_KEEP});
+                done < <(kubectl get pipelinerun -o go-template='{{range .items}}{{index .metadata.labels "tekton.dev/pipeline"}}{{"\n"}}{{end}}' | uniq);
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: curl-cronjob
+spec:
+  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccount: tekton-pipelinerun-cleaner
+          containers:
+          - name: curl-container
+            image: curlimages/curl
+            imagePullPolicy: IfNotPresent
+            args: ["curl", "-X", "POST", "--data", "{}", "el-cron-listener.default.svc.cluster.local:8080"]

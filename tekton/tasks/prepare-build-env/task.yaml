@@ -19,6 +19,8 @@ spec:
     description: The dir name of paddle toolkit repo in the workspace.
   - name: dockerfile-path
     description: The relative path to Dockerfile within repo.
+  - name: hardware
+    description: gpu or cpu.
   results:
   - name: dockerfile-name
     description: The dockerfile's file name.
@@ -28,6 +30,8 @@ spec:
     description: The base env of paddlepaddle image.
   - name: paddle-version
     description: x.x.x
+  - name: hardware
+    description: gpu("-gpu") or cpu("")
   steps:
   - name: preparing
     image: zshusers/zsh:4.3.15
@@ -40,6 +44,8 @@ spec:
       value: $(params.toolkit-dir)
     - name: DOCKERFILE_PATH
       value: $(params.dockerfile-path)
+    - name: HARDWARE
+      value: $(params.hardware)
     script: |
       #!/usr/bin/env zsh
       set -x
@@ -51,15 +57,33 @@ spec:
 
       PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
 
+      if [ ${REVISION} != "develop" ]
+      then
+          REVISION=${REVISION:0-3:3}
+      fi
+
       if [[ ${PADDLE_BASE_TAG} =~ "-" ]]
       then
           IMAGE_TAG_ENV=${PADDLE_BASE_TAG#*"-"}
       else
           IMAGE_TAG_ENV="cpu"
       fi
+
+      if [ ${HARDWARE} == "gpu" ]
+      then
+          HARDWARE="-gpu"
+      elif [ ${HARDWARE} == "cpu" ]
+      then
+        HARDWARE=""
+      else
+        echo HARDWARE must be gpu or cpu. Please check your input.
+        exit 1
+      fi
+
       printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
       printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
       printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
-      printf "%s" "${REVISION:0-3:3}" > "$(results.image-tag-branch.path)"
+      printf "%s" "${REVISION}" > "$(results.image-tag-branch.path)"
+      printf "%s" "${HARDWARE}" > "$(results.hardware.path)"
 
 

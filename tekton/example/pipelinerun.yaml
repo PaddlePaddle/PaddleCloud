@@ -22,8 +22,6 @@ spec:
     value: release/2.3
   - name: toolkit-base-image-tag
     value: 2.2.2
-  - name: toolkit-env
-    value: gpu            # gpu / cpu
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision
@@ -36,5 +34,4 @@ spec:
 #   value: gcr.io/kaniko-project/executor:latest
 
 
-  
-    
+
