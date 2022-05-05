@@ -1,124 +1,60 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+# 样本缓存组件（SampleSet Operator）快速上手
 
-- [Paddle Operator 样本缓存组件快速上手](#paddle-operator-%E6%A0%B7%E6%9C%AC%E7%BC%93%E5%AD%98%E7%BB%84%E4%BB%B6%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B)
-  - [前提条件](#%E5%89%8D%E6%8F%90%E6%9D%A1%E4%BB%B6)
-  - [安装缓存组件](#%E5%AE%89%E8%A3%85%E7%BC%93%E5%AD%98%E7%BB%84%E4%BB%B6)
-    - [1. 安装自定义资源](#1-%E5%AE%89%E8%A3%85%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B5%84%E6%BA%90)
-    - [2. 部署 Operator](#2-%E9%83%A8%E7%BD%B2-operator)
-    - [3. 部署样本缓存组件的 Controller](#3-%E9%83%A8%E7%BD%B2%E6%A0%B7%E6%9C%AC%E7%BC%93%E5%AD%98%E7%BB%84%E4%BB%B6%E7%9A%84-controller)
-    - [4. 安装 CSI 存储插件](#4-%E5%AE%89%E8%A3%85-csi-%E5%AD%98%E5%82%A8%E6%8F%92%E4%BB%B6)
-  - [缓存组件使用示例](#%E7%BC%93%E5%AD%98%E7%BB%84%E4%BB%B6%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B)
-    - [1. 准备 Redis 数据库](#1-%E5%87%86%E5%A4%87-redis-%E6%95%B0%E6%8D%AE%E5%BA%93)
-    - [2. 创建 Secret](#2-%E5%88%9B%E5%BB%BA-secret)
-    - [3. 创建 SampleSet](#3-%E5%88%9B%E5%BB%BA-sampleset)
-    - [4. 体验 SampleJob（可选）](#4-%E4%BD%93%E9%AA%8C-samplejob%E5%8F%AF%E9%80%89)
-    - [5. 创建 PaddleJob](#5-%E5%88%9B%E5%BB%BA-paddlejob)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-# Paddle Operator 样本缓存组件快速上手
-
-本文档主要讲述了如何安装部署 Paddle Operator 样本缓存组件，并通过实际的示例演示了缓存组件的基础功能。
+本文档主要讲述了如何快速上手样本缓存组件（SampleSet Operator），并通过实际的示例演示了缓存组件的基础功能。
 
 ## 前提条件
 
 * Kubernetes >= 1.8
 * kubectl
+* Helm
 
-## 安装缓存组件
+## 安装缓存组件及其依赖
 
-### 1. 安装自定义资源
+样本缓存组件依赖于 [JuiceFS CSI Driver](https://github.com/juicedata/juicefs-csi-driver)，且 JuiceFS 需要使用对象存储（如 Minio）来存储数据、使用 Redis 来存储元数据。
+为了方便用户快速上手体验，本项目提供的 paddlecloud helm chart 中包含了 JuiceFS CSI Driver、Redis、Minio 等依赖，您可以通过指定 `--set tags.all-dep=true` 来安装所有依赖。
 
-与 [README](../../README-zh_CN.md) 中描述的步骤一样，如果您使用的是0.4以前的版本，可以再次运行该命令来更新 CRD。
-创建 PaddleJob / SampleSet / SampleJob 自定义资源,
-```shell
-kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/crd.yaml
+添加并更新 helm 的 charts repositories
+
+```bash
+$ helm repo add paddlecloud https://paddleflow-public.hkg.bcebos.com/charts
+$ helm repo update
 ```
 
-创建成功后，可以通过以下命令来查看创建的自定义资源
-```shell
-$ kubectl get crd | grep batch.paddlepaddle.org
-NAME                                    CREATED AT
-paddlejobs.batch.paddlepaddle.org       2021-08-23T08:45:17Z
-samplejobs.batch.paddlepaddle.org       2021-08-23T08:45:18Z
-samplesets.batch.paddlepaddle.org       2021-08-23T08:45:18Z
+使用 helm 一键安装
+
+> 此篇教程内，namespace 默认使用 paddlecloud，如需更改，请自行替换
+
+```bash
+# install
+$ helm install test paddlecloud/paddlecloud --set tags.all-dep=true -n paddlecloud --create-namespace
 ```
 
-### 2. 部署 Operator
-
-与 [README](../../README-zh_CN.md) 中描述的步骤一样，如果您使用的是0.4以前的版本，可以再次运行该命令来更新。
-```shell
-kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/v1/operator.yaml
-```
-
-### 3. 部署样本缓存组件的 Controller
-
-以下命令中的 YAML 文件包括了自定义资源 SampleSet 和 SampleJob 的 Controller
-```shell
-kubectl apply -f https://raw.githubusercontent.com/PaddleFlow/paddle-operator/main/deploy/extensions/controllers.yaml
-```
-
-通过以下命令可以查看部署好的 Controller
-```shell
-$ kubectl -n paddle-system get pods
-NAME                                         READY   STATUS    RESTARTS   AGE
-paddle-controller-manager-776b84bfb4-5hd4s   1/1     Running   0          60s
-paddle-samplejob-manager-69b4944fb5-jqqrx    1/1     Running   0          60s
-paddle-sampleset-manager-5cd689db4d-j56rg    1/1     Running   0          60s
-```
-
-### 4. 安装 CSI 存储插件
-
-目前 Paddle Operator 样本缓存组件仅支持 [JuiceFS](https://github.com/juicedata/juicefs/blob/main/README_CN.md) 作为底层的样本缓存引擎，样本访问加速和缓存相关功能主要由缓存引擎来驱动。
-
-部署 JuiceFS CSI Driver
-```shell
-kubectl apply -f https://raw.githubusercontent.com/juicedata/juicefs-csi-driver/master/deploy/k8s.yaml
-```
-
-部署好 CSI 驱动后，您可以通过以下命令查看状态，Kubernetes 集群中的每一个 worker 节点应该都会有一个 **juicefs-csi-node** Pod。
-```shell
-$ kubectl -n kube-system get pods -l app.kubernetes.io/name=juicefs-csi-driver
-NAME                                          READY   STATUS    RESTARTS   AGE
-juicefs-csi-controller-0                      3/3     Running   0          13d
-juicefs-csi-node-87f29                        3/3     Running   0          13d
-juicefs-csi-node-8h2z5                        3/3     Running   0          13d
-```
-
-**注意**：如果 Kubernetes 无法发现 CSI 驱动程序，并出现类似这样的错误：**driver name csi.juicefs.com not found in the list of registered CSI drivers**，这是由于 CSI 驱动没有注册到 kubelet 的指定路径，您可以通过下面的步骤进行修复。
+注意：如果 JuiceFS CSI Driver 没有正常启动，及 Pod 不是 Running 状态，并出现类似这样的错误：driver name csi.juicefs.com not found in the list of registered CSI drivers， 
+这是由于 CSI 驱动没有注册到 kubelet 的指定路径，你可以通过指定 `juicefs.kubeletDir` 来正确安装 JuiceFS CSI Driver。
 
 在集群中的 worker 节点执行以下命令来获取 kubelet 的根目录
-```shell
+
 ps -ef | grep kubelet | grep root-dir
+在上述命令打印的内容中，找到 --root-dir 参数后面的值，这既是 kubelet 的根目录。
+
+然后在安装时将 `juicefs.kubeletDir` 指定为上步找到的 kubelet 的根目录。
+
+```bash
+# install
+$ helm install test paddlecloud/paddlecloud --set tags.all-dep=true --set juicefs.kubeletDir=<kubelet root dir> -n paddlecloud --create-namespace
 ```
 
-在上述命令打印的内容中，找到 `--root-dir` 参数后面的值，这既是 kubelet 的根目录。然后将以下命令中的 `{{KUBELET_DIR}}` 替换为 kubelet 的根目录并执行该命令。
-```shell
-curl -sSL https://raw.githubusercontent.com/juicedata/juicefs-csi-driver/master/deploy/k8s.yaml | sed 's@/var/lib/kubelet@{{KUBELET_DIR}}@g' | kubectl apply -f -
-```
-
-更多详情信息可参考 [JuiceFS CSI Driver](https://github.com/juicedata/juicefs-csi-driver)
+更详细的安装文档请参考[安装PaddleCloud](./installation.md)。
 
 ## 缓存组件使用示例
 
-由于 JuiceFS 缓存引擎依靠 Redis 来存储文件的元数据，并支持多种对象存储作为数据存储后端，为了方便起见，本示例使用 Redis 同时作为元数据引擎和数据存储后端。
+为了方便用户快速上手体验样本缓存组件，我们将本示例的数据集存放在百度对象存储(BOS)公开课可访问的 bucket 中，无需秘钥即可访问数据。
+同时，在上述的 PaddleCloud 安装步骤中会默认创建 `none` 和 `data-center` 两个 Secret，分别用来访问 BOS 数据源和 Minio。
+如果您需要使用自己的数据集，并且数据源需要通过 `access-key` 和 `secret-key` 来访问，您可以参考下面的步骤来创建 Secret。
 
-### 1. 准备 Redis 数据库
+### 1. 创建 Secret (可选)
 
-您可以很容易的在云计算平台购买到各种配置的云 Redis 数据库，本示例使用 Docker 在 Kubernetes 集群的 worker 节点上运行一个 Redis 数据库实例。
-```shell
-docker run -d --name redis \
-	-v redis-data:/data \
-	-p 6379:6379 \
-	--restart unless-stopped \
-	redis redis-server --appendonly yes
-```
-
-**注意**：以上命令将本地目录 `redis-data` 挂载到 Docker 容器的 `/data` 数据卷中，您可以按需求挂载不同的文件目录。
-
-### 2. 创建 Secret
+> 本步骤是可选的，如果您直接使用本文档提供的数据，可以直接从创建 SampleSet 开始操作。
 
 准备好 JuiceFS 用于格式化文件系统需要的字段，需要的字段如下：
 
@@ -155,7 +91,7 @@ data:
 kind: Secret
 metadata:
   name: imagenet
-  namespace: paddle-system
+  namespace: paddlecloud
 type: Opaque
 ```
 
@@ -171,7 +107,7 @@ $ kubectl create -f secret.yaml
 secret/imagenet created
 ```
 
-### 3. 创建 SampleSet
+### 2. 创建 SampleSet
 
 编写 imagenet.yaml 如下，数据源来自 bos (百度对象存储)公开的 bucket。
 ```yaml
@@ -179,24 +115,26 @@ apiVersion: batch.paddlepaddle.org/v1alpha1
 kind: SampleSet
 metadata:
   name: imagenet
-  namespace: paddle-system
+  namespace: paddlecloud
 spec:
   # 分区数，一个Kubernetes节点表示一个分区
   partitions: 1
   source:
     uri: bos://paddleflow-public.hkg.bcebos.com/imagenet/demo
-  secretRef:
-    name: imagenet
+    secretRef:  # 用于访问数据源的 Secret
+      name: none
+  secretRef:  # 用于访问对象存储 Minio 的 Secret
+    name: data-center
 ```
 
 创建 SampleSet，等待数据完成同步，并查看 SampleSet 的状态。数据同步操作可能比较耗时，请耐心等待。
 ```bash
 $ kubectl create -f imagenet.yaml
 sampleset.batch.paddlepaddle.org/imagenet created
-$ kubectl get sampleset -n paddle-system
+$ kubectl get sampleset -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   58 MiB       200 B         12 GiB        1/1       Ready   76s
-$ kubectl get pods -n paddle-system
+$ kubectl get pods -n paddlecloud
 NAME                                         READY   STATUS    RESTARTS   AGE
 imagenet-runtime-0                           1/1     Running   0          30s
 paddle-controller-manager-776b84bfb4-qs67f   1/1     Running   0          11h
@@ -219,7 +157,7 @@ apiVersion: batch.paddlepaddle.org/v1alpha1
 kind: SampleJob
 metadata:
   name: imagenet-rmr
-  namespace: paddle-system
+  namespace: paddlecloud
 spec:
   type: rmr
   sampleSetRef:
@@ -230,10 +168,10 @@ spec:
 
 $ kubectl create -f rmr-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-rmr created
-$ kubectl get samplejob imagenet-rmr -n paddle-system
+$ kubectl get samplejob imagenet-rmr -n paddlecloud
 NAME           PHASE
 imagenet-rmr   Succeeded
-$ kubectl get sampleset imagenet -n paddle-system
+$ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.0 KiB      200 B         12 GiB        1/1       Ready   29m
 ```
@@ -245,23 +183,23 @@ apiVersion: batch.paddlepaddle.org/v1alpha1
 kind: SampleJob
 metadata:
   name: imagenet-sync
-  namespace: paddle-system
+  namespace: paddlecloud
 spec:
   type: sync
   sampleSetRef:
     name: imagenet
   # sync job 需要填写 secret 信息
   secretRef:
-    name: imagenet
+    name: none
   syncOptions:
     source: bos://paddleflow-public.hkg.bcebos.com/imagenet
 
 $ kubectl create -f sync-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-sync created
-$ kubectl get samplejob imagenet-sync -n paddle-system
+$ kubectl get samplejob imagenet-sync -n paddlecloud
 NAME            PHASE
 imagenet-sync   Succeeded
-$ kubectl get sampleset imagenet -n paddle-system
+$ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      4.2 GiB       7.3 GiB       1/1       Ready   83m
 ```
@@ -273,7 +211,7 @@ apiVersion: batch.paddlepaddle.org/v1alpha1
 kind: SampleJob
 metadata:
   name: imagenet-clear
-  namespace: paddle-system
+  namespace: paddlecloud
 spec:
   type: clear
   sampleSetRef:
@@ -281,10 +219,10 @@ spec:
     
 $ kubectl create -f clear-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-clear created
-$ kubectl get samplejob imagenet-clear -n paddle-system
+$ kubectl get samplejob imagenet-clear -n paddlecloud
 NAME             PHASE
 imagenet-clear   Succeeded
-$ kubectl get sampleset imagenet -n paddle-system
+$ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      80 B          12 GiB        1/1       Ready   85m
 ```
@@ -296,7 +234,7 @@ apiVersion: batch.paddlepaddle.org/v1alpha1
 kind: SampleJob
 metadata:
   name: imagenet-warmup
-  namespace: paddle-system
+  namespace: paddlecloud
 spec:
   type: warmup
   sampleSetRef:
@@ -304,10 +242,10 @@ spec:
 
 $ kubectl create -f warmup-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-warmup created
-$ kubectl get samplejob imagenet-warmup -n paddle-system
+$ kubectl get samplejob imagenet-warmup -n paddlecloud
 NAME              PHASE
 imagenet-warmup   Succeeded
-$ kubectl get sampleset imagenet -n paddle-system
+$ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      4.2 GiB       7.3 GiB       1/1       Ready   90m
 ```
@@ -322,7 +260,7 @@ apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
 metadata:
   name: ps-demo
-  namespace: paddle-system
+  namespace: paddlecloud
 spec:
   sampleSetRef:
     # 申明要使用的 SampleSet
@@ -347,14 +285,14 @@ spec:
 
 查看 PaddleJob 的状态
 ```bash
-$ kubectl get paddlejob -n paddle-system
+$ kubectl get paddlejob -n paddlecloud
 NAME      STATUS    MODE   AGE
 ps-demo   Running   PS     112s
 ```
 
 查看挂载在 PaddleJob worker pod 的样本数据
 ```bash
-$ kubectl exec -it ps-demo-worker-0 -n paddle-system -- /bin/bash
+$ kubectl exec -it ps-demo-worker-0 -n paddlecloud -- /bin/bash
 $ ls /mnt/imagenet
 demo  train  train_list.txt
 ```

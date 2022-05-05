@@ -1,4 +1,4 @@
-[English](../en/Installation_en.md) | 简体中文
+[English](../en/installation_en.md) | 简体中文
 - [安装教程](#安装教程)
   - [1. 环境需求](#1-环境需求)
   - [2. 安装](#2-安装)
@@ -41,7 +41,7 @@ $ helm repo update
 
 ```bash
 # install
-$ helm install pdc paddlecloud/paddlecloud --set tags.all-dep=true -n paddlecloud --create-namespace
+$ helm install test paddlecloud/paddlecloud --set tags.all-dep=true -n paddlecloud --create-namespace
 ```
 
 安装完成后，查看安装的各个内容
@@ -130,13 +130,15 @@ redis:
   enabled: true
 ```
 
+更多可配置的参数可以参考 [Helm Charts文档](../../charts/paddlecloud/README.md) 。
+
 安装
 
 ```bash
 $ helm install test paddlecloud/paddlecloud -f values.yaml
 ```
 
-更多关于 `helm install` 的使用可通过 `helm install --help` 命令获取
+更多关于 `helm install` 的使用可通过 `helm install --help` 命令获取。
 
 ### 2.3 使用 volcano 的安装配置
 
@@ -187,7 +189,7 @@ $ kubectl -n paddlecloud get pods
 $ kubectl -n paddlecloud get pdj
 ```
 
-请点击 [paddlejob 使用教程](Paddlejob.md) 查看更多使用案例和更为详细的讲解。
+请点击 [paddlejob 使用教程](./paddlejob-tutorails.md) 查看更多使用案例和更为详细的讲解。
 
 ## 4. 卸载
 
