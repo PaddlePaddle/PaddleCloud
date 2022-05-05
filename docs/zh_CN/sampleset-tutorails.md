@@ -144,7 +144,7 @@ paddle-sampleset-manager-69bc7fb85d-4rjcg    1/1     Running   0          11h
 
 等创建的 SampleSet 其 PHASE 状态为 Ready 时，表示该数据集可以使用了。
 
-### 4. 体验 SampleJob（可选）
+### 3. 体验 SampleJob（可选）
 
 缓存组件提供了 SampleJob 用来做样本数据集的管理，目前支持了4种 Job 类型，分别是 sync/warmup/clear/rmr。
 
@@ -250,7 +250,7 @@ NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      4.2 GiB       7.3 GiB       1/1       Ready   90m
 ```
 
-### 5. 创建 PaddleJob 
+### 4. 创建 PaddleJob 
 
 以下示例使用 nginx 镜像来简单示范下如何在 PaddleJob 中声明使用 SampleSet 样本数据集。 如果您的集群中有 GPU 硬件资源，并且想要测试缓存组件给模型训练带来的提升效果，请参考文档：[性能测试](./ext-benchmark.md)
 
