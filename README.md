@@ -58,7 +58,7 @@ PaddleCloud 基于 Kubernetes 的 Operator 机制为您提供了多个功能强�
   - [快速上手](./docs/zh_CN/sampleset-tutorails.md)
   - [性能测试](./docs/zh_CN/sampleset-benchmark.md)
 - 分布式训练组件
-  - [组件概览](./docs/zh_CN/paddlecloud-overview.md)
+  - [组件概览](./docs/zh_CN/paddlejob-overview.md)
   - [快速上手](./docs/zh_CN/paddlejob-tutorails.md)
 - 模型推理服务组件
   - [使用教程](./docs/zh_CN/serving-tutorials.md)
