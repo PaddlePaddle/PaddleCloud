@@ -57,7 +57,7 @@ spec:
 
       PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
 
-      if [ ${REVISION} != "develop" ]
+      if [[ ${REVISION} != "develop" ]]
       then
           REVISION=${REVISION:0-3:3}
       fi
@@ -69,15 +69,15 @@ spec:
           IMAGE_TAG_ENV="cpu"
       fi
 
-      if [ ${HARDWARE} == "gpu" ]
+      if [[ ${HARDWARE} == "gpu" ]]
       then
           HARDWARE="-gpu"
-      elif [ ${HARDWARE} == "cpu" ]
+      elif [[ ${HARDWARE} == "cpu" ]]
       then
-        HARDWARE=""
+          HARDWARE=""
       else
-        echo HARDWARE must be gpu or cpu. Please check your input.
-        exit 1
+          echo HARDWARE must be gpu or cpu. Please check your input.
+          exit 1
       fi
 
       printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
