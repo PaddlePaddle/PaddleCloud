@@ -54,13 +54,6 @@ spec:
     - name: build-and-push
       workingDir: $(workspaces.source.path)
       image: $(params.BUILDER_IMAGE)
-      resources:
-        requests:
-          memory: 2Gi
-          cpu: 1Gi
-        limits:
-          memory: 10Gi
-          cpu: 2Gi
       args:
         - $(params.EXTRA_ARGS)
         - --dockerfile=$(params.DOCKERFILE)

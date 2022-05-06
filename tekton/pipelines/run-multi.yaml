@@ -1,11 +1,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: auto-build-pipelinerun
+  generateName: multi-pipelinerun-
 spec:
   serviceAccountName: tekton-triggers-example-sa
   pipelineRef:
-    name: auto-build-pipeline
+    name: build-multi-image
   workspaces:
   - name: shared-data
     volumeClaimTemplate:
@@ -22,7 +22,7 @@ spec:
     value: PaddleOCR
   - name: toolkit-revision
     value: release/2.4
-  - name: toolkit-base-image-tag
+  - name: toolkit-base-image-version
     value: 2.2.2
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git

@@ -1,0 +1,104 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-single-image
+spec:
+  params:
+  - name: toolkit-repo-name
+    type: string
+    description: The repo name. (PaddleOCR/PaddleDetection/PaddleNLP/PaddleSeg/PaddleClas/PaddleSpeech/PaddleRec)
+  - name: toolkit-revision
+    type: string
+    description: The branch of paddle toolkit to clone.
+  - name: toolkit-base-image-tag
+    type: string
+    description: Tag of the paddle base image. Found in https://hub.docker.com/r/paddlepaddle/paddle/tags.
+    default: 2.2.2
+  - name: docker-repo-url
+    type: string
+    description: The git repository containing Dockerfile.
+  - name: docker-revision
+    type: string
+    description: The branch of the docker repo to clone.
+  - name: image-registry
+    type: string
+    description: The image registry to push.
+  - name: dockerfile-path
+    type: string
+    description: Relative path to the Dockerfile within the docker-repo.
+  - name: kaniko-image
+    type: string
+    description: kaniko image to use.
+    default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+  workspaces:
+  - name: shared-data
+    description: "save git repos"
+  tasks:
+  - name: fetch-paddle-toolkit-repo
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+    params:
+    - name: url
+      value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
+    - name: revision
+      value: $(params.toolkit-revision)
+    - name: subdirectory
+      value: $(params.toolkit-repo-name)
+  - name: fetch-docker-repo
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+    params:
+    - name: url
+      value: $(params.docker-repo-url)
+    - name: revision
+      value: $(params.docker-revision)
+    - name: subdirectory
+      value: repo-docker
+  - name: parse-and-prepare
+    taskRef:
+      name: prepare-build-env
+    runAfter: 
+      - fetch-docker-repo
+      - fetch-paddle-toolkit-repo
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
+    - name: revision
+      value: $(params.toolkit-revision)
+    - name: paddle-base-tag
+      value: $(params.toolkit-base-image-tag)
+    - name: toolkit-dir
+      value: $(params.toolkit-repo-name)
+    - name: dockerfile-path
+      value: $(params.dockerfile-path)
+  - name: build-image
+    runAfter:
+      - parse-and-prepare
+    taskRef:
+      name: kaniko
+    params:
+      - name: IMAGE
+        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: CONTEXT
+        value: docker
+      - name: DOCKERFILE
+        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+      - name: BUILDER_IMAGE
+        value: $(params.kaniko-image)
+      - name: EXTRA_ARGS
+        value: 
+          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
+          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+    workspaces:
+      - name: source
+        workspace: shared-data
+

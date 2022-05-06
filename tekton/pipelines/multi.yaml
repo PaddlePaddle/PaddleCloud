@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: auto-build-pipeline
+  name: build-multi-image
 spec:
   params:
   - name: toolkit-repo-name
@@ -10,7 +10,7 @@ spec:
   - name: toolkit-revision
     type: string
     description: The branch of paddle toolkit to clone.
-  - name: toolkit-base-image-tag
+  - name: toolkit-base-image-version
     type: string
     description: Tag of the paddle base image. Found in https://hub.docker.com/r/paddlepaddle/paddle/tags.
     default: 2.2.2
@@ -75,12 +75,12 @@ spec:
     - name: revision
       value: $(params.toolkit-revision)
     - name: paddle-base-tag
-      value: $(params.toolkit-base-image-tag)
+      value: $(params.toolkit-base-image-version)
     - name: toolkit-dir
       value: $(params.toolkit-repo-name)
     - name: dockerfile-path
       value: $(params.dockerfile-path)
-  - name: build-image
+  - name: build-image-cpu
     runAfter:
       - parse-and-prepare
     taskRef:
@@ -97,6 +97,48 @@ spec:
       - name: EXTRA_ARGS
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
+          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+    workspaces:
+      - name: source
+        workspace: shared-data
+  - name: build-image-gpu-cuda10.2-cudnn7
+    runAfter:
+      - parse-and-prepare
+    taskRef:
+      name: kaniko
+    params:
+      - name: IMAGE
+        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda10.2-cudnn7-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: CONTEXT
+        value: docker
+      - name: DOCKERFILE
+        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+      - name: BUILDER_IMAGE
+        value: $(params.kaniko-image)
+      - name: EXTRA_ARGS
+        value:
+          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)-gpu-cuda10.2-cudnn7
+          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+    workspaces:
+      - name: source
+        workspace: shared-data
+  - name: build-image-gpu-cuda11.2-cudnn8
+    runAfter:
+      - parse-and-prepare
+    taskRef:
+      name: kaniko
+    params:
+      - name: IMAGE
+        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda11.2-cudnn8-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: CONTEXT
+        value: docker
+      - name: DOCKERFILE
+        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+      - name: BUILDER_IMAGE
+        value: $(params.kaniko-image)
+      - name: EXTRA_ARGS
+        value:
+          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)-gpu-cuda11.2-cudnn8
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
       - name: source
