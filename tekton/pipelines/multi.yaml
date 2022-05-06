@@ -96,7 +96,7 @@ spec:
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value: 
-          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
+          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
       - name: source
@@ -117,7 +117,7 @@ spec:
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value:
-          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)-gpu-cuda10.2-cudnn7
+          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda10.2-cudnn7
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
       - name: source
@@ -138,7 +138,7 @@ spec:
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value:
-          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)-gpu-cuda11.2-cudnn8
+          - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda11.2-cudnn8
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
       - name: source
