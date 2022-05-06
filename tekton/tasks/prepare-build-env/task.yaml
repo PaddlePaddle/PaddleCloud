@@ -36,7 +36,7 @@ spec:
     description: gpu("-gpu") or cpu("")
   steps:
   - name: preparing
-    image: zshusers/zsh:4.3.15
+    image: zshusers/zsh:5.8
     env:
     - name: REVISION
       value: $(params.revision)
@@ -88,7 +88,7 @@ spec:
       printf "%s" "${REVISION}" > "$(results.image-tag-branch.path)"
       printf "%s" "${HARDWARE}" > "$(results.hardware.path)"
   - name: mod-dockerfile
-    image: zshusers/zsh:4.3.15
+    image: zshusers/zsh:5.8
     env:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
