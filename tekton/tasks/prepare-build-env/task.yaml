@@ -100,14 +100,15 @@ spec:
       NO_REQUIREMENT=(PaddleRec PaddleSpeech)
       NO_INSTALL=(PaddleClas PaddleRec)
 
+      # macOS shoule be sed "" -i ...
       if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "" "/requirements.txt/d" Dockerfile
+        sed -i "/requirements.txt/d" Dockerfile
       fi
 
       if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "" "/setup.py/d" Dockerfile
+        sed -i "/setup.py/d" Dockerfile
       fi
 
 
