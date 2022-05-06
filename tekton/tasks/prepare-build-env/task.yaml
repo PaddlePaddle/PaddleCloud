@@ -59,7 +59,7 @@ spec:
 
       PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
 
-      if [[ ${REVISION} != "develop" ]]
+      if [[ ${REVISION} != "develop" ]] && [[ ${REVISION} != "master" ]]
       then
           REVISION=${REVISION:0-3:3}
       fi
