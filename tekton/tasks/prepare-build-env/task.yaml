@@ -92,22 +92,22 @@ spec:
     env:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
-      script: |
-        #!/usr/bin/env zsh
-        set -x
-        cd $(workspaces.source.path)/docker
+    script: |
+      #!/usr/bin/env zsh
+      set -x
+      cd $(workspaces.source.path)/docker
 
-        NO_REQUIREMENT=(PaddleRec PaddleSpeech)
-        NO_INSTALL=(PaddleClas PaddleRec)
+      NO_REQUIREMENT=(PaddleRec PaddleSpeech)
+      NO_INSTALL=(PaddleClas PaddleRec)
 
-        if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
-        then
-          sed -i "" "/requirements.txt/d" Dockerfile
-        fi
+      if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
+      then
+        sed -i "" "/requirements.txt/d" Dockerfile
+      fi
 
-        if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
-        then
-          sed -i "" "/setup.py/d" Dockerfile
-        fi
+      if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
+      then
+        sed -i "" "/setup.py/d" Dockerfile
+      fi
 
 
