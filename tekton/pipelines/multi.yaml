@@ -101,7 +101,7 @@ spec:
     workspaces:
       - name: source
         workspace: shared-data
-  - name: build-image-gpu-cuda10.2-cudnn7
+  - name: build-image-gpu-cuda10-cudnn7
     runAfter:
       - parse-and-prepare
     taskRef:
@@ -122,7 +122,7 @@ spec:
     workspaces:
       - name: source
         workspace: shared-data
-  - name: build-image-gpu-cuda11.2-cudnn8
+  - name: build-image-gpu-cuda11-cudnn8
     runAfter:
       - parse-and-prepare
     taskRef:
