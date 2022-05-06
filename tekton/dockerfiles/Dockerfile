@@ -1,17 +1,8 @@
 ARG IMAGE_TAG=2.2.2
-ARG PADDLE_VERSION=2.2.2
 ARG PADDLE_TOOLKIT=PaddleOCR
 ARG GPU=""
 FROM paddlepaddle/paddle:${IMAGE_TAG}
 
-ARG PADDLE_VERSION
-ARG GPU
-##########################################################
-# Paddle image has correct paddlepaddle version
-#
-# RUN pip3.7 install --upgrade pip && \
-#     pip3.7 install paddlepaddle${GPU}==${PADDLE_VERSION}
-##########################################################
 ARG PADDLE_TOOLKIT
 COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
 

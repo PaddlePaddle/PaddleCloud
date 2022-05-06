@@ -16,24 +16,20 @@ spec:
           requests:
             storage: 10Gi
   params:
+  - name: image-registry
+    value: paddlecloud/paddleocr
   - name: toolkit-repo-name
     value: PaddleOCR
   - name: toolkit-revision
     value: release/2.4
   - name: toolkit-base-image-tag
     value: 2.2.2
-  - name: toolkit-env
-    value: cpu            # gpu / cpu
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision
     value: dev-tekton
   - name: dockerfile-path
     value: tekton/dockerfiles/Dockerfile
-  - name: image-registry
-    value: paddlecloud/paddleocr
-# - name: kaniko-image
-#   value: gcr.io/kaniko-project/executor:latest
 
 
   

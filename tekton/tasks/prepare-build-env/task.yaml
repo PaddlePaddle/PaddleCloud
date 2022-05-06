@@ -21,8 +21,6 @@ spec:
     description: The dir name of paddle toolkit repo in the workspace.
   - name: dockerfile-path
     description: The relative path to Dockerfile within repo.
-  - name: hardware
-    description: gpu or cpu.
   results:
   - name: dockerfile-name
     description: The dockerfile's file name.
@@ -33,7 +31,7 @@ spec:
   - name: paddle-version
     description: x.x.x
   - name: hardware
-    description: gpu("-gpu") or cpu("")
+    description: gpu or cpu docker image
   steps:
   - name: preparing
     image: zshusers/zsh:5.8
@@ -46,8 +44,6 @@ spec:
       value: $(params.toolkit-dir)
     - name: DOCKERFILE_PATH
       value: $(params.dockerfile-path)
-    - name: HARDWARE
-      value: $(params.hardware)
     script: |
       #!/usr/bin/env zsh
       set -x
@@ -71,15 +67,11 @@ spec:
           IMAGE_TAG_ENV="cpu"
       fi
 
-      if [[ ${HARDWARE} == "gpu" ]]
+      if [[ ${PADDLE_BASE_TAG} =~ "gpu" ]]
       then
-          HARDWARE="-gpu"
-      elif [[ ${HARDWARE} == "cpu" ]]
-      then
-          HARDWARE=""
+          HARDWARE="gpu"
       else
-          echo HARDWARE must be gpu or cpu. Please check your input.
-          exit 1
+          HARDWARE="cpu"
       fi
 
       printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
