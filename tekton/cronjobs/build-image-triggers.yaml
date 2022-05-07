@@ -49,13 +49,13 @@ spec:
       - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
         value: $(tt.params.toolkit-revision)
       - name: toolkit-base-image-version
-        value: 2.2.2
+        value: $(tt.params.toolkit-base-image-version)
       - name: docker-repo-url
-        value: https://github.com/freeliuzc/PaddleCloud.git
+        value: $(tt.params.docker-repo-url)
       - name: docker-revision      # (branch, tag, sha, ref, etc...)
-        value: dev-tekton
+        value: $(tt.params.docker-revision)
       - name: dockerfile-path
-        value: tekton/dockerfiles/Dockerfile
+        value: $(tt.params.dockerfile-path)
 
 
 ---
@@ -68,7 +68,15 @@ spec:
   - name: image-registry
     value: $(body.image-registry)
   - name: toolkit-repo-name
-    value: $(body.toolkit-name)
+    value: $(body.toolkit-repo-name)
   - name: toolkit-revision
     value: $(body.toolkit-revision)
+  - name: toolkit-base-image-version
+    value: $(body.toolkit-base-image-version)
+  - name: docker-repo-url
+    value: $(body.docker-repo-url)
+  - name: docker-revision
+    value: $(body.docker-revision)
+  - name: dockerfile-path
+    value: $(body.dockerfile-path)
 
