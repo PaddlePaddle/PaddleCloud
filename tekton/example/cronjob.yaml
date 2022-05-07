@@ -1,79 +1,9 @@
-apiVersion: triggers.tekton.dev/v1beta1
-kind: EventListener
-metadata:
-  name: cron-listener
-  annotations:
-    tekton.dev/payload-validation: "false"
-spec:
-  serviceAccountName: tekton-triggers-example-sa
-  triggers:
-  - name: cron-trig
-    bindings:
-    - ref: cron-binding
-    template:
-      ref: cron-template
-
----
-apiVersion: triggers.tekton.dev/v1beta1
-kind: TriggerTemplate
-metadata:
-  name: cron-template
-spec:
-  params:
-  - name: key
-    description: Example of spec.
-    default: value
-  resourcetemplates:
-  - apiVersion: tekton.dev/v1beta1
-    kind: PipelineRun
-    metadata:
-      generateName: auto-build-pipelinerun-
-    spec:
-      serviceAccountName: tekton-triggers-example-sa
-      pipelineRef:
-        name: auto-build-pipeline
-      workspaces:
-      - name: shared-data
-        volumeClaimTemplate:
-          spec:
-            accessModes:
-            - ReadWriteOnce
-            resources:
-              requests:
-                storage: 10Gi
-      params:
-      - name: toolkit-repo-name
-        value: PaddleOCR
-      - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
-        value: release/2.3
-      - name: toolkit-base-image-tag
-        value: 2.2.2
-      - name: docker-repo-url
-        value: https://github.com/freeliuzc/PaddleCloud.git
-      - name: docker-revision      # (branch, tag, sha, ref, etc...)
-        value: main
-      - name: dockerfile-path
-        value: images/tekton/dockerfiles/paddleocr/Dockerfile.cpu
-      - name: image-registry
-        value: paddlecloud/paddleocr
-
----
-apiVersion: triggers.tekton.dev/v1beta1
-kind: TriggerBinding
-metadata:
-  name: cron-binding
-spec:
-  params:
-  - name: key
-    value: value
-
----
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: cleanup-cronjob
 spec:
-  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
+  schedule: "*/10 * * * *"       # It will run every 10 min.
   jobTemplate:
     spec:
       template:
@@ -85,8 +15,9 @@ spec:
             image: docker.io/alpine/k8s:1.21.5
             imagePullPolicy: IfNotPresent
             env:
+              # The Maximum number of pipelinerun basing the same pipeline to keep.
               - name: NUM_TO_KEEP
-                value: "2"
+                value: "3"
             command:
               - /bin/bash
               - -c
@@ -106,15 +37,49 @@ kind: CronJob
 metadata:
   name: curl-cronjob
 spec:
-  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
+  schedule: "*/0 0 * * 0"       # Cron Time
   jobTemplate:
     spec:
       template:
         spec:
+          # Never / Always / OnFailure, found in https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
           restartPolicy: Never
-          serviceAccount: tekton-pipelinerun-cleaner
           containers:
           - name: curl-container
             image: curlimages/curl
+            env:
+            # The image registry to be pushed
+            - name: IMAGE_REGISTRY
+              value: paddlecloud/paddleocr
+            # The name of paddle toolkit.
+            # PaddleOCR / PaddleNLP / PaddleDetection / PaddleSpeech / PaddleClas / PaddleRec / PaddleSeg
+            - name: TOOLKIT_NAME
+              value: PaddleOCR
+            # The branch to ues
+            - name: TOOLKIT_REVISION
+              value: release/2.4
+            # The tag of paddlepaddle image used in Dockerfile.
+            # Found in https://hub.docker.com/r/paddlepaddle/paddle/tags
+            - name: TOOLKIT_BASE_IMAGE_TAG
+              value: 2.2.2
+            # The github repo containing Dockerfile.
+            - name: DOCKER_REPO_URL
+              value: https://github.com/freeliuzc/PaddleCloud.git
+            # The branch of this repo to use
+            - name: DOCKER_REVISION
+              value: dev-tekton
+            # Dockerfile's relative path in the repo.
+            - name: DOCKERFILE_PATH
+              value: tekton/dockerfiles/Dockerfile
             imagePullPolicy: IfNotPresent
-            args: ["curl", "-X", "POST", "--data", "{}", "el-cron-listener.default.svc.cluster.local:8080"]
+            # Send a post request to Tekton EventListener.
+            # You should check the namespace and service port last line if it not works.
+            args: ["curl", "-X", "POST", "--data",
+                   '{"image-registry": "$(IMAGE_REGISTRY)",
+                   "toolkit-repo-name": "$(TOOLKIT_NAME)",
+                   "toolkit-revision": "$(TOOLKIT_REVISION)",
+                   "toolkit-base-image-tag": "$(TOOLKIT_BASE_IMAGE_TAG)",
+                   "docker-repo-url": "$(DOCKER_REPO_URL)",
+                   "docker-revision": "$(DOCKER_REVISION)",
+                   "dockerfile-path": "$(DOCKERFILE_PATH)"}',
+                   "el-cron-listener.default.svc.cluster.local:8080"]

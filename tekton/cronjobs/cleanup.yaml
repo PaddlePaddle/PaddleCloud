@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cleanup-cronjob
 spec:
-  schedule: "*/0 0 * * 0"       # It will run at 0:00 in every Sunday
+  schedule: "*/18 0 * * *"       # Cron Time
   jobTemplate:
     spec:
       template:
@@ -15,8 +15,9 @@ spec:
             image: docker.io/alpine/k8s:1.21.5
             imagePullPolicy: IfNotPresent
             env:
+              # The Maximum number of pipelinerun basing the same pipeline to keep.
               - name: NUM_TO_KEEP
-                value: "3"
+                value: "5"
             command:
               - /bin/bash
               - -c

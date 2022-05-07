@@ -1,44 +1,33 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: curl-cronjob
+  name: cronjob-curl-paddleseg
 spec:
-  schedule: "*/0 0 * * 0"       # Cron Time
+  schedule: "*/18 0 * * 3"          # UTC 18:00 CST 24:00
   jobTemplate:
     spec:
       template:
         spec:
-          # Never / Always / OnFailure, found in https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
           restartPolicy: Never
           containers:
           - name: curl-container
             image: curlimages/curl
             env:
-            # The image registry to be pushed
             - name: IMAGE_REGISTRY
-              value: paddlecloud/paddleocr
-            # The name of paddle toolkit.
-            # PaddleOCR / PaddleNLP / PaddleDetection / PaddleSpeech / PaddleClas / PaddleRec / PaddleSeg
+              value: paddlecloud/paddleseg
             - name: TOOLKIT_NAME
-              value: PaddleOCR
-            # The branch to ues
+              value: PaddleSeg
             - name: TOOLKIT_REVISION
-              value: release/2.4
-            # The paddlepaddle version. Now(2022.05.08) almost all the toolkit support v2.2.2.
+              value: release/2.5
             - name: TOOLKIT_BASE_IMAGE_VERSION
               value: 2.2.2
-            # The github repo containing Dockerfile.
             - name: DOCKER_REPO_URL
               value: https://github.com/freeliuzc/PaddleCloud.git
-            # The branch of this repo to use
             - name: DOCKER_REVISION
               value: dev-tekton
-            # Dockerfile's relative path in the repo.
             - name: DOCKERFILE_PATH
               value: tekton/dockerfiles/Dockerfile
             imagePullPolicy: IfNotPresent
-            # Send a post request to Tekton EventListener.
-            # You should check the namespace and service port last line if it not works.
             args: ["curl", "-X", "POST", "--data",
                    '{"image-registry": "$(IMAGE_REGISTRY)",
                    "toolkit-repo-name": "$(TOOLKIT_NAME)",

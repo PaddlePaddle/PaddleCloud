@@ -1,0 +1,84 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: cron-listener
+  annotations:
+    tekton.dev/payload-validation: "false"
+spec:
+  serviceAccountName: tekton-triggers-example-sa
+  triggers:
+  - name: cron-trig
+    bindings:
+    - ref: cron-binding
+    template:
+      ref: cron-template
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: cron-template
+spec:
+  params:
+  - name: image-registry
+  - name: toolkit-repo-name
+  - name: toolkit-revision
+  - name: toolkit-base-image-version
+  - name: docker-repo-url
+  - name: docker-revision
+  - name: dockerfile-path
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: single-pipelinerun-
+    spec:
+      serviceAccountName: tekton-triggers-example-sa
+      pipelineRef:
+        name: build-multi-image
+      workspaces:
+      - name: shared-data
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+      params:
+      - name: image-registry
+        value: $(tt.params.image-registry)
+      - name: toolkit-repo-name
+        value: $(tt.params.toolkit-repo-name)
+      - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
+        value: $(tt.params.toolkit-revision)
+      - name: toolkit-base-image-tag
+        value: $(tt.params.toolkit-base-image-version)
+      - name: docker-repo-url
+        value: $(tt.params.docker-repo-url)
+      - name: docker-revision      # (branch, tag, sha, ref, etc...)
+        value: $(tt.params.docker-revision)
+      - name: dockerfile-path
+        value: $(tt.params.dockerfile-path)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: cron-binding
+spec:
+  params:
+  - name: image-registry
+    value: $(body.image-registry)
+  - name: toolkit-repo-name
+    value: $(body.toolkit-repo-name)
+  - name: toolkit-revision
+    value: $(body.toolkit-tag)
+  - name: toolkit-base-image-tag
+    value: $(body.toolkit-base-image-version)
+  - name: docker-repo-url
+    value: $(body.docker-repo-url)
+  - name: docker-revision
+    value: $(body.docker-revision)
+  - name: dockerfile-path
+    value: $(body.dockerfile-path)
