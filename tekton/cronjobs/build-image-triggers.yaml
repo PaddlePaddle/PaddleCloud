@@ -20,9 +20,9 @@ metadata:
   name: cron-template
 spec:
   params:
-  - name: key
-    description: Example of spec.
-    default: value
+  - name: image-registry
+    name: toolkit-repo-name
+    name: toolkit-revision
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
