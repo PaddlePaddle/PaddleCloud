@@ -21,8 +21,8 @@ metadata:
 spec:
   params:
   - name: image-registry
-    name: toolkit-repo-name
-    name: toolkit-revision
+  - name: toolkit-repo-name
+  - name: toolkit-revision
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
