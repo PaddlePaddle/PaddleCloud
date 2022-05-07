@@ -35,9 +35,13 @@ PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模�
 ### 文档教程
 
 - 飞桨模型套件镜像列表
-  - [PaddleOCR镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr)
-  - [PaddleDetection镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection)
-  - [PaddleNLP镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlenlp)
+  - [PaddleOCR 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr)
+  - [PaddleDetection 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection)
+  - [PaddleNLP 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlenlp)
+  - [PaddleSeg 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleseg)
+  - [PaddleClas 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleclas)
+  - [PaddleSpeech 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlespeech)
+  - [PaddleRec 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlerec)
 - 模型套件Docker化部署案例
   - [PP-Human行人检查](./samples/pphuman/pphuman-docker.md)
   - [训练PP-YOLOE模型](./samples/pphuman/ppyoloe-docker.md)
