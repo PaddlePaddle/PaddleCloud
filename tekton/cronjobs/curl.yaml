@@ -19,7 +19,7 @@ spec:
             - name: TOOLKIT_NAME
               value: PaddleOCR
             - name: TOOLKIT_REVISION
-              value: release/2.4
+              value: release/2.3
             - name: TOOLKIT_BASE_IMAGE_VERSION
               value: 2.2.2
             - name: DOCKER_REPO_URL
@@ -29,17 +29,26 @@ spec:
             - name: DOCKERFILE_PATH
               value: tekton/dockerfiles/Dockerfile
             imagePullPolicy: IfNotPresent
-            args:
-            - curl
-            - -X
-            - POST
-            - --data
-            - >
-              {"image-registry": "$(IMAGE_REGISTRY)",
-              "toolkit-repo-name": "$(TOOLKIT_NAME)",
-              "toolkit-revision": "$(TOOLKIT_REVISION)"
-              "toolkit-base-image-version": "$(TOOLKIT_BASE_IMAGE_VERSION)"
-              "docker-repo-url": "$(DOCKER_REPO_URL)"
-              "docker-revision": "$(DOCKER_REVISION)"
-              "dockerfile-path": "$(DOCKERFILE_PATH)"}
-            - el-cron-listener.default.svc.cluster.local:8080
+#             args:
+#             - curl
+#             - -X
+#             - POST
+#             - --data
+#             - >
+#                {"image-registry": "$(IMAGE_REGISTRY)",
+#                "toolkit-repo-name": "$(TOOLKIT_NAME)",
+#                "toolkit-revision": "$(TOOLKIT_REVISION)"
+#                "toolkit-base-image-version": "$(TOOLKIT_BASE_IMAGE_VERSION)"
+#                "docker-repo-url": "$(DOCKER_REPO_URL)"
+#                "docker-revision": "$(DOCKER_REVISION)"
+#                "dockerfile-path": "$(DOCKERFILE_PATH)"}
+#             - el-cron-listener.default.svc.cluster.local:8080
+            args: ["curl", "-X", "POST", "--data",
+                   '{"image-registry": "$(IMAGE_REGISTRY)",
+                   "toolkit-repo-name": "$(TOOLKIT_NAME)",
+                   "toolkit-revision": "$(TOOLKIT_REVISION)",
+                   "toolkit-base-image-version": "$(TOOLKIT_BASE_IMAGE_VERSION)",
+                   "docker-repo-url": "$(DOCKER_REPO_URL)",
+                   "docker-revision": "$(DOCKER_REVISION)",
+                   "dockerfile-path": "$(DOCKERFILE_PATH)"}',
+                   "el-cron-listener.default.svc.cluster.local:8080"]
