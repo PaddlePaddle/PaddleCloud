@@ -14,5 +14,5 @@ spec:
           - name: curl-container
             image: curlimages/curl
             imagePullPolicy: IfNotPresent
-            args: ["curl", "-X", "POST", "--data", "{}", "el-cron-listener.default.svc.cluster.local:8080"]
+            args: ["curl", "-X", "POST", "--data", '{"image-registry": "paddlecloud/paddleocr", "toolkit-name": "PaddleOCR", "toolkit-revision": "release/2.4"}', "el-cron-listener.default.svc.cluster.local:8080"]
         

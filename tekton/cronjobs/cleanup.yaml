@@ -16,7 +16,7 @@ spec:
             imagePullPolicy: IfNotPresent
             env:
               - name: NUM_TO_KEEP
-                value: "2"
+                value: "3"
             command:
               - /bin/bash
               - -c

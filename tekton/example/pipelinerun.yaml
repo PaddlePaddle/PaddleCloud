@@ -1,11 +1,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  Name: auto-build-pipelinerun
+  generateName: single-pipelinerun-
 spec:
   serviceAccountName: tekton-triggers-example-sa
   pipelineRef:
-    name: auto-build-pipeline
+    name: build-single-image
   workspaces:
   - name: shared-data
     volumeClaimTemplate:
@@ -16,22 +16,20 @@ spec:
           requests:
             storage: 10Gi
   params:
+  - name: image-registry
+    value: paddlecloud/paddleocr
   - name: toolkit-repo-name
     value: PaddleOCR
   - name: toolkit-revision
-    value: release/2.3
+    value: release/2.4
   - name: toolkit-base-image-tag
     value: 2.2.2
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision
-    value: main
+    value: dev-tekton
   - name: dockerfile-path
-    value: images/tekton/dockerfiles/paddleocr/Dockerfile.cpu
-  - name: image-registry
-    value: paddlecloud/paddleocr
-# - name: kaniko-image
-#   value: gcr.io/kaniko-project/executor:latest
+    value: tekton/dockerfiles/Dockerfile
 
 
 
