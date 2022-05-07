@@ -23,6 +23,10 @@ spec:
   - name: image-registry
   - name: toolkit-repo-name
   - name: toolkit-revision
+  - name: toolkit-base-image-version
+  - name: docker-repo-url
+  - name: docker-revision
+  - name: dockerfile-path
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
