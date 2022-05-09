@@ -33,7 +33,7 @@ PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模�
 > **适用场景**：本地测试开发环境、单机部署环境。
 
 ### 文档教程
-
+所有镜像均基于 Tekton 进行自动化构建维护，详细请查看 [Tekton 文档](./tekton/README.md)
 - 飞桨模型套件镜像列表
   - [PaddleOCR 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr)
   - [PaddleDetection 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection)
