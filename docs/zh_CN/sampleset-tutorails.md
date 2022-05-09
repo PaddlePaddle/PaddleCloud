@@ -22,19 +22,20 @@ $ helm repo update
 
 使用 helm 一键安装
 
-> 此篇教程内，namespace 默认使用 paddlecloud，如需更改，请自行替换
-
 ```bash
 # install
 $ helm install test paddlecloud/paddlecloud --set tags.all-dep=true -n paddlecloud --create-namespace
 ```
 
-注意：如果 JuiceFS CSI Driver 没有正常启动，及 Pod 不是 Running 状态，并出现类似这样的错误：driver name csi.juicefs.com not found in the list of registered CSI drivers， 
+注意：如果 JuiceFS CSI Driver 没有正常启动，即 Pod 不是 Running 状态，并出现类似这样的错误：driver name csi.juicefs.com not found in the list of registered CSI drivers，
 这是由于 CSI 驱动没有注册到 kubelet 的指定路径，你可以通过指定 `juicefs.kubeletDir` 来正确安装 JuiceFS CSI Driver。
 
 在集群中的 worker 节点执行以下命令来获取 kubelet 的根目录
 
+```
 ps -ef | grep kubelet | grep root-dir
+```
+
 在上述命令打印的内容中，找到 --root-dir 参数后面的值，这既是 kubelet 的根目录。
 
 然后在安装时将 `juicefs.kubeletDir` 指定为上步找到的 kubelet 的根目录。
@@ -81,6 +82,7 @@ $ helm install test paddlecloud/paddlecloud --set tags.all-dep=true --set juicef
 **注意**：请将 IP `192.168.7.227` 替换成您在第一步中运行 Redis 容器的宿主机的 IP 地址。
 
 然后创建 secret.yaml 文件
+
 ```yaml
 apiVersion: v1
 data:
@@ -96,12 +98,14 @@ type: Opaque
 ```
 
 其中各字段的值经过 Base64 编码，您可以通过下面的示例命令来获取个字段 Base64 编码后的值。
+
 ```bash
 $ echo "redis://192.168.7.227:6379/0" | base64
 cmVkaXM6Ly8xOTIuMTY4LjcuMjI3OjYzNzkvMAo=
 ```
 
 使用 kubectl 命令创建 secret
+
 ```bash
 $ kubectl create -f secret.yaml
 secret/imagenet created
@@ -131,9 +135,11 @@ spec:
 ```bash
 $ kubectl create -f imagenet.yaml
 sampleset.batch.paddlepaddle.org/imagenet created
+
 $ kubectl get sampleset -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   58 MiB       200 B         12 GiB        1/1       Ready   76s
+
 $ kubectl get pods -n paddlecloud
 NAME                                         READY   STATUS    RESTARTS   AGE
 imagenet-runtime-0                           1/1     Running   0          30s
@@ -151,6 +157,7 @@ paddle-sampleset-manager-69bc7fb85d-4rjcg    1/1     Running   0          11h
 **注意**：由于 SampleSet 的数据缓存信息不是实时更新的，SampleJob 执行完成后缓存信息会在 30s 内完成更新。
 
 删除缓存引擎中的数据，rmr job 里的 rmrOptions 是必填的，paths 里的参数是数据的相对路径。
+
 ```bash
 $ cat rmr-job.yaml
 apiVersion: batch.paddlepaddle.org/v1alpha1
@@ -168,15 +175,18 @@ spec:
 
 $ kubectl create -f rmr-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-rmr created
+
 $ kubectl get samplejob imagenet-rmr -n paddlecloud
 NAME           PHASE
 imagenet-rmr   Succeeded
+
 $ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.0 KiB      200 B         12 GiB        1/1       Ready   29m
 ```
 
 将远程数据源中的样本数据同步到缓存引擎中，数据大概4GiB左右，12.8万张图片，请确保有足够的内存空间。
+
 ```bash
 $ cat sync-job.yaml
 apiVersion: batch.paddlepaddle.org/v1alpha1
@@ -196,15 +206,18 @@ spec:
 
 $ kubectl create -f sync-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-sync created
+
 $ kubectl get samplejob imagenet-sync -n paddlecloud
 NAME            PHASE
 imagenet-sync   Succeeded
+
 $ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      4.2 GiB       7.3 GiB       1/1       Ready   83m
 ```
 
 清理集群中的缓存数据
+
 ```bash
 $ cat clear-job.yaml
 apiVersion: batch.paddlepaddle.org/v1alpha1
@@ -219,15 +232,18 @@ spec:
     
 $ kubectl create -f clear-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-clear created
+
 $ kubectl get samplejob imagenet-clear -n paddlecloud
 NAME             PHASE
 imagenet-clear   Succeeded
+
 $ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      80 B          12 GiB        1/1       Ready   85m
 ```
 
 将缓存引擎中的数据预热到 Kubernetes 集群中
+
 ```bash
 $ cat warmup-job.yaml
 apiVersion: batch.paddlepaddle.org/v1alpha1
@@ -242,9 +258,11 @@ spec:
 
 $ kubectl create -f warmup-job.yaml
 samplejob.batch.paddlepaddle.org/imagenet-warmup created
+
 $ kubectl get samplejob imagenet-warmup -n paddlecloud
 NAME              PHASE
 imagenet-warmup   Succeeded
+
 $ kubectl get sampleset imagenet -n paddlecloud
 NAME       TOTAL SIZE   CACHED SIZE   AVAIL SPACE   RUNTIME   PHASE   AGE
 imagenet   4.2 GiB      4.2 GiB       7.3 GiB       1/1       Ready   90m
@@ -255,6 +273,7 @@ imagenet   4.2 GiB      4.2 GiB       7.3 GiB       1/1       Ready   90m
 以下示例使用 nginx 镜像来简单示范下如何在 PaddleJob 中声明使用 SampleSet 样本数据集。 如果您的集群中有 GPU 硬件资源，并且想要测试缓存组件给模型训练带来的提升效果，请参考文档：[性能测试](./ext-benchmark.md)
 
 编写 ps-demo.yaml 文件如下：
+
 ```yaml
 apiVersion: batch.paddlepaddle.org/v1
 kind: PaddleJob
@@ -284,6 +303,7 @@ spec:
 ```
 
 查看 PaddleJob 的状态
+
 ```bash
 $ kubectl get paddlejob -n paddlecloud
 NAME      STATUS    MODE   AGE
@@ -291,8 +311,11 @@ ps-demo   Running   PS     112s
 ```
 
 查看挂载在 PaddleJob worker pod 的样本数据
+
 ```bash
+# 进入 PaddleJob worker pod
 $ kubectl exec -it ps-demo-worker-0 -n paddlecloud -- /bin/bash
+
 $ ls /mnt/imagenet
 demo  train  train_list.txt
 ```

@@ -12,7 +12,7 @@
 
 - **具有丰富的云上飞桨组件。**
 
-  云上飞桨具有丰富的云原生功能组件，包括样本数据缓存组件、分部署训练组件、推理推理服务组件等，使用这些组件用户可以方便快捷的在 Kubernetes 集群上镜像模型的训练和部署工作。
+  云上飞桨具有丰富的云原生功能组件，包括样本数据缓存组件、分布式训练组件、推理推理服务组件等，使用这些组件用户可以方便快捷地在 Kubernetes 集群上进行训练和部署工作。
 
 - **功能强大的自运维能力。**
 
@@ -27,7 +27,7 @@
 
 PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模型套件（PaddleOCR等）提供了镜像持续构建的能力，使用这些镜像用户可以快速在本地环境体验和部署套件中的案例。
 目前 [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) 、[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection) 、[PaddleNLP](https://github.com/PaddlePaddle/PaddleNLP)
-三个飞桨模型已经接入镜像持续构建的流水线，后续还将接入更多的模型套件。 除了直接使用套件的标准镜像，如果您需要对模型套件进行二次开发并希望能够持续构建定制的镜像，可以参考 [tekton](./tekton/README.md ) 
+等飞桨模型套件已经接入CI流水线，后续还将接入更多的模型套件。除了直接使用套件的标准镜像，如果您需要对模型套件进行二次开发并希望能够持续构建定制的镜像，可以参考 [tekton](./tekton/README.md ) 
 目录下的文档构建您的套件镜像CI流水线。
 
 > **适用场景**：本地测试开发环境、单机部署环境。
@@ -38,9 +38,14 @@ PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模�
   - [PaddleOCR镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr)
   - [PaddleDetection镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection)
   - [PaddleNLP镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlenlp)
+  - [PaddleClas镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleclas)
+  - [PaddleSeg镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleseg)
+  - [PaddleSpeech镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlespeech)
+  - [PaddleRec镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlerec)
 - 模型套件Docker化部署案例
   - [PP-Human行人检查](./samples/pphuman/pphuman-docker.md)
   - [训练PP-YOLOE模型](./samples/pphuman/ppyoloe-docker.md)
+  - [PP-OCRv3训推一体部署实战](./samples/PaddleOCR/PP-OCRv3-docker.md)
 
 ## Kubernetes集群部署
 
@@ -61,7 +66,7 @@ PaddleCloud 基于 Kubernetes 的 Operator 机制为您提供了多个功能强�
   - [组件概览](./docs/zh_CN/paddlejob-overview.md)
   - [快速上手](./docs/zh_CN/paddlejob-tutorails.md)
 - 模型推理服务组件
-  - [使用教程](./docs/zh_CN/serving-tutorials.md)
+  - [快速上手](./docs/zh_CN/serving-tutorials.md)
 - 云上飞桨组件使用案例
   - [使用云原生组件训练PP-YOLOE](./samples/pphuman/ppyoloe-k8s.md)
 - 云上模型全链路案例
