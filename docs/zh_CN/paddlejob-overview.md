@@ -110,7 +110,7 @@ spec:
 
 **注意：**
 
-* 这里需要将主机内存挂载进 Worker Pod，以防止防止内存溢出错误。
+* 这里需要将主机内存挂载进 Worker Pod，以防止内存溢出错误。
 * 本示例使用内置数据集。程序启动后，数据集会被下载在容器内，可能会等待很长时间。
 
-更多使用文档，请参考 [Paddle Operator快速上手指南](./paddlejob-tutorails.md)
+更多使用文档，请参考 [分布式训练组件快速上手指南](./paddlejob-tutorails.md)
