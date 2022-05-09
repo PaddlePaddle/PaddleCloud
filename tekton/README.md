@@ -1,185 +1,87 @@
-# 介绍
+# Tekton
 
-该项目使用 Tekton pipelines 和 Triggers，实现了自动拉取 paddle 模型套件最新版本（例如 PaddleOCR、PaddleDetection）并制作镜像推送到 docker hub 的流程，并使用 kubernates cronjob 支持该流程的长期运行。
+## 简介
 
-# 使用指南
+该模块使用 Tekton pipelines 和 Triggers，每周定时拉取 paddlepaddle 模型套件最新版本（例如 PaddleOCR、PaddleDetection 等）制作 docker 镜像， 并推送到 docker hub 镜像仓库。您可以更改参数或 pipeline，实现自定义需求。
 
-## 安装 Tekton
+## 特性
 
-本文所有步骤均在 kubernates v1.21 版本进行测试，并默认您有一些 kubernates 的基础。如果您是其他版本 kubernates，请参考 [Tekton Pipeline](https://github.com/tektoncd/pipeline)  和 [Tekton triggers](https://github.com/tektoncd/triggers)，根据 kubernates 版本选取对应的版本安装。
+- 目前支持7个 paddlepaddle 模型套件的自动构建流程，并可以轻松的新增其他模型套件。
+- 可通过设置 cronjob 参数，在任意时间完成镜像自动构建任务。
+- 沙盒式结构，可根据需求轻松的制定出自定义任务流程。
 
-首先安装 Tekton pipelines
+## 快速上手
 
-```bash
-$ kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.34.1/release.yaml
-```
+教程：[制作 paddle 模型组件镜像并 push 到 docker hub 镜像仓库](./example/README.md)
 
-接着安装 Tekton trigger
+[Kaniko 使用指南](./tasks/kaniko/README.md)
 
-```bash
-$ kubectl apply -f https://storage.googleapis.com/tekton-releases/triggers/previous/v0.19.1/release.yaml
-$ kubectl apply -f https://storage.googleapis.com/tekton-releases/triggers/previous/v0.19.1/interceptors.yaml
-```
+## 项目概览
 
-（可选）如果您想使用 Tekton dashboard 更直观的查看各个任务，请安装 dashboard，使用方法参考 [Tekton Dashboard](https://tekton.dev/docs/dashboard/) 
+### 项目结构
 
-```bash
-$ kubectl apply --filename https://github.com/tektoncd/dashboard/releases/latest/download/tekton-dashboard-release.yaml
-```
+<img src="../docs/images/tekton-arch.png" alt="tekton-arch" style="zoom:25%;" />
 
-查看安装的 pods
+如上图所示，该项目主要流程分为两大块，一个是完成业务需求的 pipeline 流程（流程图下部），另一个是为了自动维护套件最新版本镜像的 cronjob && Tekton triggers 流程（流程图上部）。
 
-```
-$ kubectl get pods -n tekton-pipelines
-NAME                                                 READY   STATUS    RESTARTS   AGE
-tekton-triggers-webhook-79c866dc85-g42h8             1/1     Running   0          9d
-tekton-triggers-controller-75b9b7b77d-pksdq          1/1     Running   0          9d
-tekton-pipelines-webhook-6f44cfb768-rkf79            1/1     Running   0          9d
-tekton-pipelines-controller-799fd96f87-wjdh4         1/1     Running   0          9d
-tekton-dashboard-56fcdc6756-8dmpr                    1/1     Running   0          9d
-tekton-triggers-core-interceptors-7769dc7cbc-n7nxd   1/1     Running   0          9d
-```
+#### Task
 
-如果您没有 vpn，可能会遇到无法 pull docker image 的问题，请使用国内的替代资源。
+目前已有三个 Task，分别是基于 Tekton 工具库 git clone、kaniko 和对 Paddle 套件预处理的 prepare-build-env， 其中 git clone 和 kaniko 较为固定，若有自定义需求，可更改 prepare-build-env 中的处理逻辑。
 
-## 安装自动构建镜像的 pipeline
+#### Pipeline && Pipelinerun
 
-### 配置 push docker 权限
+Pipeline 由一个或多个 Task 组合而成，项目提供了针对单套件的单版本镜像制作（single-image）和针对单套件多版本镜像制作（multi-image） 两个Pipeline，用户可根据需求，更改 pipeline 中 prepare-build-env 的步骤。Pipelinrun 对 Pipeline 中的参数进行配置，是 Pipeline 的实例化。此外，用户既可以使用 Pipelinerun 脚本单次运行 Pipeline，也可以通过 cronjob/webhook 定期执行
 
-本示例使用 docker hub 作为推送镜像的 registry，如有其他镜像站需求，请参考 [kaniko](https://github.com/GoogleContainerTools/kaniko) 完成相应的身份认证。
+#### Cronjob && Trigger
 
-1. 在 docker hub 创建项目。
+项目定义了两个 cronjob，一个是使用 curl 发送 POST 请求，将 Pipeline 用到的参数作为  POST 的 data 发送给 Tekton eventListener，再通过Tekton Trigger 机制将参数应用于 Pipelinerun。这样设计的好处是，Pipeline 和 Tigger 等组件只需要安装一次，是参数无关的，用户只需要将参数（包括定时和镜像配置）写入 cronjob，创建 cronjob 即可完成部署或更改部署。
 
-   如果没有 docker hub 账户的话，请先注册账户，然后点击 Create Repository 创建项目，例如账户名为 paddletest，创建的项目为 paddlecloud，则 push 镜像时，格式为 `docker push paddletest/paddlecloud:${tag}`
+另一个是自动清理 Pipelinerun 资源的 cronjob，鉴于 Tekton Pipeline 和 Trigger 均无自动清理策略，这里使用 cronjob 定时检查 Pipeline 的实例，即 Pipelinerun 的运行数量，并按照时间戳和设定的存在阈值清理掉部分 Pipelinerun。
 
-2. 登录 docker 并创建身份认证。
+#### Dockerfile 说明
 
-   ```bash
-   $ docker login --usrname=paadletest		# paddletest 更改为你的账户
-   ```
-
-   登录成功后，会创建 `~/.docker/config.json` 认证文件
-
-   接着在默认命名空间下创建名为 docker-push 的 secret
-
-   ```bash
-   # root 改为当前 linux 用户
-   # 如果准备在其他命名空间创建 pipeline，这里请加上 -n $namespace_name
-   $ kubectl create secret generic docker-push  --from-file=.dockerconfigjson=/root/.docker/config.json  --type=kubernetes.io/dockerconfigjson
-   ```
-
-### 安装 pipeline
-
-``` bash
-$ cd $PaddleCloud_path/tekton/example
-$ kubectl create -f rbac.yaml					
-$ kubectl create -f pipeline.yaml
-```
-
-## 配置并运行 pipeline
-
-我们提供了两种使用 pipeilne 的方式，分别是单次执行的 pipelinerun 方式和定时执行的 cronjob 方式。建议您先通过 pipelinerun 方式配置并测试 pipeline 的运行情况，再使用 cronjob 方式进行部署。
-
-### pipelinerun 运行方式
-
-pipelinerun 示例文件如下，请根据参数的详细说明，更改为您自己的使用配置
-
-```yaml
-apiVersion: tekton.dev/v1beta1
-kind: PipelineRun
-metadata:
-  Name: auto-build-pipelinerun
-spec:
-  serviceAccountName: tekton-triggers-example-sa
-  pipelineRef:
-    name: auto-build-pipeline
-  workspaces:
-  - name: shared-data
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 10Gi
-  params:
-  - name: toolkit-repo-name
-    value: PaddleOCR
-  - name: toolkit-revision      
-    value: release/2.4
-  - name: toolkit-base-image-tag
-    value: 2.2.2
-  - name: docker-repo-url
-    value: https://github.com/freeliuzc/PaddleCloud.git
-  - name: docker-revision      
-    value: main
-  - name: dockerfile-path
-    value: images/tekton/dockerfiles/paddleocr/Dockerfile.cpu
-  - name: image-registry
-    value: paddlecloud/paddleocr
-# - name: kaniko-image
-#   value: gcr.io/kaniko-project/executor:latest  
-```
-
-参数说明：
-
-| 参数                   | 含义                                                         |
-| ---------------------- | ------------------------------------------------------------ |
-| toolkit-repo-name      | paddle 的模型套件名称，目前支持 PaddleOCR、PaddleDetection   |
-| toolkit-revision       | 套件的 release 分支，例如 release/2.3，release/2.4           |
-| toolkit-base-image-tag | 依赖的 paddle 基础镜像，模型套件和基础镜像依赖关系可在套件官网获取，已有的镜像 tag 可在 [docker hub](https://hub.docker.com/r/paddlepaddle/paddle/tags) 查找 |
-| docker-repo-url        | 包含 dockerfile 的 github 仓库                               |
-| docker-revision        | 此仓库所使用的 branch / commit 版本                          |
-| dockerfile-path        | Dockerfile 文件在仓库的相对路径，例如放在仓库根目录下，填写 Dockerfile |
-| image-registry         | 要推送到的 container image 仓库，例如账户名为 paddletest，仓库为 paddlecloud，这里填写 paadletest/registry |
-
- 创建 pipelinerun
+为了尽量增强 Pipeline 的通用性，目前只使用了一个 Dockerfile 模板制作所有组件的 Docker 镜像。一方面，在 prepare-build-env 里对部分信息进行解析，通过 ARG 传递到 Dockerfile；另一方面，Dockerfile 是冗余的，可通过在 prepare-build-env 里添加逻辑判断，使用 sed -i 等命令少量更改 Dockerfile 内容。例如 PaddleRec 和 PaddleSpeech 无需安装 requirement.txt 中的包，而 Dockerfile 有`RUN pip3.7 install -r requirements.txt` 的内容，可通过如下逻辑进行处理
 
 ```
-$ kubectl create -f pipelinerun.yaml
+NO_REQUIREMENT=(PaddleRec PaddleSpeech)
+
+if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
+then
+    sed -i "/requirements.txt/d" Dockerfile
+fi
 ```
 
- 查看 pipelinerun 日志
+### 文件结构
 
 ```
-$ tkn pipelinerun logs -f auto-build-pipeline -n default
+.
+├── cronjobs													# k8s 的 cronjob 和 Tekton 的 Trigger
+│   ├── build-image-triggers.yaml			# Tekton trigger，接收 curl 请求并触发 pipelinerun
+│   ├── cleanup.yaml									# 自动清理 pipelinerun 资源的 cronjob
+│   ├── curl													# 自动触发 curl 请求的 cronjobs，维护多个 paddle 套件
+├── dockerfiles												# 制作镜像使用的 Dockerfile
+├── example														# 快速上手教程
+├── pipelines													# 包含了两个 pipeline 和对应的 pipelinerun
+├── rbac															# 用户注册					
+└── tasks															# Tekton 的 task 任务
+    ├── git-clone											# 针对 github 的 git clone task
+    ├── kaniko												# 基于 kaniko 的镜像制作推送流程
+    └── prepare-build-env							# 针对 paddlepaddle 组件的处理 task
 ```
 
-或者您可以使用 [Tekton dashboard](https://tekton.dev/docs/dashboard/) 更直观的查看各个任务和日志。
+## 飞桨模型组件镜像仓库
 
-删除 pipelinerun 及相应资源
+我们使用该模块维护了多个 Paddle 组件镜像仓库，包括基于 GPU 和 CPU 的镜像，如果您有其他需求，请联系我们。
 
-```
-$ kubectl delete pipelinerun auto-build-pipeline
-```
+| Paddle 套件     | 镜像仓库                                                     | 维护版本    |
+| --------------- | ------------------------------------------------------------ | ----------- |
+| PaddleOCR       | [PaddleOCR 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr) | release/2.4 |
+| PaddleDetection | [PaddleDetection 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection) | release/2.4 |
+| PaddleNLP       | [PaddleNLP 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlenlp) | develop     |
+| PaddleSeg       | [PaddleSeg 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleseg) | release/2.5 |
+| PaddleClas      | [PaddleClas 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleclas) | release/2.3 |
+| PaddleSpeech    | [PaddleSpeech 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlespeech) | develop     |
+| PaddleRec       | [PaddleRec 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlerec) | master      |
 
-### Cronjob 运行方式
 
-1. 首先和 pipelinerun.yaml 一样，更爱 cron-template 中的 pipeline 配置参数，各个参数的具体含义可参考上表
-
-2. （可选）使用 cron 语法更改`schedule: "*/0 0 * * 0"`字段内容，以满足您的定时需求
-
-```
-schedule: "*/0 0 * * 0"
-```
-
-3. 安装 cronjob
-
-```
-$ cd $PaddleCloud/tekton/example
-$ kubectl create -f cronjob.yaml
-```
-
-4. 查看运行的 cronjob
-
-```
-$ kubectl get cronjobs
-```
-
-5. 删除 crobjob
-
-```
-$ kubectl delete cronjobs cleanup-cronjob
-$ kubectl delete cronjobs curl-cronjob
-```
 
