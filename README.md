@@ -68,7 +68,7 @@ PaddleCloud 基于 Kubernetes 的 Operator 机制为您提供了多个功能强�
 - Tekton 自动构建 docker 镜像
   - [模块概览](./tekton/README.md)
   - [快速上手教程](./tekton/example/README.md)
-  - [kaniko 使用教程](./tekton/task/kaniko/README.md)
+  - [kaniko 使用教程](./tekton/tasks/kaniko/README.md)
 - 云上飞桨组件使用案例
   - [使用云原生组件训练PP-YOLOE](./samples/pphuman/ppyoloe-k8s.md)
 - 云上模型全链路案例
