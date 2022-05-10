@@ -12,7 +12,7 @@
 
 - **具有丰富的云上飞桨组件。**
 
-  云上飞桨具有丰富的云原生功能组件，包括样本数据缓存组件、分布式训练组件、推理推理服务组件等，使用这些组件用户可以方便快捷地在 Kubernetes 集群上进行训练和部署工作。
+  云上飞桨具有丰富的云原生功能组件，包括样本数据缓存组件、分布式训练组件、推理服务组件等，使用这些组件用户可以方便快捷地在 Kubernetes 集群上进行训练和部署工作。
 
 - **功能强大的自运维能力。**
 
@@ -45,7 +45,7 @@ PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模�
 - 模型套件Docker化部署案例
   - [PP-Human行人检查](./samples/pphuman/pphuman-docker.md)
   - [训练PP-YOLOE模型](./samples/pphuman/ppyoloe-docker.md)
-  - [PP-OCRv3训推一体部署实战](./samples/PaddleOCR/PP-OCRv3-docker.md)
+  - [PP-OCRv3训推一体部署实战](./samples/PaddleOCR/PP-OCRv3.md)
 
 ## Kubernetes集群部署
 
@@ -68,7 +68,8 @@ PaddleCloud 基于 Kubernetes 的 Operator 机制为您提供了多个功能强�
 - 模型推理服务组件
   - [快速上手](./docs/zh_CN/serving-tutorials.md)
 - 云上飞桨组件使用案例
-  - [使用云原生组件训练PP-YOLOE](./samples/pphuman/ppyoloe-k8s.md)
+  - [训练PP-YOLOE目标检测模型](./samples/pphuman/ppyoloe-k8s.md)
+  - [训练PP-OCRv3文本识别模型](./samples/PaddleOCR/PP-OCRv3.md)
 - 云上模型全链路案例
   - [PP-OCR文字检测模型全链路案例](./samples/pipelines/README.md)
 
