@@ -436,13 +436,13 @@ spec:
     description: The branch of the docker repo to clone.
   - name: image-registry
     type: string
-    description: The image registry to push.
+    description: The image registry to push. In the format of $docker_hub_username/$repo.
   - name: dockerfile-path
     type: string
     description: Relative path to the Dockerfile within the docker-repo.
   - name: kaniko-image
     type: string
-    description: kaniko image to use.
+    description: kaniko image to use. Latest image has some auth problem， recommend default.
     default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
   workspaces:
   - name: shared-data
