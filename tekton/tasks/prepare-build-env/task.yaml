@@ -8,6 +8,8 @@ spec:
   - name: source
     description: Containing paddle toolkit repo and docker repo.
   params:
+  - name: toolkit-name
+    description: The paddle toolkit name.
   - name: revision
     description: The branch of paddle toolkit repo.
     type: string
@@ -28,9 +30,11 @@ spec:
     description: The base env of paddlepaddle image.
   - name: paddle-version
     description: x.x.x
+  - name: hardware
+    description: gpu or cpu docker image
   steps:
   - name: preparing
-    image: zshusers/zsh:4.3.15
+    image: zshusers/zsh:5.8
     env:
     - name: REVISION
       value: $(params.revision)
@@ -51,15 +55,52 @@ spec:
 
       PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
 
+      if [[ ${REVISION:0:7} == "release" ]]
+      then
+          REVISION=${REVISION:0-3:3}
+      fi
+
       if [[ ${PADDLE_BASE_TAG} =~ "-" ]]
       then
           IMAGE_TAG_ENV=${PADDLE_BASE_TAG#*"-"}
       else
           IMAGE_TAG_ENV="cpu"
       fi
+
+      if [[ ${PADDLE_BASE_TAG} =~ "gpu" ]]
+      then
+          HARDWARE="gpu"
+      else
+          HARDWARE="cpu"
+      fi
+
       printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
       printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
       printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
-      printf "%s" "${REVISION:0-3:3}" > "$(results.image-tag-branch.path)"
+      printf "%s" "${REVISION}" > "$(results.image-tag-branch.path)"
+      printf "%s" "${HARDWARE}" > "$(results.hardware.path)"
+  - name: mod-dockerfile
+    image: zshusers/zsh:5.8
+    env:
+    - name: TOOLKIT_NAME
+      value: $(params.toolkit-name)
+    script: |
+      #!/usr/bin/env zsh
+      set -x
+      cd $(workspaces.source.path)/docker
+
+      NO_REQUIREMENT=(PaddleRec PaddleSpeech)
+      NO_INSTALL=(PaddleClas PaddleRec)
+
+      # macOS shoule be sed "" -i ...
+      if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
+      then
+        sed -i "/requirements.txt/d" Dockerfile
+      fi
+
+      if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
+      then
+        sed -i "/setup.py/d" Dockerfile
+      fi
 
 

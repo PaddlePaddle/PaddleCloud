@@ -1,12 +1,12 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: auto-build-pipeline
+  name: build-single-image
 spec:
   params:
   - name: toolkit-repo-name
     type: string
-    description: The repo name. (PaddleOCR/PaddleDetection/)
+    description: The repo name. (PaddleOCR/PaddleDetection/PaddleNLP/PaddleSeg/PaddleClas/PaddleSpeech/PaddleRec)
   - name: toolkit-revision
     type: string
     description: The branch of paddle toolkit to clone.
@@ -69,7 +69,9 @@ spec:
     workspaces:
     - name: source
       workspace: shared-data
-    params: 
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
     - name: revision
       value: $(params.toolkit-revision)
     - name: paddle-base-tag
@@ -95,7 +97,7 @@ spec:
       - name: EXTRA_ARGS
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
-          - --build-arg=PADDLE_VERSION=$(tasks.parse-and-prepare.results.paddle-version)
+          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
       - name: source
         workspace: shared-data

@@ -1,6 +1,40 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
+  name: cleanup-cronjob
+spec:
+  schedule: "*/10 * * * *"       # It will run every 10 min.
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccount: tekton-pipelinerun-cleaner
+          containers:
+          - name: kubectl
+            image: docker.io/alpine/k8s:1.21.5
+            imagePullPolicy: IfNotPresent
+            env:
+              # The Maximum number of pipelinerun basing the same pipeline to keep.
+              - name: NUM_TO_KEEP
+                value: "3"
+            command:
+              - /bin/bash
+              - -c
+              - >
+                while read -r PIPELINE; do
+                  while read -r PIPELINE_TO_REMOVE; do
+                    test -n "${PIPELINE_TO_REMOVE}" || continue;
+                    kubectl delete ${PIPELINE_TO_REMOVE} \
+                        && echo "$(date -Is) PipelineRun ${PIPELINE_TO_REMOVE} deleted." \
+                        || echo "$(date -Is) Unable to delete PipelineRun ${PIPELINE_TO_REMOVE}.";
+                  done < <(kubectl get pipelinerun -l tekton.dev/pipeline=${PIPELINE} --sort-by=.metadata.creationTimestamp -o name | head -n -${NUM_TO_KEEP});
+                done < <(kubectl get pipelinerun -o go-template='{{range .items}}{{index .metadata.labels "tekton.dev/pipeline"}}{{"\n"}}{{end}}' | uniq);
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
   name: curl-cronjob
 spec:
   schedule: "*/0 0 * * 0"       # Cron Time
@@ -24,8 +58,9 @@ spec:
             # The branch to ues
             - name: TOOLKIT_REVISION
               value: release/2.4
-            # The paddlepaddle version. Now(2022.05.08) almost all the toolkit support v2.2.2.
-            - name: TOOLKIT_BASE_IMAGE_VERSION
+            # The tag of paddlepaddle image used in Dockerfile.
+            # Found in https://hub.docker.com/r/paddlepaddle/paddle/tags
+            - name: TOOLKIT_BASE_IMAGE_TAG
               value: 2.2.2
             # The github repo containing Dockerfile.
             - name: DOCKER_REPO_URL
@@ -43,7 +78,7 @@ spec:
                    '{"image-registry": "$(IMAGE_REGISTRY)",
                    "toolkit-repo-name": "$(TOOLKIT_NAME)",
                    "toolkit-revision": "$(TOOLKIT_REVISION)",
-                   "toolkit-base-image-version": "$(TOOLKIT_BASE_IMAGE_VERSION)",
+                   "toolkit-base-image-tag": "$(TOOLKIT_BASE_IMAGE_TAG)",
                    "docker-repo-url": "$(DOCKER_REPO_URL)",
                    "docker-revision": "$(DOCKER_REVISION)",
                    "dockerfile-path": "$(DOCKERFILE_PATH)"}',

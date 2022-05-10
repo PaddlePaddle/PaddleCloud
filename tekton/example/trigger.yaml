@@ -31,7 +31,7 @@ spec:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: multi-pipelinerun-
+      generateName: single-pipelinerun-
     spec:
       serviceAccountName: tekton-triggers-example-sa
       pipelineRef:
@@ -52,7 +52,7 @@ spec:
         value: $(tt.params.toolkit-repo-name)
       - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
         value: $(tt.params.toolkit-revision)
-      - name: toolkit-base-image-version
+      - name: toolkit-base-image-tag
         value: $(tt.params.toolkit-base-image-version)
       - name: docker-repo-url
         value: $(tt.params.docker-repo-url)
@@ -60,7 +60,6 @@ spec:
         value: $(tt.params.docker-revision)
       - name: dockerfile-path
         value: $(tt.params.dockerfile-path)
-
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1
@@ -74,8 +73,8 @@ spec:
   - name: toolkit-repo-name
     value: $(body.toolkit-repo-name)
   - name: toolkit-revision
-    value: $(body.toolkit-revision)
-  - name: toolkit-base-image-version
+    value: $(body.toolkit-tag)
+  - name: toolkit-base-image-tag
     value: $(body.toolkit-base-image-version)
   - name: docker-repo-url
     value: $(body.docker-repo-url)
@@ -83,4 +82,3 @@ spec:
     value: $(body.docker-revision)
   - name: dockerfile-path
     value: $(body.dockerfile-path)
-
