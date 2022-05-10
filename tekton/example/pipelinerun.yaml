@@ -16,6 +16,7 @@ spec:
           requests:
             storage: 10Gi
   params:
+  # You can get description in pipeline.yaml
   - name: image-registry
     value: paddlecloud/paddleocr
   - name: toolkit-repo-name

@@ -48,14 +48,14 @@ spec:
           - name: curl-container
             image: curlimages/curl
             env:
-            # The image registry to be pushed
+            # The image registry to push. In the format of $docker_hub_username/$repo.
             - name: IMAGE_REGISTRY
               value: paddlecloud/paddleocr
             # The name of paddle toolkit.
             # PaddleOCR / PaddleNLP / PaddleDetection / PaddleSpeech / PaddleClas / PaddleRec / PaddleSeg
             - name: TOOLKIT_NAME
               value: PaddleOCR
-            # The branch to ues
+            # The branch of paddle toolkit to clone.
             - name: TOOLKIT_REVISION
               value: release/2.4
             # The tag of paddlepaddle image used in Dockerfile.
@@ -65,7 +65,7 @@ spec:
             # The github repo containing Dockerfile.
             - name: DOCKER_REPO_URL
               value: https://github.com/freeliuzc/PaddleCloud.git
-            # The branch of this repo to use
+            # The branch of the docker repo to clone.
             - name: DOCKER_REVISION
               value: dev-tekton
             # Dockerfile's relative path in the repo.
