@@ -75,13 +75,13 @@ fi
 
 | Paddle 套件     | 镜像仓库                                                     | 维护版本    |
 | --------------- | ------------------------------------------------------------ | ----------- |
-| PaddleOCR       | [PaddleOCR 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr) | release/2.4 |
-| PaddleDetection | [PaddleDetection 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection) | release/2.4 |
-| PaddleNLP       | [PaddleNLP 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlenlp) | develop     |
-| PaddleSeg       | [PaddleSeg 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleseg) | release/2.5 |
-| PaddleClas      | [PaddleClas 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleclas) | release/2.3 |
-| PaddleSpeech    | [PaddleSpeech 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlespeech) | develop     |
-| PaddleRec       | [PaddleRec 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlerec) | master      |
+| PaddleOCR       | [PaddleOCR 镜像仓库](https://hub.docker.com/r/paddlecloud/paddleocr) | release/2.4 |
+| PaddleDetection | [PaddleDetection 镜像仓库](https://hub.docker.com/r/paddlecloud/paddledetection) | release/2.4 |
+| PaddleNLP       | [PaddleNLP 镜像仓库](https://hub.docker.com/r/paddlecloud/paddlenlp) | develop     |
+| PaddleSeg       | [PaddleSeg 镜像仓库](https://hub.docker.com/r/paddlecloud/paddleseg) | release/2.5 |
+| PaddleClas      | [PaddleClas 镜像仓库](https://hub.docker.com/r/paddlecloud/paddleclas) | release/2.3 |
+| PaddleSpeech    | [PaddleSpeech 镜像仓库](https://hub.docker.com/r/paddlecloud/paddlespeech) | develop     |
+| PaddleRec       | [PaddleRec 镜像仓库](https://hub.docker.com/r/paddlecloud/paddlerec) | master      |
 
 
 
