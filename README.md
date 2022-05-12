@@ -35,17 +35,17 @@ PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模�
 ### 文档教程
 所有镜像均基于 Tekton 进行自动化构建维护，详细请查看 [Tekton 文档](./tekton/README.md)
 - 飞桨模型套件镜像列表
-  - [PaddleOCR 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleocr)
-  - [PaddleDetection 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddledetection)
-  - [PaddleNLP 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlenlp)
-  - [PaddleSeg 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleseg)
-  - [PaddleClas 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddleclas)
-  - [PaddleSpeech 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlespeech)
-  - [PaddleRec 镜像仓库](https://hub.docker.com/repository/docker/paddlecloud/paddlerec)
-- 模型套件 Docker 化部署案例
-  - [PP-Human 行人检查](./samples/pphuman/pphuman-docker.md)
-  - [训练 PP-YOLOE 模型](./samples/pphuman/ppyoloe-docker.md)
-  - [PP-OCRv3 训推一体部署实战](./samples/PaddleOCR/PP-OCRv3.md)
+  - [PaddleOCR镜像仓库](https://hub.docker.com/r/paddlecloud/paddleocr)
+  - [PaddleDetection镜像仓库](https://hub.docker.com/r/paddlecloud/paddledetection)
+  - [PaddleNLP镜像仓库](https://hub.docker.com/r/paddlecloud/paddlenlp)
+  - [PaddleClas镜像仓库](https://hub.docker.com/r/paddlecloud/paddleclas)
+  - [PaddleSeg镜像仓库](https://hub.docker.com/r/paddlecloud/paddleseg)
+  - [PaddleSpeech镜像仓库](https://hub.docker.com/r/paddlecloud/paddlespeech)
+  - [PaddleRec镜像仓库](https://hub.docker.com/r/paddlecloud/paddlerec)
+- 模型套件Docker化部署案例
+  - [PP-Human行人检测](./samples/pphuman/pphuman-docker.md)
+  - [训练PP-YOLOE模型](./samples/pphuman/ppyoloe-docker.md)
+  - [PP-OCRv3训推一体部署实战](./samples/PaddleOCR/PP-OCRv3.md)
 
 ## Kubernetes集群部署
 
