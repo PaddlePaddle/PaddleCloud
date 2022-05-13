@@ -42,19 +42,27 @@ docker container ls
 ```
 
 ### 进入容器
-
+attach 进入的是创建容器时的进程，如果执行 exit，会导致容器停止运行
+```
+docker attach [container_name]
+```
+exec 是新建一个进程，可以理解为 ssh 到容器内，执行 exit 只会退出当前进程，不会导致容器停止运行
 ```
 docker exec -it [container_name] /bin/bash
 ```
 
-这里的 name 在上述例子中，即 `--name dev` 参数设置的 dev，也可以通过`docker container ls`查看
+这里的 name 在上述例子中，即 `--name dev` 参数设置的 dev，也可以通过`docker container ls`查看已有 container 名称
 
 ### 关闭容器
-
-- 从容器中退出，回到本机 shell：
+- 将当前进程挂到后台运行，不关闭
+```
+Ctrl + P + Q
+```
+- 退出当前进程，如果是 docker run / docker attach 的进程，则会停止容器运行；而 docker exec 创建的进程，则不会影响容器运行
 
 ```
-ctrl + d
+ctrl + D
+$ exit
 ```
 
 - 停止容器，可通过 `docker start [container_name]` 再次开启容器
