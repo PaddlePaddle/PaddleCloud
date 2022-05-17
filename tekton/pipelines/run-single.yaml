@@ -15,6 +15,7 @@ spec:
         resources:
           requests:
             storage: 10Gi
+  timeout: 2h
   params:
   - name: image-registry
     value: paddlecloud/paddleocr

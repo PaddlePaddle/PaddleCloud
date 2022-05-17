@@ -5,11 +5,11 @@ FROM paddlepaddle/paddle:${IMAGE_TAG}
 ARG PADDLE_TOOLKIT
 COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
 
-WORKDIR /home/${PADDLE_TOOLKIT}
-
+RUN pip3.7 install --upgrade pip
 RUN pip3.7 install jupyter -U && pip3.7 install jupyterlab
 
-RUN pip3.7 install --upgrade pip
+WORKDIR /home/${PADDLE_TOOLKIT}
+
 RUN pip3.7 install -r requirements.txt
 RUN python3.7 setup.py install
 
