@@ -103,4 +103,9 @@ spec:
         sed -i "/setup.py/d" Dockerfile
       fi
 
+      if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
+      then
+        sed -i "/FROM paddlepaddle/paddle:${IMAGE_TAG}/a\RUN apt-get update -y && apt-get install -y libsndfile1"
+        sed -i "/RUN pip3.7 install --upgrade pip/a\RUN pip3.7 install ." Dockerfile
+      fi
 
