@@ -105,8 +105,8 @@ spec:
 
       if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
       then
-        sed -i "# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" Dockerfile
-        sed -i "# toolkit install/a\RUN pip3.7 install ." Dockerfile
+        sed -i "/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" Dockerfile
+        sed -i "/# toolkit install/a\RUN pip3.7 install ." Dockerfile
         sed -i "/setup.py/d" Dockerfile
       fi
 
