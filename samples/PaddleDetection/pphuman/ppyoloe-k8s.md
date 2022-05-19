@@ -8,7 +8,7 @@
 ## 飞桨K8S大礼包概览
 
 <div align="center">
-  <img src="./img/PaddleCloudArch.png" width="800"/>
+  <img src="img/PaddleCloudArch.png" width="800"/>
 </div>
 
 - **简单易用的编程接口**。
@@ -46,7 +46,7 @@
 - 样本缓存组件基于开源项目JuiceFS实现了样本缓存，旨在解决Kubernetes中计算与存储分离的结构带来的高网络IO开销问题，提升云上飞桨分布式训练作业的执行效率。
 
 <div align="center">
-  <img src="../../docs/images/sampleset-arch.jpeg" width="600"/>
+  <img src="../../../docs/images/sampleset-arch.jpeg" width="600"/>
 </div>
 
 ## 使用云原生组件训练PP-YOLOE

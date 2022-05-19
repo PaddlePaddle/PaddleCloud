@@ -43,9 +43,10 @@ PaddleCloud 基于 [Tekton](https://github.com/tektoncd/pipeline) 为飞桨模�
   - [PaddleSpeech镜像仓库](https://hub.docker.com/r/paddlecloud/paddlespeech)
   - [PaddleRec镜像仓库](https://hub.docker.com/r/paddlecloud/paddlerec)
 - 模型套件Docker化部署案例
-  - [PP-Human行人检测](./samples/pphuman/pphuman-docker.md)
-  - [训练PP-YOLOE模型](./samples/pphuman/ppyoloe-docker.md)
+  - [PP-Human行人检测](./samples/PaddleDetection/pphuman/pphuman-docker.md)
+  - [训练PP-YOLOE模型](./samples/PaddleDetection/pphuman/ppyoloe-docker.md)
   - [PP-OCRv3训推一体部署实战](./samples/PaddleOCR/PP-OCRv3.md)
+  - [PP-Tracking多目标跟踪实战](./samples/PaddleDetection/PP-Tracking/README.md)
 
 ## Kubernetes集群部署
 
@@ -72,7 +73,7 @@ PaddleCloud 基于 Kubernetes 的 Operator 机制为您提供了多个功能强�
   - [快速上手教程](./tekton/example/README.md)
   - [kaniko 使用教程](./tekton/tasks/kaniko/README.md)
 - 云上飞桨组件使用案例
-  - [训练 PP-YOLOE 目标检测模型](./samples/pphuman/ppyoloe-k8s.md)
+  - [训练 PP-YOLOE 目标检测模型](./samples/PaddleDetection/pphuman/ppyoloe-k8s.md)
   - [训练 PP-OCRv3 文本识别模型](./samples/PaddleOCR/PP-OCRv3.md)
 - 云上模型全链路案例
   - [PP-OCR 文字检测模型全链路案例](./samples/pipelines/README.md)
