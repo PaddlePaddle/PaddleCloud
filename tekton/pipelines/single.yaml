@@ -88,6 +88,8 @@ spec:
     params:
       - name: IMAGE
         value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: IMAGE_BAIDU
+        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE

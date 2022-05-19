@@ -18,6 +18,8 @@ spec:
   params:
     - name: IMAGE
       description: Name (reference) of the image to build.
+    - name: IMAGE_BAIDU
+      description: Name (reference) of the image to build.
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
@@ -59,6 +61,7 @@ spec:
         - --dockerfile=$(params.DOCKERFILE)
         - --context=$(workspaces.source.path)/$(params.CONTEXT) # The user does not need to care the workspace and the source.
         - --destination=$(params.IMAGE)
+        - --destination=$(params.IMAGE_BAIDU)
         - --digest-file=$(results.IMAGE_DIGEST.path)
       # kaniko assumes it is running as root, which means this example fails on platforms
       # that default to run containers as random uid (like OpenShift). Adding this securityContext

@@ -22,6 +22,8 @@ spec:
   - name: dockerfile-path
     description: The relative path to Dockerfile within repo.
   results:
+  - name: toolkit-name-lower
+    description: The lowercase name.
   - name: dockerfile-name
     description: The dockerfile's file name.
   - name: image-tag-branch
@@ -36,6 +38,8 @@ spec:
   - name: preparing
     image: zshusers/zsh:5.8
     env:
+    - name: TOOLKIT_NAME
+      value: $(params.toolkit-name)
     - name: REVISION
       value: $(params.revision)
     - name: PADDLE_BASE_TAG
@@ -54,6 +58,8 @@ spec:
       echo "file list: `ls`"
 
       PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
+
+      TOOLKIT_NAME_LOWER=`echo ${TOOLKIT_NAME} | tr A-Z a-z`
 
       if [[ ${REVISION:0:7} == "release" ]]
       then
@@ -74,6 +80,7 @@ spec:
           HARDWARE="cpu"
       fi
 
+      printf "%s" "${TOOLKIT_NAME_LOWER}" > "$(results.toolkit-name-lower.path)"
       printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
       printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
       printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
