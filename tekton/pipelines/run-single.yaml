@@ -17,9 +17,9 @@ spec:
           requests:
             storage: 10Gi
 # Cache space for kaniko
-  - name: shared-data
+  - name: cache
     persistentVolumeClaim:
-      claimName: pvc-pipeline
+      claimName: pvc-kaniko-cache
   timeout: 2h
   params:
   - name: image-registry

@@ -19,7 +19,7 @@ spec:
 # Cache space for kaniko
   - name: cache
     persistentVolumeClaim:
-      claimName: pvc-pipeline
+      claimName: pvc-kaniko-cache
   timeout: 6h
   params:
   - name: image-registry
