@@ -32,7 +32,9 @@ spec:
     default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
   workspaces:
   - name: shared-data
-    description: "save git repos"
+    description: Shared storage space for git repo.
+  - name: cache
+    description: Cache dir for kaniko. It should be a PV.
   tasks:
   - name: fetch-paddle-toolkit-repo
     taskRef:
@@ -101,6 +103,8 @@ spec:
     workspaces:
       - name: source
         workspace: shared-data
+      - name: cache
+        workspace: cache
   - name: build-image-gpu-cuda10-cudnn7
     runAfter:
       - parse-and-prepare
@@ -122,6 +126,8 @@ spec:
     workspaces:
       - name: source
         workspace: shared-data
+      - name: cache
+        workspace: cache
   - name: build-image-gpu-cuda11-cudnn8
     runAfter:
       - parse-and-prepare
@@ -141,6 +147,8 @@ spec:
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda11.2-cudnn8
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
+      - name: cache
+        workspace: cache
       - name: source
         workspace: shared-data
 

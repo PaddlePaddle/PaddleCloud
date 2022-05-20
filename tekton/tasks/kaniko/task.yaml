@@ -39,6 +39,8 @@ spec:
       description: Includes a docker `config.json`
       optional: true
       mountPath: /kaniko/.docker
+    - name: cache
+      description: Base image cache.
   results:
     - name: IMAGE_DIGEST
       description: Digest of the image just built.
@@ -62,6 +64,8 @@ spec:
         - --context=$(workspaces.source.path)/$(params.CONTEXT) # The user does not need to care the workspace and the source.
         - --destination=$(params.IMAGE)
         - --destination=$(params.IMAGE_BAIDU)
+        - --cache=true
+        - --cache-dir=$(workspaces.cache.path)
         - --digest-file=$(results.IMAGE_DIGEST.path)
       # kaniko assumes it is running as root, which means this example fails on platforms
       # that default to run containers as random uid (like OpenShift). Adding this securityContext
