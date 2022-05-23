@@ -125,7 +125,7 @@ spec:
 
       if [[ ${TOOLKIT_NAME} == "PaddleHelix" ]]
       then
-        sed -i '/WORKDIR/ s?$?apps/paddlefold?' ${DOCKERFILE}
+        sed -i '/WORKDIR/ s?$?/apps/paddlefold?' ${DOCKERFILE}
       fi
 
       echo ${DOCKERFILE}
