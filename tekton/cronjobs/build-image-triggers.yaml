@@ -37,6 +37,7 @@ spec:
       pipelineRef:
         name: build-multi-image
       workspaces:
+      # Temporary volume which will be deleted when the pipeline finishes.
       - name: shared-data
         volumeClaimTemplate:
           spec:
@@ -45,6 +46,10 @@ spec:
             resources:
               requests:
                 storage: 10Gi
+    # Cache space for kaniko
+      - name: cache
+        persistentVolumeClaim:
+          claimName: pvc-kaniko-cache
       params:
       - name: image-registry
         value: $(tt.params.image-registry)

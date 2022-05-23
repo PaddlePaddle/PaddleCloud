@@ -13,7 +13,7 @@ spec:
   - name: toolkit-base-image-version
     type: string
     description: Tag of the paddle base image. Found in https://hub.docker.com/r/paddlepaddle/paddle/tags.
-    default: 2.2.2
+    default: 2.3.0
   - name: docker-repo-url
     type: string
     description: The git repository containing Dockerfile.
@@ -35,6 +35,7 @@ spec:
     description: Shared storage space for git repo.
   - name: cache
     description: Cache dir for kaniko. It should be a PV.
+  - name: shared-data-rocm
   tasks:
   - name: fetch-paddle-toolkit-repo
     taskRef:
@@ -146,9 +147,77 @@ spec:
         value:
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda11.2-cudnn8
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+
+  - name: fetch-paddle-toolkit-repo-rocm
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data-rocm
+    params:
+    - name: url
+      value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
+    - name: revision
+      value: $(params.toolkit-revision)
+    - name: subdirectory
+      value: $(params.toolkit-repo-name)
+  - name: fetch-docker-repo-rocm
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data-rocm
+    params:
+    - name: url
+      value: $(params.docker-repo-url)
+    - name: revision
+      value: $(params.docker-revision)
+    - name: subdirectory
+      value: repo-docker
+  - name: parse-and-prepare-rocm
+    taskRef:
+      name: prepare-build-env
+    runAfter:
+      - fetch-docker-repo-rocm
+      - fetch-paddle-toolkit-repo-rocm
+    workspaces:
+    - name: source
+      workspace: shared-data-rocm
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
+    - name: revision
+      value: $(params.toolkit-revision)
+    - name: paddle-base-tag
+      value: $(params.toolkit-base-image-version)
+    - name: toolkit-dir
+      value: $(params.toolkit-repo-name)
+    - name: dockerfile-path
+      value: $(params.dockerfile-path).rocm
+  - name: build-image-rocm4-miopen2
+    runAfter:
+      - parse-and-prepare-rocm
+    taskRef:
+      name: kaniko
+    params:
+      - name: IMAGE
+        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: CONTEXT
+        value: docker
+      - name: DOCKERFILE
+        value: $(tasks.parse-and-prepare-rocm.results.dockerfile-name)
+      - name: BUILDER_IMAGE
+        value: $(params.kaniko-image)
+      - name: EXTRA_ARGS
+        value:
+          - --build-arg=IMAGE_TAG="latest-dev-rocm4.0-miopen2.11"
+          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
     workspaces:
       - name: cache
         workspace: cache
       - name: source
-        workspace: shared-data
+        workspace: shared-data-rocm
+
+
+
 

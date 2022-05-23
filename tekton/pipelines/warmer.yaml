@@ -25,4 +25,4 @@ spec:
         secretName: docker-push
     - name: kaniko-cache
       persistentVolumeClaim:
-        claimName: kaniko-cache-claim
+        claimName: pvc-kaniko-cache

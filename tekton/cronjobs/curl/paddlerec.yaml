@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cronjob-curl-paddlerec
 spec:
-  schedule: "*/18 0 * * 6"          # UTC 18:00 CST 24:00
+  schedule: "*/0 0 * * 6"          # UTC 18:00 CST 24:00
   jobTemplate:
     spec:
       template:
@@ -20,7 +20,7 @@ spec:
             - name: TOOLKIT_REVISION
               value: master
             - name: TOOLKIT_BASE_IMAGE_VERSION
-              value: 2.2.2
+              value: 2.3.0
             - name: DOCKER_REPO_URL
               value: https://github.com/freeliuzc/PaddleCloud.git
             - name: DOCKER_REVISION

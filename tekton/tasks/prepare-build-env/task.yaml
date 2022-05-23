@@ -76,6 +76,9 @@ spec:
       if [[ ${PADDLE_BASE_TAG} =~ "gpu" ]]
       then
           HARDWARE="gpu"
+      elif [[ ${PADDLE_BASE_TAG} =~ "rocm" ]]
+      then
+          HARDWARE="rocm"
       else
           HARDWARE="cpu"
       fi
@@ -97,24 +100,31 @@ spec:
       cd $(workspaces.source.path)/docker
 
       NO_REQUIREMENT=(PaddleRec PaddleSpeech)
-      NO_INSTALL=(PaddleClas PaddleRec)
+      NO_INSTALL=(PaddleClas PaddleRec PaddleHelix)
 
       # macOS shoule be sed "" -i ...
       if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "/requirements.txt/d" Dockerfile
+        sed -i "/requirements.txt/d" $(results.dockerfile-name)
       fi
 
       if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "/setup.py/d" Dockerfile
+        sed -i "/setup.py/d" $(results.dockerfile-name)
       fi
 
       if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
       then
-        sed -i "/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" Dockerfile
-        sed -i "/# toolkit install/a\RUN pip3.7 install ." Dockerfile
-        sed -i "/setup.py/d" Dockerfile
+        sed -i "/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" $(results.dockerfile-name)
+        sed -i "/# toolkit install/a\RUN pip3.7 install ." $(results.dockerfile-name)
+        sed -i "/setup.py/d" $(results.dockerfile-name)
       fi
 
-      cat Dockerfile
+      if [[ ${TOOLKIT_NAME} == "PaddleHelix" ]]
+      then
+        sed -i "/WORKDIR*/d" $(results.dockerfile-name)
+        sed -i "/# toolkit install/i\WORKDIR /home/PaddleHelix/apps/paddlefold" $(results.dockerfile-name)
+      fi
+
+      echo $(results.dockerfile-name)
+      cat $(results.dockerfile-name)
