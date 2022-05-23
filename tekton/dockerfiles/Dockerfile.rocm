@@ -7,14 +7,14 @@ COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
 
 # previous install
 
-RUN pip3.7 install --upgrade pip
-RUN pip3.7 install jupyter -U && pip3.7 install jupyterlab
-RUN pip3.7 install paddlepaddle-rocm -f https://paddle-wheel.bj.bcebos.com/2.3.0/rocm/paddlepaddle_rocm-2.3.0.post401-cp37-cp37m-linux_x86_64.whl -i https://mirror.baidu.com/pypi/simple
+RUN pip install --upgrade pip
+RUN pip install jupyter -U && pip3.7 install jupyterlab
+RUN pip install paddlepaddle-rocm -f https://paddle-wheel.bj.bcebos.com/2.3.0/rocm/paddlepaddle_rocm-2.3.0.post401-cp37-cp37m-linux_x86_64.whl -i https://mirror.baidu.com/pypi/simple
 
 WORKDIR /opt/${PADDLE_TOOLKIT}
 
 # toolkit install
-RUN pip3.7 install -r requirements.txt
-RUN python3.7 setup.py install
+RUN pip install -r requirements.txt
+RUN python setup.py install
 
 CMD ["sleep", "infinity"]
