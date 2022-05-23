@@ -53,6 +53,7 @@ spec:
       set -x
       cd $(workspaces.source.path) && mkdir docker
       mv repo-docker/${DOCKERFILE_PATH} docker/ && DOCKERFILE_NAME=`ls docker`
+      echo ${DOCKERFILE_NAME} > ./dockerfile_name
       mv ${TOOLKIT_DIR} docker/ && cd docker
       echo "current path: `pwd`"
       echo "file list: `ls`"
@@ -94,12 +95,12 @@ spec:
     env:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
-    - name DOCKERFILE
-      value: $(tasks.prepare-build-env.results.dockerfile-name)
     script: |
       #!/usr/bin/env zsh
       set -x
       cd $(workspaces.source.path)/docker
+
+      DOCKERFILE=$(cat dockerfile_name)
 
       NO_REQUIREMENT=(PaddleRec PaddleSpeech)
       NO_INSTALL=(PaddleClas PaddleRec PaddleHelix)
