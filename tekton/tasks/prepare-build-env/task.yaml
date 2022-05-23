@@ -108,25 +108,24 @@ spec:
       # macOS shoule be sed "" -i ...
       if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "/requirements.txt/d" ${DOCKERFILE}
+        sed -i '/requirements.txt/d' ${DOCKERFILE}
       fi
 
       if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "/setup.py/d" ${DOCKERFILE}
+        sed -i '/setup.py/d' ${DOCKERFILE}
       fi
 
       if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
       then
-        sed -i "/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" ${DOCKERFILE}
-        sed -i "/# toolkit install/a\RUN pip3.7 install ." ${DOCKERFILE}
-        sed -i "/setup.py/d" ${DOCKERFILE}
+        sed -i '/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1' ${DOCKERFILE}
+        sed -i '/# toolkit install/a\RUN pip3.7 install .' ${DOCKERFILE}
+        sed -i '/setup.py/d' ${DOCKERFILE}
       fi
 
       if [[ ${TOOLKIT_NAME} == "PaddleHelix" ]]
       then
-        sed -i "/WORKDIR*/d" ${DOCKERFILE}
-        sed -i "/# toolkit install/i\WORKDIR /home/PaddleHelix/apps/paddlefold" ${DOCKERFILE}
+        sed -i '/WORKDIR/ s?$?apps/paddlefold?' ${DOCKERFILE}
       fi
 
       echo ${DOCKERFILE}
