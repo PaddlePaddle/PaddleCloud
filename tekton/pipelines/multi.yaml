@@ -92,7 +92,9 @@ spec:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-cpu-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: IMAGE_BAIDU
+        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-cpu-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
@@ -117,6 +119,8 @@ spec:
     params:
       - name: IMAGE
         value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda10.2-cudnn7-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: IMAGE_BAIDU
+        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda10.2-cudnn7-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
@@ -141,6 +145,8 @@ spec:
     params:
       - name: IMAGE
         value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda11.2-cudnn8-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: IMAGE_BAIDU
+        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda11.2-cudnn8-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
@@ -215,6 +221,8 @@ spec:
     params:
       - name: IMAGE
         value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+      - name: IMAGE_BAIDU
+        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
