@@ -95,7 +95,7 @@ spec:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
     - name DOCKERFILE
-      value: $(results.dockerfile-name)
+      value: $(tasks.prepare-build-env.results.dockerfile-name)
     script: |
       #!/usr/bin/env zsh
       set -x
