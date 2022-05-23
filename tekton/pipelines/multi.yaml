@@ -35,7 +35,6 @@ spec:
     description: Shared storage space for git repo.
   - name: cache
     description: Cache dir for kaniko. It should be a PV.
-  - name: shared-data-rocm
   tasks:
   - name: fetch-paddle-toolkit-repo
     taskRef:
@@ -43,6 +42,7 @@ spec:
     workspaces:
     - name: output
       workspace: shared-data
+      subPath: dir1
     params:
     - name: url
       value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
@@ -56,6 +56,7 @@ spec:
     workspaces:
     - name: output
       workspace: shared-data
+      subPath: dir1
     params:
     - name: url
       value: $(params.docker-repo-url)
@@ -72,6 +73,7 @@ spec:
     workspaces:
     - name: source
       workspace: shared-data
+      subPath: dir1
     params:
     - name: toolkit-name
       value: $(params.toolkit-repo-name)
@@ -104,6 +106,7 @@ spec:
     workspaces:
       - name: source
         workspace: shared-data
+        subPath: dir1
       - name: cache
         workspace: cache
   - name: build-image-gpu-cuda10-cudnn7
@@ -127,6 +130,7 @@ spec:
     workspaces:
       - name: source
         workspace: shared-data
+        subPath: dir1
       - name: cache
         workspace: cache
   - name: build-image-gpu-cuda11-cudnn8
@@ -147,13 +151,20 @@ spec:
         value:
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda11.2-cudnn8
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+    workspaces:
+      - name: source
+        workspace: shared-data
+        subPath: dir1
+      - name: cache
+        workspace: cache
 
   - name: fetch-paddle-toolkit-repo-rocm
     taskRef:
       name: git-clone
     workspaces:
     - name: output
-      workspace: shared-data-rocm
+      workspace: shared-data
+      subPath: dir2
     params:
     - name: url
       value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
@@ -166,7 +177,8 @@ spec:
       name: git-clone
     workspaces:
     - name: output
-      workspace: shared-data-rocm
+      workspace: shared-data
+      subPath: dir2
     params:
     - name: url
       value: $(params.docker-repo-url)
@@ -182,7 +194,8 @@ spec:
       - fetch-paddle-toolkit-repo-rocm
     workspaces:
     - name: source
-      workspace: shared-data-rocm
+      workspace: shared-data
+      subPath: dir2
     params:
     - name: toolkit-name
       value: $(params.toolkit-repo-name)
@@ -216,7 +229,8 @@ spec:
       - name: cache
         workspace: cache
       - name: source
-        workspace: shared-data-rocm
+        workspace: shared-data
+        subPath: dir2
 
 
 
