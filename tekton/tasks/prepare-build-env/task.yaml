@@ -94,6 +94,8 @@ spec:
     env:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
+    - name DOCKERFILE
+      value: $(results.dockerfile-name)
     script: |
       #!/usr/bin/env zsh
       set -x
@@ -105,26 +107,26 @@ spec:
       # macOS shoule be sed "" -i ...
       if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "/requirements.txt/d" $(results.dockerfile-name)
+        sed -i "/requirements.txt/d" ${DOCKERFILE}
       fi
 
       if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
       then
-        sed -i "/setup.py/d" $(results.dockerfile-name)
+        sed -i "/setup.py/d" ${DOCKERFILE}
       fi
 
       if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
       then
-        sed -i "/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" $(results.dockerfile-name)
-        sed -i "/# toolkit install/a\RUN pip3.7 install ." $(results.dockerfile-name)
-        sed -i "/setup.py/d" $(results.dockerfile-name)
+        sed -i "/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1" ${DOCKERFILE}
+        sed -i "/# toolkit install/a\RUN pip3.7 install ." ${DOCKERFILE}
+        sed -i "/setup.py/d" ${DOCKERFILE}
       fi
 
       if [[ ${TOOLKIT_NAME} == "PaddleHelix" ]]
       then
-        sed -i "/WORKDIR*/d" $(results.dockerfile-name)
-        sed -i "/# toolkit install/i\WORKDIR /home/PaddleHelix/apps/paddlefold" $(results.dockerfile-name)
+        sed -i "/WORKDIR*/d" ${DOCKERFILE}
+        sed -i "/# toolkit install/i\WORKDIR /home/PaddleHelix/apps/paddlefold" ${DOCKERFILE}
       fi
 
-      echo $(results.dockerfile-name)
-      cat $(results.dockerfile-name)
+      echo ${DOCKERFILE}
+      cat ${DOCKERFILE}
