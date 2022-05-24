@@ -22,5 +22,5 @@ WORKDIR /home/${PADDLE_TOOLKIT}
 RUN pip3.7 install -r requirements.txt
 RUN python3.7 setup.py install
 
-CMD ["sleep", "infinity"]
+# CMD ["sleep", "infinity"]
 CMD ["jupyter lab", "--ip=0.0.0.0", "--port=8888", "--allow-root", "--notebook-dir=/home"]
