@@ -54,7 +54,8 @@ spec:
         cd $(workspaces.source.path)/$(params.CONTEXT)
         echo "context ls: `ls`"
         echo "dockerfile: $(workspaces.source.path)/$(params.CONTEXT)/$(params.DOCKERFILE)"
-        echo "destination: $(params.IMAGE)"
+        echo "destination1: $(params.IMAGE_BAIDU)"
+        echo "destination2: $(params.IMAGE)"
     - name: build-and-push
       workingDir: $(workspaces.source.path)
       image: $(params.BUILDER_IMAGE)
@@ -62,8 +63,8 @@ spec:
         - $(params.EXTRA_ARGS)
         - --dockerfile=$(params.DOCKERFILE)
         - --context=$(workspaces.source.path)/$(params.CONTEXT) # The user does not need to care the workspace and the source.
-        - --destination=$(params.IMAGE)
         - --destination=$(params.IMAGE_BAIDU)
+        - --destination=$(params.IMAGE)
         - --cache=true
         - --cache-dir=$(workspaces.cache.path)
         - --digest-file=$(results.IMAGE_DIGEST.path)
