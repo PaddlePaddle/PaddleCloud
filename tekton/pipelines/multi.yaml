@@ -113,7 +113,7 @@ spec:
         workspace: cache
   - name: build-image-gpu-cuda10-cudnn7
     runAfter:
-      - parse-and-prepare
+      - build-image-cpu
     taskRef:
       name: kaniko
     params:
@@ -139,7 +139,7 @@ spec:
         workspace: cache
   - name: build-image-gpu-cuda11-cudnn8
     runAfter:
-      - parse-and-prepare
+      - build-image-gpu-cuda10-cudnn7
     taskRef:
       name: kaniko
     params:
@@ -215,7 +215,7 @@ spec:
       value: $(params.dockerfile-path).rocm
   - name: build-image-rocm4-miopen2
     runAfter:
-      - parse-and-prepare-rocm
+      - build-image-gpu-cuda11-cudnn8
     taskRef:
       name: kaniko
     params:
