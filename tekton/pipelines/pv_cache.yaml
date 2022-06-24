@@ -11,4 +11,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/root/lzc/pv/pipeline"
+    path: "/root/liuzichang01/pv/cache"

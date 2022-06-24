@@ -3,9 +3,11 @@ kind: Pod
 metadata:
   name: kaniko-warmer
 spec:
+  hostNetwork: true
   containers:
   - name: kaniko-warmer
-    image: gcr.io/kaniko-project/warmer:latest
+    # image: gcr.io/kaniko-project/warmer:latest
+    image: 13338886898/lzc:kaniko-project
     args: ["--cache-dir=/cache",
            "--image=paddlepaddle/paddle:2.3.0",
            "--image=paddlepaddle/paddle:2.3.0-gpu-cuda10.2-cudnn7",
@@ -18,6 +20,14 @@ spec:
     env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /secret/kaniko-secret.json
+      - name: HTTP_PROXY
+        value: "http://172.19.57.45:3128/"
+      - name: HTTPS_PROXY
+        value: "http://172.19.57.45:3128/"
+      - name: http_proxy
+        value: "http://172.19.57.45:3128/"
+      - name: https_proxy
+        value: "http://172.19.57.45:3128/"
   restartPolicy: Never
   volumes:
     - name: kaniko-secret

@@ -1,0 +1,84 @@
+FROM paddlepaddle/paddle:latest-dev-rocm4.0-miopen2.11
+
+RUN mkdir -p /var/run/sshd /root/.ssh
+# 不使用DNS
+RUN sed -i "s/#UseDNS .*/UseDNS no/" /etc/ssh/sshd_config
+RUN sed -i -r "s/^(.*pam_nologin.so)/#\1/" /etc/pam.d/sshd
+RUN ssh-keygen -A
+
+COPY ./Resource/condarc /root/.condarc
+COPY PaddleSlim ./PaddleSlim
+COPY PaddleOCR ./PaddleOCR
+COPY PaddleNLP ./PaddleNLP
+COPY PaddleDetection ./PaddleDetection
+COPY PaddleSeg ./PaddleSeg
+COPY PaddleClas ./PaddleClas
+COPY PaddleSpeech ./PaddleSpeech
+COPY PaddleRec ./PaddleRec
+COPY PaddleHelix ./PaddleHelix
+COPY PaddleScience ./PaddleScience
+
+
+RUN pip install --no-cache-dir --upgrade pip \
+    -i https://mirror.baidu.com/pypi/simple && \
+    pip install paddlepaddle-rocm -f \
+    https://www.paddlepaddle.org.cn/whl/rocm/develop.html && \
+    pip install --no-cache-dir --upgrade jupyter jupyterlab \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple/ 
+
+RUN pip install --no-cache-dir --upgrade jupyter jupyterlab ipykernel ipython \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple/ 
+
+WORKDIR /opt/PaddleSlim
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+RUN python setup.py install
+
+WORKDIR /opt/PaddleOCR
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+RUN python setup.py install
+
+WORKDIR /opt/PaddleNLP
+RUN pip install --no-cache-dir visualdl regex pybind11 zstandard \
+    -i https://mirror.baidu.com/pypi/simple
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+RUN python setup.py install
+
+WORKDIR /opt/PaddleDetection
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+RUN python setup.py install
+
+WORKDIR /opt/PaddleSeg
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+RUN python setup.py install
+
+WORKDIR /opt/PaddleClas
+RUN pip install --no-cache-dir -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+
+WORKDIR /opt/PaddleSpeech
+RUN pip install . -i https://mirror.baidu.com/pypi/simple
+
+WORKDIR /opt/PaddleHelix
+RUN conda install -c conda-forge openmm=7.5.1 pdbfixer
+RUN pip install pgl networkx sklearn \
+    -i https://mirror.baidu.com/pypi/simple
+
+WORKDIR /opt/PaddleScience
+RUN pip install -r requirements.txt \
+    -i https://mirror.baidu.com/pypi/simple
+ENV PYTHONPATH /opt/PaddleScience
+RUN chmod 777 -R /opt/PaddleScience/examples
+
+WORKDIR /opt
+
+# ssh
+EXPOSE 22    
+# jupyter lab   
+EXPOSE 8888
+
+CMD ["sleep", "infinity"]

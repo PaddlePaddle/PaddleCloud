@@ -29,7 +29,7 @@ spec:
   - name: kaniko-image
     type: string
     description: kaniko image to use.
-    default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+    default: lzc842650834/tekton:kaniko-project-executor-v1.5.1
   workspaces:
   - name: shared-data
     description: Shared storage space for git repo.

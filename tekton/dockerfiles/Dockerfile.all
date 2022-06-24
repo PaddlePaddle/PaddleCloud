@@ -1,0 +1,77 @@
+FROM paddlepaddle/paddle:2.3.0
+
+RUN rm -rf /etc/apt/* && mkdir -p /etc/apt/apt.conf.d \
+    /Resource/trusted.gpg.d /etc/apt/preferences.d
+COPY ./Resource/sources.list /etc/apt/
+COPY ./Resource/trusted.gpg /etc/apt/
+COPY ./Resource/trusted.gpg.d /etc/apt/trusted.gpg.d
+
+# 更新apt缓存、安装ssh服务
+RUN apt-get update && apt-get dist-upgrade
+RUN /usr/sbin/sshd -p 22; if [ $? -ne 0 ]; then \
+apt-get install -y openssh-server; fi
+RUN mkdir -p /var/run/sshd /root/.ssh
+# 不使用DNS
+RUN sed -i "s/#UseDNS .*/UseDNS no/" /etc/ssh/sshd_config
+RUN sed -i -r "s/^(.*pam_nologin.so)/#\1/" /etc/pam.d/sshd
+RUN ssh-keygen -A
+
+COPY PaddleSlim ./PaddleSlim
+COPY PaddleOCR ./PaddleOCR
+COPY PaddleNLP ./PaddleNLP
+COPY PaddleDetection ./PaddleDetection
+COPY PaddleSeg ./PaddleSeg
+COPY PaddleClas ./PaddleClas
+COPY PaddleSpeech ./PaddleSpeech
+COPY PaddleRec ./PaddleRec
+COPY PaddleHelix ./PaddleHelix
+COPY PaddleScience ./PaddleScience
+
+RUN apt-get install -y libsndfile1
+RUN pip3.7 install --no-cache-dir --upgrade pip \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple/
+RUN pip3.7 install --no-cache-dir --upgrade jupyter jupyterlab \
+    ipykernel ipython -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+WORKDIR /home/PaddleSlim
+RUN pip3.7 install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN python3.7 setup.py install
+
+WORKDIR /home/PaddleOCR
+RUN pip3.7 install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN python3.7 setup.py install
+
+WORKDIR /home/PaddleNLP
+RUN pip3.7 install --no-cache-dir visualdl regex pybind11 zstandard \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3.7 install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN python3.7 setup.py install
+
+WORKDIR /home/PaddleDetection
+RUN pip3.7 install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN python3.7 setup.py install
+
+WORKDIR /home/PaddleSeg
+RUN pip3.7 install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN python3.7 setup.py install
+
+WORKDIR /home/PaddleClas
+RUN pip3.7 install --no-cache-dir -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+WORKDIR /home/PaddleSpeech
+RUN pip3.7 install . -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+WORKDIR /home
+
+# ssh
+EXPOSE 22    
+# jupyter lab   
+EXPOSE 8888
+
+CMD ["sleep", "infinity"]

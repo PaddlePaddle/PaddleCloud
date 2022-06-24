@@ -9,20 +9,31 @@ spec:
   workspaces:
 # Temporary volume which will be deleted when the pipeline finishes.
   - name: shared-data
-    persistentVolumeClaim:
-      claimName: pvc-runtime
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
 # Cache space for kaniko
   - name: cache
-    persistentVolumeClaim:
-      claimName: pvc-kaniko-cache
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+#
   timeout: 2h
   params:
   - name: image-registry
     value: paddlecloud/paddledetection
   - name: toolkit-repo-name
-    value: PaddleOCR
+    value: PaddleDetection
   - name: toolkit-revision
-    value: release/2.5
+    value: release/2.4
   - name: toolkit-base-image-tag
     value: 2.3.0
   - name: docker-repo-url
