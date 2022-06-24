@@ -23,9 +23,12 @@ spec:
   - name: image-registry
     type: string
     description: The image registry to push.
+  - name: context-path
+    type: string
+    description: The directory path containing Dockerfile and dependency files within repo.
   - name: dockerfile-path
     type: string
-    description: Relative path to the Dockerfile within the docker-repo.
+    description: The relative path to context path.  
   - name: kaniko-image
     type: string
     description: kaniko image to use.
@@ -49,6 +52,10 @@ spec:
       value: $(params.toolkit-revision)
     - name: subdirectory
       value: $(params.toolkit-repo-name)
+    - name: httpProxy
+      value: http://172.19.57.45:3128/
+    - name: httpsProxy
+      value: http://172.19.57.45:3128/
   - name: fetch-docker-repo
     taskRef:
       name: git-clone
@@ -62,6 +69,10 @@ spec:
       value: $(params.docker-revision)
     - name: subdirectory
       value: repo-docker
+    - name: httpProxy
+      value: http://172.19.57.45:3128/
+    - name: httpsProxy
+      value: http://172.19.57.45:3128/
   - name: parse-and-prepare
     taskRef:
       name: prepare-build-env
@@ -80,6 +91,8 @@ spec:
       value: $(params.toolkit-base-image-tag)
     - name: toolkit-dir
       value: $(params.toolkit-repo-name)
+    - name: context-path
+      value: $(params.context-path)
     - name: dockerfile-path
       value: $(params.dockerfile-path)
   - name: build-image
@@ -95,7 +108,7 @@ spec:
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
-        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+        value: $(params.dockerfile-path)
       - name: BUILDER_IMAGE
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS

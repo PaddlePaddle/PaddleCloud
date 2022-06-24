@@ -19,13 +19,15 @@ spec:
     default: 2.2.2
   - name: toolkit-dir
     description: The dir name of paddle toolkit repo in the workspace.
+  - name: context-path
+    type: string
+    description: The directory path containing Dockerfile and dependency files within repo.
   - name: dockerfile-path
-    description: The relative path to Dockerfile within repo.
+    type: string
+    description: The relative path to context path.
   results:
   - name: toolkit-name-lower
     description: The lowercase name.
-  - name: dockerfile-name
-    description: The dockerfile's file name.
   - name: image-tag-branch
     description: image release version
   - name: image-tag-env
@@ -46,15 +48,17 @@ spec:
       value: $(params.paddle-base-tag)
     - name: TOOLKIT_DIR
       value: $(params.toolkit-dir)
+    - name: CONTEXT_PATH
+      value: $(params.context-path)
     - name: DOCKERFILE_PATH
       value: $(params.dockerfile-path)
+      
     script: |
       #!/usr/bin/env zsh
       set -x
       cd $(workspaces.source.path) && mkdir docker
-      mv repo-docker/${DOCKERFILE_PATH} docker/ && DOCKERFILE_NAME=`ls docker`
+      mv repo-docker/${CONTEXT_PATH}/* docker/
       mv ${TOOLKIT_DIR} docker/ && cd docker
-      echo ${DOCKERFILE_NAME} > ./dockerfile_name
       echo "current path: `pwd`"
       echo "file list: `ls`"
 
@@ -85,7 +89,6 @@ spec:
       fi
 
       printf "%s" "${TOOLKIT_NAME_LOWER}" > "$(results.toolkit-name-lower.path)"
-      printf "%s" "${DOCKERFILE_NAME}" > "$(results.dockerfile-name.path)"
       printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
       printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
       printf "%s" "${REVISION}" > "$(results.image-tag-branch.path)"
@@ -95,12 +98,14 @@ spec:
     env:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
+    - name: DOCKERFILE
+      value: $(params.dockerfile-path)
     script: |
       #!/usr/bin/env zsh
       set -x
-      cd $(workspaces.source.path)/docker
 
-      export DOCKERFILE=$(cat dockerfile_name)
+      # cd to context path.
+      cd $(workspaces.source.path)/docker     
 
       NO_REQUIREMENT=(PaddleRec PaddleSpeech)
       NO_INSTALL=(PaddleClas PaddleRec PaddleHelix)
