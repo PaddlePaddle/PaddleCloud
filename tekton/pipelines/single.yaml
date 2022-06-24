@@ -115,6 +115,7 @@ spec:
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+          - --registry-mirror=mirror.baidubce.com
     workspaces:
       - name: source
         workspace: shared-data
