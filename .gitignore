@@ -31,3 +31,4 @@ charts/knative/charts/*
 
 # macOS file
 */.DS_Store
+.DS_Store
