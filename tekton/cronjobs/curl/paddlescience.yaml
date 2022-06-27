@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cronjob-curl-paddlespeech
+  name: cronjob-curl-paddleclas
 spec:
-  schedule: "*/0 0 * * 4"          # UTC 18:00 CST 24:00
+  schedule: "*/0 0 * * 5"          # UTC 18:00 CST 24:00
   jobTemplate:
     spec:
       template:
@@ -18,7 +18,7 @@ spec:
             - name: IMAGE_BAIDUBCE_REGISTRY
               value: registry.baidubce.com/paddleflow-public
             - name: TOOLKIT_NAME
-              value: PaddleSpeech
+              value: PaddleClas
             - name: TOOLKIT_REVISION
               value: develop
             - name: TOOLKIT_BASE_IMAGE_VERSION
@@ -30,7 +30,7 @@ spec:
             - name: CONTEXT_PATH
               value: tekton/dockerfiles
             - name: DOCKERFILE_PATH
-              value: Dockerfile.speech
+              value: Dockerfile.science
             imagePullPolicy: IfNotPresent
             args: ["curl", "-X", "POST", "--data",
                    '{"image-dockerhub-registry": "$(IMAGE_DOCKERHUB_REGISTRY)",
