@@ -10,7 +10,7 @@ COPY ./Resource/trusted.gpg /etc/apt/
 COPY ./Resource/trusted.gpg.d /etc/apt/trusted.gpg.d
 RUN apt-get update
 RUN /usr/sbin/sshd -p 22; if [ $? -ne 0 ]; then \
-apt-get install -y openssh-server; fi
+    apt-get install -y openssh-server; fi
 
 # disable UseDNS
 RUN mkdir -p /var/run/sshd /root/.ssh
@@ -23,6 +23,7 @@ RUN ssh-keygen -A
 # ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 # RUN chmod +x /tini
 COPY ./Resource/tini /tini
+RUN chmod +x /tini
 
 ARG PADDLE_TOOLKIT
 COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}

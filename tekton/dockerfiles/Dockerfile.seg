@@ -23,6 +23,7 @@ RUN ssh-keygen -A
 # ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 # RUN chmod +x /tini
 COPY ./Resource/tini /tini
+RUN chmod +x /tini
 
 ARG PADDLE_TOOLKIT
 COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
