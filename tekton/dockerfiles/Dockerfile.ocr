@@ -12,7 +12,8 @@ RUN apt-get update
 
 RUN mkdir -p /var/run/sshd /root/.ssh
 RUN /usr/sbin/sshd -p 22; if [ $? -ne 0 ]; then \
-apt-get install -y openssh-server; fi
+    rm -rf /etc/ssh/sshd_config && apt-get install \
+    -y openssh-server; fi
 
 # disable UseDNS
 RUN sed -i "s/#UseDNS .*/UseDNS no/" /etc/ssh/sshd_config
