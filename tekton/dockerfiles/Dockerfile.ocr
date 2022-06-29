@@ -10,7 +10,7 @@ COPY ./Resource/trusted.gpg /etc/apt/
 COPY ./Resource/trusted.gpg.d /etc/apt/trusted.gpg.d
 RUN apt-get update
 RUN /usr/sbin/sshd -p 22; if [ $? -ne 0 ]; then \
-apt-get install -y openssh-server; fi
+sh -c 'bin/echo -e "1" | apt-get install -y openssh-server'; fi
 
 # disable UseDNS
 RUN mkdir -p /var/run/sshd /root/.ssh
