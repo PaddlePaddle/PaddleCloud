@@ -42,9 +42,8 @@ WORKDIR /home/${PADDLE_TOOLKIT}
 # toolkit install
 RUN pip3.7 install --no-cache-dir -r requirements.txt \ 
     -i https://mirror.baidu.com/pypi/simple
-ENV PYTHONPATH /opt/PaddleScience
-RUN chmod 777 -R /opt/PaddleScience/examples
-
+ENV PYTHONPATH /home/PaddleScience
+RUN chmod 777 -R /home/PaddleScience/examples
 
 ENTRYPOINT ["/tini", "--"]
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", \
