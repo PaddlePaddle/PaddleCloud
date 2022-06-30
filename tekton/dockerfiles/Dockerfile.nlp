@@ -9,11 +9,13 @@ COPY ./Resource/sources.list /etc/apt/
 COPY ./Resource/trusted.gpg /etc/apt/
 COPY ./Resource/trusted.gpg.d /etc/apt/trusted.gpg.d
 RUN apt-get update
+
+RUN mkdir -p /var/run/sshd /root/.ssh
 RUN /usr/sbin/sshd -p 22; if [ $? -ne 0 ]; then \
-apt-get install -y openssh-server; fi
+    rm -rf /etc/ssh/sshd_config && apt-get install \
+    -y openssh-server; fi
 
 # disable UseDNS
-RUN mkdir -p /var/run/sshd /root/.ssh
 RUN sed -i "s/#UseDNS .*/UseDNS no/" /etc/ssh/sshd_config
 RUN sed -i -r "s/^(.*pam_nologin.so)/#\1/" /etc/pam.d/sshd
 RUN ssh-keygen -A
