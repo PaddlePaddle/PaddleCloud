@@ -1,3 +1,6 @@
+#
+# Used in Tekton triggers 0.19
+#
 apiVersion: v1
 kind: ServiceAccount
 metadata:

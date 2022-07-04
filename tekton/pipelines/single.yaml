@@ -13,16 +13,19 @@ spec:
   - name: toolkit-base-image-tag
     type: string
     description: Tag of the paddle base image. Found in https://hub.docker.com/r/paddlepaddle/paddle/tags.
-    default: 2.2.2
+    default: 2.3.0
   - name: docker-repo-url
     type: string
     description: The git repository containing Dockerfile.
   - name: docker-revision
     type: string
     description: The branch of the docker repo to clone.
-  - name: image-registry
+  - name: image-dockerhub-registry
     type: string
     description: The image registry to push.
+  - name: image-baidubce-registry
+    type: string
+    description: The baidubce registry to push. You also can use other registry.
   - name: context-path
     type: string
     description: The directory path containing Dockerfile and dependency files within repo.
@@ -40,6 +43,8 @@ spec:
     description: Cache dir for kaniko. It should be a PV.
   tasks:
   - name: fetch-paddle-toolkit-repo
+    retries: 4
+    Timeout: 20m
     taskRef:
       name: git-clone
     workspaces:
@@ -57,6 +62,8 @@ spec:
     - name: httpsProxy
       value: http://172.19.57.45:3128/
   - name: fetch-docker-repo
+    retries: 4
+    Timeout: 5m
     taskRef:
       name: git-clone
     workspaces:
@@ -73,9 +80,9 @@ spec:
       value: http://172.19.57.45:3128/
     - name: httpsProxy
       value: http://172.19.57.45:3128/
-  - name: parse-and-prepare
+  - name: prepare-build-context
     taskRef:
-      name: prepare-build-env
+      name: prepare-docker-build-context
     runAfter: 
       - fetch-docker-repo
       - fetch-paddle-toolkit-repo
@@ -85,26 +92,50 @@ spec:
     params:
     - name: toolkit-name
       value: $(params.toolkit-repo-name)
-    - name: revision
+    - name: context-path
+      value: $(params.context-path)
+  - name: generate-image-tag
+    taskRef:
+      name: generate-docker-image-tag
+    runAfter: 
+      - prepare-build-context
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
+    - name: branch
       value: $(params.toolkit-revision)
+    - name: commit-id
+      value: $(tasks.fetch-paddle-toolkit-repo.results.commit-id)
     - name: paddle-base-tag
       value: $(params.toolkit-base-image-tag)
-    - name: toolkit-dir
-      value: $(params.toolkit-repo-name)
     - name: context-path
       value: $(params.context-path)
     - name: dockerfile-path
       value: $(params.dockerfile-path)
+    - name: dockerhub-registry
+      value: $(params.image-dockerhub-registry)
+    - name: baidubce-registry
+      value: $(params.image-baidubce-registry)
   - name: build-image
+    retries: 4
     runAfter:
-      - parse-and-prepare
+      - generate-image-tag
     taskRef:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag.results.image-tag-dockerhub)"
+      - name: IMAGE_LATEST
+        value: "$(tasks.generate-image-tag.results.image-tag-latest-dockerhub)"
       - name: IMAGE_BAIDU
-        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-$(tasks.parse-and-prepare.results.image-tag-env)-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag.results.image-tag-baidubce)"
+      - name: IMAGE_LATEST_BAIDU
+        value: "$(tasks.generate-image-tag.results.image-tag-latest-baidubce)"
+      - name: CACHE_REPO
+        value: registry.baidubce.com/paddleflow-public/cache/kaniko
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
@@ -115,10 +146,19 @@ spec:
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-tag)
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+          # - --build-arg=http_proxy=http://172.19.57.45:3128
+          # - --build-arg=https_proxy=http://172.19.57.45:3128
           - --registry-mirror=mirror.baidubce.com
     workspaces:
       - name: source
         workspace: shared-data
       - name: cache
         workspace: cache
+  finally:
+  - name: cleanup
+    taskRef:
+      name: cleanup
+    workspaces:
+    - name: source
+      workspace: shared-data
 

@@ -1,11 +1,9 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: cronjob-curl-paddledetection
+  name: cronjob-curl-paddleocr
 spec:
-  schedule: "*/1 0 * * 2"          
-  successfulJobsHistoryLimit: 0
-  failedJobsHistoryLimit: 0  
+  schedule: "*/31 16 * * *"          # UTC 18:00 CST 24:00
   jobTemplate:
     spec:
       template:
@@ -20,9 +18,9 @@ spec:
             - name: IMAGE_BAIDUBCE_REGISTRY
               value: registry.baidubce.com/paddleflow-public
             - name: TOOLKIT_NAME
-              value: PaddleDetection
+              value: PaddleSeg
             - name: TOOLKIT_REVISION
-              value: release/2.4
+              value: release/2.5
             - name: TOOLKIT_BASE_IMAGE_VERSION
               value: 2.3.0
             - name: DOCKER_REPO_URL
@@ -30,9 +28,9 @@ spec:
             - name: DOCKER_REVISION
               value: dev-tekton
             - name: CONTEXT_PATH
-              value: tekton/dockerfiles
+              value: tekton/dockerfiles              
             - name: DOCKERFILE_PATH
-              value: Dockerfile.detection
+              value: Dockerfile.seg
             imagePullPolicy: IfNotPresent
             args: ["curl", "-X", "POST", "--data",
                    '{"image-dockerhub-registry": "$(IMAGE_DOCKERHUB_REGISTRY)",

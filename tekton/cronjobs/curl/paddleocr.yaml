@@ -1,9 +1,11 @@
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: cronjob-curl-paddleocr
 spec:
-  schedule: "*/0 0 * * 0"          # UTC 18:00 CST 24:00
+  schedule: "*/1 0 * * 0"          # UTC 18:00 CST 24:00
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
   jobTemplate:
     spec:
       template:

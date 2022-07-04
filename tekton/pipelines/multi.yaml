@@ -20,29 +20,38 @@ spec:
   - name: docker-revision
     type: string
     description: The branch of the docker repo to clone.
-  - name: image-registry
+  - name: image-dockerhub-registry
     type: string
     description: The image registry to push.
+  - name: image-baidubce-registry
+    type: string
+    description: The baidubce registry to push. You also can use other registry.
+  - name: context-path
+    type: string
+    description: The directory path containing Dockerfile and dependency files within repo.
   - name: dockerfile-path
     type: string
-    description: Relative path to the Dockerfile within the docker-repo.
+    description: The relative path to context path. 
   - name: kaniko-image
     type: string
     description: kaniko image to use.
-    default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+    default: lzc842650834/tekton:kaniko-project-executor-v1.5.1
   workspaces:
   - name: shared-data
     description: Shared storage space for git repo.
   - name: cache
     description: Cache dir for kaniko. It should be a PV.
+
   tasks:
   - name: fetch-paddle-toolkit-repo
+    retries: 4
+    Timeout: 20m
     taskRef:
       name: git-clone
     workspaces:
     - name: output
       workspace: shared-data
-      subPath: dir1
+      # subPath: dir1
     params:
     - name: url
       value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
@@ -50,13 +59,20 @@ spec:
       value: $(params.toolkit-revision)
     - name: subdirectory
       value: $(params.toolkit-repo-name)
+    - name: httpProxy
+      value: http://172.19.57.45:3128/
+    - name: httpsProxy
+      value: http://172.19.57.45:3128/
+
   - name: fetch-docker-repo
+    retries: 4
+    Timeout: 5m
     taskRef:
       name: git-clone
     workspaces:
     - name: output
       workspace: shared-data
-      subPath: dir1
+      # subPath: dir1
     params:
     - name: url
       value: $(params.docker-repo-url)
@@ -64,181 +80,295 @@ spec:
       value: $(params.docker-revision)
     - name: subdirectory
       value: repo-docker
-  - name: parse-and-prepare
+    - name: httpProxy
+      value: http://172.19.57.45:3128/
+    - name: httpsProxy
+      value: http://172.19.57.45:3128/
+
+  - name: prepare-build-context
     taskRef:
-      name: prepare-build-env
+      name: prepare-docker-build-context
     runAfter: 
       - fetch-docker-repo
       - fetch-paddle-toolkit-repo
     workspaces:
     - name: source
       workspace: shared-data
-      subPath: dir1
+      # subPath: dir1
     params:
     - name: toolkit-name
       value: $(params.toolkit-repo-name)
-    - name: revision
+    - name: context-path
+      value: $(params.context-path)
+
+  - name: generate-image-tag-cpu
+    taskRef:
+      name: generate-docker-image-tag
+    runAfter: 
+      - prepare-build-context
+    workspaces:
+    - name: source
+      workspace: shared-data
+      # subPath: dir1
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
+    - name: branch
       value: $(params.toolkit-revision)
+    - name: commit-id
+      value: $(tasks.fetch-paddle-toolkit-repo.results.commit-id)
     - name: paddle-base-tag
       value: $(params.toolkit-base-image-version)
-    - name: toolkit-dir
-      value: $(params.toolkit-repo-name)
+    - name: context-path
+      value: $(params.context-path)
     - name: dockerfile-path
       value: $(params.dockerfile-path)
+    - name: dockerhub-registry
+      value: $(params.image-dockerhub-registry)
+    - name: baidubce-registry
+      value: $(params.image-baidubce-registry)
+
   - name: build-image-cpu
+    retries: 3
     runAfter:
-      - parse-and-prepare
+      - generate-image-tag-cpu
     taskRef:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-cpu-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag-cpu.results.image-tag-dockerhub)"
+      - name: IMAGE_LATEST
+        value: "$(tasks.generate-image-tag-cpu.results.image-tag-latest-dockerhub)"
       - name: IMAGE_BAIDU
-        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-cpu-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag-cpu.results.image-tag-baidubce)"
+      - name: IMAGE_LATEST_BAIDU
+        value: "$(tasks.generate-image-tag-cpu.results.image-tag-latest-baidubce)"
+      - name: CACHE_REPO
+        value: registry.baidubce.com/paddleflow-public/cache/kaniko
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
-        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+        value: $(params.dockerfile-path)
       - name: BUILDER_IMAGE
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value: 
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+          - --registry-mirror=mirror.baidubce.com
     workspaces:
       - name: source
         workspace: shared-data
-        subPath: dir1
+        # subPath: dir1
       - name: cache
         workspace: cache
+
+  - name: generate-image-tag-gpu-cuda10-cudnn7
+    taskRef:
+      name: generate-docker-image-tag
+    runAfter: 
+      - prepare-build-context
+    workspaces:
+    - name: source
+      workspace: shared-data
+      # subPath: dir1
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
+    - name: branch
+      value: $(params.toolkit-revision)
+    - name: commit-id
+      value: $(tasks.fetch-paddle-toolkit-repo.results.commit-id)
+    - name: paddle-base-tag
+      value: $(params.toolkit-base-image-version)-gpu-cuda10.2-cudnn7
+    - name: context-path
+      value: $(params.context-path)
+    - name: dockerfile-path
+      value: $(params.dockerfile-path)
+    - name: dockerhub-registry
+      value: $(params.image-dockerhub-registry)
+    - name: baidubce-registry
+      value: $(params.image-baidubce-registry)
+
   - name: build-image-gpu-cuda10-cudnn7
+    retries: 3
     runAfter:
-      - parse-and-prepare
+      - generate-image-tag-gpu-cuda10-cudnn7
     taskRef:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda10.2-cudnn7-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag-gpu-cuda10-cudnn7.results.image-tag-dockerhub)"
+      - name: IMAGE_LATEST
+        value: "$(tasks.generate-image-tag-gpu-cuda10-cudnn7.results.image-tag-latest-dockerhub)"
       - name: IMAGE_BAIDU
-        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda10.2-cudnn7-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag-gpu-cuda10-cudnn7.results.image-tag-baidubce)"
+      - name: IMAGE_LATEST_BAIDU
+        value: "$(tasks.generate-image-tag-gpu-cuda10-cudnn7.results.image-tag-latest-baidubce)"
+      - name: CACHE_REPO
+        value: registry.baidubce.com/paddleflow-public/cache/kaniko
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
-        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+        value: $(params.dockerfile-path)
       - name: BUILDER_IMAGE
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value:
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda10.2-cudnn7
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+          - --registry-mirror=mirror.baidubce.com
     workspaces:
       - name: source
         workspace: shared-data
-        subPath: dir1
+        # subPath: dir1
       - name: cache
         workspace: cache
+
+  - name: generate-image-tag-gpu-cuda11-cudnn8
+    taskRef:
+      name: generate-docker-image-tag
+    runAfter: 
+      - prepare-build-context
+    workspaces:
+    - name: source
+      workspace: shared-data
+      # subPath: dir1
+    params:
+    - name: toolkit-name
+      value: $(params.toolkit-repo-name)
+    - name: branch
+      value: $(params.toolkit-revision)
+    - name: commit-id
+      value: $(tasks.fetch-paddle-toolkit-repo.results.commit-id)
+    - name: paddle-base-tag
+      value: $(params.toolkit-base-image-version)-gpu-cuda11.2-cudnn8
+    - name: context-path
+      value: $(params.context-path)
+    - name: dockerfile-path
+      value: $(params.dockerfile-path)
+    - name: dockerhub-registry
+      value: $(params.image-dockerhub-registry)
+    - name: baidubce-registry
+      value: $(params.image-baidubce-registry)
+
   - name: build-image-gpu-cuda11-cudnn8
+    retries: 3
     runAfter:
-      - parse-and-prepare
+      - generate-image-tag-gpu-cuda11-cudnn8
     taskRef:
       name: kaniko
     params:
       - name: IMAGE
-        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda11.2-cudnn8-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag-gpu-cuda11-cudnn8.results.image-tag-dockerhub)"
+      - name: IMAGE_LATEST
+        value: "$(tasks.generate-image-tag-gpu-cuda11-cudnn8.results.image-tag-latest-dockerhub)"
       - name: IMAGE_BAIDU
-        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-gpu-cuda11.2-cudnn8-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+        value: "$(tasks.generate-image-tag-gpu-cuda11-cudnn8.results.image-tag-baidubce)"
+      - name: IMAGE_LATEST_BAIDU
+        value: "$(tasks.generate-image-tag-gpu-cuda11-cudnn8.results.image-tag-latest-baidubce)"
+      - name: CACHE_REPO
+        value: registry.baidubce.com/paddleflow-public/cache/kaniko      
       - name: CONTEXT
         value: docker
       - name: DOCKERFILE
-        value: $(tasks.parse-and-prepare.results.dockerfile-name)
+        value: $(params.dockerfile-path)
       - name: BUILDER_IMAGE
         value: $(params.kaniko-image)
       - name: EXTRA_ARGS
         value:
           - --build-arg=IMAGE_TAG=$(params.toolkit-base-image-version)-gpu-cuda11.2-cudnn8
           - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+          - --registry-mirror=mirror.baidubce.com
     workspaces:
       - name: source
         workspace: shared-data
-        subPath: dir1
+        # subPath: dir1
       - name: cache
         workspace: cache
 
-  - name: fetch-paddle-toolkit-repo-rocm
+  finally:
+  - name: cleanup
     taskRef:
-      name: git-clone
-    workspaces:
-    - name: output
-      workspace: shared-data
-      subPath: dir2
-    params:
-    - name: url
-      value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
-    - name: revision
-      value: $(params.toolkit-revision)
-    - name: subdirectory
-      value: $(params.toolkit-repo-name)
-  - name: fetch-docker-repo-rocm
-    taskRef:
-      name: git-clone
-    workspaces:
-    - name: output
-      workspace: shared-data
-      subPath: dir2
-    params:
-    - name: url
-      value: $(params.docker-repo-url)
-    - name: revision
-      value: $(params.docker-revision)
-    - name: subdirectory
-      value: repo-docker
-  - name: parse-and-prepare-rocm
-    taskRef:
-      name: prepare-build-env
-    runAfter:
-      - fetch-docker-repo-rocm
-      - fetch-paddle-toolkit-repo-rocm
+      name: cleanup
     workspaces:
     - name: source
       workspace: shared-data
-      subPath: dir2
-    params:
-    - name: toolkit-name
-      value: $(params.toolkit-repo-name)
-    - name: revision
-      value: $(params.toolkit-revision)
-    - name: paddle-base-tag
-      value: $(params.toolkit-base-image-version)
-    - name: toolkit-dir
-      value: $(params.toolkit-repo-name)
-    - name: dockerfile-path
-      value: $(params.dockerfile-path).rocm
-  - name: build-image-rocm4-miopen2
-    runAfter:
-      - parse-and-prepare-rocm
-    taskRef:
-      name: kaniko
-    params:
-      - name: IMAGE
-        value: "$(params.image-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
-      - name: IMAGE_BAIDU
-        value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
-      - name: CONTEXT
-        value: docker
-      - name: DOCKERFILE
-        value: $(tasks.parse-and-prepare-rocm.results.dockerfile-name)
-      - name: BUILDER_IMAGE
-        value: $(params.kaniko-image)
-      - name: EXTRA_ARGS
-        value:
-          - --build-arg=IMAGE_TAG="latest-dev-rocm4.0-miopen2.11"
-          - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
-    workspaces:
-      - name: cache
-        workspace: cache
-      - name: source
-        workspace: shared-data
-        subPath: dir2
+
+  # Build rocm image. 
+  # - name: fetch-paddle-toolkit-repo-rocm
+  #   taskRef:
+  #     name: git-clone
+  #   workspaces:
+  #   - name: output
+  #     workspace: shared-data
+  #     subPath: dir2
+  #   params:
+  #   - name: url
+  #     value: https://github.com/PaddlePaddle/$(params.toolkit-repo-name)
+  #   - name: revision
+  #     value: $(params.toolkit-revision)
+  #   - name: subdirectory
+  #     value: $(params.toolkit-repo-name)
+  # - name: fetch-docker-repo-rocm
+  #   taskRef:
+  #     name: git-clone
+  #   workspaces:
+  #   - name: output
+  #     workspace: shared-data
+  #     subPath: dir2
+  #   params:
+  #   - name: url
+  #     value: $(params.docker-repo-url)
+  #   - name: revision
+  #     value: $(params.docker-revision)
+  #   - name: subdirectory
+  #     value: repo-docker
+  # - name: parse-and-prepare-rocm
+  #   taskRef:
+  #     name: prepare-build-env
+  #   runAfter:
+  #     - fetch-docker-repo-rocm
+  #     - fetch-paddle-toolkit-repo-rocm
+  #   workspaces:
+  #   - name: source
+  #     workspace: shared-data
+  #     subPath: dir2
+  #   params:
+  #   - name: toolkit-name
+  #     value: $(params.toolkit-repo-name)
+  #   - name: revision
+  #     value: $(params.toolkit-revision)
+  #   - name: paddle-base-tag
+  #     value: $(params.toolkit-base-image-version)
+  #   - name: dockerfile-path
+  #     value: $(params.dockerfile-path).rocm
+  # - name: build-image-rocm4-miopen2
+  #   runAfter:
+  #     - parse-and-prepare-rocm
+  #   taskRef:
+  #     name: kaniko
+  #   params:
+  #     - name: IMAGE
+  #       value: "$(params.image-dockerhub-registry):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+  #     - name: IMAGE_BAIDU
+  #       value: "registry.baidubce.com/paddleflow-public/$(tasks.parse-and-prepare.results.toolkit-name-lower):$(tasks.parse-and-prepare.results.image-tag-branch)-rocm4.0-miopen2.11-$(tasks.fetch-paddle-toolkit-repo.results.commit-id)"
+  #     - name: CONTEXT
+  #       value: docker
+  #     - name: DOCKERFILE
+  #       value: $(tasks.parse-and-prepare-rocm.results.dockerfile-name)
+  #     - name: BUILDER_IMAGE
+  #       value: $(params.kaniko-image)
+  #     - name: EXTRA_ARGS
+  #       value:
+  #         - --build-arg=IMAGE_TAG="latest-dev-rocm4.0-miopen2.11"
+  #         - --build-arg=PADDLE_TOOLKIT=$(params.toolkit-repo-name)
+  #   workspaces:
+  #     - name: cache
+  #       workspace: cache
+  #     - name: source
+  #       workspace: shared-data
+  #       subPath: dir2
 
 
 

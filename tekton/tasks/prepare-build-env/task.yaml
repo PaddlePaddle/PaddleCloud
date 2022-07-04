@@ -1,7 +1,48 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: prepare-build-env
+  name: prepare-docker-build-context
+spec:
+  description: Prepare files used in building images.
+  workspaces:
+  - name: source
+    description: Containing paddle toolkit repo and docker repo.
+  params:
+  - name: toolkit-name
+    description: The name of paddle toolkit.
+  - name: context-path
+    type: string
+    description: The directory path containing Dockerfile and dependency files within repo.
+  steps:
+  - name: prepare
+    image: zshusers/zsh:5.8
+    env:
+    - name: TOOLKIT_NAME
+      value: $(params.toolkit-name)
+    - name: CONTEXT_PATH
+      value: $(params.context-path)
+    script: |
+      #!/usr/bin/env zsh
+      set -x
+      cd $(workspaces.source.path) 
+
+      if [ -e docker ]
+      then
+          rm -rf docker/*
+      else 
+          mkdir docker
+      fi
+
+      mv repo-docker/${CONTEXT_PATH}/* docker/
+      mv ${TOOLKIT_NAME} docker/ && cd docker
+      echo "current path: `pwd`"
+      echo "file list: `ls`"
+      
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: generate-docker-image-tag
 spec:
   description: Parse parameters from original infos and prepare env for kaniko task.
   workspaces:
@@ -10,65 +51,65 @@ spec:
   params:
   - name: toolkit-name
     description: The paddle toolkit name.
-  - name: revision
+  - name: branch
     description: The branch of paddle toolkit repo.
+    type: string
+  - name: commit-id
+    description: Latest commit-id in current branch.
     type: string
   - name: paddle-base-tag
     description: The tag of paddle base image.
     type: string
-    default: 2.2.2
-  - name: toolkit-dir
-    description: The dir name of paddle toolkit repo in the workspace.
+    default: 2.3.0
   - name: context-path
     type: string
     description: The directory path containing Dockerfile and dependency files within repo.
   - name: dockerfile-path
     type: string
     description: The relative path to context path.
+  - name: dockerhub-registry
+  - name: baidubce-registry
   results:
-  - name: toolkit-name-lower
-    description: The lowercase name.
-  - name: image-tag-branch
-    description: image release version
-  - name: image-tag-env
-    description: The base env of paddlepaddle image.
   - name: paddle-version
     description: x.x.x
   - name: hardware
     description: gpu or cpu docker image
+  - name: image-tag-dockerhub
+  - name: image-tag-latest-dockerhub
+  - name: image-tag-baidubce
+  - name: image-tag-latest-baidubce
   steps:
-  - name: preparing
+  - name: generate
     image: zshusers/zsh:5.8
     env:
     - name: TOOLKIT_NAME
       value: $(params.toolkit-name)
-    - name: REVISION
-      value: $(params.revision)
+    - name: BRANCH
+      value: $(params.branch)
+    - name: COMMIT_ID
+      value: $(params.commit-id)
     - name: PADDLE_BASE_TAG
       value: $(params.paddle-base-tag)
-    - name: TOOLKIT_DIR
-      value: $(params.toolkit-dir)
     - name: CONTEXT_PATH
       value: $(params.context-path)
     - name: DOCKERFILE_PATH
       value: $(params.dockerfile-path)
-      
+    - name: DOCKERHUB_REGISTRY
+      value: $(params.dockerhub-registry)
+    - name: BAIDUBCE_REGISTRY
+      value: $(params.baidubce-registry)
     script: |
       #!/usr/bin/env zsh
       set -x
-      cd $(workspaces.source.path) && mkdir docker
-      mv repo-docker/${CONTEXT_PATH}/* docker/
-      mv ${TOOLKIT_DIR} docker/ && cd docker
-      echo "current path: `pwd`"
-      echo "file list: `ls`"
+      cd $(workspaces.source.path)/docker
 
       PADDLE_VERSION=${PADDLE_BASE_TAG:0:5}
 
       TOOLKIT_NAME_LOWER=`echo ${TOOLKIT_NAME} | tr A-Z a-z`
 
-      if [[ ${REVISION:0:7} == "release" ]]
+      if [[ ${BRANCH:0:7} == "release" ]]
       then
-          REVISION=${REVISION:0-3:3}
+          BRANCH=${BRANCH:0-3:3}
       fi
 
       if [[ ${PADDLE_BASE_TAG} =~ "-" ]]
@@ -88,50 +129,83 @@ spec:
           HARDWARE="cpu"
       fi
 
-      printf "%s" "${TOOLKIT_NAME_LOWER}" > "$(results.toolkit-name-lower.path)"
+      echo ${DOCKERFILE_PATH}
+      cat ${DOCKERFILE_PATH}
+
+      IMAGE_TAG_DOCKERHUB="${DOCKERHUB_REGISTRY}/${TOOLKIT_NAME_LOWER}:${BRANCH}-${IMAGE_TAG_ENV}-${COMMIT_ID}"
+      IMAGE_TAG_LATEST_DOCKERHUB="${DOCKERHUB_REGISTRY}/${TOOLKIT_NAME_LOWER}:${BRANCH}-${IMAGE_TAG_ENV}-latest"
+      IMAGE_TAG_BAIDUBCE="${BAIDUBCE_REGISTRY}/${TOOLKIT_NAME_LOWER}:${BRANCH}-${IMAGE_TAG_ENV}-${COMMIT_ID}"
+      IMAGE_TAG_LATEST_BAIDUBCE="${BAIDUBCE_REGISTRY}/${TOOLKIT_NAME_LOWER}:${BRANCH}-${IMAGE_TAG_ENV}-latest"
+
+
       printf "%s" "${PADDLE_VERSION}" > "$(results.paddle-version.path)"
-      printf "%s" "${IMAGE_TAG_ENV}" > "$(results.image-tag-env.path)"
-      printf "%s" "${REVISION}" > "$(results.image-tag-branch.path)"
       printf "%s" "${HARDWARE}" > "$(results.hardware.path)"
-  - name: mod-dockerfile
+
+      printf "%s" "${IMAGE_TAG_DOCKERHUB}" > "$(results.image-tag-dockerhub.path)"
+      printf "%s" "${IMAGE_TAG_LATEST_DOCKERHUB}" > "$(results.image-tag-latest-dockerhub.path)"
+      printf "%s" "${IMAGE_TAG_BAIDUBCE}" > "$(results.image-tag-baidubce.path)"
+      printf "%s" "${IMAGE_TAG_LATEST_BAIDUBCE}" > "$(results.image-tag-latest-baidubce.path)"
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # #    
+  # Now, we use independence Dockerfile for every paddle toolkit.
+  #
+  # - name: mod-dockerfile
+  #   image: zshusers/zsh:5.8
+  #   env:
+  #   - name: TOOLKIT_NAME
+  #     value: $(params.toolkit-name)
+  #   - name: DOCKERFILE
+  #     value: $(params.dockerfile-path)
+  #   script: |
+  #     #!/usr/bin/env zsh
+  #     set -x
+
+  #     # cd to context path.
+  #     cd $(workspaces.source.path)/docker     
+
+  #     NO_REQUIREMENT=(PaddleRec PaddleSpeech)
+  #     NO_INSTALL=(PaddleClas PaddleRec PaddleHelix)
+
+  #     # macOS shoule be sed "" -i ...
+  #     if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
+  #     then
+  #       sed -i '/requirements.txt/d' ${DOCKERFILE}
+  #     fi
+
+  #     if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
+  #     then
+  #       sed -i '/setup.py/d' ${DOCKERFILE}
+  #     fi
+
+  #     if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
+  #     then
+  #       sed -i '/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1' ${DOCKERFILE}
+  #       sed -i '/# toolkit install/a\RUN pip3.7 install .' ${DOCKERFILE}
+  #       sed -i '/setup.py/d' ${DOCKERFILE}
+  #     fi
+
+  #     if [[ ${TOOLKIT_NAME} == "PaddleHelix" ]]
+  #     then
+  #       sed -i '/WORKDIR/ s?$?/apps/paddlefold?' ${DOCKERFILE}
+  #     fi
+
+  #     echo ${DOCKERFILE}
+  #     cat ${DOCKERFILE}
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: cleanup
+spec:
+  description: Cleanup tmp files.
+  workspaces:
+  - name: source
+    description: Runtime files.
+  steps:
+  - name: clean
     image: zshusers/zsh:5.8
-    env:
-    - name: TOOLKIT_NAME
-      value: $(params.toolkit-name)
-    - name: DOCKERFILE
-      value: $(params.dockerfile-path)
     script: |
       #!/usr/bin/env zsh
       set -x
-
-      # cd to context path.
-      cd $(workspaces.source.path)/docker     
-
-      NO_REQUIREMENT=(PaddleRec PaddleSpeech)
-      NO_INSTALL=(PaddleClas PaddleRec PaddleHelix)
-
-      # macOS shoule be sed "" -i ...
-      if [[ ${NO_REQUIREMENT[*]} =~ ${TOOLKIT_NAME} ]]
-      then
-        sed -i '/requirements.txt/d' ${DOCKERFILE}
-      fi
-
-      if [[ ${NO_INSTALL[*]} =~ ${TOOLKIT_NAME} ]]
-      then
-        sed -i '/setup.py/d' ${DOCKERFILE}
-      fi
-
-      if [[ ${TOOLKIT_NAME} == "PaddleSpeech" ]]
-      then
-        sed -i '/# previous install/a\RUN apt-get update -y && apt-get install -y libsndfile1' ${DOCKERFILE}
-        sed -i '/# toolkit install/a\RUN pip3.7 install .' ${DOCKERFILE}
-        sed -i '/setup.py/d' ${DOCKERFILE}
-      fi
-
-      if [[ ${TOOLKIT_NAME} == "PaddleHelix" ]]
-      then
-        sed -i '/WORKDIR/ s?$?/apps/paddlefold?' ${DOCKERFILE}
-      fi
-
-      echo ${DOCKERFILE}
-      cat ${DOCKERFILE}
+      rm -rf $(workspaces.source.path)/*

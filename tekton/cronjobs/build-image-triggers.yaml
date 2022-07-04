@@ -1,4 +1,4 @@
-apiVersion: triggers.tekton.dev/v1beta1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
   name: cron-listener
@@ -38,20 +38,24 @@ spec:
       serviceAccountName: tekton-triggers-example-sa
       pipelineRef:
         name: build-multi-image
+      podTemplate:
+        hostNetwork: true
       workspaces:
       # Temporary volume which will be deleted when the pipeline finishes.
-      - name: shared-data
-        volumeClaimTemplate:
-          spec:
-            accessModes:
-            - ReadWriteOnce
-            resources:
-              requests:
-                storage: 10Gi
-    # Cache space for kaniko
-      - name: cache
-        persistentVolumeClaim:
-          claimName: pvc-kaniko-cache
+        - name: shared-data
+          volumeClaimTemplate:
+            spec:
+              storageClassName: manual
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
+      # Cache space for kaniko
+        - name: cache
+          persistentVolumeClaim:
+            claimName: pvc-kaniko-cache
+      timeout: 7h
       params:
       - name: image-dockerhub-registry
         value: $(tt.params.image-dockerhub-registry)
@@ -71,7 +75,6 @@ spec:
         value: $(tt.params.context-path)
       - name: dockerfile-path
         value: $(tt.params.dockerfile-path)
-
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1

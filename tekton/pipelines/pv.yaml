@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-runtime
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-2
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 29Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-2"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-runtime-2
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 29Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-3
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 28Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-3"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-runtime-3
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 28Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-kaniko-cache
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/cache"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-kaniko-cache
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

@@ -1,9 +1,11 @@
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: cleanup-cronjob
 spec:
-  schedule: "*/18 0 * * *"       # Cron Time
+  schedule: "*/5 0 * * *"       # Cron Time
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
   jobTemplate:
     spec:
       template:

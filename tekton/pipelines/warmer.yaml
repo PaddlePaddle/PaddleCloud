@@ -11,7 +11,11 @@ spec:
     args: ["--cache-dir=/cache",
            "--image=paddlepaddle/paddle:2.3.0",
            "--image=paddlepaddle/paddle:2.3.0-gpu-cuda10.2-cudnn7",
-           "--image=paddlepaddle/paddle:2.3.0-gpu-cuda11.2-cudnn8",]
+           "--image=paddlepaddle/paddle:2.3.0-gpu-cuda11.2-cudnn8",
+           "--registry-mirror=mirror.baidubce.com",
+           "--insecure-pull",
+           "--skip-tls-verify-registry=mirror.baidubce.com",
+           "--verbosity=trace"]
     volumeMounts:
       - name: kaniko-secret
         mountPath: /secret
@@ -20,14 +24,14 @@ spec:
     env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /secret/kaniko-secret.json
-      - name: HTTP_PROXY
-        value: "http://172.19.57.45:3128/"
-      - name: HTTPS_PROXY
-        value: "http://172.19.57.45:3128/"
-      - name: http_proxy
-        value: "http://172.19.57.45:3128/"
-      - name: https_proxy
-        value: "http://172.19.57.45:3128/"
+      # - name: HTTP_PROXY
+      #   value: "http://172.19.57.45:3128/"
+      # - name: HTTPS_PROXY
+      #   value: "http://172.19.57.45:3128/"
+      # - name: http_proxy
+      #   value: "http://172.19.57.45:3128/"
+      # - name: https_proxy
+      #   value: "http://172.19.57.45:3128/"
   restartPolicy: Never
   volumes:
     - name: kaniko-secret

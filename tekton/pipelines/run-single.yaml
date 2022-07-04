@@ -11,22 +11,30 @@ spec:
   workspaces:
 # Temporary volume which will be deleted when the pipeline finishes.
   - name: shared-data
-    persistentVolumeClaim:
-      claimName: pvc-runtime
+    volumeClaimTemplate:
+      spec:
+        storageClassName: manual
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 15Gi
 # Cache space for kaniko
   - name: cache
     persistentVolumeClaim:
       claimName: pvc-kaniko-cache
   timeout: 2h
   params:
-  - name: image-registry
-    value: paddlecloud/paddledetection
+  - name: image-dockerhub-registry
+    value: paddlecloud
+  - name: image-baidubce-registry
+    value: registry.baidubce.com/paddleflow-public
   - name: toolkit-repo-name
-    value: PaddleOCR
+    value: PaddleDetection
   - name: toolkit-revision
-    value: release/2.5
+    value: release/2.4
   - name: toolkit-base-image-tag
-    value: 2.3.0
+    value: 2.3.0-gpu-cuda11.2-cudnn8
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision
@@ -34,7 +42,10 @@ spec:
   - name: context-path
     value: tekton/dockerfiles
   - name: dockerfile-path
-    value: Dockerfile
+    value: Dockerfile.detection
+  - name:  kaniko-image
+    value: lzc842650834/tekton:kaniko-project-executor-v1.5.1
+
 
 
   

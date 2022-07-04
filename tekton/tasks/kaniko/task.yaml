@@ -18,8 +18,14 @@ spec:
   params:
     - name: IMAGE
       description: Name (reference) of the image to build.
+    - name: IMAGE_LATEST
+      description: Lastet image tag.
     - name: IMAGE_BAIDU
       description: Name (reference) of the image to build.
+    - name: IMAGE_LATEST_BAIDU
+      description: Latest image tag
+    - name: CACHE_REPO
+      description: Repo for saving cache layers.
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
@@ -55,7 +61,10 @@ spec:
         echo "context ls: `ls`"
         echo "dockerfile: $(workspaces.source.path)/$(params.CONTEXT)/$(params.DOCKERFILE)"
         echo "destination1: $(params.IMAGE_BAIDU)"
-        echo "destination2: $(params.IMAGE)"
+        echo "destination2: $(params.IMAGE_LATEST_BAIDU)"
+        echo "destination3: $(params.IMAGE)"
+        echo "destination4: $(params.IMAGE_LATEST)"
+
     - name: build-and-push
       workingDir: $(workspaces.source.path)
       image: $(params.BUILDER_IMAGE)
@@ -64,10 +73,14 @@ spec:
         - --dockerfile=$(params.DOCKERFILE)
         - --context=$(workspaces.source.path)/$(params.CONTEXT) # The user does not need to care the workspace and the source.
         - --destination=$(params.IMAGE_BAIDU)
+        - --destination=$(params.IMAGE_LATEST_BAIDU)
         - --destination=$(params.IMAGE)
+        - --destination=$(params.IMAGE_LATEST)                
         - --cache=true
         - --cache-dir=$(workspaces.cache.path)
+        - --cache-repo=$(params.CACHE_REPO)
         - --digest-file=$(results.IMAGE_DIGEST.path)
+        - --cleanup
       # kaniko assumes it is running as root, which means this example fails on platforms
       # that default to run containers as random uid (like OpenShift). Adding this securityContext
       # makes it explicit that it needs to run as root.
@@ -78,4 +91,6 @@ spec:
       script: |
         set -e
         image="$(params.IMAGE)"
+        echo -n "${image}" | tee "$(results.IMAGE_URL.path)"
+        image="$(params.IMAGE_BAIDU)"
         echo -n "${image}" | tee "$(results.IMAGE_URL.path)"
