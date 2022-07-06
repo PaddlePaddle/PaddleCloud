@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cronjob-curl-paddlehelix
 spec:
-  schedule: "*/1 12 * * 6"          
+  schedule: "1 12 * * 6"          
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 0  
   jobTemplate:

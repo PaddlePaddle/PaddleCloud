@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cronjob-curl-paddlescience
 spec:
-  schedule: "*/1 12 * * 5"          
+  schedule: "1 12 * * 5"          
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 0
   jobTemplate:

@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cronjob-curl-paddlenlp
 spec:
-  schedule: "*/1 0 * * 1"          
+  schedule: "1 0 * * 1"          
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 0
   jobTemplate:
