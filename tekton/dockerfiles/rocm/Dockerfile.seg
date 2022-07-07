@@ -27,9 +27,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Ref: https://github.com/jupyterlab/jupyterlab/issues/10228
 RUN pip install --no-cache-dir --upgrade jupyter-server==1.6.4 jupyterlab==3.3.4 ipykernel ipython \
     -i https://mirror.baidu.com/pypi/simple
-RUN pip install --no-cache-dir paddlepaddle-rocm -f \
-    https://www.paddlepaddle.org.cn/whl/rocm/develop.html
-
+RUN pip install --no-cache-dir https://hkg.bcebos.com/v1/paddleflow-public/paddlepaddle_rocm-0.0.0-cp37-cp37m-linux_x86_64.whl \
+    -i https://mirror.baidu.com/pypi/simple
+    
 WORKDIR /opt/${PADDLE_TOOLKIT}
 
 # toolkit install
