@@ -26,24 +26,23 @@
 
 如上图所示，该项目主要流程分为两大块，一个是完成业务需求的 pipeline 流程（流程图下部），另一个是定时构建最新版本镜像的 cronjob && Tekton triggers 流程（流程图上部），其中虚线框表示此流程有数据流入/流出。
 
-### task 和 Pipeline 流程
-
+### Task 和 Pipeline 流程
 
 <img src="../docs/images/tekton-task-and-pipeline.png" alt="tekton-task-and-pipeline" style="zoom:25%;" />
 上图以流程图的形式展示了 task 和 pipeilne 功能及组合关系
-
-### cronjob 流程
-
-<img src="../docs/images/tekton-cronjob.png" alt="tekton-cronjob" style="zoom:25%;" />
-上图详细描述了 cronjob 的流程构建，虚线表示数据流向。
 
 #### Task
 
 项目提供了三个 Task，分别是用于 git clone 项目的 git-clone、 build & push docker 镜像的 kaniko、对 Paddle 套件预处理的 prepare-build-env。其中 git-clone 和 kaniko 较为固定，若有自定义需求，可更改 prepare-build-env 中的处理逻辑。
 
-#### Pipeline && Pipelinerun
+#### Pipeline 和 Piplinerun
 
 Pipeline 由一个或多个 Task 组合而成，项目提供了针对单套件的单版本镜像制作（single-image）和针对单套件多版本镜像制作（multi-image） 两个Pipeline，用户可通过组合各个 Task、修改 prepare-build-env task，完成自定义需求。Pipelinrun 是 Pipeline 的实例，对 Pipeline 中的参数进行配置。此外，用户既可以使用 Pipelinerun 脚本单次运行 Pipeline，也可以通过 cronjob/webhook 定期执行。
+
+### Cronjob 流程
+
+<img src="../docs/images/tekton-cronjob.png" alt="tekton-cronjob" style="zoom:25%;" />
+上图详细描述了 cronjob 的流程构建，虚线表示数据流向。
 
 #### Cronjob && Trigger
  
