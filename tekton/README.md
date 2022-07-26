@@ -2,7 +2,7 @@
 
 ## 简介
 
-该模块使用 Tekton pipelines 和 Triggers，每周定时拉取 paddlepaddle 模型套件最新版本（例如 PaddleOCR、PaddleDetection 等）制作 docker 镜像， 并推送到 docker hub 镜像仓库。您可以更改参数或 pipeline，实现自定义需求。
+该模块使用 Tekton pipelines 和 Triggers，每周定时拉取 paddlepaddle 模型套件最新版本（例如 PaddleOCR、PaddleDetection 等）制作 docker 镜像， 并推送到 docker hub / baidebce镜像仓库。您可以更改参数或 pipeline，实现自定义需求。
 
 ## 特性
 
