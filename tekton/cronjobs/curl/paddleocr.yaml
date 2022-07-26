@@ -1,9 +1,11 @@
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: cronjob-curl-paddleocr
 spec:
-  schedule: "*/18 0 * * 0"          # UTC 18:00 CST 24:00
+  schedule: "1 0 * * 0"         
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
   jobTemplate:
     spec:
       template:
@@ -13,27 +15,33 @@ spec:
           - name: curl-container
             image: curlimages/curl
             env:
-            - name: IMAGE_REGISTRY
-              value: paddlecloud/paddleocr
+            - name: IMAGE_DOCKERHUB_REGISTRY
+              value: paddlecloud
+            - name: IMAGE_BAIDUBCE_REGISTRY
+              value: registry.baidubce.com/paddleflow-public
             - name: TOOLKIT_NAME
               value: PaddleOCR
             - name: TOOLKIT_REVISION
-              value: release/2.4
+              value: release/2.5
             - name: TOOLKIT_BASE_IMAGE_VERSION
-              value: 2.2.2
+              value: 2.3.0
             - name: DOCKER_REPO_URL
               value: https://github.com/freeliuzc/PaddleCloud.git
             - name: DOCKER_REVISION
               value: dev-tekton
+            - name: CONTEXT_PATH
+              value: tekton/dockerfiles              
             - name: DOCKERFILE_PATH
-              value: tekton/dockerfiles/Dockerfile
+              value: Dockerfile.ocr
             imagePullPolicy: IfNotPresent
             args: ["curl", "-X", "POST", "--data",
-                   '{"image-registry": "$(IMAGE_REGISTRY)",
+                   '{"image-dockerhub-registry": "$(IMAGE_DOCKERHUB_REGISTRY)",
+                   "image-baidubce-registry": "$(IMAGE_BAIDUBCE_REGISTRY)",
                    "toolkit-repo-name": "$(TOOLKIT_NAME)",
                    "toolkit-revision": "$(TOOLKIT_REVISION)",
                    "toolkit-base-image-version": "$(TOOLKIT_BASE_IMAGE_VERSION)",
                    "docker-repo-url": "$(DOCKER_REPO_URL)",
                    "docker-revision": "$(DOCKER_REVISION)",
+                   "context-path": "$(CONTEXT_PATH)",
                    "dockerfile-path": "$(DOCKERFILE_PATH)"}',
                    "el-cron-listener.default.svc.cluster.local:8080"]

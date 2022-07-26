@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  generateName: git-clone-taskrun-
+spec:
+  taskRef:
+    name: git-clone
+  podTemplate:
+    hostNetwork: true
+  workspaces:
+    - name: output
+      persistentVolumeClaim:
+        claimName: pvc-runtime
+  params:
+  - name: url
+    value: https://github.com/freeliuzc/PaddleNLP.git
+  - name: revision
+    value: develop
+  - name: subdirectory
+    value: PaddleNLP
+  - name: httpProxy
+    value: http://172.19.57.45:3128/
+  - name: httpsProxy
+    value: http://172.19.57.45:3128/
+  - name: deleteExisting
+    value: "true"

@@ -1,0 +1,54 @@
+ARG IMAGE_TAG=2.3.0
+ARG PADDLE_TOOLKIT=PaddleOCR
+FROM paddlepaddle/paddle:${IMAGE_TAG}
+
+# update apt cache, install ssh
+RUN rm -rf /etc/apt/* && mkdir -p /etc/apt/apt.conf.d \
+    /Resource/trusted.gpg.d /etc/apt/preferences.d
+COPY ./Resource/sources.list /etc/apt/
+COPY ./Resource/trusted.gpg /etc/apt/
+COPY ./Resource/trusted.gpg.d /etc/apt/trusted.gpg.d
+RUN apt-get update
+
+RUN mkdir -p /var/run/sshd /root/.ssh
+RUN /usr/sbin/sshd -p 22; if [ $? -ne 0 ]; then \
+    rm -rf /etc/ssh/sshd_config && apt-get install \
+    -y openssh-server; fi
+
+# disable UseDNS
+RUN sed -i "s/#UseDNS .*/UseDNS no/" /etc/ssh/sshd_config
+RUN sed -i -r "s/^(.*pam_nologin.so)/#\1/" /etc/pam.d/sshd
+RUN ssh-keygen -A
+
+# add tini
+# ENV TINI_VERSION v0.19.0
+# ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+# RUN chmod +x /tini
+COPY ./Resource/tini /tini
+RUN chmod +x /tini
+
+ARG PADDLE_TOOLKIT
+COPY ${PADDLE_TOOLKIT} ./${PADDLE_TOOLKIT}
+
+# previous install
+
+RUN pip3.7 install --no-cache-dir --upgrade pip \
+    -i https://mirror.baidu.com/pypi/simple
+RUN pip3.7 install --no-cache-dir --upgrade jupyter-server==1.6.4 jupyterlab==3.3.4 ipykernel ipython \
+    -i https://mirror.baidu.com/pypi/simple
+
+WORKDIR /home/${PADDLE_TOOLKIT}
+
+# toolkit install
+RUN pip3.7 install --no-cache-dir -r requirements.txt \ 
+    -i https://mirror.baidu.com/pypi/simple
+RUN python3.7 setup.py install
+
+ENTRYPOINT ["/tini", "--"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", \
+     "--allow-root", "--notebook-dir=/home", "--ServerApp.token=''"]
+
+# ssh
+EXPOSE 22    
+# jupyter lab   
+EXPOSE 8888

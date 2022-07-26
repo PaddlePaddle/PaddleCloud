@@ -1,0 +1,11 @@
+ARG IMAGE_TAG=2.3.0
+ARG PADDLE_TOOLKIT=PaddleOCR
+FROM paddlepaddle/paddle:${IMAGE_TAG}
+
+
+CMD ["sleep", "infinity"]
+
+# ssh
+EXPOSE 22    
+# jupyter lab   
+EXPOSE 8888

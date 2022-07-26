@@ -1,11 +1,11 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: cronjob-curl-paddleclas
+  name: cronjob-curl-paddlehelix
 spec:
-  schedule: "1 0 * * 5"          
+  schedule: "1 12 * * 6"          
   successfulJobsHistoryLimit: 0
-  failedJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0  
   jobTemplate:
     spec:
       template:
@@ -20,9 +20,9 @@ spec:
             - name: IMAGE_BAIDUBCE_REGISTRY
               value: registry.baidubce.com/paddleflow-public
             - name: TOOLKIT_NAME
-              value: PaddleClas
+              value: PaddleHelix
             - name: TOOLKIT_REVISION
-              value: release/2.4
+              value: dev
             - name: TOOLKIT_BASE_IMAGE_VERSION
               value: 2.3.0
             - name: DOCKER_REPO_URL
@@ -32,7 +32,7 @@ spec:
             - name: CONTEXT_PATH
               value: tekton/dockerfiles
             - name: DOCKERFILE_PATH
-              value: Dockerfile.clas
+              value: Dockerfile.helix
             imagePullPolicy: IfNotPresent
             args: ["curl", "-X", "POST", "--data",
                    '{"image-dockerhub-registry": "$(IMAGE_DOCKERHUB_REGISTRY)",

@@ -7,14 +7,20 @@ spec:
     name: kaniko
   params:
   - name: IMAGE
-    value: lzc842650834/jarvis_tekton:0.3
+    value: lzc842650834/jarvis_tekton:0.4
+  - name: DOCKERFILE
+    value: $(workspaces.)
+  - name: BUILDER_IMAGE
+    value: lzc842650834/tekton:kaniko-project-executor-v1.5.1
   - name: EXTRA_ARGS
     value:
-    - "--build-arg=IMAGE_TAG=2.2.2"
+    - --build-arg=IMAGE_TAG=2.3.0
+    - --build-arg=PADDLE_TOOLKIT=Paddle
+    - --registry-mirror=mirror.baidubce.com
   workspaces:
   - name: source
     persistentVolumeClaim:
-      claimName: pvc-kaniko
+      claimName: pvc-runtime
   - name: dockerconfig
     persistentVolumeClaim:
-      claimName: pvc-kaniko
+      claimName: pvc-runtime

@@ -1,4 +1,4 @@
-apiVersion: triggers.tekton.dev/v1beta1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
   name: cron-listener
@@ -20,12 +20,14 @@ metadata:
   name: cron-template
 spec:
   params:
-  - name: image-registry
+  - name: image-dockerhub-registry
+  - name: image-baidubce-registry
   - name: toolkit-repo-name
   - name: toolkit-revision
   - name: toolkit-base-image-version
   - name: docker-repo-url
   - name: docker-revision
+  - name: context-path
   - name: dockerfile-path
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
@@ -36,18 +38,29 @@ spec:
       serviceAccountName: tekton-triggers-example-sa
       pipelineRef:
         name: build-multi-image
+      podTemplate:
+        hostNetwork: true
       workspaces:
-      - name: shared-data
-        volumeClaimTemplate:
-          spec:
-            accessModes:
-            - ReadWriteOnce
-            resources:
-              requests:
-                storage: 10Gi
+      # Temporary volume which will be deleted when the pipeline finishes.
+        - name: shared-data
+          volumeClaimTemplate:
+            spec:
+              storageClassName: manual
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
+      # Cache space for kaniko
+        - name: cache
+          persistentVolumeClaim:
+            claimName: pvc-kaniko-cache
+      timeout: 7h
       params:
-      - name: image-registry
-        value: $(tt.params.image-registry)
+      - name: image-dockerhub-registry
+        value: $(tt.params.image-dockerhub-registry)
+      - name: image-baidubce-registry
+        value: $(tt.params.image-baidubce-registry)
       - name: toolkit-repo-name
         value: $(tt.params.toolkit-repo-name)
       - name: toolkit-revision      # (branch, tag, sha, ref, etc...)
@@ -58,9 +71,10 @@ spec:
         value: $(tt.params.docker-repo-url)
       - name: docker-revision      # (branch, tag, sha, ref, etc...)
         value: $(tt.params.docker-revision)
+      - name: context-path
+        value: $(tt.params.context-path)
       - name: dockerfile-path
         value: $(tt.params.dockerfile-path)
-
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1
@@ -69,8 +83,10 @@ metadata:
   name: cron-binding
 spec:
   params:
-  - name: image-registry
-    value: $(body.image-registry)
+  - name: image-dockerhub-registry
+    value: $(body.image-dockerhub-registry)
+  - name: image-baidubce-registry
+    value: $(body.image-baidubce-registry)
   - name: toolkit-repo-name
     value: $(body.toolkit-repo-name)
   - name: toolkit-revision
@@ -81,6 +97,8 @@ spec:
     value: $(body.docker-repo-url)
   - name: docker-revision
     value: $(body.docker-revision)
+  - name: context-path
+    value: $(body.context-path)
   - name: dockerfile-path
     value: $(body.dockerfile-path)
 

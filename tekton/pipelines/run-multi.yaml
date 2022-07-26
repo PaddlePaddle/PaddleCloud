@@ -6,30 +6,45 @@ spec:
   serviceAccountName: tekton-triggers-example-sa
   pipelineRef:
     name: build-multi-image
+  podTemplate:
+    hostNetwork: true
   workspaces:
+# Temporary volume which will be deleted when the pipeline finishes.
   - name: shared-data
     volumeClaimTemplate:
       spec:
+        storageClassName: manual
         accessModes:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 10Gi
+            storage: 15Gi
+# Cache space for kaniko
+  - name: cache
+    persistentVolumeClaim:
+      claimName: pvc-kaniko-cache
+  timeout: 7h
   params:
-  - name: image-registry
-    value: paddlecloud/paddleocr
+  - name: image-dockerhub-registry
+    value: paddlecloud
+  - name: image-baidubce-registry
+    value: registry.baidubce.com/paddleflow-public
   - name: toolkit-repo-name
-    value: PaddleOCR
+    value: PaddleClas
   - name: toolkit-revision
     value: release/2.4
   - name: toolkit-base-image-version
-    value: 2.2.2
+    value: 2.3.0
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision
     value: dev-tekton
+  - name: context-path
+    value: tekton/dockerfiles
   - name: dockerfile-path
-    value: tekton/dockerfiles/Dockerfile
+    value: Dockerfile.clas
+  - name:  kaniko-image
+    value: lzc842650834/tekton:kaniko-project-executor-v1.5.1
 
 
   
