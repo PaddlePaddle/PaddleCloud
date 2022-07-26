@@ -32,6 +32,7 @@ docker run --name dev --runtime=nvidia -v $PWD:/paddle -p 8888:8888 -it paddlecl
 - -it：开启容器和本机的交互式运行
 - --rm：退出容器后，自动删除容器，只有当您仅想试用一次时，加上此参数
 - --runtime=nvidia：表示使用 nvidia-docker 环境，及挂载相应的 cuda 环境和 GPU。
+- --shm-size=16G：将容器共享内存设为16G，建议将此参数设的大一些，比如64G。
 
 注：一般情况下，推荐将代码和数据集保存在本地，通过 -v 挂载到容器内，后续即使将 container 删除，代码和数据集不会受到影响。
 
