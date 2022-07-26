@@ -31,6 +31,7 @@
 
 <img src="../docs/images/tekton-task-and-pipeline.png" alt="tekton-task-and-pipeline" style="zoom:25%;" />
 上图以流程图的形式展示了 task 和 pipeilne 功能及组合关系
+
 ### cronjob 流程
 
 <img src="../docs/images/tekton-cronjob.png" alt="tekton-cronjob" style="zoom:25%;" />
