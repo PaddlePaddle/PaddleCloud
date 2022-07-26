@@ -30,7 +30,7 @@ spec:
   - name: image-baidubce-registry
     value: registry.baidubce.com/paddleflow-public
   - name: toolkit-repo-name
-    value: PaddleDetection
+    value: PaddleClas
   - name: toolkit-revision
     value: release/2.4
   - name: toolkit-base-image-version
@@ -42,7 +42,7 @@ spec:
   - name: context-path
     value: tekton/dockerfiles
   - name: dockerfile-path
-    value: Dockerfile.detection
+    value: Dockerfile.clas
   - name:  kaniko-image
     value: lzc842650834/tekton:kaniko-project-executor-v1.5.1
 

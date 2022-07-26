@@ -20,7 +20,7 @@ spec:
             - name: IMAGE_BAIDUBCE_REGISTRY
               value: registry.baidubce.com/paddleflow-public
             - name: TOOLKIT_NAME
-              value: PaddleClas
+              value: PaddleScience
             - name: TOOLKIT_REVISION
               value: develop
             - name: TOOLKIT_BASE_IMAGE_VERSION

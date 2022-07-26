@@ -1,92 +1,6 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: pv-runtime
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 30Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/liuzichang01/pv/runtime"
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pvc-runtime
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 30Gi
-
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv-runtime-2
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 29Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/liuzichang01/pv/runtime-2"
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pvc-runtime-2
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 29Gi
-
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv-runtime-3
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 28Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/liuzichang01/pv/runtime-3"
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pvc-runtime-3
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 28Gi
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
   name: pv-kaniko-cache
   labels:
     type: local
@@ -111,3 +25,139 @@ spec:
   resources:
     requests:
       storage: 20Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-1
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-1"
+    
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-2
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-2"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-3
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-3"
+    
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-4
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-4"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-5
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-5"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-6
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-6"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-7
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-7"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-runtime-8
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: manual
+  capacity:
+    storage: 15Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/liuzichang01/pv/runtime-8"

@@ -34,7 +34,7 @@ WORKDIR /opt/${PADDLE_TOOLKIT}
 # toolkit install
 RUN pip install --no-cache-dir -r requirements.txt \
     -i https://mirror.baidu.com/pypi/simple
-RUN pip install visualdl regex pybind11 zstandard typing-extensions \
+RUN pip install visualdl regex pybind11 zstandard typing-extensions paddleslim \
     -i https://mirror.baidu.com/pypi/simple
 RUN python setup.py install
 

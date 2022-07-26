@@ -30,11 +30,11 @@ spec:
   - name: image-baidubce-registry
     value: registry.baidubce.com/paddleflow-public
   - name: toolkit-repo-name
-    value: PaddleDetection
+    value: PaddleSeg
   - name: toolkit-revision
-    value: release/2.4
+    value: release/2.5
   - name: toolkit-base-image-tag
-    value: 2.3.0-gpu-cuda11.2-cudnn8
+    value: latest-dev-rocm4.0-miopen2.11
   - name: docker-repo-url
     value: https://github.com/freeliuzc/PaddleCloud.git
   - name: docker-revision
@@ -42,7 +42,7 @@ spec:
   - name: context-path
     value: tekton/dockerfiles
   - name: dockerfile-path
-    value: Dockerfile.detection
+    value: rocm/Dockerfile.seg
   - name:  kaniko-image
     value: lzc842650834/tekton:kaniko-project-executor-v1.5.1
 

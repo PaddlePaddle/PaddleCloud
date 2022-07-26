@@ -33,9 +33,9 @@ RUN pip install --no-cache-dir https://hkg.bcebos.com/v1/paddleflow-public/paddl
 WORKDIR /opt/${PADDLE_TOOLKIT}
 
 # toolkit install
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN conda install -c conda-forge openmm=7.5.1 pdbfixer
+RUN pip install pgl networkx sklearn \
     -i https://mirror.baidu.com/pypi/simple
-RUN python setup.py install
 
 ENTRYPOINT ["/tini", "--"]
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--allow-root", "--notebook-dir=/opt"]

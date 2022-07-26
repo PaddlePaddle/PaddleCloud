@@ -39,9 +39,12 @@ RUN pip3.7 install --no-cache-dir --upgrade jupyter-server==1.6.4 jupyterlab==3.
 
 WORKDIR /home/${PADDLE_TOOLKIT}
 
+
+# Helix need conda to install requirements package.
 # toolkit install
-RUN pip3.7 install --no-cache-dir -r requirements.txt -i https://mirror.baidu.com/pypi/simple
-RUN python3.7 setup.py install
+# RUN conda install -c conda-forge openmm=7.5.1 pdbfixer
+RUN pip3.7 install pgl networkx sklearn \
+    -i https://mirror.baidu.com/pypi/simple
 
 ENTRYPOINT ["/tini", "--"]
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", \

@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cronjob-curl-paddleseg
 spec:
-  schedule: "1 0 * * 3"          # UTC 18:00 CST 24:00
+  schedule: "1 0 * * 3"         
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 0
   jobTemplate:
