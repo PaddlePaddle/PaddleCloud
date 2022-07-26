@@ -2,19 +2,21 @@
 
 ## 简介
 
-该模块使用 Tekton pipelines 和 Triggers，每周定时拉取 paddlepaddle 模型套件最新版本（例如 PaddleOCR、PaddleDetection 等）制作 docker 镜像， 并推送到 docker hub / baidebce镜像仓库。您可以更改参数或 pipeline，实现自定义需求。
+该模块使用 Tekton pipelines 和 Triggers，每周定时拉取 paddlepaddle 模型套件最新版本（例如 PaddleOCR、PaddleDetection 等）制作 docker 镜像， 并推送到 docker hub/baidebce 镜像仓库。您可以在此项目的基础上，实现自定义需求。
 
 ## 特性
 
 - 目前支持7个 paddlepaddle 模型套件的自动构建流程，并可以轻松的新增其他模型套件。
 - 可通过设置 cronjob 参数，在任意时间完成镜像自动构建任务。
 - 沙盒式结构，可根据需求轻松的制定出自定义任务流程。
+- 此项目维护的 [飞桨套件 docker 镜像仓库](https://hub.docker.com/orgs/paddlecloud/repositories)
 
 ## 快速上手
 
-教程：[制作 paddle 模型组件镜像并 push 到 docker hub 镜像仓库](./example/README.md)
+教程：
+- [制作 飞桨套件镜像并 push 到 docker hub 镜像仓库](./example/README.md)
 
-[Kaniko 使用指南](./tasks/kaniko/README.md)
+- [Kaniko 使用指南](./tasks/kaniko/README.md)
 
 ## 项目概览
 
@@ -22,7 +24,17 @@
 
 <img src="../docs/images/tekton-arch.png" alt="tekton-arch" style="zoom:25%;" />
 
-如上图所示，该项目主要流程分为两大块，一个是完成业务需求的 pipeline 流程（流程图下部），另一个是为了自动维护套件最新版本镜像的 cronjob && Tekton triggers 流程（流程图上部）。
+如上图所示，该项目主要流程分为两大块，一个是完成业务需求的 pipeline 流程（流程图下部），另一个是定时构建最新版本镜像的 cronjob && Tekton triggers 流程（流程图上部），其中虚线框表示此流程有数据流入/流出。
+
+### task 和 Pipeline 流程
+
+
+<img src="../docs/images/tekton-task-and-pipeline.png" alt="tekton-task-and-pipeline" style="zoom:25%;" />
+上图以流程图的形式展示了 task 和 pipeilne 功能及组合关系
+### cronjob 流程
+
+<img src="../docs/images/tekton-cronjob.png" alt="tekton-cronjob" style="zoom:25%;" />
+上图详细描述了 cronjob 的流程构建，虚线表示数据流向。
 
 #### Task
 
