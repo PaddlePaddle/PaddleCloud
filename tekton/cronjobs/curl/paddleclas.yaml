@@ -22,7 +22,7 @@ spec:
             - name: TOOLKIT_NAME
               value: PaddleClas
             - name: TOOLKIT_REVISION
-              value: release/2.3
+              value: release/2.4
             - name: TOOLKIT_BASE_IMAGE_VERSION
               value: 2.3.0
             - name: DOCKER_REPO_URL
